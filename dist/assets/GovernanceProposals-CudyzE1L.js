@@ -1,1 +1,0 @@
-import{_ as r}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{c as n,a as o,o as a}from"./index-ZSh_hNOY.js";const s={};function l(c,e){return a(),n("div",null,e[0]||(e[0]=[o("h1",null,"Governance Proposals",-1),o("p",null,"Future Chain Explorer PBI - Governance proposals placeholder",-1)]))}const u=r(s,[["render",l]]);export{u as default};
