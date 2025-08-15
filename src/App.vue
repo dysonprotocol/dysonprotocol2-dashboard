@@ -387,12 +387,40 @@ import { ref, computed, provide, onMounted, onBeforeUnmount, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useWallet } from "@/composables/useWallet";
 import TxHashDisplay from "@/components/TxHashDisplay.vue";
+import { useStorage } from "@vueuse/core";
 
-// Global chain configuration
+// Global chain configuration (persist and prefer stored restUrl)
+const defaultRestUrl =
+  (typeof window !== "undefined" && window.REST_URL) ||
+  (import.meta.env.PROD
+    ? window.location.origin
+    : import.meta.env.VITE_REST_URL || "http://localhost:1317");
+const restUrlStorage = useStorage("restUrl", defaultRestUrl);
+
 const DEFAULT_CHAIN_INFO = {
-  restUrl: "http://localhost:1317", // DO NOT EDIT
+  restUrl: restUrlStorage.value,
   bech32Prefix: "dys2",
+  setRestUrl: (url) => {
+    const v = String(url || "")
+      .trim()
+      .replace(/\/$/, "");
+    const next = v || defaultRestUrl;
+    restUrlStorage.value = next;
+    DEFAULT_CHAIN_INFO.restUrl = next;
+  },
 };
+
+watch(
+  () => restUrlStorage.value,
+  (v) => {
+    DEFAULT_CHAIN_INFO.restUrl = v || defaultRestUrl;
+  }
+);
+
+// Expose setter globally for runtime overrides
+if (typeof window !== "undefined") {
+  window.setRestUrl = DEFAULT_CHAIN_INFO.setRestUrl;
+}
 
 // Provide chain info to all child components
 provide("chainInfo", DEFAULT_CHAIN_INFO);
