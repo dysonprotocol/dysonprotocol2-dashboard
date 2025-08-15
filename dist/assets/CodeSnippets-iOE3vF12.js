@@ -1,1 +1,0 @@
-import{_ as s,c as n,a as o,o as r}from"./index-DdPofLeb.js";const t={};function p(a,e){return r(),n("div",null,e[0]||(e[0]=[o("h1",null,"Code Snippets",-1),o("p",null,"Future API & Learning PBI - Code snippets placeholder",-1)]))}const l=s(t,[["render",p],["__file","/workspaces/dysonprotocol2-dashboard/src/views/api/CodeSnippets.vue"]]);export{l as default};

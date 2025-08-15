@@ -15,7 +15,7 @@
                   class="input input-bordered w-full"
                   placeholder="e.g. alice.dys"
                 />
-                <div class="text-warning text-xs">
+                <div class="text-error text-xs">
                   <span v-if="chosenName && !isValidName">
                     Name must end with ".dys".
                   </span>
@@ -85,7 +85,7 @@
             </div>
 
             <div class="text-xs space-y-1">
-              <div v-if="validationMessage" class="text-warning">
+              <div v-if="validationMessage" class="text-error">
                 {{ validationMessage }}
               </div>
               <div v-if="commitTxHash">
@@ -224,18 +224,24 @@ const selectedDisplayDenom = ref("");
 async function loadNameserviceParams() {
   try {
     const resp = await fetch(
-      `${chainInfo.restUrl}/dysonprotocol/nameservice/v1/params`
+      `${chainInfo.restUrl}/dysonprotocol/nft/v1beta1/class?class_id=nameservice.dys`
     );
-    if (!resp.ok) return;
-    const json = await resp.json();
-    allowedDenoms.value = json?.params?.allowed_denoms || [];
-    await loadDenomMetadata();
-    allowedDisplayOptions.value = getDisplayOptions({
-      allowedBases: allowedDenoms.value,
-    });
-    if (!selectedDisplayDenom.value && allowedDisplayOptions.value.length)
-      selectedDisplayDenom.value = allowedDisplayOptions.value[0].display;
-  } catch {}
+    if (!resp.ok) allowedDenoms.value = ["udys"];
+    else {
+      const json = await resp.json();
+      const list = json?.class?.data?.allowed_denoms;
+      allowedDenoms.value =
+        Array.isArray(list) && list.length ? list : ["udys"];
+    }
+  } catch {
+    allowedDenoms.value = ["udys"];
+  }
+  await loadDenomMetadata();
+  allowedDisplayOptions.value = getDisplayOptions({
+    allowedBases: allowedDenoms.value,
+  });
+  if (!selectedDisplayDenom.value && allowedDisplayOptions.value.length)
+    selectedDisplayDenom.value = allowedDisplayOptions.value[0].display;
 }
 
 // Balance tracking for the currently selected base denom
@@ -293,12 +299,9 @@ watch(
 );
 
 // Reset steps when form fields change
-watch(
-  [chosenName, valuationAmount, selectedDisplayDenom, selectedExecutor],
-  () => {
-    step.value = 1;
-  }
-);
+watch([chosenName], () => {
+  step.value = 1;
+});
 
 onUnmounted(() => {
   if (balanceInterval) clearInterval(balanceInterval);
@@ -534,10 +537,10 @@ async function commit() {
       amount: String(requiredBaseAmount.value || "0"),
     },
   };
-  const res = await sendMsg({ msg, executorAddress: committer });
+  step.value = Math.max(step.value, 2);
+  const res = await sendMsg({ msg, executorAddress: committer, gas: "auto" });
   if (!res.success) throw new Error(res.rawLog || `code=${res.code}`);
   commitTxHash.value = res.rawSendMsgsResponse?.raw?.tx_response?.txhash || "";
-  step.value = Math.max(step.value, 2);
   refreshBalance();
 }
 
@@ -552,11 +555,13 @@ async function reveal() {
     salt: String(salt.value),
   };
   step.value = Math.max(step.value, 3);
-  const res = await sendMsg({ msg, executorAddress: committer });
+
+  const res = await sendMsg({ msg, executorAddress: committer, gas: "auto" });
   if (!res.success) throw new Error(res.rawLog || `code=${res.code}`);
   revealTxHash.value = res.rawSendMsgsResponse?.raw?.tx_response?.txhash || "";
   step.value = Math.max(step.value, 4);
   refreshBalance();
+  await loadAllNames();
 }
 
 async function register() {

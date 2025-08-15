@@ -54,7 +54,10 @@
                       </label>
                       <div class="bg-base-200 p-3">
                         <div
-                          class="text-sm font-mono text-base-content"
+                          :class="[
+                            'text-sm font-mono',
+                            isNonMainnet ? 'text-error' : 'text-base-content',
+                          ]"
                           data-testid="chain-id-display"
                         >
                           {{ editableTransaction.chainId || "Not set" }}
@@ -263,6 +266,12 @@ const messagesJson = ref("");
 const messagesTextarea = ref(null);
 
 // Computed
+const isNonMainnet = computed(() => {
+  const id = String(editableTransaction.value.chainId || "").toLowerCase();
+  if (!id) return false;
+  return !id.includes("mainnet");
+});
+
 const parsedMessages = computed(() => {
   try {
     const parsed = JSON.parse(messagesJson.value);

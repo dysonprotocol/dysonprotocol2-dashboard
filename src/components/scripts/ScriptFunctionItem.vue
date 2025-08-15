@@ -24,6 +24,28 @@
         {{ noParamsMessage }}
       </div>
 
+      <!-- Optional: attach a coin transfer to this call -->
+      <div class="mt-3">
+        <label class="label cursor-pointer justify-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            class="checkbox checkbox-sm"
+            v-model="attachSend"
+          />
+          <span>Attach coin transfer (bank MsgSend)</span>
+        </label>
+        <div class="mt-2" v-if="attachSend">
+          <AmountDenomSelector
+            :disabled="isSimulating || isExecuting"
+            @update:base="onSendBaseUpdate"
+          />
+          <div class="text-xs opacity-70 mt-1">
+            From <span class="font-mono">{{ selectedExecutor }}</span> to
+            <span class="font-mono">{{ address }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Error Display -->
       <div v-if="errorText" class="mt-4 break-all">
         <div class="alert alert-error text-base-content alert-outline">
@@ -57,15 +79,17 @@
         <div>
           <div v-if="result.result !== null" class="mt-2">
             <div class="font-medium text-xs opacity-80">Result:</div>
-            <pre class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto">{{
-              formatResult(result.result)
-            }}</pre>
+            <pre
+              class="text-xs bg-base-200 p-2 mt-1 max-h-64 overflow-x-auto wrap-anywhere"
+              >{{ formatResult(result.result) }}</pre
+            >
           </div>
           <div v-if="result.stdout" class="mt-2">
             <div class="font-medium text-xs opacity-80">Output:</div>
-            <pre class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto">{{
-              result.stdout
-            }}</pre>
+            <pre
+              class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-x-auto"
+              >{{ result.stdout }}</pre
+            >
           </div>
           <div class="mt-2 text-xs opacity-80 flex gap-4">
             <span>Gas: {{ formatNumber(result.gasConsumed) }}</span>
@@ -123,6 +147,7 @@ import { useStorage } from "@vueuse/core";
 import { useWallet } from "@/composables/useWallet";
 import WalletSelector from "@/components/shared/WalletSelector.vue";
 import TxHashDisplay from "@/components/TxHashDisplay.vue";
+import AmountDenomSelector from "@/components/AmountDenomSelector.vue";
 
 const props = defineProps({
   address: { type: String, required: true },
@@ -177,6 +202,16 @@ const errorHeader = computed(() =>
 
 const isExecuting = ref(false);
 const isSimulating = ref(false);
+
+// Attached bank send state
+const attachSend = ref(false);
+const sendBaseAmount = ref("");
+const sendBaseDenom = ref("");
+
+function onSendBaseUpdate(v) {
+  sendBaseAmount.value = String(v?.amount || "");
+  sendBaseDenom.value = String(v?.denom || "");
+}
 
 function buildKwargsPlaceholder(f) {
   const parameters = f.parameters;
@@ -259,10 +294,25 @@ async function run(simulate) {
   const setLoading = (v) => ((simulate ? isSimulating : isExecuting).value = v);
   setLoading(true);
   try {
+    // Build optional attached bank send as JSON string
+    const attached = [];
+    const amt = sendBaseAmount.value.trim();
+    const denom = sendBaseDenom.value.trim();
+    if (attachSend.value && amt !== "" && denom !== "" && Number(amt) > 0) {
+      const msgSend = {
+        "@type": "/cosmos.bank.v1beta1.MsgSend",
+        from_address: selectedExecutor.value,
+        to_address: props.address,
+        amount: [{ denom, amount: amt }],
+      };
+      attached.push(msgSend);
+    }
+
     const res = await wallet.runDysonScript({
       scriptAddress: props.address,
       functionName: props.func.function_name,
       kwargs: kwargsInput.value || "{}",
+      attachedMsg: attached,
       simulate,
       executorAddress: selectedExecutor.value,
     });

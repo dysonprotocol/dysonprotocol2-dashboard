@@ -385,6 +385,20 @@ const router = createRouter({
 
 // Global navigation guard centralizes address/name validation
 router.beforeEach(async (to, from, next) => {
+  // Normalize path: collapse duplicate slashes and remove trailing slash (except root)
+  if (to.path !== "/") {
+    const collapsed = to.path.replace(/\/+/, "/");
+    const normalized = collapsed.replace(/(.+?)\/+$/, "$1");
+    if (normalized !== to.path) {
+      return next({
+        path: normalized,
+        query: to.query,
+        hash: to.hash,
+        replace: true,
+      });
+    }
+  }
+
   if (to.path.startsWith("/address/")) {
     const addressParam = to.params.address;
     if (!addressParam || isReservedRoute(addressParam)) return next("/404");

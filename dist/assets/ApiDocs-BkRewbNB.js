@@ -1,0 +1,1 @@
+import{_ as n}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{c as r,a as o,o as t}from"./index-ZSh_hNOY.js";const c={};function a(s,e){return t(),r("div",null,e[0]||(e[0]=[o("h1",null,"API Documentation",-1),o("p",null,"Future API & Learning PBI - API docs placeholder",-1)]))}const i=n(c,[["render",a]]);export{i as default};

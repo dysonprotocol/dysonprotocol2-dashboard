@@ -25,9 +25,13 @@
           >
             <div class="flex items-center justify-between gap-2">
               <span class="truncate">Chain ID:</span>
-              <span class="font-mono text-base-content/80">{{
-                chainIdDisplay || chainId || "…"
-              }}</span>
+              <span
+                :class="[
+                  'font-mono',
+                  isNonMainnet ? 'text-error' : 'text-base-content/80',
+                ]"
+                >{{ chainIdDisplay || chainId || "…" }}</span
+              >
             </div>
             <div class="flex items-center justify-between gap-2">
               <span class="truncate">Height:</span>
@@ -100,6 +104,30 @@
                 <span class="truncate">{{ explorer.name }}</span>
               </router-link>
             </li>
+            <li>
+              <a
+                href="/swagger/"
+                class="text-base-content hover:bg-base-200 hover:text-primary group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold"
+              >
+                <DocumentTextIcon
+                  class="text-base-content/60 group-hover:text-primary size-6 shrink-0"
+                  aria-hidden="true"
+                />
+                <span class="truncate">Swagger</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="/proto-json-schema/"
+                class="text-base-content hover:bg-base-200 hover:text-primary group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold"
+              >
+                <CodeBracketIcon
+                  class="text-base-content/60 group-hover:text-primary size-6 shrink-0"
+                  aria-hidden="true"
+                />
+                <span class="truncate">Proto JSON Schema</span>
+              </a>
+            </li>
           </ul>
         </li>
       </ul>
@@ -144,6 +172,14 @@ const latestTimeIso = ref("");
 const chainIdDisplay = ref("");
 const nowMs = ref(Date.now());
 
+const isNonMainnet = computed(() => {
+  const id = String(
+    chainIdDisplay.value || (chainId && chainId.value) || ""
+  ).toLowerCase();
+  if (!id) return false;
+  return !id.includes("mainnet");
+});
+
 // Localized relative time string (e.g., "5 minutes ago")
 const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
 const relativeAgo = computed(() => {
@@ -171,6 +207,7 @@ const relativeAgo = computed(() => {
 
 let tickTimer = null;
 let pollTimer = null;
+const pollDelayMs = ref(1000);
 
 async function fetchLatestBlock() {
   const url = `${restUrl.value}/cosmos/base/tendermint/v1beta1/blocks/latest`;
@@ -178,20 +215,39 @@ async function fetchLatestBlock() {
   const json = await resp.json();
   const header = json?.block?.header || json?.sdk_block?.header;
   if (!header) return;
+  const newHeight = Number(header.height);
+  const prevHeight = latestHeight.value;
   chainIdDisplay.value = String(header.chain_id || "");
-  latestHeight.value = Number(header.height);
+  latestHeight.value = newHeight;
   latestTimeIso.value = String(header.time || "");
+
+  if (prevHeight == null) return;
+
+  const delta = newHeight - prevHeight;
+  if (delta <= 0) {
+    pollDelayMs.value = Math.round(pollDelayMs.value * 1.05);
+  } else {
+    pollDelayMs.value = Math.round(pollDelayMs.value * 0.95);
+  }
+}
+
+function scheduleNextPoll() {
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = setTimeout(async () => {
+    await fetchLatestBlock();
+    scheduleNextPoll();
+  }, pollDelayMs.value);
 }
 
 onMounted(() => {
   fetchLatestBlock();
   tickTimer = setInterval(() => (nowMs.value = Date.now()), 1000);
-  pollTimer = setInterval(fetchLatestBlock, 300);
+  scheduleNextPoll();
 });
 
 onBeforeUnmount(() => {
   if (tickTimer) clearInterval(tickTimer);
-  if (pollTimer) clearInterval(pollTimer);
+  if (pollTimer) clearTimeout(pollTimer);
 });
 
 // Keplr UI/state handled inside WalletCards

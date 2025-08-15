@@ -1,1 +1,0 @@
-import{_ as s,c as r,a as o,o as c}from"./index-DdPofLeb.js";const n={};function a(t,e){return c(),r("div",null,e[0]||(e[0]=[o("h1",null,"API Documentation",-1),o("p",null,"Future API & Learning PBI - API docs placeholder",-1)]))}const i=s(n,[["render",a],["__file","/workspaces/dysonprotocol2-dashboard/src/views/api/ApiDocs.vue"]]);export{i as default};
