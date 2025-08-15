@@ -1,0 +1,1 @@
+import{c as r,a as o,o as n}from"./index-BO9308Id.js";import{_ as a}from"./_plugin-vue_export-helper-DlAUqK2U.js";const s={};function l(c,e){return n(),r("div",null,e[0]||(e[0]=[o("h1",null,"Governance Proposals",-1),o("p",null,"Future Chain Explorer PBI - Governance proposals placeholder",-1)]))}const u=a(s,[["render",l]]);export{u as default};

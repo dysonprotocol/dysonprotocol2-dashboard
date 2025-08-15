@@ -1,0 +1,543 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "dysonprotocol/nameservice/v1/query.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/dysonprotocol/nameservice/v1/compute_hash": {
+      "get": {
+        "summary": "ComputeHash computes the hash for a name, salt, and committer address",
+        "operationId": "dysonprotocol.nameservice.v1.QueryComputeHashRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.nameservice.v1.ComputeHashResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "description": "name is the name to compute the hash for.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "salt",
+            "description": "salt is the salt to use for the hash computation.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "committer",
+            "description": "committer is the committer address.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/dysonprotocol/nameservice/v1/denoms_by_name/{name}": {
+      "get": {
+        "summary": "QueryDenomByName lists denoms under a given root name along with details",
+        "operationId": "dysonprotocol.nameservice.v1.QueryQueryDenomByNameRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.nameservice.v1.QueryDenomByNameResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "description": "name is the root name to list denoms for",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "subdenom_prefix",
+            "description": "subdenom_prefix optionally filters to a sub-path under the name (e.g.\n\"/foo\") If empty, all denoms under the root including the base denom are\nreturned.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.key",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.count_total",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.reverse",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/dysonprotocol/nameservice/v1/names_by_destination/{destination}": {
+      "get": {
+        "summary": "QueryNamesByDestination queries all names pointing to a destination address",
+        "operationId": "dysonprotocol.nameservice.v1.QueryQueryNamesByDestinationRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.nameservice.v1.QueryNamesByDestinationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "destination",
+            "description": "destination is the address to find names for",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pagination.key",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.count_total",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.reverse",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/dysonprotocol/nameservice/v1/nftclasses_by_name/{name}": {
+      "get": {
+        "summary": "QueryNFTClassesByName lists NFT class IDs under a given root name",
+        "operationId": "dysonprotocol.nameservice.v1.QueryQueryNFTClassesByNameRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.nameservice.v1.QueryNFTClassesByNameResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "description": "name is the root name to list classes for",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "subclass_prefix",
+            "description": "subclass_prefix optionally filters to a sub-path under the name (e.g.\n\"/foo\") If empty, all classes under the root including the base class are\nreturned.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.key",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.count_total",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.reverse",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/dysonprotocol/nameservice/v1/params": {
+      "get": {
+        "summary": "Params queries the nameservice module parameters",
+        "operationId": "dysonprotocol.nameservice.v1.QueryParamsRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.nameservice.v1.QueryParamsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/dysonprotocol/nameservice/v1/resolve_name/{name_or_address}": {
+      "get": {
+        "summary": "ResolveName resolves a name to address or returns the address if already\nvalid",
+        "operationId": "dysonprotocol.nameservice.v1.QueryResolveNameRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.nameservice.v1.QueryResolveNameResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name_or_address",
+            "description": "name_or_address is either a nameservice name or a valid address",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "cosmos.base.query.v1beta1.PageRequest": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "format": "byte",
+          "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set."
+        },
+        "offset": {
+          "type": "string",
+          "format": "uint64",
+          "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set."
+        },
+        "limit": {
+          "type": "string",
+          "format": "uint64",
+          "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app."
+        },
+        "count_total": {
+          "type": "boolean",
+          "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set."
+        },
+        "reverse": {
+          "type": "boolean",
+          "description": "reverse is set to true if results are to be returned in the descending\norder."
+        }
+      },
+      "description": "message SomeRequest {\n         Foo some_parameter = 1;\n         PageRequest pagination = 2;\n }",
+      "title": "PageRequest is to be embedded in gRPC request messages for efficient\npagination. Ex:"
+    },
+    "cosmos.base.query.v1beta1.PageResponse": {
+      "type": "object",
+      "properties": {
+        "next_key": {
+          "type": "string",
+          "format": "byte",
+          "description": "next_key is the key to be passed to PageRequest.key to\nquery the next page most efficiently. It will be empty if\nthere are no more results."
+        },
+        "total": {
+          "type": "string",
+          "format": "uint64",
+          "title": "total is total number of results available if PageRequest.count_total\nwas set, its value is undefined otherwise"
+        }
+      },
+      "description": "PageResponse is to be embedded in gRPC response messages where the\ncorresponding request message has used PageRequest.\n\n message SomeResponse {\n         repeated Bar results = 1;\n         PageResponse page = 2;\n }"
+    },
+    "dysonprotocol.nameservice.v1.ComputeHashResponse": {
+      "type": "object",
+      "properties": {
+        "hex_hash": {
+          "type": "string",
+          "title": "hex_hash is the computed hash as a hex string"
+        }
+      },
+      "title": "ComputeHashResponse contains the computed hash as a hex string"
+    },
+    "dysonprotocol.nameservice.v1.DenomDetails": {
+      "type": "object",
+      "properties": {
+        "denom": {
+          "type": "string",
+          "title": "denom is the full denom string (e.g. \"foo.dys/bar:baz\")"
+        }
+      },
+      "title": "DenomDetails provides basic information about a custom denom"
+    },
+    "dysonprotocol.nameservice.v1.Params": {
+      "type": "object",
+      "properties": {
+        "mint_fee_per_coin": {
+          "type": "string",
+          "title": "mint_fee_per_coin defines the fee in udys charged per coin minted"
+        },
+        "min_bid_timeout_class": {
+          "type": "string",
+          "title": "Bounds for per-class bidding parameters\nClass bid_timeout must be within [min_bid_timeout_class,\nmax_bid_timeout_class]"
+        },
+        "max_bid_timeout_class": {
+          "type": "string"
+        },
+        "min_reject_bid_valuation_fee_percent": {
+          "type": "string",
+          "title": "Class reject fee percent must be within\n[min_reject_bid_valuation_fee_percent,\nmax_reject_bid_valuation_fee_percent]"
+        },
+        "max_reject_bid_valuation_fee_percent": {
+          "type": "string"
+        },
+        "min_minimum_bid_percent_increase": {
+          "type": "string",
+          "title": "Class minimum bid percent increase must be within\n[min_minimum_bid_percent_increase, max_minimum_bid_percent_increase]"
+        },
+        "max_minimum_bid_percent_increase": {
+          "type": "string"
+        },
+        "min_valuation_fee_pct": {
+          "type": "string",
+          "title": "Class valuation fee percent must be within\n[min_valuation_fee_pct, max_valuation_fee_pct]"
+        },
+        "max_valuation_fee_pct": {
+          "type": "string"
+        },
+        "min_valuation_period": {
+          "type": "string",
+          "title": "Class valuation period bounds must be within\n[min_valuation_period, max_valuation_period]"
+        },
+        "max_valuation_period": {
+          "type": "string"
+        }
+      },
+      "description": "Params defines the parameters for the nameservice module."
+    },
+    "dysonprotocol.nameservice.v1.QueryDenomByNameResponse": {
+      "type": "object",
+      "properties": {
+        "denoms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/dysonprotocol.nameservice.v1.DenomDetails"
+          },
+          "title": "denoms is the list of denom details under the provided root name"
+        },
+        "pagination": {
+          "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse",
+          "description": "pagination defines the pagination in the response."
+        }
+      },
+      "description": "QueryDenomByNameResponse is response type for the\nQuery/QueryDenomByName RPC method."
+    },
+    "dysonprotocol.nameservice.v1.QueryNFTClassesByNameResponse": {
+      "type": "object",
+      "properties": {
+        "class_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "class_ids is the list of NFT class IDs under the provided root name"
+        },
+        "pagination": {
+          "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse",
+          "description": "pagination defines the pagination in the response."
+        }
+      },
+      "description": "QueryNFTClassesByNameResponse is response type for the\nQuery/QueryNFTClassesByName RPC method."
+    },
+    "dysonprotocol.nameservice.v1.QueryNamesByDestinationResponse": {
+      "type": "object",
+      "properties": {
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "names is the list of name strings pointing to the destination address"
+        },
+        "pagination": {
+          "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse",
+          "description": "pagination defines the pagination in the response."
+        }
+      },
+      "description": "QueryNamesByDestinationResponse is response type for the\nQuery/QueryNamesByDestination RPC method."
+    },
+    "dysonprotocol.nameservice.v1.QueryParamsResponse": {
+      "type": "object",
+      "properties": {
+        "params": {
+          "$ref": "#/definitions/dysonprotocol.nameservice.v1.Params",
+          "description": "params holds all the parameters of this module."
+        }
+      },
+      "description": "QueryParamsResponse is response type for the Query/Params RPC method."
+    },
+    "dysonprotocol.nameservice.v1.QueryResolveNameResponse": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "title": "address is the resolved address"
+        }
+      },
+      "description": "QueryResolveNameResponse is response type for the Query/ResolveName RPC\nmethod."
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte",
+          "description": "Must be a valid serialized protocol buffer of the above specified type."
+        }
+      }
+    },
+    "grpc.gateway.runtime.Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}

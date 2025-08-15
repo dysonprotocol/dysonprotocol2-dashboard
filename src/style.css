@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark;
+}
+
+@plugin "daisyui/theme" {
+  name: "light";
+
+  color-scheme: "light";
+  --color-base-100: rgb(255, 255, 255);
+  --color-base-200: rgb(245, 247, 247);
+  --color-base-300: rgb(235, 235, 255);
+  --color-base-content: rgb(0, 0, 0);
+  --color-primary: rgb(0, 128, 0);
+  --color-primary-content: rgb(255, 255, 255);
+  --color-secondary: rgb(108, 117, 125);
+  --color-secondary-content: rgb(255, 255, 255);
+  --color-accent: rgb(102, 179, 102);
+  --color-accent-content: rgb(255, 255, 255);
+  --color-neutral: rgb(73, 80, 87);
+  --color-neutral-content: rgb(255, 255, 255);
+  --color-info: rgb(0, 128, 0);
+  --color-info-content: rgb(255, 255, 255);
+  --color-success: rgb(0, 128, 0);
+  --color-success-content: rgb(255, 255, 255);
+  --color-warning: rgb(255, 193, 7);
+  --color-warning-content: rgb(0, 0, 0);
+  --color-error: rgb(220, 53, 69);
+  --color-error-content: rgb(255, 255, 255);
+  --radius-selector: 0.375rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "dark";
+  --color-base-100: rgb(27, 27, 29);
+  --color-base-200: rgb(33, 37, 41);
+  --color-base-300: rgb(73, 80, 87);
+  --color-base-content: rgb(227, 227, 227);
+  --color-primary: rgb(0, 128, 0);
+  --color-primary-content: rgb(255, 255, 255);
+  --color-secondary: rgb(108, 117, 125);
+  --color-secondary-content: rgb(255, 255, 255);
+  --color-accent: rgb(102, 179, 102);
+  --color-accent-content: rgb(255, 255, 255);
+  --color-neutral: rgb(73, 80, 87);
+  --color-neutral-content: rgb(227, 227, 227);
+  --color-info: rgb(0, 128, 0);
+  --color-info-content: rgb(255, 255, 255);
+  --color-success: rgb(0, 128, 0);
+  --color-success-content: rgb(255, 255, 255);
+  --color-warning: rgb(255, 193, 7);
+  --color-warning-content: rgb(0, 0, 0);
+  --color-error: rgb(220, 53, 69);
+  --color-error-content: rgb(255, 255, 255);
+  --radius-selector: 0.375rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
