@@ -390,30 +390,35 @@ import TxHashDisplay from "@/components/TxHashDisplay.vue";
 import { useStorage } from "@vueuse/core";
 
 // Global chain configuration (persist and prefer stored restUrl)
-const defaultRestUrl =
-  (typeof window !== "undefined" && window.REST_URL) ||
-  (import.meta.env.PROD
-    ? window.location.origin
-    : import.meta.env.VITE_REST_URL || "http://localhost:1317");
+const defaultRestUrl = "";
 const restUrlStorage = useStorage("restUrl", defaultRestUrl);
 
+const resolveRestUrl = () => {
+  const candidate =
+    restUrlStorage.value ||
+    import.meta.env.VITE_REST_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  return String(candidate || "")
+    .trim()
+    .replace(/\/$/, "");
+};
+
 const DEFAULT_CHAIN_INFO = {
-  restUrl: restUrlStorage.value,
+  restUrl: resolveRestUrl(),
   bech32Prefix: "dys2",
   setRestUrl: (url) => {
     const v = String(url || "")
       .trim()
       .replace(/\/$/, "");
-    const next = v || defaultRestUrl;
-    restUrlStorage.value = next;
-    DEFAULT_CHAIN_INFO.restUrl = next;
+    restUrlStorage.value = v;
+    DEFAULT_CHAIN_INFO.restUrl = resolveRestUrl();
   },
 };
 
 watch(
   () => restUrlStorage.value,
-  (v) => {
-    DEFAULT_CHAIN_INFO.restUrl = v || defaultRestUrl;
+  () => {
+    DEFAULT_CHAIN_INFO.restUrl = resolveRestUrl();
   }
 );
 
