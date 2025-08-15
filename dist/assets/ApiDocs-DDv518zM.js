@@ -1,1 +1,0 @@
-import{c as n,a as o,o as r}from"./index-BO9308Id.js";import{_ as t}from"./_plugin-vue_export-helper-DlAUqK2U.js";const c={};function a(s,e){return r(),n("div",null,e[0]||(e[0]=[o("h1",null,"API Documentation",-1),o("p",null,"Future API & Learning PBI - API docs placeholder",-1)]))}const i=t(c,[["render",a]]);export{i as default};

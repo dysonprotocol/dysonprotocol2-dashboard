@@ -2,15 +2,22 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { resolve } from "path";
-import nodePolyfills from "rollup-plugin-node-polyfills";
+// Removed rollup-plugin-node-polyfills; it forces CJS builds and breaks env in browser
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss(), nodePolyfills()],
+  plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),
-      buffer: resolve(__dirname, "node_modules/rollup-plugin-node-polyfills/polyfills/buffer-es6.js"),
     },
+  },
+  define: {
+    "process.env.NODE_ENV": '"production"',
+    "process.env": {},
+    global: "window",
+    __DEV__: "false",
+    __VUE_PROD_DEVTOOLS__: "false",
+    __VUE_OPTIONS_API__: "true",
   },
   optimizeDeps: {
     esbuildOptions: {
