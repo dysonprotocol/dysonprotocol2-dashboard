@@ -481,7 +481,13 @@ export function useWallet() {
 
   // UTILITIES
   const loadChainIdFromApi = async () => {
-    const url = `${restUrl.value}/cosmos/base/tendermint/v1beta1/node_info`;
+    const base = String(
+      restUrl.value || DEFAULT_CHAIN_INFO.restUrl || "http://localhost:1317"
+    )
+      .trim()
+      .replace(/\/$/, "");
+    if (!restUrl.value && base) restUrl.value = base;
+    const url = `${base}/cosmos/base/tendermint/v1beta1/node_info`;
     const resp = await fetch(url);
     if (!resp.ok) {
       throw new Error(`Failed to fetch node_info: ${await resp.text()}`);
@@ -520,11 +526,16 @@ export function useWallet() {
     if (!chainId.value.includes("mainnet")) {
       chainName = `DysonProtocol2 (${chainId.value})`;
     }
+    const effectiveRest = String(
+      restUrl.value || DEFAULT_CHAIN_INFO.restUrl || "http://localhost:1317"
+    )
+      .trim()
+      .replace(/\/$/, "");
     const chainInfo = {
       chainId: chainId.value,
       chainName: chainName,
       rpc: rpcUrl.value || "http://localhost:26657",
-      rest: restUrl.value,
+      rest: effectiveRest,
       bip44: { coinType: 118 },
       bech32Config: {
         bech32PrefixAccAddr: "dys2",
