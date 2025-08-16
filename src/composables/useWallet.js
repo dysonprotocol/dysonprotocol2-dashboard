@@ -481,7 +481,6 @@ export function useWallet() {
 
   // UTILITIES
   const loadChainIdFromApi = async () => {
-    if (!restUrl.value) throw new Error("REST URL is empty.");
     const url = `${restUrl.value}/cosmos/base/tendermint/v1beta1/node_info`;
     const resp = await fetch(url);
     if (!resp.ok) {
@@ -518,8 +517,7 @@ export function useWallet() {
     const name = chainId.value.includes("mainnet")
       ? "DysonProtocol2"
       : `DysonProtocol2 (${chainId.value})`;
-    if (!restUrl.value) throw new Error("REST URL is empty.");
-    if (!rpcUrl.value) throw new Error("RPC URL is empty.");
+
     const chainInfo = {
       chainId: chainId.value,
       chainName: name,
