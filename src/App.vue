@@ -391,20 +391,14 @@ import { useStorage } from "@vueuse/core";
 
 // Global chain configuration (persist and prefer stored restUrl)
 const defaultRestUrl =
-  (typeof window !== "undefined" ? window.location.origin : "") ||
-  import.meta.env.VITE_REST_URL ||
-  "http://localhost:1317";
+  typeof window !== "undefined" ? window.location.origin : "";
 const restUrlStorage = useStorage("restUrl", defaultRestUrl);
 
 const resolveRestUrl = () => {
-  const candidate =
+  return (
     restUrlStorage.value ||
-    (typeof window !== "undefined" ? window.location.origin : "") ||
-    import.meta.env.VITE_REST_URL ||
-    "http://localhost:1317";
-
-  console.log("candidate", candidate);
-  return candidate;
+    (typeof window !== "undefined" ? window.location.origin : "")
+  );
 };
 
 const DEFAULT_CHAIN_INFO = {

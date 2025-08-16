@@ -481,13 +481,8 @@ export function useWallet() {
 
   // UTILITIES
   const loadChainIdFromApi = async () => {
-    const base = String(
-      restUrl.value || DEFAULT_CHAIN_INFO.restUrl || "http://localhost:1317"
-    )
-      .trim()
-      .replace(/\/$/, "");
-    if (!restUrl.value && base) restUrl.value = base;
-    const url = `${base}/cosmos/base/tendermint/v1beta1/node_info`;
+    if (!restUrl.value) throw new Error("REST URL is empty.");
+    const url = `${restUrl.value}/cosmos/base/tendermint/v1beta1/node_info`;
     const resp = await fetch(url);
     if (!resp.ok) {
       throw new Error(`Failed to fetch node_info: ${await resp.text()}`);
@@ -520,16 +515,16 @@ export function useWallet() {
   };
 
   const suggestChainIfNeeded = async (provider) => {
-    let chainName = "DysonProtocol2";
-    if (!chainId.value.includes("mainnet")) {
-      chainName = `DysonProtocol2 (${chainId.value})`;
-    }
-    const effectiveRest = String(restUrl.value).trim().replace(/\/$/, "");
+    const name = chainId.value.includes("mainnet")
+      ? "DysonProtocol2"
+      : `DysonProtocol2 (${chainId.value})`;
+    if (!restUrl.value) throw new Error("REST URL is empty.");
+    if (!rpcUrl.value) throw new Error("RPC URL is empty.");
     const chainInfo = {
       chainId: chainId.value,
-      chainName: chainName,
+      chainName: name,
       rpc: rpcUrl.value,
-      rest: effectiveRest,
+      rest: restUrl.value,
       bip44: { coinType: 118 },
       bech32Config: {
         bech32PrefixAccAddr: "dys2",
