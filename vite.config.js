@@ -1,8 +1,12 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
-import { resolve } from "path";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+import { execSync } from "child_process";
 // Removed rollup-plugin-node-polyfills; it forces CJS builds and breaks env in browser
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
@@ -18,6 +22,12 @@ export default defineConfig({
     __DEV__: "false",
     __VUE_PROD_DEVTOOLS__: "false",
     __VUE_OPTIONS_API__: "true",
+    __GIT_COMMIT__: JSON.stringify(
+      execSync("git rev-parse --short HEAD").toString().trim()
+    ),
+    __GIT_BRANCH__: JSON.stringify(
+      execSync("git rev-parse --abbrev-ref HEAD").toString().trim()
+    ),
   },
   optimizeDeps: {
     esbuildOptions: {

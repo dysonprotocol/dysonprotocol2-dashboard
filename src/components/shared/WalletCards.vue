@@ -52,11 +52,11 @@
         </div>
       </div>
       <div class="collapse bg-base-100 border-base-300 border" v-else>
-        <input type="checkbox" />
+        <input type="checkbox" :checked="isKeplrAvailable" />
         <div class="collapse-title font-medium">
           <div class="flex items-center gap-2">
             <img :src="keplrLogo" alt="Keplr" class="w-5 h-5" />
-            <div class="text-base text-base-content">Keplr Wallet!</div>
+            <div class="text-base text-base-content">Keplr Wallet</div>
           </div>
         </div>
         <div class="collapse-content text-sm">

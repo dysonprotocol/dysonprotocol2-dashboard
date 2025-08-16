@@ -28,6 +28,8 @@ export function useWallet() {
   // Persisted state
   const restUrl = useStorage("restUrl", DEFAULT_CHAIN_INFO.restUrl);
   const chainId = useStorage("chainId", "");
+  const rpcUrl = useStorage("rpcUrl", "");
+  const nodeInfo = useStorage("nodeInfo", null);
   const localCosmJsWallets = useStorage("localCosmJsWallets", []);
   const gasPrice = useStorage("gasPrice", 0.0);
 
@@ -485,18 +487,43 @@ export function useWallet() {
       throw new Error(`Failed to fetch node_info: ${await resp.text()}`);
     }
     const json = await resp.json();
+
+    // Persist full node_info with build_deps removed to avoid huge payloads
+    const sanitized = { ...json };
+    if (
+      sanitized &&
+      typeof sanitized === "object" &&
+      sanitized.application_version &&
+      typeof sanitized.application_version === "object" &&
+      "build_deps" in sanitized.application_version
+    ) {
+      delete sanitized.application_version.build_deps;
+    }
+    nodeInfo.value = sanitized;
     const discovered = json?.default_node_info?.network;
     if (!discovered) {
       throw new Error("No chainId found in node_info response.");
     }
     chainId.value = discovered;
+
+    const rawRpcAddr = json?.default_node_info?.other?.rpc_address || "";
+    const normalizedRpc = String(rawRpcAddr)
+      .trim()
+      .replace(/^tpc:\/\//, "http://")
+      .replace(/^tcp:\/\//, "http://")
+      .replace(/\/$/, "");
+    if (normalizedRpc) rpcUrl.value = normalizedRpc;
   };
 
   const suggestChainIfNeeded = async (provider) => {
+    let chainName = "DysonProtocol2";
+    if (!chainId.value.includes("mainnet")) {
+      chainName = `DysonProtocol2 (${chainId.value})`;
+    }
     const chainInfo = {
       chainId: chainId.value,
-      chainName: "Example Dyson Chain",
-      rpc: "http://localhost:26657",
+      chainName: chainName,
+      rpc: rpcUrl.value || "http://localhost:26657",
       rest: restUrl.value,
       bip44: { coinType: 118 },
       bech32Config: {
@@ -1019,6 +1046,7 @@ export function useWallet() {
   return {
     // State
     restUrl,
+    rpcUrl,
     chainId,
     localCosmJsWallets,
     gasPrice,

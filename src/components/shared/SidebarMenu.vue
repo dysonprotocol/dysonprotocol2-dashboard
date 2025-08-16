@@ -42,6 +42,64 @@
                 {{ latestHeight != null ? latestHeight : "…" }}
               </span>
             </div>
+            <div
+              class="flex items-center justify-between gap-2"
+              v-if="nodeVersion || nodeCommit"
+            >
+              <span class="truncate">Node:</span>
+              <span class="font-mono text-base-content/80">
+                <span v-if="nodeVersion">
+                  <a
+                    :href="nodeBranchUrl"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="hover:text-primary"
+                  >
+                    {{ nodeVersion }}
+                  </a>
+                </span>
+                <span v-if="nodeCommit">
+                  -
+                  <a
+                    :href="nodeCommitUrl"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="hover:text-primary"
+                  >
+                    {{ nodeCommit }}
+                  </a>
+                </span>
+              </span>
+            </div>
+            <div
+              class="flex items-center justify-between gap-2"
+              v-if="gitShortCommit || gitBranch"
+            >
+              <span class="truncate">Dashboard:</span>
+              <span class="font-mono text-base-content/80">
+                <span v-if="gitBranch">
+                  <a
+                    :href="dashboardBranchUrl"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="hover:text-primary"
+                  >
+                    {{ gitBranch }}
+                  </a>
+                </span>
+                <span v-if="gitShortCommit">
+                  -
+                  <a
+                    :href="dashboardCommitUrl"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="hover:text-primary"
+                  >
+                    {{ gitShortCommit }}
+                  </a>
+                </span>
+              </span>
+            </div>
           </div>
           <div class="py-5">
             <WalletCards />
@@ -172,6 +230,10 @@ const latestTimeIso = ref("");
 const chainIdDisplay = ref("");
 const nowMs = ref(Date.now());
 
+// Node info
+const nodeVersion = ref("");
+const nodeCommit = ref("");
+
 const isNonMainnet = computed(() => {
   const id = String(
     chainIdDisplay.value || (chainId && chainId.value) || ""
@@ -239,8 +301,20 @@ function scheduleNextPoll() {
   }, pollDelayMs.value);
 }
 
+async function fetchNodeInfo() {
+  const url = `${restUrl.value}/cosmos/base/tendermint/v1beta1/node_info`;
+  const resp = await fetch(url);
+  const json = await resp.json();
+  const app = json?.application_version;
+  nodeVersion.value = String(
+    app?.version || json?.default_node_info?.version || ""
+  );
+  nodeCommit.value = String(app?.git_commit || "");
+}
+
 onMounted(() => {
   fetchLatestBlock();
+  fetchNodeInfo();
   tickTimer = setInterval(() => (nowMs.value = Date.now()), 1000);
   scheduleNextPoll();
 });
@@ -309,4 +383,27 @@ function truncateAddress(addr) {
   if (addr.length <= 12) return addr;
   return `${addr.slice(0, 6)}...${addr.slice(-6)}`;
 }
+
+// Build metadata
+const gitShortCommit =
+  typeof __GIT_COMMIT__ !== "undefined" && __GIT_COMMIT__ ? __GIT_COMMIT__ : "";
+const gitBranch =
+  typeof __GIT_BRANCH__ !== "undefined" && __GIT_BRANCH__ ? __GIT_BRANCH__ : "";
+
+// Repo URLs
+const dashboardRepo =
+  "https://github.com/dysonprotocol/dysonprotocol2-dashboard";
+const nodeRepo = "https://github.com/dysonprotocol/dysonprotocol2";
+const dashboardCommitUrl = computed(() =>
+  gitShortCommit ? `${dashboardRepo}/commit/${gitShortCommit}` : "#"
+);
+const dashboardBranchUrl = computed(() =>
+  gitBranch ? `${dashboardRepo}/tree/${gitBranch}` : "#"
+);
+const nodeCommitUrl = computed(() =>
+  nodeCommit.value ? `${nodeRepo}/commit/${nodeCommit.value}` : "#"
+);
+const nodeBranchUrl = computed(() =>
+  nodeVersion.value ? `${nodeRepo}/tree/${nodeVersion.value}` : "#"
+);
 </script>
