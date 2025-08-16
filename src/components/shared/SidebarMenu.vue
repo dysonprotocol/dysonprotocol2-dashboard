@@ -46,7 +46,7 @@
               class="flex items-center justify-between gap-2"
               v-if="nodeVersion || nodeCommit"
             >
-              <span class="truncate">Node:</span>
+              <span class="truncate">Version:</span>
               <span class="font-mono text-base-content/80">
                 <span v-if="nodeVersion">
                   <a
@@ -73,31 +73,18 @@
             </div>
             <div
               class="flex items-center justify-between gap-2"
-              v-if="gitShortCommit || gitBranch"
+              v-if="gitShortCommit"
             >
               <span class="truncate">Dashboard:</span>
               <span class="font-mono text-base-content/80">
-                <span v-if="gitBranch">
-                  <a
-                    :href="dashboardBranchUrl"
-                    target="_blank"
-                    rel="noreferrer"
-                    class="hover:text-primary"
-                  >
-                    {{ gitBranch }}
-                  </a>
-                </span>
-                <span v-if="gitShortCommit">
-                  -
-                  <a
-                    :href="dashboardCommitUrl"
-                    target="_blank"
-                    rel="noreferrer"
-                    class="hover:text-primary"
-                  >
-                    {{ gitShortCommit }}
-                  </a>
-                </span>
+                <a
+                  :href="dashboardCommitUrl"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="hover:text-primary"
+                >
+                  {{ gitShortCommit }}
+                </a>
               </span>
             </div>
           </div>
@@ -387,8 +374,6 @@ function truncateAddress(addr) {
 // Build metadata
 const gitShortCommit =
   typeof __GIT_COMMIT__ !== "undefined" && __GIT_COMMIT__ ? __GIT_COMMIT__ : "";
-const gitBranch =
-  typeof __GIT_BRANCH__ !== "undefined" && __GIT_BRANCH__ ? __GIT_BRANCH__ : "";
 
 // Repo URLs
 const dashboardRepo =
@@ -396,9 +381,6 @@ const dashboardRepo =
 const nodeRepo = "https://github.com/dysonprotocol/dysonprotocol2";
 const dashboardCommitUrl = computed(() =>
   gitShortCommit ? `${dashboardRepo}/commit/${gitShortCommit}` : "#"
-);
-const dashboardBranchUrl = computed(() =>
-  gitBranch ? `${dashboardRepo}/tree/${gitBranch}` : "#"
 );
 const nodeCommitUrl = computed(() =>
   nodeCommit.value ? `${nodeRepo}/commit/${nodeCommit.value}` : "#"
