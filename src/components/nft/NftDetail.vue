@@ -17,7 +17,16 @@
         <tbody>
           <tr>
             <th class="w-48">Class ID</th>
-            <td class="font-mono">{{ nft?.class_id }}</td>
+            <td class="font-mono">
+              <router-link
+                :to="`/names/${encodeURIComponent(
+                  (classId || '').split('/')[0] || ''
+                )}/nfts/${encodeURIComponent(nft?.class_id || '')}`"
+                class="link"
+              >
+                {{ nft?.class_id }}
+              </router-link>
+            </td>
           </tr>
           <tr>
             <th>ID</th>

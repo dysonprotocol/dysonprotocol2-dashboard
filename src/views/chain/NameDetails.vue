@@ -1,29 +1,41 @@
 <template>
-  <div class="max-w-3xl mx-auto p-4 space-y-4 h-full min-h-0 overflow-auto">
+  <div class="max-w-3xl mx-auto p-4 space-y-4 h-full min-h-0">
     <h1 class="text-2xl font-semibold">Name: {{ routeName }}</h1>
 
     <div v-if="isLoading" class="text-base-content/70">Loading…</div>
     <div v-else-if="error" class="text-error">{{ error }}</div>
 
-    <div v-else class="space-y-3">
-      <div class="card bg-base-200 shadow">
-        <div class="card-body">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-            <div class="text-sm opacity-70">Resolved address</div>
-            <div class="sm:col-span-2 font-mono break-all">
-              <AddressDisplay :address="resolvedAddress" />
+    <div v-else>
+      <div v-if="!nft" class="space-y-3">
+        <div class="alert alert-info alert-soft">
+          <h2 class="card-title">This name is available</h2>
+        </div>
+        <div class="card bg-base-200 shadow">
+          <div class="card-body gap-3">
+            <div class="flex items-center justify-between">
+              <h2 class="card-title">Register Name</h2>
             </div>
+            <RegisterName :initialName="routeName" @registered="onRegistered" />
           </div>
         </div>
       </div>
-
-      <div class="card bg-base-200 shadow">
-        <div class="card-body">
-          <div class="flex items-center justify-between">
-            <h2 class="card-title">Name Detail</h2>
+      <div v-else class="space-y-3">
+        <div class="card bg-base-200 shadow">
+          <div class="card-body">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
+              <div class="text-sm opacity-70">Resolved address</div>
+              <div class="sm:col-span-2 font-mono break-all">
+                <AddressDisplay :address="resolvedAddress" />
+              </div>
+            </div>
           </div>
-          <div v-if="!nft" class="text-base-content/70">No data.</div>
-          <div v-else class="">
+        </div>
+
+        <div class="card bg-base-200 shadow">
+          <div class="card-body">
+            <div class="flex items-center justify-between">
+              <h2 class="card-title">Name Detail</h2>
+            </div>
             <table class="table">
               <tbody>
                 <tr>
@@ -34,25 +46,32 @@
                 </tr>
                 <tr>
                   <th class="w-48">Class ID</th>
-                  <td class="font-mono">{{ nft.class_id }}</td>
+                  <td class="font-mono">
+                    <router-link
+                      :to="`/names/${encodeURIComponent(
+                        routeName
+                      )}/nfts/${encodeURIComponent(nft.class_id)}`"
+                      class="link"
+                    >
+                      {{ nft.class_id }}
+                    </router-link>
+                  </td>
                 </tr>
                 <tr>
                   <th>ID</th>
-                  <td class="font-mono">{{ nft.id }}</td>
+                  <td class="font-mono">
+                    <router-link
+                      :to="`/names/${encodeURIComponent(nft.id)}`"
+                      class="link"
+                    >
+                      {{ nft.id }}
+                    </router-link>
+                  </td>
                 </tr>
                 <tr>
                   <th>Destination (URI)</th>
                   <td class="font-mono break-all">
                     <AddressDisplay :address="nft.uri" />
-                  </td>
-                </tr>
-                <tr>
-                  <th>Listed</th>
-                  <td>
-                    <div v-if="nft.data?.listed" class="badge badge-success">
-                      listed
-                    </div>
-                    <div v-else class="badge">—</div>
                   </td>
                 </tr>
                 <tr>
@@ -105,259 +124,290 @@
             </table>
           </div>
         </div>
-      </div>
 
-      <div class="card bg-base-200 shadow">
-        <div class="card-body gap-3">
-          <div class="flex items-center justify-between">
-            <h2 class="card-title">Set Destination</h2>
-          </div>
-          <input
-            v-model.trim="destination"
-            class="input input-bordered w-full font-mono"
-            placeholder="new destination address (URI)"
-            :disabled="isSettingDest"
-          />
-          <div v-if="setDestError" class="text-error text-sm">
-            {{ setDestError }}
-          </div>
-          <button
-            class="btn btn-primary"
-            :disabled="isSettingDest || !canSetDestination"
-            @click="setDestination"
-          >
-            Set Destination
-          </button>
-        </div>
-      </div>
-
-      <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-        <legend class="fieldset-legend">Mint coin(s)</legend>
-
-        <div class="text-xs opacity-70 mb-2">
-          Destination:
-          <AddressDisplay :address="resolvedAddress" />
-        </div>
-        <form
-          class="grid grid-cols-1 md:grid-cols-2 gap-2"
-          @submit.prevent="mintCoins"
-        >
-          <ul class="list-disc list-inside">
-            <li class="text-xs opacity-70 mb-2">
-              Display Denom:
-              <span class="font-mono">{{ mintDisplayLabel }}</span>
-            </li>
-            <li class="text-xs opacity-70 mb-2">
-              Display amount:
-              <span class="font-mono">{{ mintAmountDisplayNormalized }}</span>
-            </li>
-            <li class="text-xs opacity-70 mb-2">
-              Decimal places:
-              <span v-if="mintDenom === routeName" class="font-mono">6</span>
-              <span v-else class="font-mono">0</span>
-            </li>
-            <li class="text-xs opacity-70 mb-2">
-              Base Denom:
-              <span class="font-mono">{{ mintDenom }}</span>
-            </li>
-            <li class="text-xs opacity-70 mb-2">
-              Base amount:
-              <span class="font-mono">{{ mintAmount }}</span>
-            </li>
-            <li
-              v-if="Number(estimatedFeeUdys || 0) > 0"
-              class="text-xs opacity-70 mb-2"
-            >
-              Fee:
-              <span class="font-mono">{{ estimatedFeeDisplay.amount }}</span>
-              {{ estimatedFeeDisplay.label }}
-              <span class="opacity-70"> ({{ estimatedFeeUdys }} udys) </span>
-            </li>
-            <li
-              v-if="Number(mintAmount || 0) > 0"
-              class="text-xs opacity-70 mb-2"
-            >
-              <span class="font-mono">{{ mintAmountDisplay }}</span>
-              {{ mintDisplayLabel }}
-              ==
-              <span class="font-mono">{{ mintAmount }}</span>
-              {{ mintDenom }}
-            </li>
-          </ul>
-          <div class="space-y-2">
-            <label class="input w-full">
-              <span class="label">Display Amount </span>
-              <input
-                :value="mintAmountDisplay"
-                @focus="isEditingDisplay = true"
-                @blur="
-                  isEditingDisplay = false;
-                  mintAmountDisplay = normalizeDisplay(mintAmountDisplay);
-                "
-                @input="onDisplayInput"
-                class=""
-                placeholder="amount (display)"
-                label="amount (display)"
-                type="text"
-                inputmode="decimal"
-                pattern="^\d*(\.\d{0,6})?$"
-                :disabled="denomBusy === 'mint'"
-              />
-            </label>
-            <label class="input w-full">
-              <span class="label">Display Denom</span>
-              <input class="input-ghost" :value="mintDisplayLabel" readonly />
-            </label>
-            <!-- confirm checkbox-->
-
-            <p class="flex items-center gap-2">
-              <input
-                v-model="confirmMintChecked"
-                type="checkbox"
-                class="checkbox"
-              />
-              <span>
-                I understand that minting
-                <span class="font-mono">{{ mintAmountDisplay }}</span>
-                {{ mintDisplayLabel }} will cost
-                {{ estimatedFeeDisplay.amount }}
-                {{ estimatedFeeDisplay.label }} and is non-refundable.
-              </span>
-            </p>
-
-            <button
-              class="btn btn-primary w-full mt-2"
-              :disabled="
-                denomBusy === 'mint' || !canMint || !confirmMintChecked
-              "
-            >
-              mint
-            </button>
-          </div>
-
-          <div
-            v-if="denomErrMint"
-            class="join-item alert alert-error alert-soft mt-2"
-          >
-            {{ denomErrMint }}
-          </div>
-        </form>
-      </fieldset>
-
-      <div class="card bg-base-200 shadow">
-        <div class="card-body">
-          <div class="font-medium mb-2">Denoms</div>
-          <div v-if="isLoadingDenoms" class="text-base-content/70">
-            Loading…
-          </div>
-          <div v-else-if="denomsError" class="text-error">
-            {{ denomsError }}
-          </div>
-          <div v-else>
-            <div v-if="denoms.length === 0" class="text-base-content/70">
-              No denoms.
+        <div class="card bg-base-200 shadow">
+          <div class="card-body gap-3">
+            <div class="flex items-center justify-between">
+              <h2 class="card-title">Set Metadata</h2>
             </div>
-            <ul v-else class="menu bg-base-100 rounded">
-              <li v-for="d in denoms" :key="d">
-                <router-link
-                  :to="`/names/${encodeURIComponent(
-                    routeName
-                  )}/denoms/${encodeURIComponent(d)}`"
-                  class="font-mono"
-                  >{{ d }}</router-link
-                >
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div class="card bg-base-200 shadow">
-        <div class="card-body gap-3">
-          <div class="flex items-center justify-between">
-            <h2 class="card-title">NFT Classes</h2>
-          </div>
-
-          <div class="border rounded p-3 bg-base-100">
-            <div class="font-medium mb-2">Create NFT Class</div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <input
-                v-model.trim="classForm.classId"
-                class="input input-bordered w-full"
-                :placeholder="`class id (e.g. ${routeName}/foo)`"
-                :disabled="isSavingClass"
-              />
-              <input
-                v-model.trim="classForm.name"
-                class="input input-bordered w-full"
-                placeholder="name (optional)"
-                :disabled="isSavingClass"
-              />
-              <input
-                v-model.trim="classForm.symbol"
-                class="input input-bordered w-full"
-                placeholder="symbol (optional)"
-                :disabled="isSavingClass"
-              />
-              <input
-                v-model.trim="classForm.uri"
-                class="input input-bordered w-full"
-                placeholder="uri (optional)"
-                :disabled="isSavingClass"
-              />
+            <div class="text-xs opacity-70 mb-1">
+              Only the owner can set metadata. This is an arbitrary string.
             </div>
             <textarea
-              v-model.trim="classForm.description"
-              class="textarea textarea-bordered w-full mt-2"
-              placeholder="description (optional)"
-              :disabled="isSavingClass"
+              v-model.trim="metadataValue"
+              class="textarea textarea-bordered w-full"
+              placeholder="metadata"
+              :disabled="isSettingMetadata"
+              rows="3"
             ></textarea>
-            <div class="text-xs opacity-70 mt-2">
-              {{ routeName }} is managed by destination:
-              <span class="font-mono">{{ resolvedAddress }}</span>
-            </div>
-            <div v-if="classSaveError" class="text-error text-sm mt-1">
-              {{ classSaveError }}
+            <div v-if="setMetadataError" class="text-error text-sm">
+              {{ setMetadataError }}
             </div>
             <button
-              class="btn btn-primary mt-2"
-              :disabled="!canSaveClass || isSavingClass"
-              @click="saveClass"
+              class="btn btn-primary"
+              :disabled="isSettingMetadata || !ownerAddress"
+              @click="setNameMetadata"
             >
-              Create
+              Save Metadata
             </button>
           </div>
-          <div v-if="isLoadingClasses" class="text-base-content/70">
-            Loading…
-          </div>
-          <div v-else-if="classesError" class="text-error">
-            {{ classesError }}
-          </div>
-          <div v-else>
-            <div v-if="classIds.length === 0" class="text-base-content/70">
-              No classes.
+        </div>
+
+        <div class="card bg-base-200 shadow">
+          <div class="card-body gap-3">
+            <div class="flex items-center justify-between">
+              <h2 class="card-title">Set Destination</h2>
             </div>
-            <div v-else class="overflow-x-auto">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Class ID</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="cid in classIds" :key="cid">
-                    <td class="font-mono">
-                      <router-link
-                        :to="`/names/${encodeURIComponent(
-                          routeName
-                        )}/nfts/${encodeURIComponent(cid)}`"
-                        class="link"
-                        >{{ cid }}</router-link
-                      >
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="text-xs opacity-70 mb-1">
+              Destination can be a bech32 address or another .dys name.
+            </div>
+            <input
+              v-model.trim="destination"
+              class="input input-bordered w-full font-mono"
+              placeholder="new destination (address or name)"
+              :disabled="isSettingDest"
+            />
+            <div v-if="setDestError" class="text-error text-sm">
+              {{ setDestError }}
+            </div>
+            <button
+              class="btn btn-primary"
+              :disabled="isSettingDest || !canSetDestination"
+              @click="setDestination"
+            >
+              Set Destination
+            </button>
+          </div>
+        </div>
+
+        <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
+          <legend class="fieldset-legend">Mint coin(s)</legend>
+
+          <div class="text-xs opacity-70 mb-2">
+            Destination:
+            <AddressDisplay :address="resolvedAddress" />
+          </div>
+          <form
+            class="grid grid-cols-1 md:grid-cols-2 gap-2"
+            @submit.prevent="mintCoins"
+          >
+            <ul class="list-disc list-inside">
+              <li class="text-xs opacity-70 mb-2">
+                Display Denom:
+                <span class="font-mono">{{ mintDisplayLabel }}</span>
+              </li>
+              <li class="text-xs opacity-70 mb-2">
+                Display amount:
+                <span class="font-mono">{{ mintAmountDisplayNormalized }}</span>
+              </li>
+              <li class="text-xs opacity-70 mb-2">
+                Decimal places:
+                <span v-if="mintDenom === routeName" class="font-mono">6</span>
+                <span v-else class="font-mono">0</span>
+              </li>
+              <li class="text-xs opacity-70 mb-2">
+                Base Denom:
+                <span class="font-mono">{{ mintDenom }}</span>
+              </li>
+              <li class="text-xs opacity-70 mb-2">
+                Base amount:
+                <span class="font-mono">{{ mintAmount }}</span>
+              </li>
+              <li
+                v-if="Number(estimatedFeeUdys || 0) > 0"
+                class="text-xs opacity-70 mb-2"
+              >
+                Fee:
+                <span class="font-mono">{{ estimatedFeeDisplay.amount }}</span>
+                {{ estimatedFeeDisplay.label }}
+                <span class="opacity-70"> ({{ estimatedFeeUdys }} udys) </span>
+              </li>
+              <li
+                v-if="Number(mintAmount || 0) > 0"
+                class="text-xs opacity-70 mb-2"
+              >
+                <span class="font-mono">{{ mintAmountDisplay }}</span>
+                {{ mintDisplayLabel }}
+                ==
+                <span class="font-mono">{{ mintAmount }}</span>
+                {{ mintDenom }}
+              </li>
+            </ul>
+            <div class="space-y-2">
+              <label class="input w-full">
+                <span class="label">Display Amount </span>
+                <input
+                  :value="mintAmountDisplay"
+                  @focus="isEditingDisplay = true"
+                  @blur="
+                    isEditingDisplay = false;
+                    mintAmountDisplay = normalizeDisplay(mintAmountDisplay);
+                  "
+                  @input="onDisplayInput"
+                  class=""
+                  placeholder="amount (display)"
+                  label="amount (display)"
+                  type="text"
+                  inputmode="decimal"
+                  pattern="^\d*(\.\d{0,6})?$"
+                  :disabled="denomBusy === 'mint'"
+                />
+              </label>
+              <label class="input w-full">
+                <span class="label">Display Denom</span>
+                <input class="input-ghost" :value="mintDisplayLabel" readonly />
+              </label>
+              <!-- confirm checkbox-->
+
+              <p class="flex items-center gap-2">
+                <input
+                  v-model="confirmMintChecked"
+                  type="checkbox"
+                  class="checkbox"
+                />
+                <span>
+                  I understand that minting
+                  <span class="font-mono">{{ mintAmountDisplay }}</span>
+                  {{ mintDisplayLabel }} will cost
+                  {{ estimatedFeeDisplay.amount }}
+                  {{ estimatedFeeDisplay.label }} and is non-refundable.
+                </span>
+              </p>
+
+              <button
+                class="btn btn-primary w-full mt-2"
+                :disabled="
+                  denomBusy === 'mint' || !canMint || !confirmMintChecked
+                "
+              >
+                mint
+              </button>
+            </div>
+
+            <div
+              v-if="denomErrMint"
+              class="join-item alert alert-error alert-soft mt-2"
+            >
+              {{ denomErrMint }}
+            </div>
+          </form>
+        </fieldset>
+
+        <div class="card bg-base-200 shadow">
+          <div class="card-body">
+            <div class="font-medium mb-2">Denoms</div>
+            <div v-if="isLoadingDenoms" class="text-base-content/70">
+              Loading…
+            </div>
+            <div v-else-if="denomsError" class="text-error">
+              {{ denomsError }}
+            </div>
+            <div v-else>
+              <div v-if="denoms.length === 0" class="text-base-content/70">
+                No denoms.
+              </div>
+              <ul v-else class="menu bg-base-100 rounded">
+                <li v-for="d in denoms" :key="d">
+                  <router-link
+                    :to="`/names/${encodeURIComponent(
+                      routeName
+                    )}/denoms/${encodeURIComponent(d)}`"
+                    class="font-mono"
+                    >{{ d }}</router-link
+                  >
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bg-base-200 shadow">
+          <div class="card-body gap-3">
+            <div class="flex items-center justify-between">
+              <h2 class="card-title">NFT Classes</h2>
+            </div>
+
+            <div class="border rounded p-3 bg-base-100">
+              <div class="font-medium mb-2">Create NFT Class</div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <input
+                  v-model.trim="classForm.classId"
+                  class="input input-bordered w-full"
+                  :placeholder="`class id (e.g. ${routeName}/foo)`"
+                  :disabled="isSavingClass"
+                />
+                <input
+                  v-model.trim="classForm.name"
+                  class="input input-bordered w-full"
+                  placeholder="name (optional)"
+                  :disabled="isSavingClass"
+                />
+                <input
+                  v-model.trim="classForm.symbol"
+                  class="input input-bordered w-full"
+                  placeholder="symbol (optional)"
+                  :disabled="isSavingClass"
+                />
+                <input
+                  v-model.trim="classForm.uri"
+                  class="input input-bordered w-full"
+                  placeholder="uri (optional)"
+                  :disabled="isSavingClass"
+                />
+              </div>
+              <textarea
+                v-model.trim="classForm.description"
+                class="textarea textarea-bordered w-full mt-2"
+                placeholder="description (optional)"
+                :disabled="isSavingClass"
+              ></textarea>
+              <div class="text-xs opacity-70 mt-2">
+                {{ routeName }} is managed by destination:
+                <span class="font-mono">{{ resolvedAddress }}</span>
+              </div>
+              <div v-if="classSaveError" class="text-error text-sm mt-1">
+                {{ classSaveError }}
+              </div>
+              <button
+                class="btn btn-primary mt-2"
+                :disabled="!canSaveClass || isSavingClass"
+                @click="saveClass"
+              >
+                Create
+              </button>
+            </div>
+            <div v-if="isLoadingClasses" class="text-base-content/70">
+              Loading…
+            </div>
+            <div v-else-if="classesError" class="text-error">
+              {{ classesError }}
+            </div>
+            <div v-else>
+              <div v-if="classIds.length === 0" class="text-base-content/70">
+                No classes.
+              </div>
+              <div v-else class="overflow-x-auto">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Class ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="cid in classIds" :key="cid">
+                      <td class="font-mono">
+                        <router-link
+                          :to="`/names/${encodeURIComponent(
+                            routeName
+                          )}/nfts/${encodeURIComponent(cid)}`"
+                          class="link"
+                          >{{ cid }}</router-link
+                        >
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -371,6 +421,7 @@ import { ref, computed, inject, watchEffect, watch } from "vue";
 import { useRoute } from "vue-router";
 import AddressDisplay from "@/components/AddressDisplay.vue";
 import { useWallet } from "@/composables/useWallet";
+import RegisterName from "@/components/nameservice/RegisterName.vue";
 const route = useRoute();
 const routeName = computed(() => String(route.params.name || ""));
 
@@ -382,6 +433,9 @@ const error = ref("");
 const resolvedAddress = ref("");
 const nft = ref(null);
 const ownerAddress = ref("");
+const metadataValue = ref("");
+const isSettingMetadata = ref(false);
+const setMetadataError = ref("");
 
 const { loadDenomMetadata, getDisplayOptions, unlockedWallets, sendMsg } =
   useWallet();
@@ -490,28 +544,40 @@ async function fetchResolveName(name) {
       chainInfo.restUrl
     }/dysonprotocol/nameservice/v1/resolve_name/${encodeURIComponent(name)}`;
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
-    const json = await resp.json();
-    resolvedAddress.value = json?.address || "";
+    if (resp.ok) {
+      const json = await resp.json();
+      resolvedAddress.value = json?.address || "";
+    } else if (resp.status === 400 || resp.status === 404) {
+      // Treat bad request / not found as unregistered name
+      resolvedAddress.value = "";
+    } else {
+      throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+    }
     // Fetch NFT detail in parallel
     const rest = chainInfo.restUrl;
     const nftUrl = `${rest}/dysonprotocol/nft/v1beta1/nft?class_id=nameservice.dys&id=${encodeURIComponent(
       name
     )}`;
     const nftResp = await fetch(nftUrl);
-    if (!nftResp.ok)
-      throw new Error(`HTTP ${nftResp.status} ${nftResp.statusText}`);
-    const nftJson = await nftResp.json();
-    nft.value = nftJson?.nft || null;
+    if (nftResp.ok) {
+      const nftJson = await nftResp.json();
+      nft.value = nftJson?.nft || null;
+    } else {
+      nft.value = null; // treat missing NFT as unregistered name
+    }
+    destination.value = nft.value?.uri || "";
+    metadataValue.value = nft.value?.data?.metadata || "";
 
     const ownerUrl = `${rest}/dysonprotocol/nft/v1beta1/owner?class_id=nameservice.dys&id=${encodeURIComponent(
       name
     )}`;
     const ownerResp = await fetch(ownerUrl);
-    if (!ownerResp.ok)
-      throw new Error(`HTTP ${ownerResp.status} ${ownerResp.statusText}`);
-    const ownerJson = await ownerResp.json();
-    ownerAddress.value = ownerJson?.owner || "";
+    if (ownerResp.ok) {
+      const ownerJson = await ownerResp.json();
+      ownerAddress.value = ownerJson?.owner || "";
+    } else {
+      ownerAddress.value = "";
+    }
   } catch (e) {
     error.value = e?.message || "Failed to resolve name";
   } finally {
@@ -529,6 +595,35 @@ async function reload() {
 }
 
 watchEffect(() => reload());
+
+function onRegistered() {
+  reload();
+}
+
+// ---- Set Name Metadata ----
+async function setNameMetadata() {
+  isSettingMetadata.value = true;
+  setMetadataError.value = "";
+  try {
+    const msg = {
+      "@type": "/dysonprotocol.nameservice.v1.MsgSetNameMetadata",
+      owner: String(ownerAddress.value || ""),
+      name: String(routeName.value || ""),
+      metadata: String(metadataValue.value || ""),
+    };
+    const res = await sendMsg({
+      msg,
+      executorAddress: ownerAddress.value,
+      gasLimit: "auto",
+    });
+    if (!res.success) throw new Error(res.rawLog || `code=${res.code}`);
+    await reload();
+  } catch (e) {
+    setMetadataError.value = e?.message || "Failed to set metadata";
+  } finally {
+    isSettingMetadata.value = false;
+  }
+}
 
 // ---- NFT classes by name ----
 const isLoadingClasses = ref(false);

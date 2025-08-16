@@ -64,6 +64,12 @@
             placeholder="uri (optional)"
             :disabled="busy === 'metadata'"
           />
+          <input
+            v-model.trim="meta.uriHash"
+            class="input input-bordered w-full"
+            placeholder="uri hash (optional)"
+            :disabled="busy === 'metadata'"
+          />
         </div>
         <button class="btn btn-primary btn-sm" :disabled="busy === 'metadata'">
           save
@@ -96,12 +102,13 @@ const { sendMsg } = useWallet();
 const busy = ref("");
 const err = ref({ burn: "", move: "", metadata: "" });
 const moveTo = ref("");
-const meta = ref({ metadata: "", uri: "" });
+const meta = ref({ metadata: "", uri: "", uriHash: "" });
 
 // initialize defaults from current nft
 if (props.nft) {
   meta.value.metadata = String(props.nft?.data?.metadata || "");
   meta.value.uri = String(props.nft?.uri || "");
+  meta.value.uriHash = String(props.nft?.uri_hash || "");
 }
 
 async function burnNft() {
@@ -165,6 +172,7 @@ async function setMetadata() {
       nft_id: props.tokenId,
       metadata: String(meta.value.metadata || ""),
       uri: String(meta.value.uri || ""),
+      uri_hash: String(meta.value.uriHash || ""),
     };
     const res = await sendMsg({
       msg,

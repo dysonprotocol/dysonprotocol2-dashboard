@@ -8,6 +8,16 @@ import { execSync } from "child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+function gitOrDefault(cmd, fallback = "") {
+  try {
+    return execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim();
+  } catch {
+    return fallback;
+  }
+}
+
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
   resolve: {
@@ -23,10 +33,10 @@ export default defineConfig({
     __VUE_PROD_DEVTOOLS__: "false",
     __VUE_OPTIONS_API__: "true",
     __GIT_COMMIT__: JSON.stringify(
-      execSync("git rev-parse --short HEAD").toString().trim()
+      gitOrDefault("git rev-parse --short HEAD", "<none>")
     ),
     __GIT_BRANCH__: JSON.stringify(
-      execSync("git rev-parse --abbrev-ref HEAD").toString().trim()
+      gitOrDefault("git rev-parse --abbrev-ref HEAD", "<none>")
     ),
   },
   optimizeDeps: {
