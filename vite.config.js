@@ -36,7 +36,8 @@ export default defineConfig({
       gitOrDefault("git rev-parse --short HEAD", "<none>")
     ),
     __GIT_BRANCH__: JSON.stringify(
-      gitOrDefault("git rev-parse --abbrev-ref HEAD", "<none>")
+      gitOrDefault("git name-rev HEAD", "HEAD <none>").split(/\s+/)[1] ||
+        "<none>"
     ),
   },
   optimizeDeps: {
