@@ -26,7 +26,7 @@ export function useWallet() {
   });
 
   // Persisted state
-  const restUrl = useStorage("restUrl", DEFAULT_CHAIN_INFO.restUrl);
+  const restUrl = computed(() => DEFAULT_CHAIN_INFO.restUrl);
   const chainId = useStorage("chainId", "");
   const rpcUrl = useStorage("rpcUrl", "");
   const nodeInfo = useStorage("nodeInfo", null);

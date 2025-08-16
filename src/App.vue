@@ -390,16 +390,14 @@ import TxHashDisplay from "@/components/TxHashDisplay.vue";
 import { useStorage } from "@vueuse/core";
 
 // Global chain configuration (persist and prefer stored restUrl)
-const defaultRestUrl =
-  typeof window !== "undefined" ? window.location.origin : "";
-const restUrlStorage = useStorage("restUrl", defaultRestUrl);
+const restUrlStorage = useStorage(
+  "restUrl",
+  typeof window !== "undefined" ? window.location.origin : ""
+);
 
-const resolveRestUrl = () => {
-  return (
-    restUrlStorage.value ||
-    (typeof window !== "undefined" ? window.location.origin : "")
-  );
-};
+const resolveRestUrl = () =>
+  restUrlStorage.value ||
+  (typeof window !== "undefined" ? window.location.origin : "");
 
 const DEFAULT_CHAIN_INFO = {
   restUrl: resolveRestUrl(),
