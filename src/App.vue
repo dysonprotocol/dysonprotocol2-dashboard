@@ -402,19 +402,16 @@ const resolveRestUrl = () => {
     (typeof window !== "undefined" ? window.location.origin : "") ||
     import.meta.env.VITE_REST_URL ||
     "http://localhost:1317";
-  return String(candidate || "")
-    .trim()
-    .replace(/\/$/, "");
+
+  console.log("candidate", candidate);
+  return candidate;
 };
 
 const DEFAULT_CHAIN_INFO = {
   restUrl: resolveRestUrl(),
   bech32Prefix: "dys2",
   setRestUrl: (url) => {
-    const v = String(url || "")
-      .trim()
-      .replace(/\/$/, "");
-    restUrlStorage.value = v;
+    restUrlStorage.value = url;
     DEFAULT_CHAIN_INFO.restUrl = resolveRestUrl();
   },
 };
@@ -429,6 +426,7 @@ watch(
 // Expose setter globally for runtime overrides
 if (typeof window !== "undefined") {
   window.setRestUrl = DEFAULT_CHAIN_INFO.setRestUrl;
+  window.resolveRestUrl = resolveRestUrl;
 }
 
 // Provide chain info to all child components

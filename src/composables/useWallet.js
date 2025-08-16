@@ -515,9 +515,7 @@ export function useWallet() {
     const rawRpcAddr = json?.default_node_info?.other?.rpc_address || "";
     const normalizedRpc = String(rawRpcAddr)
       .trim()
-      .replace(/^tpc:\/\//, "http://")
-      .replace(/^tcp:\/\//, "http://")
-      .replace(/\/$/, "");
+      .replace(/^tcp:\/\//, "http://");
     if (normalizedRpc) rpcUrl.value = normalizedRpc;
   };
 
@@ -526,15 +524,11 @@ export function useWallet() {
     if (!chainId.value.includes("mainnet")) {
       chainName = `DysonProtocol2 (${chainId.value})`;
     }
-    const effectiveRest = String(
-      restUrl.value || DEFAULT_CHAIN_INFO.restUrl || "http://localhost:1317"
-    )
-      .trim()
-      .replace(/\/$/, "");
+    const effectiveRest = String(restUrl.value).trim().replace(/\/$/, "");
     const chainInfo = {
       chainId: chainId.value,
       chainName: chainName,
-      rpc: rpcUrl.value || "http://localhost:26657",
+      rpc: rpcUrl.value,
       rest: effectiveRest,
       bip44: { coinType: 118 },
       bech32Config: {
@@ -549,14 +543,18 @@ export function useWallet() {
         { coinDenom: "DYS", coinMinimalDenom: "udys", coinDecimals: 0 },
       ],
       feeCurrencies: [
-        { coinDenom: "DYS", coinMinimalDenom: "udys", coinDecimals: 0 },
+        {
+          coinDenom: "DYS",
+          coinMinimalDenom: "udys",
+          coinDecimals: 0,
+          gasPriceStep: { low: 0.0, average: 0.00001, high: 0.00002 },
+        },
       ],
       stakeCurrency: {
         coinDenom: "DYS",
         coinMinimalDenom: "udys",
         coinDecimals: 6,
       },
-      gasPriceStep: { low: 0.0, average: 0.00001, high: 0.00002 },
     };
 
     try {
