@@ -1,15 +1,19 @@
 <template>
   <div class="space-y-2">
-    <!-- Keplr as collapse -->
+    <!-- Keplr states: details (connected) → install (not available) → connect (available) -->
     <div class="space-y-2">
+      <!-- Connected: show wallet details in collapse -->
       <div
-        class="collapse bg-base-100 border-base-300 border"
         v-if="hasKeplrWallet"
+        class="collapse bg-base-100 border-base-300 border collapse-arrow"
         :class="{
           'border-primary': addressCurrentAddress === keplrWallet?.address,
         }"
       >
-        <input type="checkbox" />
+        <input
+          type="checkbox"
+          v-model="openWalletCollapse[keplrWallet?.name]"
+        />
         <div class="collapse-title font-medium">
           <div class="flex items-center gap-2">
             <img :src="keplrLogo" alt="Keplr" class="w-5 h-5" />
@@ -35,7 +39,6 @@
               Disconnect
             </button>
           </div>
-
           <router-link
             v-for="tab in addressTabs"
             :key="tab.path"
@@ -51,42 +54,58 @@
           </router-link>
         </div>
       </div>
-      <div class="collapse bg-base-100 border-base-300 border" v-else>
-        <input type="checkbox" :checked="isKeplrAvailable" />
-        <div class="collapse-title font-medium">
-          <div class="flex items-center gap-2">
-            <img :src="keplrLogo" alt="Keplr" class="w-5 h-5" />
-            <div class="text-base text-base-content">Keplr Wallet</div>
-          </div>
+
+      <!-- Not available: prompt to install and enable Keplr -->
+      <div
+        v-else-if="!isKeplrAvailable"
+        class="bg-base-100 border-base-300 border p-3"
+      >
+        <div class="font-medium text-base text-base-content mb-2">
+          Install and enable Keplr
         </div>
-        <div class="collapse-content text-sm">
-          <div class="flex items-center gap-2 mt-1">
-            <a
-              v-if="!isKeplrAvailable"
-              href="https://www.keplr.app/get"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Get Keplr"
-              class="inline-flex btn"
-              >Get Keplr
-              <ArrowTopRightOnSquareIcon class="w-4 h-4 text-primary" />
-            </a>
-          </div>
-          <div class="flex items-center gap-2 mt-3">
-            <button
-              class="btn btn-outline btn-xs"
-              :disabled="keplrLoading"
-              @click.stop="connectKeplr"
-            >
-              <span
-                v-if="keplrLoading"
-                class="loading loading-spinner loading-xs mr-1"
-              ></span>
-              Connect
-            </button>
-            <div v-if="keplrError" class="text-error text-xs">
-              {{ keplrError }}
-            </div>
+        <div class="text-xs text-base-content/80 mb-2">
+          Keplr is a browser extension that allows you to connect to the
+          blockchain.
+        </div>
+
+        <a
+          href="https://www.keplr.app/get"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Get Keplr"
+          class="btn btn-outline border-base-300 border w-full"
+        >
+          <img :src="keplrLogo" alt="Keplr" class="w-5 h-5" />
+          Get Keplr
+          <ArrowTopRightOnSquareIcon class="w-4 h-4" />
+        </a>
+      </div>
+
+      <!-- Available but not connected: prompt to connect -->
+      <div v-else class="bg-base-100 border-base-300 border rounded-lg p-4">
+        <div
+          class="font-medium text-base text-base-content flex items-center gap-2 mb-2"
+        >
+          <img :src="keplrLogo" alt="Keplr" class="w-5 h-5" />
+          <span>Keplr Wallet</span>
+        </div>
+        <div class="text-xs text-base-content/80 mb-2">
+          Connect your Keplr wallet to start using the app.
+        </div>
+        <div class="flex items-center gap-2 mt-3">
+          <button
+            class="btn btn-outline btn-xs"
+            :disabled="keplrLoading"
+            @click.stop="connectKeplr"
+          >
+            <span
+              v-if="keplrLoading"
+              class="loading loading-spinner loading-xs mr-1"
+            ></span>
+            Connect
+          </button>
+          <div v-if="keplrError" class="text-error text-xs">
+            {{ keplrError }}
           </div>
         </div>
       </div>
@@ -126,28 +145,30 @@
 
           <div v-else class="flex flex-col gap-1">
             <div class="flex items-center gap-1">
-              <input
-                v-model="unlockPassword[wallet.name]"
-                type="password"
-                placeholder="Password"
-                class="input input-xs w-20 text-xs"
-                :class="{
-                  'input-error': unlockErrors[wallet.name],
-                  'input-disabled': unlockLoading[wallet.name],
-                }"
-                :disabled="unlockLoading[wallet.name]"
-              />
-              <button
-                class="btn btn-primary btn-xs"
-                :disabled="unlockLoading[wallet.name]"
-                @click="doUnlock(wallet.name)"
-              >
-                <span
-                  v-if="unlockLoading[wallet.name]"
-                  class="loading loading-spinner loading-xs m-1"
-                ></span>
-                Unlock
-              </button>
+              <form @submit.prevent="doUnlock(wallet.name)">
+                <input
+                  v-model="unlockPassword[wallet.name]"
+                  type="password"
+                  placeholder="Password"
+                  class="input input-xs w-20 text-xs"
+                  :class="{
+                    'input-error': unlockErrors[wallet.name],
+                    'input-disabled': unlockLoading[wallet.name],
+                  }"
+                  :disabled="unlockLoading[wallet.name]"
+                />
+                <button
+                  class="btn btn-primary btn-xs"
+                  :disabled="unlockLoading[wallet.name]"
+                  @click="doUnlock(wallet.name)"
+                >
+                  <span
+                    v-if="unlockLoading[wallet.name]"
+                    class="loading loading-spinner loading-xs m-1"
+                  ></span>
+                  Unlock
+                </button>
+              </form>
             </div>
             <div v-if="unlockErrors[wallet.name]" class="text-xs text-error">
               {{ unlockErrors[wallet.name] }}
@@ -183,8 +204,8 @@
     <!-- Import wallet (collapse) moved below wallets; styled same as others -->
     <div class="collapse bg-base-100 border-base-300 border">
       <input type="checkbox" v-model="isImportOpen" />
-      <div class="collapse-title font-medium">Import CosmJS wallet</div>
-      <div class="collapse-content text-sm">
+      <div class="collapse-title font-medium">Add CosmJS wallet</div>
+      <div class="collapse-content flex flex-col gap-2">
         <input
           v-model="newWalletName"
           placeholder="Wallet name"
@@ -194,31 +215,25 @@
           v-model="mnemonic"
           placeholder="Enter recovery phrase..."
           class="textarea textarea-xs w-full resize-none"
-          rows="2"
+          rows="6"
         ></textarea>
-        <div class="flex gap-2">
-          <button
-            type="button"
-            class="btn btn-ghost btn-xs"
-            @click="generateSeed(12)"
-          >
-            12W
-          </button>
-          <button
-            type="button"
-            class="btn btn-ghost btn-xs"
-            @click="generateSeed(24)"
-          >
-            24W
-          </button>
-        </div>
+        <button
+          type="button"
+          class="btn btn-outline btn-sm w-full"
+          @click="generateSeed(24)"
+        >
+          Generate New Seed Phrase
+        </button>
         <label class="flex items-start gap-2 text-xs">
           <input
             v-model="seedBackedUp"
             type="checkbox"
             class="checkbox checkbox-xs mt-0.5"
           />
-          <span class="opacity-80">I've backed up my recovery phrase</span>
+          <span class="opacity-80"
+            >I've backed up my recovery phrase and understand the risks. I take
+            full responsibility for my actions.</span
+          >
         </label>
         <input
           v-model="newWalletPassword"
@@ -231,15 +246,15 @@
           {{ importError }}
         </div>
         <button
-          class="btn btn-primary btn-xs w-full"
+          class="btn btn-primary w-full btn-sm"
           :disabled="!canImport || importLoading"
           @click="handleImport"
         >
           <span
             v-if="importLoading"
-            class="loading loading-spinner loading-xs mr-1"
+            class="loading loading-spinner mr-1s"
           ></span>
-          Import Wallet
+          Add Wallet
         </button>
       </div>
     </div>
@@ -280,6 +295,14 @@ const isKeplrAvailable = ref(false);
 
 onMounted(() => {
   isKeplrAvailable.value = typeof window !== "undefined" && !!window.keplr;
+  try {
+    const raw = localStorage.getItem("walletCollapseOpenState");
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (saved && typeof saved === "object")
+        Object.assign(openWalletCollapse, saved);
+    }
+  } catch (e) {}
 });
 
 // Inject address tabs data from root
@@ -407,4 +430,26 @@ watch(isImportOpen, () => {
   seedBackedUp.value = false;
   if (importError.value) importError.value = "";
 });
+
+// Persist collapse state per wallet name
+watch(
+  openWalletCollapse,
+  (val) => {
+    try {
+      localStorage.setItem("walletCollapseOpenState", JSON.stringify(val));
+    } catch (e) {}
+  },
+  { deep: true }
+);
+
+// When Keplr connects first time in session, default to open unless persisted
+watch(
+  () => hasKeplrWallet.value,
+  (isConnected) => {
+    if (!isConnected) return;
+    const name = keplrWallet.value?.name;
+    if (!name) return;
+    if (openWalletCollapse[name] === undefined) openWalletCollapse[name] = true;
+  }
+);
 </script>
