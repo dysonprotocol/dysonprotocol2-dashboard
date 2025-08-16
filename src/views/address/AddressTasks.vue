@@ -192,8 +192,8 @@ const address = computed(
   () => route.meta?.resolvedAddress || route.params.address
 );
 
-const DEFAULT_CHAIN_INFO = inject("chainInfo", {
-  restUrl: "http://localhost:1317",
+const CHAIN_INFO = inject("chainInfo", {
+  restUrl: "",
 });
 
 // ---- List tasks by creator ----
@@ -240,7 +240,7 @@ async function loadTasks() {
   try {
     const u = new URL(
       `${
-        DEFAULT_CHAIN_INFO.restUrl
+        CHAIN_INFO.restUrl
       }/dysonprotocol/crontask/v1/tasks/creator/${encodeURIComponent(
         String(address.value)
       )}`

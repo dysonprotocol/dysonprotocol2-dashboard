@@ -164,7 +164,7 @@ import { useDenom } from "@/composables/useDenom";
 import { useWallet } from "@/composables/useWallet";
 
 const route = useRoute();
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 const {
   getDisplayInfoForBase,
   baseToDisplay,

@@ -130,8 +130,7 @@ async function loadOwned() {
     do {
       const url = `${route.meta?.apiBase || ""}${""}`; // placeholder ignored
       const final = `${window?.__CHAIN_REST__ || ""}`; // ignored
-      const api = route.meta?.chainInfo?.restUrl || window?.CHAIN_REST || "";
-      const rest = api || "http://localhost:1317";
+      const rest = (window?.resolveRestUrl && window.resolveRestUrl()) || "";
       const q = `${rest}/dysonprotocol/nft/v1beta1/nfts?class_id=nameservice.dys&owner=${encodeURIComponent(
         base
       )}&pagination.limit=200${
@@ -162,10 +161,7 @@ async function loadDestination() {
   destNames.value = [];
   try {
     const base = route.meta?.resolvedAddress || address.value;
-    const rest =
-      route.meta?.chainInfo?.restUrl ||
-      window?.CHAIN_REST ||
-      "http://localhost:1317";
+    const rest = (window?.resolveRestUrl && window.resolveRestUrl()) || "";
     const url = `${rest}/dysonprotocol/nameservice/v1/names_by_destination/${encodeURIComponent(
       base
     )}?pagination.limit=200`;

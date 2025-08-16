@@ -7,7 +7,7 @@ export const useAddressStore = defineStore("address", () => {
   const nameCache = ref(new Map());
 
   // Address validation regex (bech32 format for Cosmos chains)
-  // Prefix aligns with App.vue DEFAULT_CHAIN_INFO.bech32Prefix
+  // Prefix aligns with App.vue CHAIN_INFO.bech32Prefix
   const BECH32_PREFIX = "dys2";
   const BECH32_REGEX = new RegExp(`^${BECH32_PREFIX}1[0-9a-z]{38,87}$`, "i");
 
@@ -32,9 +32,9 @@ export const useAddressStore = defineStore("address", () => {
 
       try {
         const rest =
-          typeof window !== "undefined" && window.CHAIN_REST
-            ? window.CHAIN_REST
-            : "http://localhost:1317";
+          typeof window !== "undefined" && window.resolveRestUrl
+            ? window.resolveRestUrl()
+            : "";
         const url = `${rest}/dysonprotocol/nameservice/v1/resolve_name/${encodeURIComponent(
           input
         )}`;

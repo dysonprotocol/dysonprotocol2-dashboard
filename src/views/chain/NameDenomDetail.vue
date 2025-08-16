@@ -263,7 +263,7 @@ import AddressDisplay from "@/components/AddressDisplay.vue";
 const route = useRoute();
 const routeName = computed(() => String(route.params.name || ""));
 const denom = computed(() => String(route.params.denom || ""));
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 const { sendMsg } = useWallet();
 
 const resolvedAddress = ref("");

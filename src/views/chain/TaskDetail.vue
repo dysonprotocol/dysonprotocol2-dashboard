@@ -102,8 +102,8 @@ import { useRoute } from "vue-router";
 import DisplayMsg from "@/components/explorer/DisplayMsg.vue";
 
 const route = useRoute();
-const DEFAULT_CHAIN_INFO = inject("chainInfo", {
-  restUrl: "http://localhost:1317",
+const CHAIN_INFO = inject("chainInfo", {
+  restUrl: "",
 });
 
 const taskId = computed(() => String(route.params.taskId || ""));
@@ -118,7 +118,7 @@ async function loadTask() {
   task.value = null;
   try {
     const url = `${
-      DEFAULT_CHAIN_INFO.restUrl
+      CHAIN_INFO.restUrl
     }/dysonprotocol/crontask/v1/tasks/${encodeURIComponent(taskId.value)}`;
     const r = await fetch(url);
     if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);

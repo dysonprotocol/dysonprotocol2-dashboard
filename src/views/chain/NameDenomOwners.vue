@@ -39,7 +39,7 @@ import { useRoute } from "vue-router";
 
 const route = useRoute();
 const denom = computed(() => String(route.params.denom || ""));
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 
 const isLoading = ref(false);
 const error = ref("");

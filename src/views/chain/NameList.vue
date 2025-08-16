@@ -61,7 +61,7 @@ import { ref, inject, computed, onMounted } from "vue";
 import { useWallet } from "@/composables/useWallet";
 import RegisterName from "@/components/nameservice/RegisterName.vue";
 
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 
 // removed search state
 const isLoadingAll = ref(false);

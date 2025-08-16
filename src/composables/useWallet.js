@@ -20,13 +20,13 @@ let globalHandleKeplrAccountChange = null;
 
 export function useWallet() {
   // Inject chain info from App.vue
-  const DEFAULT_CHAIN_INFO = inject("chainInfo", {
-    restUrl: "http://localhost:1317", // Fallback
+  const CHAIN_INFO = inject("chainInfo", {
+    restUrl: "",
     bech32Prefix: "dys2",
   });
 
   // Persisted state
-  const restUrl = computed(() => DEFAULT_CHAIN_INFO.restUrl);
+  const restUrl = computed(() => CHAIN_INFO.restUrl);
   const chainId = useStorage("chainId", "");
   const rpcUrl = useStorage("rpcUrl", "");
   const nodeInfo = useStorage("nodeInfo", null);
@@ -589,7 +589,7 @@ export function useWallet() {
     }
 
     const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
-      prefix: DEFAULT_CHAIN_INFO.bech32Prefix,
+      prefix: CHAIN_INFO.bech32Prefix,
     });
     const kdfConfig = {
       algorithm: "argon2id",

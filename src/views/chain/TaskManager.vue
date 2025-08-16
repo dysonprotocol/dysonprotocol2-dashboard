@@ -306,8 +306,8 @@
 <script setup>
 import { inject, reactive } from "vue";
 
-const DEFAULT_CHAIN_INFO = inject("chainInfo", {
-  restUrl: "http://localhost:1317",
+const CHAIN_INFO = inject("chainInfo", {
+  restUrl: "",
 });
 
 const scheduled = reactive({
@@ -343,7 +343,7 @@ async function loadScheduled() {
   scheduled.nextKey = "";
   try {
     const u = new URL(
-      `${DEFAULT_CHAIN_INFO.restUrl}/dysonprotocol/crontask/v1/tasks/status/SCHEDULED`
+      `${CHAIN_INFO.restUrl}/dysonprotocol/crontask/v1/tasks/status/SCHEDULED`
     );
     if (scheduled.limit)
       u.searchParams.set("pagination.limit", String(scheduled.limit));
@@ -367,7 +367,7 @@ async function loadPending() {
   pending.total = "";
   try {
     const u = new URL(
-      `${DEFAULT_CHAIN_INFO.restUrl}/dysonprotocol/crontask/v1/tasks/status/PENDING/by_gas`
+      `${CHAIN_INFO.restUrl}/dysonprotocol/crontask/v1/tasks/status/PENDING/by_gas`
     );
     if (pending.limit)
       u.searchParams.set("pagination.limit", String(pending.limit));
@@ -394,7 +394,7 @@ async function loadFinished() {
     const status = finished.status || "DONE";
     const u = new URL(
       `${
-        DEFAULT_CHAIN_INFO.restUrl
+        CHAIN_INFO.restUrl
       }/dysonprotocol/crontask/v1/tasks/status/${encodeURIComponent(status)}`
     );
     if (finished.limit)

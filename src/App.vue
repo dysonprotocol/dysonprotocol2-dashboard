@@ -390,39 +390,36 @@ import TxHashDisplay from "@/components/TxHashDisplay.vue";
 import { useStorage } from "@vueuse/core";
 
 // Global chain configuration (persist and prefer stored restUrl)
-const restUrlStorage = useStorage(
-  "restUrl",
-  typeof window !== "undefined" ? window.location.origin : ""
-);
+const customRestUrlStorage = useStorage("customRestUrlStorage", "");
 
 const resolveRestUrl = () =>
-  restUrlStorage.value ||
+  customRestUrlStorage.value ||
   (typeof window !== "undefined" ? window.location.origin : "");
 
-const DEFAULT_CHAIN_INFO = {
+const CHAIN_INFO = {
   restUrl: resolveRestUrl(),
   bech32Prefix: "dys2",
   setRestUrl: (url) => {
-    restUrlStorage.value = url;
-    DEFAULT_CHAIN_INFO.restUrl = resolveRestUrl();
+    customRestUrlStorage.value = url;
+    CHAIN_INFO.restUrl = resolveRestUrl();
   },
 };
 
 watch(
-  () => restUrlStorage.value,
+  () => customRestUrlStorage.value,
   () => {
-    DEFAULT_CHAIN_INFO.restUrl = resolveRestUrl();
+    CHAIN_INFO.restUrl = resolveRestUrl();
   }
 );
 
 // Expose setter globally for runtime overrides
 if (typeof window !== "undefined") {
-  window.setRestUrl = DEFAULT_CHAIN_INFO.setRestUrl;
+  window.setCustomRestUrl = CHAIN_INFO.setRestUrl;
   window.resolveRestUrl = resolveRestUrl;
 }
 
 // Provide chain info to all child components
-provide("chainInfo", DEFAULT_CHAIN_INFO);
+provide("chainInfo", CHAIN_INFO);
 import {
   Dialog,
   DialogPanel,
@@ -604,7 +601,7 @@ watch(
     const { root, main, classId, tokenId } = parsedName.value || {};
     if (!root) return;
     const seq = ++searchSeq;
-    const rest = DEFAULT_CHAIN_INFO.restUrl;
+    const rest = CHAIN_INFO.restUrl;
     try {
       // Check name existence
       const pName = fetch(

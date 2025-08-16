@@ -151,8 +151,8 @@ const address = computed(
   () => route.meta?.resolvedAddress || route.params.address
 );
 
-const DEFAULT_CHAIN_INFO = inject("chainInfo", {
-  restUrl: "http://localhost:1317",
+const CHAIN_INFO = inject("chainInfo", {
+  restUrl: "",
 });
 
 const form = ref({
@@ -228,7 +228,7 @@ async function reload() {
   total.value = "";
   try {
     const u = new URL(
-      `${DEFAULT_CHAIN_INFO.restUrl}/dysonprotocol/storage/v1/storage_list`
+      `${CHAIN_INFO.restUrl}/dysonprotocol/storage/v1/storage_list`
     );
     u.searchParams.set("owner", String(address.value));
     if (form.value.index_prefix)

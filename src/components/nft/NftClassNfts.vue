@@ -100,7 +100,7 @@ import { useWallet } from "@/composables/useWallet";
 import { useDenom } from "@/composables/useDenom";
 
 const route = useRoute();
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 const { unlockedWallets, localCosmJsWallets, sendMsg } = useWallet();
 const {
   getDisplayOptions,

@@ -316,14 +316,14 @@ const address = computed(
   () => route.meta?.resolvedAddress || route.params.address
 );
 
-const DEFAULT_CHAIN_INFO = inject("chainInfo", {
-  restUrl: "http://localhost:1317",
+const CHAIN_INFO = inject("chainInfo", {
+  restUrl: "",
 });
 
 const { ensureDenomsLoaded, baseToDisplay, getDisplayInfoForBase } = useDenom();
 const bondDenom = ref("");
 async function loadParams() {
-  const u = `${DEFAULT_CHAIN_INFO.restUrl}/cosmos/staking/v1beta1/params`;
+  const u = `${CHAIN_INFO.restUrl}/cosmos/staking/v1beta1/params`;
   const r = await fetch(u);
   if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
   const json = await r.json();
@@ -366,7 +366,7 @@ const validators = ref([]);
 async function loadValidators() {
   try {
     const u = new URL(
-      `${DEFAULT_CHAIN_INFO.restUrl}/cosmos/staking/v1beta1/validators`
+      `${CHAIN_INFO.restUrl}/cosmos/staking/v1beta1/validators`
     );
     u.searchParams.set("pagination.limit", "200");
     const r = await fetch(u.toString());
@@ -390,7 +390,7 @@ async function loadDelegations() {
   try {
     const u = new URL(
       `${
-        DEFAULT_CHAIN_INFO.restUrl
+        CHAIN_INFO.restUrl
       }/cosmos/staking/v1beta1/delegations/${encodeURIComponent(
         String(address.value)
       )}`
@@ -420,7 +420,7 @@ async function loadRewards() {
   rewards.value = [];
   try {
     const u = `${
-      DEFAULT_CHAIN_INFO.restUrl
+      CHAIN_INFO.restUrl
     }/cosmos/distribution/v1beta1/delegators/${encodeURIComponent(
       String(address.value)
     )}/rewards`;
@@ -455,7 +455,7 @@ async function loadUnbondings() {
   try {
     const u = new URL(
       `${
-        DEFAULT_CHAIN_INFO.restUrl
+        CHAIN_INFO.restUrl
       }/cosmos/staking/v1beta1/delegators/${encodeURIComponent(
         String(address.value)
       )}/unbonding_delegations`

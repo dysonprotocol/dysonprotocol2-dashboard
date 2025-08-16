@@ -96,7 +96,7 @@ const props = defineProps({
   nft: { type: Object, default: null },
 });
 
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 const { sendMsg } = useWallet();
 
 const busy = ref("");

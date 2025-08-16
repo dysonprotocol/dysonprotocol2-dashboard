@@ -126,7 +126,7 @@ import { useWallet } from "@/composables/useWallet";
 const props = defineProps({ initialName: { type: String, default: "" } });
 const emit = defineEmits(["registered"]);
 
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 
 const isRegistering = ref(false);
 const step = ref(1);

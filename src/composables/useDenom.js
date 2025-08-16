@@ -3,12 +3,12 @@ import { useStorage } from "@vueuse/core";
 
 // Centralized denom utilities: load metadata, convert display<->base, and helpers
 export function useDenom() {
-  const DEFAULT_CHAIN_INFO = inject("chainInfo", {
-    restUrl: "http://localhost:1317",
+  const CHAIN_INFO = inject("chainInfo", {
+    restUrl: "",
   });
 
   // Cache REST url and metadata across sessions
-  const restUrl = useStorage("restUrl", DEFAULT_CHAIN_INFO.restUrl);
+  const restUrl = useStorage("restUrl", CHAIN_INFO.restUrl);
   const denomMetadatas = ref([]);
   const isLoadingDenoms = ref(false);
 
@@ -33,7 +33,10 @@ export function useDenom() {
   }
 
   async function ensureDenomsLoaded() {
-    if (!Array.isArray(denomMetadatas.value) || denomMetadatas.value.length === 0) {
+    if (
+      !Array.isArray(denomMetadatas.value) ||
+      denomMetadatas.value.length === 0
+    ) {
       await loadDenomMetadata();
     }
     return;
@@ -42,7 +45,8 @@ export function useDenom() {
   function getDisplayOptions({ allowedBases }) {
     let bases = Array.isArray(allowedBases) ? allowedBases : [];
     // If no allowed bases specified, expose all known base denoms from metadata
-    if (bases.length === 0) bases = (denomMetadatas.value || []).map((m) => m.base);
+    if (bases.length === 0)
+      bases = (denomMetadatas.value || []).map((m) => m.base);
 
     const options = [];
     for (const base of bases) {

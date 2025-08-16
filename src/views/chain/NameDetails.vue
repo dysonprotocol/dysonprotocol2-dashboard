@@ -426,7 +426,7 @@ const route = useRoute();
 const routeName = computed(() => String(route.params.name || ""));
 
 // Chain info provided by App.vue
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 
 const isLoading = ref(false);
 const error = ref("");

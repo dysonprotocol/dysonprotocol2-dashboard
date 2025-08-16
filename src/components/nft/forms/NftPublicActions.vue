@@ -93,7 +93,7 @@ const props = defineProps({
   classAlwaysListed: { type: Boolean, default: false },
 });
 
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 const { getDisplayOptions, normalizeFromDisplay, loadDenomMetadata } =
   useDenom();
 const { sendMsg } = useWallet();

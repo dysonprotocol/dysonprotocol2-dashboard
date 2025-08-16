@@ -23,7 +23,7 @@ const props = defineProps({
 });
 const emit = defineEmits(["update:modelValue"]);
 
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 
 const rawValue = ref("");
 const inputValue = ref("");

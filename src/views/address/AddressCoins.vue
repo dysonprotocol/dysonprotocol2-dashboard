@@ -111,7 +111,7 @@ import { useWallet } from "@/composables/useWallet";
 import AmountDenomSelector from "@/components/AmountDenomSelector.vue";
 import ResolveNameOrAddresInput from "@/components/ResolveNameOrAddresInput.vue";
 
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 
 const route = useRoute();
 const address = computed(() =>

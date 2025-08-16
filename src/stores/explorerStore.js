@@ -4,7 +4,7 @@ import { ref, computed, inject } from "vue";
 export const useExplorerStore = defineStore("explorer", () => {
   // Inject chain info from App.vue
   const chainInfo = inject("chainInfo", {
-    restUrl: "http://localhost:1317", // Fallback
+    restUrl: "",
     bech32Prefix: "dys2",
   });
   // State

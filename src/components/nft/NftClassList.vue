@@ -102,7 +102,7 @@ import { useRoute } from "vue-router";
 import { useWallet } from "@/composables/useWallet";
 
 const route = useRoute();
-const chainInfo = inject("chainInfo", { restUrl: "http://localhost:1317" });
+const chainInfo = inject("chainInfo", { restUrl: "" });
 
 const { unlockedWallets, localCosmJsWallets, sendMsg } = useWallet();
 

@@ -104,8 +104,8 @@ import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
-const DEFAULT_CHAIN_INFO = inject("chainInfo", {
-  restUrl: "http://localhost:1317",
+const CHAIN_INFO = inject("chainInfo", {
+  restUrl: "",
 });
 
 const form = ref({
@@ -155,7 +155,7 @@ async function load() {
   nextKey.value = "";
   try {
     const u = new URL(
-      `${DEFAULT_CHAIN_INFO.restUrl}/cosmos/staking/v1beta1/validators`
+      `${CHAIN_INFO.restUrl}/cosmos/staking/v1beta1/validators`
     );
     if (form.value.status) u.searchParams.set("status", form.value.status);
     if (form.value.limit)

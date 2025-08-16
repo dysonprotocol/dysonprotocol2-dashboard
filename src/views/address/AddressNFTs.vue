@@ -140,8 +140,7 @@ async function loadOwned() {
     const collected = [];
     let nextKey = "";
     do {
-      const api = route.meta?.chainInfo?.restUrl || window?.CHAIN_REST || "";
-      const rest = api || "http://localhost:1317";
+      const rest = (window?.resolveRestUrl && window.resolveRestUrl()) || "";
       const q = `${rest}/dysonprotocol/nft/v1beta1/nfts?owner=${encodeURIComponent(
         base
       )}&pagination.limit=200${

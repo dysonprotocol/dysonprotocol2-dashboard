@@ -243,8 +243,8 @@ import AddressDisplay from "@/components/AddressDisplay.vue";
 const route = useRoute();
 const valAddress = computed(() => String(route.params.valAddress || ""));
 
-const DEFAULT_CHAIN_INFO = inject("chainInfo", {
-  restUrl: "http://localhost:1317",
+const CHAIN_INFO = inject("chainInfo", {
+  restUrl: "",
 });
 
 const { ensureDenomsLoaded, baseToDisplay, getDisplayInfoForBase } = useDenom();
@@ -255,7 +255,7 @@ const error = ref("");
 
 const bondDenom = ref("");
 async function loadParams() {
-  const u = `${DEFAULT_CHAIN_INFO.restUrl}/cosmos/staking/v1beta1/params`;
+  const u = `${CHAIN_INFO.restUrl}/cosmos/staking/v1beta1/params`;
   const r = await fetch(u);
   if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
   const json = await r.json();
@@ -269,7 +269,7 @@ async function loadValidator() {
   validator.value = null;
   try {
     const u = `${
-      DEFAULT_CHAIN_INFO.restUrl
+      CHAIN_INFO.restUrl
     }/cosmos/staking/v1beta1/validators/${encodeURIComponent(
       valAddress.value
     )}`;
@@ -295,7 +295,7 @@ async function loadDelegations() {
   try {
     const url = new URL(
       `${
-        DEFAULT_CHAIN_INFO.restUrl
+        CHAIN_INFO.restUrl
       }/cosmos/staking/v1beta1/validators/${encodeURIComponent(
         valAddress.value
       )}/delegations`
@@ -333,7 +333,7 @@ async function loadUnbondings() {
   try {
     const url = new URL(
       `${
-        DEFAULT_CHAIN_INFO.restUrl
+        CHAIN_INFO.restUrl
       }/cosmos/staking/v1beta1/validators/${encodeURIComponent(
         valAddress.value
       )}/unbonding_delegations`
