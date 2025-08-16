@@ -1,0 +1,1 @@
+import{_ as s}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{c as o,a as t,o as a}from"./index-U0gXWERw.js";const r={},c={class:"text-center"};function n(l,e){return a(),o("div",c,e[0]||(e[0]=[t("h1",{class:"text-4xl font-bold mb-4"},"Dys2",-1),t("p",{class:"text-lg text-gray-600"},"Make Dwapps, get Paid.",-1)]))}const f=s(r,[["render",n]]);export{f as default};

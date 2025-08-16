@@ -1,0 +1,1 @@
+import{c as t,a as e,o}from"./index-U0gXWERw.js";const a={class:"p-4"},r={__name:"NameDenoms",setup(n){return(m,s)=>(o(),t("div",a,s[0]||(s[0]=[e("h2",{class:"text-xl font-bold mb-2"},"Denoms",-1),e("p",{class:"text-sm text-gray-600"},"Denoms list coming soon",-1)])))}};export{r as default};
