@@ -533,18 +533,18 @@ export function useWallet() {
         bech32PrefixConsPub: "dys2valconspub",
       },
       currencies: [
-        { coinDenom: "DYS", coinMinimalDenom: "udys", coinDecimals: 0 },
+        { coinDenom: "DYS2", coinMinimalDenom: "udys", coinDecimals: 6 },
       ],
       feeCurrencies: [
         {
-          coinDenom: "DYS",
+          coinDenom: "DYS2",
           coinMinimalDenom: "udys",
-          coinDecimals: 0,
-          gasPriceStep: { low: 0.0, average: 0.00001, high: 0.00002 },
+          coinDecimals: 6,
+          gasPriceStep: { low: 0.0, average: 0.0, high: 0.00002 },
         },
       ],
       stakeCurrency: {
-        coinDenom: "DYS",
+        coinDenom: "DYS2",
         coinMinimalDenom: "udys",
         coinDecimals: 6,
       },
