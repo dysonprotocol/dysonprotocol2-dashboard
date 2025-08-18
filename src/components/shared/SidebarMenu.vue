@@ -11,7 +11,7 @@
         class="flex items-center gap-2"
       >
         <img :src="logoSrc" alt="Dyson Protocol" class="h-6 w-auto" />
-        <span class="text-xl font-bold">Dyson Protocol</span>
+        <span class="text-xl font-bold">Dyson Protocol 2</span>
       </router-link>
     </div>
 

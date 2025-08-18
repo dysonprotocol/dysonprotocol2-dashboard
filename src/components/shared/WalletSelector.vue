@@ -14,6 +14,10 @@
       <div class="modal-box">
         <h3 class="text-lg font-bold">Select wallet</h3>
         <ul class="mt-4">
+          <li v-if="options.length === 0" class="px-4 py-2 text-sm opacity-70">
+            No wallets available. Enable Keplr or add and unlock a JS wallet in
+            the sidebar.
+          </li>
           <li v-for="opt in options" :key="opt.address">
             <button
               type="button"

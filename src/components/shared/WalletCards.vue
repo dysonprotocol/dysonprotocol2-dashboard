@@ -56,16 +56,13 @@
       </div>
 
       <!-- Not available: prompt to install and enable Keplr -->
-      <div
-        v-else-if="!isKeplrAvailable"
-        class="bg-base-100 border-base-300 border p-3"
-      >
+      <div v-else-if="!isKeplrAvailable" class="">
         <div class="font-medium text-base text-base-content mb-2">
           Install and enable Keplr
         </div>
         <div class="text-xs text-base-content/80 mb-2">
           Keplr is a browser extension that allows you to connect to the
-          blockchain.
+          blockchain. Or add a CosmJS wallet below.
         </div>
 
         <a
@@ -73,7 +70,7 @@
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Get Keplr"
-          class="btn btn-outline border-base-300 border w-full"
+          class="btn btn-outline w-full border-base-300 border rounded-lg"
         >
           <img :src="keplrLogo" alt="Keplr" class="w-5 h-5" />
           Get Keplr

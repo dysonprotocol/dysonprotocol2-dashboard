@@ -1,5 +1,4 @@
 import { ref, inject } from "vue";
-import { useStorage } from "@vueuse/core";
 
 // Centralized denom utilities: load metadata, convert display<->base, and helpers
 export function useDenom() {
@@ -8,7 +7,7 @@ export function useDenom() {
   });
 
   // Cache REST url and metadata across sessions
-  const restUrl = useStorage("restUrl", CHAIN_INFO.restUrl);
+  const restUrl = CHAIN_INFO.restUrl;
   const denomMetadatas = ref([]);
   const isLoadingDenoms = ref(false);
 
@@ -17,7 +16,7 @@ export function useDenom() {
       return;
     isLoadingDenoms.value = true;
     try {
-      const url = `${restUrl.value}/cosmos/bank/v1beta1/denoms_metadata?pagination.limit=1000`;
+      const url = `${restUrl}/cosmos/bank/v1beta1/denoms_metadata?pagination.limit=1000`;
       const resp = await fetch(url);
       if (!resp.ok)
         throw new Error(

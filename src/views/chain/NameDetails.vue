@@ -12,9 +12,6 @@
         </div>
         <div class="card bg-base-200 shadow">
           <div class="card-body gap-3">
-            <div class="flex items-center justify-between">
-              <h2 class="card-title">Register Name</h2>
-            </div>
             <RegisterName :initialName="routeName" @registered="onRegistered" />
           </div>
         </div>

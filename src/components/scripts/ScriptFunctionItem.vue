@@ -40,8 +40,8 @@
             @update:base="onSendBaseUpdate"
           />
           <div class="text-xs opacity-70 mt-1">
-            From <span class="font-mono">{{ selectedExecutor }}</span> to
-            <span class="font-mono">{{ address }}</span>
+            From <AddressDisplay :address="selectedExecutor" :truncate="5" /> to
+            <AddressDisplay :address="address" :truncate="5" />
           </div>
         </div>
       </div>
@@ -148,6 +148,7 @@ import { useWallet } from "@/composables/useWallet";
 import WalletSelector from "@/components/shared/WalletSelector.vue";
 import TxHashDisplay from "@/components/TxHashDisplay.vue";
 import AmountDenomSelector from "@/components/AmountDenomSelector.vue";
+import AddressDisplay from "@/components/AddressDisplay.vue";
 
 const props = defineProps({
   address: { type: String, required: true },
