@@ -3,12 +3,27 @@
     <header class="mb-1 text-xs opacity-70">
       <span>
         Post
-        <a :href="`${restBase}/redirect-to-dwapp/nuance.dys/${postId}`" class="link">#{{ postId }}</a>
+        <a
+          :href="`${restBase}/redirect-to-dwapp/nuance.dys/${postId}`"
+          class="link"
+          >#{{ postId }}</a
+        >
         by
-        <a :href="`${restBase}/redirect-to-dwapp/foo.dys/authors/${enc(safeAuthor)}`" class="link">{{ safeAuthor }}</a>
-        on {{ formattedTime }} has earned {{ earnedDys }} DYS |
-        Topic:
-        <a :href="`${restBase}/redirect-to-dwapp/foo.dys/topics/${enc(topicTag)}`" class="link">#{{ topicTag }}</a>
+        <a
+          :href="`${restBase}/redirect-to-dwapp/nuance.dys/authors/${enc(
+            safeAuthor
+          )}`"
+          class="link"
+          >{{ safeAuthor }}</a
+        >
+        on {{ formattedTime }} has earned {{ earnedDys }} DYS | Topic:
+        <a
+          :href="`${restBase}/redirect-to-dwapp/nuance.dys/topics/${enc(
+            topicTag
+          )}`"
+          class="link"
+          >#{{ topicTag }}</a
+        >
       </span>
     </header>
     <div class="nuance markdown prose" v-html="safeHtml"></div>
@@ -48,7 +63,9 @@ function formatTime(raw) {
   return d.toLocaleString();
 }
 
-const formattedTime = computed(() => formatTime(props.post?.created_time || ""));
+const formattedTime = computed(() =>
+  formatTime(props.post?.created_time || "")
+);
 
 function calcEarnedDys(post) {
   try {
@@ -62,7 +79,7 @@ function calcEarnedDys(post) {
 
 const earnedDys = computed(() => calcEarnedDys(props.post));
 
-const safeHtml = computed(() => renderMarkdownToSafeHtml(props.post?.content || ""));
+const safeHtml = computed(() =>
+  renderMarkdownToSafeHtml(props.post?.content || "")
+);
 </script>
-
-
