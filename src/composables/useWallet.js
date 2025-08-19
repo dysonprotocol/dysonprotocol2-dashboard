@@ -481,7 +481,15 @@ export function useWallet() {
 
   // UTILITIES
   const loadChainIdFromApi = async () => {
-    const url = `${restUrl.value}/cosmos/base/tendermint/v1beta1/node_info`;
+    const base =
+      CHAIN_INFO.restUrl ||
+      (typeof window !== "undefined" &&
+      typeof window.resolveRestUrl === "function"
+        ? window.resolveRestUrl()
+        : "");
+    if (!base)
+      throw new Error("REST URL is not configured (chainInfo.restUrl)");
+    const url = `${base}/cosmos/base/tendermint/v1beta1/node_info`;
     const resp = await fetch(url);
     if (!resp.ok) {
       throw new Error(`Failed to fetch node_info: ${await resp.text()}`);
@@ -1047,7 +1055,6 @@ export function useWallet() {
 
   return {
     // State
-    restUrl,
     rpcUrl,
     chainId,
     localCosmJsWallets,

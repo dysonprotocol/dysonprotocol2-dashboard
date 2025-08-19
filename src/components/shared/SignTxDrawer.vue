@@ -126,7 +126,7 @@
                     <!-- Fee -->
                     <div class="form-control">
                       <label class="label">
-                        <span class="label-text font-medium">Fee</span>
+                        <span class="label-text font-medium">Gas fee</span>
                       </label>
                       <div class="grid grid-cols-2 gap-2">
                         <div>

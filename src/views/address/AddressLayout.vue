@@ -1,6 +1,6 @@
 <template>
   <div class="h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
-    <div class="bg-base-100 shadow-sm border-b flex-col items-start gap-2">
+    <div class="bg-base-100 flex-col items-start gap-2">
       <!-- Address and current tab -->
       <div class="text-sm p-2 flex items-center gap-2">
         <router-link
@@ -13,18 +13,18 @@
         <AddressDisplay :address="address" :truncate="0" />
       </div>
       <!-- Menu links -->
-      <div class="flex-none w-full md:w-auto">
-        <ul class="menu menu-horizontal p-0">
-          <li v-for="tab in addressTabsInjected" :key="tab.path">
-            <router-link
-              :to="linkForTab(tab.path)"
-              class="p-2"
-              :class="{ 'text-primary font-medium': currentTab === tab.path }"
-            >
-              {{ tab.name }}
-            </router-link>
-          </li>
-        </ul>
+
+      <div role="tablist" class="tabs tabs-lift">
+        <router-link
+          v-for="tab in addressTabsInjected"
+          :key="tab.path"
+          :to="linkForTab(tab.path)"
+          class="tab"
+          role="tab"
+          :class="{ 'tab-active': currentTab === tab.path }"
+        >
+          {{ tab.name }}
+        </router-link>
       </div>
     </div>
 

@@ -1,14 +1,18 @@
 <template>
   <section>
-    
-
-      <span v-if="error" class="text-error">{{ error }}</span>
-      <span v-else-if="loading">Loading…</span>
-    <ul class="space-y-4">
+    <span v-if="error" class="text-error">{{ error }}</span>
+    <span v-else-if="loading">Loading…</span>
+    <ul role="list" class="divide-y divide-gray-200 dark:divide-white/10">
       <li v-for="it in items" :key="`${it.rating}-${it.tag}-${it.paddedId}`">
-        <NuanceTaggedPost :tag="it.tag" :id="it.id" :post="it.post || placeholderPost" />
+        <NuanceTaggedPost
+          :tag="it.tag"
+          :id="it.id"
+          :post="it.post || placeholderPost"
+        />
       </li>
-      <li v-if="!loading && !error && items.length === 0" class="opacity-70">No posts</li>
+      <li v-if="!loading && !error && items.length === 0" class="opacity-70">
+        No posts
+      </li>
     </ul>
   </section>
 </template>
@@ -33,7 +37,12 @@ const loading = computed(() => state.value.loading);
 const error = computed(() => state.value.error);
 const nextKey = computed(() => state.value.nextKey);
 
-const placeholderPost = { post_id: "", author: "", content: "", created_time: "" };
+const placeholderPost = {
+  post_id: "",
+  author: "",
+  content: "",
+  created_time: "",
+};
 
 onMounted(() => {
   store.loadInitial(props.tag, activeRating.value, props.limit);
@@ -51,5 +60,3 @@ function setRating(r) {
   activeRating.value = r;
 }
 </script>
-
-

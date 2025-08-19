@@ -1,104 +1,97 @@
 <template>
-  <div class="max-w-5xl mx-auto p-4 space-y-4">
-    <div class="card bg-base-100 border-base-300 border card-md shadow-sm">
-      <div class="card-body">
-        <h2 class="card-title">Send Coins</h2>
-        <form class="flex flex-col gap-2" @submit.prevent="onSend">
-          <ResolveNameOrAddresInput
-            v-model="toAddr"
-            :disabled="!isUnlocked || isSending"
+  <div class="max-w-5xl mx-auto p-4">
+    <div class="grid gap-4 md:grid-cols-1">
+      <div>
+        <h2 class="text-xl font-semibold">Coins & Balances</h2>
+        <p class="text-base-content/70 mb-3">
+          Balances for
+          <AddressDisplay :address="address" :truncate="0" />
+        </p>
+
+        <div v-if="isLoading" class="text-base-content/70">Loading…</div>
+        <div v-else-if="error" class="text-error">{{ error }}</div>
+        <div v-else>
+          <div
+            v-if="balancesView.length === 0"
+            class="card bg-base-100 border border-base-300 shadow-sm p-4"
           >
-            <template
-              #default="{
-                inputValue,
-                rawValue,
-                isResolving,
-                err,
-                showResolve,
-                canResolve,
-                labelSuffix,
-                disabled,
-                onInput,
-                onResolve,
-              }"
+            <div class="text-base-content/70">No balances.</div>
+          </div>
+          <div v-else class="space-y-3">
+            <div
+              v-for="b in balancesView"
+              :key="b.baseDenom"
+              class="card bg-base-100 border border-base-300 shadow-sm"
             >
-              <div class="flex flex-wrap items-end gap-2 w-full">
-                <div class="join flex-1 min-w-[16rem]">
-                  <input
-                    :value="inputValue"
-                    @input="onInput"
-                    type="text"
-                    placeholder="dys2... or name"
-                    class="input input-bordered input-md font-mono join-item w-full validator"
-                    :class="{ 'input-error': !!err }"
-                    :disabled="disabled || isResolving"
-                    autocomplete="off"
-                    spellcheck="false"
-                  />
-                  <button
-                    v-if="showResolve"
-                    class="btn btn-md join-item"
-                    :disabled="disabled || isResolving || !canResolve"
-                    @click.prevent="onResolve"
-                  >
-                    {{ isResolving ? "Resolving…" : "Resolve name" }}
-                  </button>
+              <div class="card-body py-3 grid grid-cols-2 w-full">
+                <div class="space-y-2">
+                  <div class="text-xs text-base-content/60">Denom</div>
+                  <div class="font-mono">{{ b.displayDenom }}</div>
+                  <div class="text-xs text-base-content/60">Balance</div>
+                  <div class="font-mono">{{ b.displayAmount }}</div>
+                  <div class="text-xs text-base-content/60">Description</div>
+                  <div>{{ b.description || "—" }}</div>
                 </div>
 
-                <AmountDenomSelector
-                  :base-denoms="baseDenoms"
-                  :default-base-denom="defaultBaseDenom"
-                  :disabled="!isUnlocked || isSending"
-                  @update:display="onDisplayUpdate"
-                  @update:base="onBaseUpdate"
-                />
+                <div>
+                  <h3 class="font-semibold">Send {{ b.displayDenom }}</h3>
+                  <form
+                    class="flex flex-col gap-3"
+                    @submit.prevent="onSendCard(b)"
+                  >
+                    <ResolveNameOrAddresInput
+                      v-model="cardToAddr[b.baseDenom]"
+                      v-model:text="cardToText[b.baseDenom]"
+                      :disabled="!isUnlocked || isSending"
+                    />
 
-                <button
-                  class="btn btn-primary"
-                  :disabled="!isUnlocked || isSending"
-                >
-                  Send
-                </button>
+                    <AmountDenomSelector
+                      :base-denoms="[b.baseDenom]"
+                      :default-base-denom="b.baseDenom"
+                      :disabled="!isUnlocked || isSending"
+                      @update:display="
+                        (p) => onCardDisplayUpdate(b.baseDenom, p)
+                      "
+                      @update:base="(p) => onCardBaseUpdate(b.baseDenom, p)"
+                    />
+
+                    <div
+                      v-if="
+                        cardBaseAmount[b.baseDenom] &&
+                        !hasSufficient(b.baseDenom)
+                      "
+                      class="text-error text-sm"
+                    >
+                      Insufficient {{ b.displayDenom }} balance
+                    </div>
+
+                    <button
+                      class="btn btn-primary"
+                      :disabled="
+                        !isUnlocked ||
+                        isSending ||
+                        (cardBaseAmount[b.baseDenom] &&
+                          !hasSufficient(b.baseDenom))
+                      "
+                    >
+                      <span
+                        v-if="isSending"
+                        class="loading loading-spinner"
+                      ></span
+                      >Send {{ cardAmt[b.baseDenom] }} {{ b.displayDenom }} ...
+                    </button>
+
+                    <div class="w-full text-error text-sm">
+                      <span v-if="cardErr[b.baseDenom]">{{
+                        cardErr[b.baseDenom]
+                      }}</span>
+                    </div>
+                  </form>
+                </div>
               </div>
-
-              <div
-                class="w-full text-error text-sm flex flex-wrap gap-x-4 gap-y-1"
-              >
-                <span v-if="err">{{ err }}</span>
-                <span v-if="formErr">{{ formErr }}</span>
-              </div>
-            </template>
-          </ResolveNameOrAddresInput>
-        </form>
-      </div>
-    </div>
-
-    <h2 class="text-xl font-semibold">Coins & Balances</h2>
-    <p class="text-sm text-base-content/70">Balances for {{ address }}</p>
-
-    <div v-if="isLoading" class="text-base-content/70">Loading…</div>
-    <div v-else-if="error" class="text-error">{{ error }}</div>
-    <div v-else>
-      <div v-if="balancesView.length === 0" class="text-base-content/70">
-        No balances.
-      </div>
-      <div v-else class="overflow-x-auto">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Denom</th>
-              <th>Description</th>
-              <th class="text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="b in balancesView" :key="b.baseDenom">
-              <td class="font-mono">{{ b.displayDenom }}</td>
-              <td>{{ b.description }}</td>
-              <td class="text-right">{{ b.displayAmount }}</td>
-            </tr>
-          </tbody>
-        </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -110,6 +103,7 @@ import { useRoute } from "vue-router";
 import { useWallet } from "@/composables/useWallet";
 import AmountDenomSelector from "@/components/AmountDenomSelector.vue";
 import ResolveNameOrAddresInput from "@/components/ResolveNameOrAddresInput.vue";
+import AddressDisplay from "@/components/AddressDisplay.vue";
 
 const chainInfo = inject("chainInfo", { restUrl: "" });
 
@@ -131,6 +125,7 @@ const {
 } = useWallet();
 
 const toAddr = ref("");
+const toText = ref("");
 const amt = ref("");
 const den = ref("dys2");
 const baseAmount = ref("");
@@ -145,6 +140,15 @@ const baseDenoms = computed(() =>
 );
 const defaultBaseDenom = computed(() => balancesRaw.value[0]?.denom || "");
 
+// Per-card form state keyed by base denom
+import { reactive } from "vue";
+const cardToAddr = reactive({});
+const cardToText = reactive({});
+const cardAmt = reactive({});
+const cardBaseAmount = reactive({});
+const cardBaseDenom = reactive({});
+const cardErr = reactive({});
+
 function onDisplayUpdate({ amount, denom }) {
   amt.value = amount || "";
   den.value = denom || "";
@@ -155,36 +159,58 @@ function onBaseUpdate({ amount, denom }) {
   baseDenom.value = denom || "";
 }
 
-async function onSend() {
-  formErr.value = "";
+function onCardDisplayUpdate(key, { amount }) {
+  cardAmt[key] = amount || "";
+}
+
+function onCardBaseUpdate(key, { amount, denom }) {
+  cardBaseAmount[key] = amount || "";
+  cardBaseDenom[key] = denom || "";
+}
+
+function hasSufficient(denom) {
+  const amtStr = String(cardBaseAmount[denom] || "");
+  if (!amtStr) return true;
+  const bal = balancesRaw.value.find((c) => String(c.denom) === denom);
+  const balBase = BigInt(String(bal?.amount || "0"));
+  const sendBase = BigInt(amtStr);
+  return sendBase <= balBase;
+}
+
+async function sendInternal({
+  to,
+  amountDisplay,
+  displayDenom,
+  baseAmt,
+  baseDen,
+  setError,
+  clear,
+}) {
+  setError("");
   if (!isUnlocked.value) return;
-  if (!toAddr.value.startsWith("dys2")) {
-    formErr.value = "Invalid recipient";
+  if (!String(to || "").startsWith("dys2")) {
+    setError("Invalid recipient");
     return;
   }
-  if (!amt.value || Number(amt.value) <= 0) {
-    formErr.value = "Amount must be > 0";
+  if (!amountDisplay || Number(amountDisplay) <= 0) {
+    setError("Amount must be > 0");
     return;
   }
-  if (!den.value) {
-    formErr.value = "Select denom";
-    return;
-  }
-
-  // Use base values computed by selector
-  if (!baseDenom.value || !baseAmount.value) {
-    formErr.value = "Denom conversion failed";
+  if (!displayDenom) {
+    setError("Select denom");
     return;
   }
 
-  // Validate balance (compare in base)
-  const bal = balancesRaw.value.find(
-    (c) => String(c.denom) === baseDenom.value
-  );
+  if (!baseDen || !baseAmt) {
+    setError("Denom conversion failed");
+    return;
+  }
+
+  const bal = balancesRaw.value.find((c) => String(c.denom) === baseDen);
   const balBase = BigInt(bal?.amount || "0");
-  const sendBase = BigInt(baseAmount.value);
+  const sendBase = BigInt(baseAmt);
   if (sendBase > balBase) {
-    formErr.value = `Insufficient ${den.value}`;
+    setError(`Insufficient ${displayDenom}`);
     return;
   }
 
@@ -193,8 +219,8 @@ async function onSend() {
     const msg = {
       "@type": "/cosmos.bank.v1beta1.MsgSend",
       from_address: address.value,
-      to_address: toAddr.value.trim(),
-      amount: [{ denom: baseDenom.value, amount: baseAmount.value }],
+      to_address: String(to).trim(),
+      amount: [{ denom: baseDen, amount: baseAmt }],
     };
     const res = await sendMsg({
       msg,
@@ -203,18 +229,51 @@ async function onSend() {
       executorAddress: address.value,
     });
     if (!res?.success) throw new Error(res?.rawLog || "Tx failed");
-    toAddr.value =
-      amt.value =
-      den.value =
-      baseAmount.value =
-      baseDenom.value =
-        "";
+    clear?.();
     await fetchBalances();
   } catch (e) {
-    formErr.value = e?.message || "Send failed";
+    setError(e?.message || "Send failed");
   } finally {
     isSending.value = false;
   }
+}
+
+async function onSend() {
+  await sendInternal({
+    to: toAddr.value,
+    amountDisplay: amt.value,
+    displayDenom: den.value,
+    baseAmt: baseAmount.value,
+    baseDen: baseDenom.value,
+    setError: (msg) => (formErr.value = msg),
+    clear: () => {
+      toAddr.value =
+        amt.value =
+        den.value =
+        baseAmount.value =
+        baseDenom.value =
+          "";
+    },
+  });
+}
+
+async function onSendCard(b) {
+  const key = b.baseDenom;
+  await sendInternal({
+    to: cardToAddr[key] || "",
+    amountDisplay: cardAmt[key] || "",
+    displayDenom: b.displayDenom,
+    baseAmt: cardBaseAmount[key] || "",
+    baseDen: cardBaseDenom[key] || "",
+    setError: (msg) => (cardErr[key] = msg),
+    clear: () => {
+      cardToAddr[key] = "";
+      cardToText[key] = "";
+      cardAmt[key] = "";
+      cardBaseAmount[key] = "";
+      cardBaseDenom[key] = "";
+    },
+  });
 }
 
 async function fetchBalances() {

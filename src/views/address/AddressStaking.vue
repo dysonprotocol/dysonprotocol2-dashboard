@@ -215,24 +215,12 @@
           </select>
         </label>
         <div class="grid grid-cols-2 gap-2">
-          <label class="form-control">
-            <span class="label-text">amount</span>
-            <input
-              v-model.trim="delegateForm.amount"
-              type="text"
-              class="input input-bordered input-sm"
-              placeholder="100000"
-            />
-          </label>
-          <label class="form-control">
-            <span class="label-text">denom</span>
-            <input
-              v-model.trim="delegateForm.denom"
-              type="text"
-              class="input input-bordered input-sm"
-              placeholder="udys"
-            />
-          </label>
+          <AmountDenomSelector
+            :base-denoms="stakingAllowedBases"
+            :default-base-denom="bondDenom"
+            :disabled="isDelegating"
+            @update:base="onDelegateBaseUpdate"
+          />
         </div>
         <button
           class="btn btn-primary btn-sm"
@@ -270,24 +258,12 @@
           </select>
         </label>
         <div class="grid grid-cols-2 gap-2">
-          <label class="form-control">
-            <span class="label-text">amount</span>
-            <input
-              v-model.trim="undelegateForm.amount"
-              type="text"
-              class="input input-bordered input-sm"
-              placeholder="100000"
-            />
-          </label>
-          <label class="form-control">
-            <span class="label-text">denom</span>
-            <input
-              v-model.trim="undelegateForm.denom"
-              type="text"
-              class="input input-bordered input-sm"
-              placeholder="udys"
-            />
-          </label>
+          <AmountDenomSelector
+            :base-denoms="stakingAllowedBases"
+            :default-base-denom="bondDenom"
+            :disabled="isUndelegating"
+            @update:base="onUndelegateBaseUpdate"
+          />
         </div>
         <button
           class="btn btn-primary btn-sm"
@@ -310,6 +286,7 @@ import { useRoute } from "vue-router";
 import { useWallet } from "@/composables/useWallet";
 import { useDenom } from "@/composables/useDenom";
 import AddressDisplay from "@/components/AddressDisplay.vue";
+import AmountDenomSelector from "@/components/AmountDenomSelector.vue";
 
 const route = useRoute();
 const address = computed(
@@ -322,6 +299,9 @@ const CHAIN_INFO = inject("chainInfo", {
 
 const { ensureDenomsLoaded, baseToDisplay, getDisplayInfoForBase } = useDenom();
 const bondDenom = ref("");
+const stakingAllowedBases = computed(() =>
+  bondDenom.value ? [bondDenom.value] : []
+);
 async function loadParams() {
   const u = `${CHAIN_INFO.restUrl}/cosmos/staking/v1beta1/params`;
   const r = await fetch(u);
@@ -519,6 +499,10 @@ async function withdrawReward(validatorAddress) {
 const isDelegating = ref(false);
 const delegateError = ref("");
 const delegateForm = ref({ validator: "", amount: "", denom: "udys" });
+function onDelegateBaseUpdate(payload) {
+  delegateForm.value.amount = String(payload?.amount || "");
+  delegateForm.value.denom = String(payload?.denom || "");
+}
 async function submitDelegate() {
   delegateError.value = "";
   isDelegating.value = true;
@@ -551,6 +535,10 @@ async function submitDelegate() {
 const isUndelegating = ref(false);
 const undelegateError = ref("");
 const undelegateForm = ref({ validator: "", amount: "", denom: "udys" });
+function onUndelegateBaseUpdate(payload) {
+  undelegateForm.value.amount = String(payload?.amount || "");
+  undelegateForm.value.denom = String(payload?.denom || "");
+}
 async function submitUndelegate() {
   undelegateError.value = "";
   isUndelegating.value = true;

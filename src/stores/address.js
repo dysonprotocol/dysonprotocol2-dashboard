@@ -1,9 +1,10 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref, computed, inject } from "vue";
 
 export const useAddressStore = defineStore("address", () => {
+  const chainInfo = inject("chainInfo", { restUrl: "" });
   const currentAddress = ref("");
-  const addressCache = ref(new Map());
+  // const addressCache = ref(new Map());
   const nameCache = ref(new Map());
 
   // Address validation regex (bech32 format for Cosmos chains)
@@ -31,11 +32,9 @@ export const useAddressStore = defineStore("address", () => {
       if (nameCache.value.has(input)) return nameCache.value.get(input);
 
       try {
-        const rest =
-          typeof window !== "undefined" && window.resolveRestUrl
-            ? window.resolveRestUrl()
-            : "";
-        const url = `${rest}/dysonprotocol/nameservice/v1/resolve_name/${encodeURIComponent(
+        const url = `${
+          chainInfo.restUrl
+        }/dysonprotocol/nameservice/v1/resolve_name/${encodeURIComponent(
           input
         )}`;
         const resp = await fetch(url);

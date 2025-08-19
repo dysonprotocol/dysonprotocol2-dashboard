@@ -56,11 +56,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, inject } from "vue";
 import { useRoute } from "vue-router";
 import { useWallet } from "@/composables/useWallet";
 
 const route = useRoute();
+const chainInfo = inject("chainInfo", { restUrl: "" });
 const address = computed(() =>
   String(route.meta?.resolvedAddress || route.params.address || "")
 );
@@ -128,10 +129,9 @@ async function loadOwned() {
     const collected = [];
     let nextKey = "";
     do {
-      const url = `${route.meta?.apiBase || ""}${""}`; // placeholder ignored
-      const final = `${window?.__CHAIN_REST__ || ""}`; // ignored
-      const rest = (window?.resolveRestUrl && window.resolveRestUrl()) || "";
-      const q = `${rest}/dysonprotocol/nft/v1beta1/nfts?class_id=nameservice.dys&owner=${encodeURIComponent(
+      const q = `${
+        chainInfo.restUrl
+      }/dysonprotocol/nft/v1beta1/nfts?class_id=nameservice.dys&owner=${encodeURIComponent(
         base
       )}&pagination.limit=200${
         nextKey ? `&pagination.key=${encodeURIComponent(nextKey)}` : ""
@@ -161,8 +161,9 @@ async function loadDestination() {
   destNames.value = [];
   try {
     const base = route.meta?.resolvedAddress || address.value;
-    const rest = (window?.resolveRestUrl && window.resolveRestUrl()) || "";
-    const url = `${rest}/dysonprotocol/nameservice/v1/names_by_destination/${encodeURIComponent(
+    const url = `${
+      chainInfo.restUrl
+    }/dysonprotocol/nameservice/v1/names_by_destination/${encodeURIComponent(
       base
     )}?pagination.limit=200`;
     const resp = await fetch(url);

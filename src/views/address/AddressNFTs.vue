@@ -73,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, inject } from "vue";
 import { useRoute } from "vue-router";
 import { useWallet } from "@/composables/useWallet";
 
@@ -83,6 +83,7 @@ const address = computed(() =>
 );
 
 const { loadDenomMetadata, getDisplayOptions } = useWallet();
+const chainInfo = inject("chainInfo", { restUrl: "" });
 
 // Owned NFTs
 const isLoadingOwned = ref(false);
@@ -140,8 +141,9 @@ async function loadOwned() {
     const collected = [];
     let nextKey = "";
     do {
-      const rest = (window?.resolveRestUrl && window.resolveRestUrl()) || "";
-      const q = `${rest}/dysonprotocol/nft/v1beta1/nfts?owner=${encodeURIComponent(
+      const q = `${
+        chainInfo.restUrl
+      }/dysonprotocol/nft/v1beta1/nfts?owner=${encodeURIComponent(
         base
       )}&pagination.limit=200${
         nextKey ? `&pagination.key=${encodeURIComponent(nextKey)}` : ""

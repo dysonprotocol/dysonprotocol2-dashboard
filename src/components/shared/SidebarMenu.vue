@@ -184,7 +184,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, inject } from "vue";
 import { useRoute } from "vue-router";
 import { useWallet } from "@/composables/useWallet";
 import { useTheme } from "@/composables/useTheme";
@@ -205,7 +205,8 @@ import logoLight from "@/assets/images/dys-inverted.svg";
 
 const route = useRoute();
 
-const { unlockedWallets, restUrl, chainId } = useWallet();
+const { unlockedWallets, chainId } = useWallet();
+const chainInfo = inject("chainInfo", { restUrl: "" });
 const { theme } = useTheme();
 
 // Use colored logo on light theme, inverted on dark theme
@@ -259,7 +260,7 @@ let pollTimer = null;
 const pollDelayMs = ref(1000);
 
 async function fetchLatestBlock() {
-  const url = `${restUrl.value}/cosmos/base/tendermint/v1beta1/blocks/latest`;
+  const url = `${chainInfo.restUrl}/cosmos/base/tendermint/v1beta1/blocks/latest`;
   const resp = await fetch(url);
   const json = await resp.json();
   const header = json?.block?.header || json?.sdk_block?.header;
@@ -289,7 +290,7 @@ function scheduleNextPoll() {
 }
 
 async function fetchNodeInfo() {
-  const url = `${restUrl.value}/cosmos/base/tendermint/v1beta1/node_info`;
+  const url = `${chainInfo.restUrl}/cosmos/base/tendermint/v1beta1/node_info`;
   const resp = await fetch(url);
   const json = await resp.json();
   const app = json?.application_version;

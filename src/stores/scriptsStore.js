@@ -69,12 +69,20 @@ export const useScriptsStore = defineStore("scripts", () => {
     error.value = null;
 
     try {
-      const url = `${wallet.restUrl.value}${SCRIPT_API_PATH}/${address}`;
+      const url = `${window.resolveRestUrl()}${SCRIPT_API_PATH}/${address}`;
       const response = await globalThis.fetch(url);
 
       let scriptData;
 
       if (response.ok) {
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          const snippet = (await response.text()).slice(0, 120);
+          throw new ScriptStoreError(
+            `Expected JSON from ${url} but received content-type "${contentType}". Snippet: ${snippet}`,
+            "API_NON_JSON"
+          );
+        }
         const json = await response.json();
         scriptData = {
           code: json.script?.code || "",

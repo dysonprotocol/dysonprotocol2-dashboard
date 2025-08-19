@@ -1,43 +1,78 @@
 import { ref, inject } from "vue";
 
+// Shared, module-level state to dedupe fetches across multiple composable users
+const _denomState = {
+  denomMetadatas: ref([]),
+  isLoadingDenoms: ref(false),
+  loadPromise: null,
+  lastRestUrl: "",
+  loadError: ref(null),
+};
+
 // Centralized denom utilities: load metadata, convert display<->base, and helpers
 export function useDenom() {
-  const CHAIN_INFO = inject("chainInfo", {
-    restUrl: "",
-  });
-
+  const CHAIN_INFO = inject("chainInfo", { restUrl: "" });
   // Cache REST url and metadata across sessions
   const restUrl = CHAIN_INFO.restUrl;
-  const denomMetadatas = ref([]);
-  const isLoadingDenoms = ref(false);
+  const denomMetadatas = _denomState.denomMetadatas;
+  const isLoadingDenoms = _denomState.isLoadingDenoms;
+
+  // If REST URL changed (e.g., chain switch), reset cache to allow reloading
+  if (
+    typeof restUrl === "string" &&
+    _denomState.lastRestUrl &&
+    _denomState.lastRestUrl !== restUrl
+  ) {
+    denomMetadatas.value = [];
+    _denomState.loadPromise = null;
+    _denomState.loadError.value = null;
+  }
+  if (typeof restUrl === "string") _denomState.lastRestUrl = restUrl;
 
   async function loadDenomMetadata() {
+    // Return immediately if already loaded
     if (Array.isArray(denomMetadatas.value) && denomMetadatas.value.length > 0)
       return;
-    isLoadingDenoms.value = true;
-    try {
-      const url = `${restUrl}/cosmos/bank/v1beta1/denoms_metadata?pagination.limit=1000`;
-      const resp = await fetch(url);
-      if (!resp.ok)
-        throw new Error(
-          `Failed to load denom metadata: ${resp.status} ${resp.statusText}`
-        );
-      const json = await resp.json();
-      const list = Array.isArray(json?.metadatas) ? json.metadatas : [];
-      if (list.length < 1) throw new Error("No denom metadata found");
-      denomMetadatas.value = list;
-    } finally {
-      isLoadingDenoms.value = false;
+    // If a load is in-flight, await the same promise (single-flight)
+    if (_denomState.loadPromise) {
+      await _denomState.loadPromise;
+      if (_denomState.loadError.value) throw _denomState.loadError.value;
+      return;
     }
+
+    isLoadingDenoms.value = true;
+    _denomState.loadPromise = (async () => {
+      try {
+        const url = `${restUrl}/cosmos/bank/v1beta1/denoms_metadata?pagination.limit=1000`;
+        const resp = await fetch(url);
+        if (!resp.ok)
+          throw new Error(
+            `Failed to load denom metadata: ${resp.status} ${resp.statusText}`
+          );
+        const json = await resp.json();
+        const list = Array.isArray(json?.metadatas) ? json.metadatas : [];
+        if (list.length < 1) throw new Error("No denom metadata found");
+        denomMetadatas.value = list;
+        _denomState.loadError.value = null;
+      } catch (err) {
+        _denomState.loadError.value = err;
+        throw err;
+      } finally {
+        isLoadingDenoms.value = false;
+        _denomState.loadPromise = null;
+      }
+    })();
+
+    await _denomState.loadPromise;
   }
 
   async function ensureDenomsLoaded() {
-    if (
-      !Array.isArray(denomMetadatas.value) ||
-      denomMetadatas.value.length === 0
-    ) {
-      await loadDenomMetadata();
-    }
+    const isEmpty =
+      !Array.isArray(denomMetadatas.value) || denomMetadatas.value.length === 0;
+    if (!isEmpty) return;
+    if (_denomState.loadPromise) return await _denomState.loadPromise;
+    if (_denomState.loadError.value) throw _denomState.loadError.value;
+    await loadDenomMetadata();
     return;
   }
 

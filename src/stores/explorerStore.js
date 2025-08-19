@@ -1,12 +1,7 @@
 import { defineStore } from "pinia";
-import { ref, computed, inject } from "vue";
+import { ref, computed } from "vue";
 
 export const useExplorerStore = defineStore("explorer", () => {
-  // Inject chain info from App.vue
-  const chainInfo = inject("chainInfo", {
-    restUrl: "",
-    bech32Prefix: "dys2",
-  });
   // State
   const blocks = ref(new Map()); // Store blocks by height
   const blocksList = ref([]); // Recent blocks list
@@ -16,8 +11,7 @@ export const useExplorerStore = defineStore("explorer", () => {
 
   // No automatic retries; surface errors immediately
 
-  // REST API base URL (uses chain info from App.vue)
-  const apiUrl = ref(chainInfo.restUrl); // Default from chain config
+  // REST API base URL is provided via chainInfo.restUrl
 
   // Getters
   const isLoading = computed(() => loading.value);
@@ -39,17 +33,23 @@ export const useExplorerStore = defineStore("explorer", () => {
   };
 
   const apiRequest = async (endpoint) => {
-    const response = await fetch(`${apiUrl.value}${endpoint}`);
+    const base = window.resolveRestUrl();
+    if (!base) throw new Error(`REST URL is not configured, ${base}`);
+    const response = await fetch(`${base}${endpoint}`);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      const snippet = (await response.text()).slice(0, 120);
+      throw new Error(
+        `Expected JSON from ${base}${endpoint} but received content-type "${contentType}". Snippet: ${snippet}`
+      );
     }
     return await response.json();
   };
 
   // Actions
-  const setApiUrl = (url) => {
-    apiUrl.value = url.replace(/\/$/, ""); // Remove trailing slash
-  };
 
   const clearData = () => {
     blocks.value.clear();
@@ -323,7 +323,7 @@ export const useExplorerStore = defineStore("explorer", () => {
       // First request
       const initialParams = buildParams(query);
       const initialRes = await fetch(
-        `${apiUrl.value}${endpoint(initialParams)}`
+        `${chainInfo.restUrl}${endpoint(initialParams)}`
       );
 
       // Success path
@@ -376,7 +376,7 @@ export const useExplorerStore = defineStore("explorer", () => {
 
           const retryParams = buildParams(adjustedQuery);
           const retryRes = await fetch(
-            `${apiUrl.value}${endpoint(retryParams)}`
+            `${chainInfo.restUrl}${endpoint(retryParams)}`
           );
           if (!retryRes.ok) {
             // If retry also fails, surface the original structured error
@@ -422,10 +422,8 @@ export const useExplorerStore = defineStore("explorer", () => {
     isLoading,
     hasError,
     errorMessage,
-    apiUrl: computed(() => apiUrl.value),
 
     // Actions
-    setApiUrl,
     clearData,
     clearError,
     fetchBlocks,

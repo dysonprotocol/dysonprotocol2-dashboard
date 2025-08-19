@@ -7,7 +7,7 @@
         v-if="hasKeplrWallet"
         class="collapse bg-base-100 border-base-300 border collapse-arrow"
         :class="{
-          'border-primary': addressCurrentAddress === keplrWallet?.address,
+          'border-success': addressCurrentAddress === keplrWallet?.address,
         }"
       >
         <input
@@ -114,7 +114,7 @@
       :key="wallet.name"
       class="collapse bg-base-100 border-base-300 border collapse-arrow"
       :class="{
-        'border-primary':
+        'border-success':
           addressCurrentAddress === wallet.address && isWalletUnlocked(wallet),
         'border-warning':
           addressCurrentAddress === wallet.address && !isWalletUnlocked(wallet),

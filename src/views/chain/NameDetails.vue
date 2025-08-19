@@ -551,8 +551,9 @@ async function fetchResolveName(name) {
       throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
     }
     // Fetch NFT detail in parallel
-    const rest = chainInfo.restUrl;
-    const nftUrl = `${rest}/dysonprotocol/nft/v1beta1/nft?class_id=nameservice.dys&id=${encodeURIComponent(
+    const nftUrl = `${
+      chainInfo.restUrl
+    }/dysonprotocol/nft/v1beta1/nft?class_id=nameservice.dys&id=${encodeURIComponent(
       name
     )}`;
     const nftResp = await fetch(nftUrl);
@@ -565,7 +566,9 @@ async function fetchResolveName(name) {
     destination.value = nft.value?.uri || "";
     metadataValue.value = nft.value?.data?.metadata || "";
 
-    const ownerUrl = `${rest}/dysonprotocol/nft/v1beta1/owner?class_id=nameservice.dys&id=${encodeURIComponent(
+    const ownerUrl = `${
+      chainInfo.restUrl
+    }/dysonprotocol/nft/v1beta1/owner?class_id=nameservice.dys&id=${encodeURIComponent(
       name
     )}`;
     const ownerResp = await fetch(ownerUrl);

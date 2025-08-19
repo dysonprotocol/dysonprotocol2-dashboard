@@ -1,5 +1,5 @@
 <template>
-  <article class="bg-base-200 p-3 rounded">
+  <article class="bg-base-200 p-3 rounded wrap-anywhere overflow-hidden">
     <header class="mb-1 text-xs opacity-70">
       <span>
         Post
@@ -40,10 +40,9 @@ const props = defineProps({
   tag: { type: String, default: "" },
 });
 
-const restBase =
-  typeof window !== "undefined" && typeof window.resolveRestUrl === "function"
-    ? window.resolveRestUrl()
-    : "";
+import { inject } from "vue";
+const chainInfo = inject("chainInfo", { restUrl: "" });
+const restBase = chainInfo.restUrl;
 
 const safeAuthor = computed(() => (props.post?.author || "").toString());
 const topicTag = computed(() => (props.tag || "").toString());

@@ -384,10 +384,6 @@
 
 <script setup>
 import { ref, computed, provide, onMounted, onBeforeUnmount, watch } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import { useWallet } from "@/composables/useWallet";
-import TxHashDisplay from "@/components/TxHashDisplay.vue";
-import { useStorage } from "@vueuse/core";
 
 // Global chain configuration (persist and prefer stored restUrl)
 const customRestUrlStorage = useStorage("customRestUrlStorage", "");
@@ -399,11 +395,18 @@ const resolveRestUrl = () =>
 const CHAIN_INFO = {
   restUrl: resolveRestUrl(),
   bech32Prefix: "dys2",
+  resolveRestUrl: resolveRestUrl,
   setRestUrl: (url) => {
     customRestUrlStorage.value = url;
     CHAIN_INFO.restUrl = resolveRestUrl();
   },
 };
+provide("chainInfo", CHAIN_INFO);
+
+import { useRouter, useRoute } from "vue-router";
+import { useWallet } from "@/composables/useWallet";
+import TxHashDisplay from "@/components/TxHashDisplay.vue";
+import { useStorage } from "@vueuse/core";
 
 watch(
   () => customRestUrlStorage.value,
@@ -419,7 +422,7 @@ if (typeof window !== "undefined") {
 }
 
 // Provide chain info to all child components
-provide("chainInfo", CHAIN_INFO);
+
 import {
   Dialog,
   DialogPanel,

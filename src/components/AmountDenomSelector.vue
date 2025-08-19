@@ -7,12 +7,12 @@
       min="0"
       step="0.000001"
       placeholder="Amount"
-      class="input input-md join-item w-40"
+      class="input input-md join-item"
       :disabled="disabled"
     />
     <select
       v-model="selectedBaseDenom"
-      class="select select-md join-item w-36"
+      class="select select-md join-item"
       :disabled="disabled || options.length === 0"
     >
       <option v-for="opt in options" :key="opt.base" :value="opt.base">
