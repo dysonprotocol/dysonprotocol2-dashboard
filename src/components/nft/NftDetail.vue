@@ -65,6 +65,17 @@
             </td>
           </tr>
           <tr>
+            <th>Valuation expiry</th>
+            <td>
+              <span v-if="valuationExpiry">{{ valuationExpiry }} - </span>
+
+              <span v-if="valuationExpiryDelta">{{
+                valuationExpiryDelta
+              }}</span>
+            </td>
+          </tr>
+
+          <tr>
             <th>Current bid</th>
             <td>
               <span v-if="currentBidDisplay.label"
@@ -257,6 +268,10 @@ function parseDurationMs(s) {
   if (v.endsWith("s")) return (Number(v.slice(0, -1)) || 0) * 1000;
   return Number(v) || 0;
 }
+function formatUtcDateTime(ms) {
+  const iso = new Date(ms).toISOString();
+  return `${iso.slice(0, 19).replace("T", " ")} UTC`;
+}
 const bidTimeoutDisplay = computed(() => {
   const ms = bidTimeoutMs.value;
   if (ms < 1000) return `${ms}ms`;
@@ -311,6 +326,38 @@ const claimCountdownDisplay = computed(() => {
   if (hours > 0) return `in ${hours}h ${minutes}m`;
   if (minutes > 0) return `in ${minutes}m ${seconds}s`;
   return `in ${seconds}s`;
+});
+
+const valuationExpiry = computed(() => {
+  try {
+    const ts = String(nft.value?.data?.valuation_expiry || "");
+    if (!ts) return "";
+    const ms = Date.parse(ts);
+    if (!ms || Number.isNaN(ms)) return "";
+    return formatUtcDateTime(ms);
+  } catch {
+    return "";
+  }
+});
+
+const valuationExpiryDelta = computed(() => {
+  try {
+    const ts = String(nft.value?.data?.valuation_expiry || "");
+    if (!ts) return "";
+    const ms = Date.parse(ts);
+    if (!ms || Number.isNaN(ms)) return "";
+    const diff = ms - nowMs.value;
+    if (diff <= 0) return "expired";
+    const totalSec = Math.ceil(diff / 1000);
+    const hours = Math.floor(totalSec / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
+    if (hours > 0) return `in ${hours}h ${minutes}m`;
+    if (minutes > 0) return `in ${minutes}m ${seconds}s`;
+    return `in ${seconds}s`;
+  } catch {
+    return "";
+  }
 });
 
 async function loadNFTDetail() {
