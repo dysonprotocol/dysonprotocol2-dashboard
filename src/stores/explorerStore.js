@@ -323,7 +323,7 @@ export const useExplorerStore = defineStore("explorer", () => {
       // First request
       const initialParams = buildParams(query);
       const initialRes = await fetch(
-        `${chainInfo.restUrl}${endpoint(initialParams)}`
+        `${window.resolveRestUrl()}${endpoint(initialParams)}`
       );
 
       // Success path
@@ -376,7 +376,7 @@ export const useExplorerStore = defineStore("explorer", () => {
 
           const retryParams = buildParams(adjustedQuery);
           const retryRes = await fetch(
-            `${chainInfo.restUrl}${endpoint(retryParams)}`
+            `${window.resolveRestUrl()}${endpoint(retryParams)}`
           );
           if (!retryRes.ok) {
             // If retry also fails, surface the original structured error

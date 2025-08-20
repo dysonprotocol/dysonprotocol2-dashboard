@@ -18,7 +18,12 @@
       <div>
         <h1 class="text-2xl font-bold">Transaction Details</h1>
         <div class="text-sm text-base-content/60 mt-1 font-mono break-all">
-          <TxHashDisplay :hash="hash" :truncate="12" />
+          <TxHashDisplay
+            :hash="hash"
+            :truncate="12"
+            clickable
+            status="success"
+          />
         </div>
       </div>
       <div v-if="txData?.height" class="flex gap-2">

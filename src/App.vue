@@ -379,6 +379,9 @@
 
     <!-- Global Transaction Modal Override -->
     <GlobalTransactionModal />
+
+    <!-- Global Transaction Toasts -->
+    <TxToasts :history="txHistory" @dismiss="removeTransaction" />
   </div>
 </template>
 
@@ -443,6 +446,7 @@ import SidebarMenu from "@/components/shared/SidebarMenu.vue";
 import { useTheme } from "@/composables/useTheme";
 import logoDark from "@/assets/images/dys.svg";
 import logoLight from "@/assets/images/dys-inverted.svg";
+import TxToasts from "@/components/shared/TxToasts.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -455,6 +459,8 @@ const {
   connectExtension,
   init,
   cleanup,
+  txHistory,
+  removeTransaction,
 } = useWallet();
 
 // Theme-aware logo for mobile header

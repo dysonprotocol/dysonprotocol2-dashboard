@@ -79,7 +79,6 @@
 
     <!-- Events -->
     <div v-if="hasEvents" class="mt-6 collapse collapse-arrow bg-base-200">
-      <input type="checkbox" v-model="showEvents" />
       <div class="collapse-title text-md font-medium">
         Events ({{ events.length }})
       </div>

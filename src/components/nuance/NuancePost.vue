@@ -1,6 +1,8 @@
 <template>
-  <article class="bg-base-200 p-3 rounded wrap-anywhere overflow-hidden">
-    <header class="mb-1 text-xs opacity-70">
+  <article
+    class="m-4 p-4 break-words overflow-hidden border border-base-300 rounded-lg"
+  >
+    <header class="mb-1 text-xs opacity-70 border-b border-base-300 pb-2">
       <span>
         Post
         <a
@@ -26,6 +28,7 @@
         >
       </span>
     </header>
+
     <div class="nuance markdown prose" v-html="safeHtml"></div>
   </article>
 </template>

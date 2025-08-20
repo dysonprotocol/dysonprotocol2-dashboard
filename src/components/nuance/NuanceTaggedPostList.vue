@@ -2,18 +2,21 @@
   <section>
     <span v-if="error" class="text-error">{{ error }}</span>
     <span v-else-if="loading">Loading…</span>
-    <ul role="list" class="divide-y divide-gray-200 dark:divide-white/10">
-      <li v-for="it in items" :key="`${it.rating}-${it.tag}-${it.paddedId}`">
-        <NuanceTaggedPost
-          :tag="it.tag"
-          :id="it.id"
-          :post="it.post || placeholderPost"
-        />
-      </li>
-      <li v-if="!loading && !error && items.length === 0" class="opacity-70">
-        No posts
-      </li>
-    </ul>
+
+    <div
+      v-for="it in items"
+      :key="`${it.rating}-${it.tag}-${it.paddedId}`"
+      class="mx-auto w-1/2"
+    >
+      <NuanceTaggedPost
+        :tag="it.tag"
+        :id="it.id"
+        :post="it.post || placeholderPost"
+      />
+    </div>
+    <div v-if="!loading && !error && items.length === 0" class="opacity-70">
+      No posts
+    </div>
   </section>
 </template>
 

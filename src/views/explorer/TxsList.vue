@@ -194,10 +194,12 @@
       <!-- Pruned history warning -->
       <div v-if="limitedFromHeight" class="alert alert-warning">
         <span>
-          This node serves transactions starting from height
+          This node serves cometbft transactions starting from height
           {{ limitedFromHeight }}. Your search was adjusted to include
           <code class="px-1">tx.height&gt;={{ limitedFromHeight }}</code
-          >.
+          >. Note, this is managed by the node's
+          <code>min-retain-blocks</code> setting and is different from the
+          <code>pruning</code> settings.
         </span>
       </div>
       <!-- Results Header -->

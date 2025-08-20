@@ -863,11 +863,24 @@ export function useWallet() {
       success: result.success,
       code: result.code,
       rawLog: result.rawLog,
-      transactionHash: result.rawSendMsgsResponse?.raw?.tx_response?.txhash,
-      gasUsed: result.rawSendMsgsResponse?.raw?.tx_response?.gas_used,
-      gasWanted: result.rawSendMsgsResponse?.raw?.tx_response?.gas_wanted,
+      transactionHash: result.raw.tx_response.txhash,
+      gasUsed: result.raw.tx_response.gas_used,
+      gasWanted: result.raw.tx_response.gas_wanted,
       fullResult: result,
     });
+
+    const txHash = result.raw.tx_response.txhash;
+    if (txHash) {
+      addTransaction({
+        txHash,
+        timestamp: Date.now(),
+        type: msg?.["@type"] || "unknown",
+        fromAddress: address,
+        toAddress: msg?.address || msg?.to_address || msg?.recipient || "",
+        amount: msg?.amount,
+        status: result?.success ? "success" : "failed",
+      });
+    }
 
     return result;
   };
@@ -927,7 +940,7 @@ export function useWallet() {
 
     const fee = buildFee(finalGasLimit);
 
-    return runScript({
+    const result = await runScript({
       apiUrl: restUrl.value,
       wallet: walletInstance,
       walletType: type,
@@ -942,6 +955,29 @@ export function useWallet() {
       fee,
       simulate,
     });
+
+    if (!simulate) {
+      const sendRes = result.rawSendMsgsResponse;
+      const txResp = sendRes?.raw?.tx_response;
+      const hasHash = Boolean(txResp?.txhash);
+      if (hasHash) {
+        const firstMsgType = String(
+          sendRes?.raw?.tx?.body?.messages?.[0]?.["@type"] ||
+            "/dysonprotocol.script.v1.MsgExec"
+        );
+        addTransaction({
+          txHash: txResp.txhash,
+          timestamp: Date.now(),
+          type: firstMsgType,
+          fromAddress: address,
+          toAddress: scriptAddress,
+          amount: undefined,
+          status: result.success ? "success" : "failed",
+        });
+      }
+    }
+
+    return result;
   };
 
   // SIGNING METHODS
@@ -1036,12 +1072,12 @@ export function useWallet() {
   const addTransaction = (txMetadata) => {
     const transaction = {
       txHash: txMetadata.txHash,
-      timestamp: txMetadata.timestamp || Date.now(),
-      type: txMetadata.type || "unknown",
+      timestamp: txMetadata.timestamp,
+      type: txMetadata.type,
       fromAddress: txMetadata.fromAddress,
       toAddress: txMetadata.toAddress,
       amount: txMetadata.amount,
-      status: txMetadata.status || "pending",
+      status: txMetadata.status,
     };
 
     // Add to beginning of array (most recent first)
@@ -1051,6 +1087,12 @@ export function useWallet() {
     if (txHistory.value.length > 100) {
       txHistory.value = txHistory.value.slice(0, 100);
     }
+  };
+
+  const removeTransaction = (txHash) => {
+    if (!txHash) return;
+    const idx = txHistory.value.findIndex((t) => t.txHash === txHash);
+    if (idx !== -1) txHistory.value.splice(idx, 1);
   };
 
   return {
@@ -1102,6 +1144,7 @@ export function useWallet() {
     normalizeFromDisplay,
     normalizeCoin,
     addTransaction,
+    removeTransaction,
 
     // Cleanup function
     cleanup: () => {
