@@ -859,17 +859,18 @@ export function useWallet() {
       simulate: false,
     });
 
+    const txResp = result?.raw?.tx_response;
     console.log("📨 Send transaction result:", {
-      success: result.success,
-      code: result.code,
-      rawLog: result.rawLog,
-      transactionHash: result.raw.tx_response.txhash,
-      gasUsed: result.raw.tx_response.gas_used,
-      gasWanted: result.raw.tx_response.gas_wanted,
+      success: result?.success,
+      code: result?.code,
+      rawLog: result?.rawLog,
+      transactionHash: txResp?.txhash || null,
+      gasUsed: txResp?.gas_used || null,
+      gasWanted: txResp?.gas_wanted || null,
       fullResult: result,
     });
 
-    const txHash = result.raw.tx_response.txhash;
+    const txHash = txResp?.txhash;
     if (txHash) {
       addTransaction({
         txHash,

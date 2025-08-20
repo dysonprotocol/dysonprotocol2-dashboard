@@ -9,150 +9,92 @@
 
     <!-- Main: Controls and list -->
     <section>
-      <form class="" @submit.prevent>
-        <div class="grid md:grid-cols-4 gap-4">
-          <!-- Column 1: index_prefix, filter, extract -->
-          <fieldset
-            class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
-          >
-            <legend class="fieldset-legend">Filters</legend>
-            <input
-              v-model.trim="form.index_prefix"
-              type="text"
-              class="input"
-              placeholder="Index prefix (e.g. user/)"
-            />
-            <input
-              v-model.trim="form.filter"
-              type="text"
-              class="input"
-              placeholder='Filter (e.g. status == "active")'
-            />
-            <input
-              v-model.trim="form.extract"
-              type="text"
-              class="input"
-              placeholder="Extract (e.g. user.name)"
-            />
-          </fieldset>
-
-          <!-- Column 2: limit, offset, reverse, key -->
-          <fieldset
-            class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
-          >
-            <legend class="fieldset-legend">Pagination</legend>
-            <input
-              v-model.number="form.limit"
-              min="1"
-              max="500"
-              type="number"
-              class="input"
-              placeholder="Limit (default: 100)"
-            />
-            <input
-              v-model.trim="form.offset"
-              type="number"
-              min="0"
-              class="input"
-              placeholder="Offset (e.g. 0)"
-            />
-            <label class="cursor-pointer flex items-center gap-2">
-              <span>Reverse</span>
-              <input v-model="form.reverse" type="checkbox" class="checkbox" />
-            </label>
-          </fieldset>
-          <fieldset
-            class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
-          >
-            <legend class="fieldset-legend">Metrics</legend>
-            <div class="text-sm">
-              <div v-if="metricsError" class="text-error">
-                {{ metricsError }}
-              </div>
-              <div v-else>
-                <table class="table table-compact table-sm w-full">
-                  <tbody>
-                    <tr>
-                      <td class="opacity-70 w-1/3 align-top">owner</td>
-                      <td class="align-top">
-                        <AddressDisplay
-                          :address="metrics.owner || address"
-                          :truncate="10"
-                        />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="opacity-70 align-top">total_bytes</td>
-                      <td class="align-top">
-                        <span class="font-mono">{{
-                          metrics.total_bytes || "0"
-                        }}</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="opacity-70 align-top">min_stake_amount</td>
-                      <td class="align-top">
-                        <span class="font-mono">{{
-                          metrics.min_stake_amount || "0"
-                        }}</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="opacity-70 align-top">current_stake_amount</td>
-                      <td class="align-top">
-                        <span class="font-mono">{{
-                          metrics.current_stake_amount || "0"
-                        }}</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <fieldset
+          class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
+        >
+          <legend class="fieldset-legend">Metrics</legend>
+          <div class="text-sm">
+            <div v-if="metricsError" class="text-error">
+              {{ metricsError }}
             </div>
-          </fieldset>
+            <div v-else>
+              <table class="table table-compact table-sm w-full">
+                <tbody>
+                  <tr>
+                    <td class="opacity-70 w-1/3 align-top">owner</td>
+                    <td class="align-top">
+                      <AddressDisplay
+                        :address="metrics.owner || address"
+                        :truncate="10"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="opacity-70 align-top">total_bytes</td>
+                    <td class="align-top">
+                      <span class="font-mono">{{
+                        metrics.total_bytes || "0"
+                      }}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="opacity-70 align-top">min_stake_amount</td>
+                    <td class="align-top">
+                      <span class="font-mono">{{
+                        minStakeDisplay.amount
+                      }}</span>
+                      <span class="text-xs opacity-70">{{
+                        minStakeDisplay.denom
+                      }}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="opacity-70 align-top">current_stake_amount</td>
+                    <td class="align-top">
+                      <span class="font-mono"
+                        >{{ currentStakeDisplay.amount }}
+                      </span>
+                      <span class="text-xs opacity-70">{{
+                        currentStakeDisplay.denom
+                      }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </fieldset>
 
-          <form @submit.prevent="submitUpload">
+        <form class="" @submit.prevent>
+          <div class="">
+            <!-- Column 1: index_prefix, filter, extract -->
             <fieldset
               class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
             >
-              <legend class="fieldset-legend">Upload</legend>
+              <legend class="fieldset-legend">Filters</legend>
               <input
-                v-model.trim="upload.index"
+                v-model.trim="form.index_prefix"
                 type="text"
                 class="input"
-                placeholder="Index (e.g. user/123)"
+                placeholder="Index prefix (e.g. user/)"
               />
-              <textarea
-                v-model="upload.data"
-                class="textarea min-h-24"
-                placeholder="Data (text/JSON)"
+              <input
+                v-model.trim="form.filter"
+                type="text"
+                class="input"
+                placeholder='Filter (e.g. status == "active")'
               />
-              <div class="flex items-center gap-2">
-                <input
-                  ref="fileInput"
-                  type="file"
-                  class="hidden"
-                  @change="onFileChange"
-                />
-                <button type="button" class="btn btn-sm" @click="pickFile">
-                  Select file
-                </button>
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-primary"
-                  :disabled="uploadBusy || !upload.index"
-                >
-                  Set
-                </button>
-                <span v-if="uploadError" class="text-error text-sm">{{
-                  uploadError
-                }}</span>
-              </div>
+              <input
+                v-model.trim="form.extract"
+                type="text"
+                class="input"
+                placeholder="Extract (e.g. user.name)"
+              />
             </fieldset>
-          </form>
-        </div>
-      </form>
-
+          </div>
+        </form>
+      </div>
       <div class="mb-2 text-sm">
         <span v-if="error" class="text-error">{{ error }}</span>
         <span v-else-if="isLoading">Loading…</span>
@@ -162,7 +104,10 @@
       </div>
 
       <!-- Page numbers -->
-      <div v-if="showPageNumbers" class="mb-2 flex items-center">
+      <div
+        v-if="showPageNumbers"
+        class="mb-2 flex items-center gap-3 flex-wrap"
+      >
         <div class="join">
           <button
             class="join-item btn btn-xs"
@@ -205,6 +150,34 @@
             {{ currentPage }}/{{ totalPages }} • {{ entries.length }} per page
           </button>
         </div>
+        <!-- Inline pagination controls -->
+        <form class="flex items-center gap-2" @submit.prevent>
+          <label class="text-xs opacity-70">limit</label>
+          <input
+            v-model.number="form.limit"
+            min="1"
+            max="500"
+            type="number"
+            class="input input-xs w-20"
+            placeholder="100"
+          />
+          <label class="text-xs opacity-70">offset</label>
+          <input
+            v-model.trim="form.offset"
+            type="number"
+            min="0"
+            class="input input-xs w-24"
+            placeholder="0"
+          />
+          <label class="cursor-pointer flex items-center gap-1 text-xs">
+            <span>reverse</span>
+            <input
+              v-model="form.reverse"
+              type="checkbox"
+              class="checkbox checkbox-xs"
+            />
+          </label>
+        </form>
       </div>
 
       <!-- Split view: list (left) and editor (right) with independent scroll -->
@@ -214,9 +187,10 @@
           <table class="table table-zebra table-sm w-full">
             <thead>
               <tr>
-                <th class="w-[56%]">index</th>
-                <th class="w-[22%]">height</th>
-                <th class="w-[22%]">timestamp</th>
+                <th class="w-[48%]">index</th>
+                <th class="w-[18%]">height</th>
+                <th class="w-[18%]">timestamp</th>
+                <th class="w-[16%] text-right">actions</th>
               </tr>
             </thead>
             <tbody>
@@ -230,15 +204,29 @@
                 <td class="font-mono align-top break-all">{{ e.index }}</td>
                 <td class="align-top">{{ e.updated_height }}</td>
                 <td class="align-top">{{ e.updated_timestamp }}</td>
+                <td class="align-top text-right">
+                  <button
+                    class="btn btn-xs btn-error"
+                    :disabled="isDeleting(e.index)"
+                    title="Delete this entry"
+                    @click.stop="deleteEntry(e)"
+                  >
+                    <span
+                      v-if="isDeleting(e.index)"
+                      class="loading loading-spinner loading-xs"
+                    ></span>
+                    <span v-else>Delete</span>
+                  </button>
+                </td>
               </tr>
               <tr v-if="!isLoading && !error && !entries.length">
-                <td colspan="3" class="text-center opacity-70">No results</td>
+                <td colspan="4" class="text-center opacity-70">No results</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Right: selected entry editor -->
+        <!-- Right: selected entry editor (also supports creating new entries) -->
         <div class="h-[60vh] overflow-y-auto">
           <fieldset
             class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
@@ -247,9 +235,11 @@
             <div class="text-sm mb-2">
               <div>
                 <span class="opacity-70">index:</span>
-                <span class="font-mono break-all">{{
-                  selectedIndex || "—"
-                }}</span>
+                <input
+                  v-model.trim="selectedIndex"
+                  class="input input-sm w-full font-mono"
+                  placeholder="index (e.g. user/123)"
+                />
               </div>
             </div>
             <textarea
@@ -258,6 +248,19 @@
               placeholder="Select a row to view/edit its data"
             />
             <div class="mt-2 flex items-center gap-2">
+              <input
+                ref="fileInput"
+                type="file"
+                class="hidden"
+                @change="onFileChangeForEditor"
+              />
+              <button
+                type="button"
+                class="btn btn-sm"
+                @click="pickFileForEditor"
+              >
+                Select file
+              </button>
               <button
                 class="btn btn-sm btn-primary"
                 :disabled="editorBusy || !selectedIndex"
@@ -279,7 +282,7 @@
 </template>
 
 <script setup>
-import { computed, ref, inject, watch } from "vue";
+import { computed, ref, inject, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useWallet } from "@/composables/useWallet";
 import AddressDisplay from "@/components/AddressDisplay.vue";
@@ -294,13 +297,10 @@ const CHAIN_INFO = inject("chainInfo", {
   restUrl: "",
 });
 
-// Upload state
-const upload = ref({ index: "", data: "" });
+// File input for editor/new entry
 const fileInput = ref(null);
-const uploadBusy = ref(false);
-const uploadError = ref("");
 
-const { sendMsg } = useWallet();
+const { sendMsg, normalizeCoin, loadDenomMetadata } = useWallet();
 
 // Metrics state
 const metrics = ref({
@@ -311,60 +311,54 @@ const metrics = ref({
 });
 const metricsError = ref("");
 
-function pickFile() {
+const minStakeDisplay = computed(() => {
+  try {
+    const n = normalizeCoin({
+      amount: String(metrics.value.min_stake_amount || "0"),
+      denom: "udys",
+    });
+    return { amount: n.display.amount, denom: n.display.denom };
+  } catch {
+    return {
+      amount: String(metrics.value.min_stake_amount || "0"),
+      denom: "udys",
+    };
+  }
+});
+
+const currentStakeDisplay = computed(() => {
+  try {
+    const n = normalizeCoin({
+      amount: String(metrics.value.current_stake_amount || "0"),
+      denom: "udys",
+    });
+    return { amount: n.display.amount, denom: n.display.denom };
+  } catch {
+    return {
+      amount: String(metrics.value.current_stake_amount || "0"),
+      denom: "udys",
+    };
+  }
+});
+
+function pickFileForEditor() {
   const el = fileInput.value;
   if (el) el.click();
 }
 
-function onFileChange(e) {
-  uploadError.value = "";
+function onFileChangeForEditor(e) {
+  editorError.value = "";
   const el = e?.target;
   const file = el?.files?.[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
-    upload.value.data = String(reader.result || "");
+    editorData.value = String(reader.result || "");
   };
   reader.onerror = () => {
-    uploadError.value = "Failed to read file";
+    editorError.value = "Failed to read file";
   };
   reader.readAsText(file);
-}
-
-async function submitUpload() {
-  uploadError.value = "";
-  if (!address.value) {
-    uploadError.value = "Missing owner address";
-    return;
-  }
-  if (!upload.value.index) {
-    uploadError.value = "Index is required";
-    return;
-  }
-  if (upload.value.data == null) upload.value.data = "";
-  uploadBusy.value = true;
-  try {
-    const msg = {
-      "@type": "/dysonprotocol.storage.v1.MsgStorageSet",
-      owner: String(address.value),
-      index: String(upload.value.index),
-      data: String(upload.value.data),
-    };
-    const res = await sendMsg({
-      msg,
-      executorAddress: String(address.value),
-      gasLimit: "auto",
-    });
-    if (!res?.success) throw new Error(res?.rawLog || `code=${res?.code}`);
-    // clear and refresh
-    upload.value.index = "";
-    upload.value.data = "";
-    await reload();
-  } catch (e) {
-    uploadError.value = e?.message || "Failed to set storage";
-  } finally {
-    uploadBusy.value = false;
-  }
 }
 
 const form = ref({
@@ -404,6 +398,7 @@ const selectedIndex = ref("");
 const editorData = ref("");
 const editorBusy = ref(false);
 const editorError = ref("");
+const deleting = ref(new Set());
 
 // No filename assumptions; list uses raw entries
 
@@ -535,6 +530,10 @@ watch(
   { immediate: true, deep: true }
 );
 
+onMounted(async () => {
+  await loadDenomMetadata();
+});
+
 // Debounced auto-apply on form changes
 let autoApplyTimer = null;
 watch(
@@ -589,6 +588,45 @@ async function saveSelected() {
     editorError.value = e?.message || "Failed to save";
   } finally {
     editorBusy.value = false;
+  }
+}
+
+function isDeleting(index) {
+  const key = String(index || "");
+  return deleting.value.has(key);
+}
+
+async function deleteEntry(e) {
+  editorError.value = "";
+  if (!address.value) return;
+  const index = String(e?.index || "");
+  if (!index) return;
+  const s = new Set(deleting.value);
+  s.add(index);
+  deleting.value = s;
+  try {
+    const msg = {
+      "@type": "/dysonprotocol.storage.v1.MsgStorageDelete",
+      owner: String(address.value),
+      indexes: [index],
+    };
+    const res = await sendMsg({
+      msg,
+      executorAddress: String(address.value),
+      gasLimit: "auto",
+    });
+    if (!res?.success) throw new Error(res?.rawLog || `code=${res?.code}`);
+    if (selectedIndex.value === index) {
+      selectedIndex.value = "";
+      editorData.value = "";
+    }
+    await reload();
+  } catch (err) {
+    editorError.value = err?.message || "Failed to delete";
+  } finally {
+    const t = new Set(deleting.value);
+    t.delete(index);
+    deleting.value = t;
   }
 }
 </script>
