@@ -36,9 +36,6 @@
             <div class="flex items-center justify-between gap-2">
               <span class="truncate">Height:</span>
               <span class="font-mono text-base-content/80">
-                <span v-if="latestTimeIso" class="text-base-content/60">{{
-                  relativeAgo
-                }}</span>
                 {{ latestHeight != null ? latestHeight : "…" }}
               </span>
             </div>
@@ -211,9 +208,7 @@ const logoSrc = computed(() => (theme.value === "dark" ? logoLight : logoDark));
 
 // Chain status (latest block)
 const latestHeight = ref(null);
-const latestTimeIso = ref("");
 const chainIdDisplay = ref("");
-const nowMs = ref(Date.now());
 
 // Node info
 const nodeVersion = ref("");
@@ -227,32 +222,6 @@ const isNonMainnet = computed(() => {
   return !id.includes("mainnet");
 });
 
-// Localized relative time string (e.g., "5 minutes ago")
-const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
-const relativeAgo = computed(() => {
-  if (!latestTimeIso.value) return "";
-  const t = Date.parse(latestTimeIso.value);
-  if (Number.isNaN(t)) return "";
-  const seconds = Math.floor((nowMs.value - t) / 1000);
-  if (seconds <= 1) return "just now";
-  const units = [
-    ["year", 31536000],
-    ["month", 2592000],
-    ["day", 86400],
-    ["hour", 3600],
-    ["minute", 60],
-    ["second", 1],
-  ];
-  for (const [unit, size] of units) {
-    if (seconds >= size || unit === "second") {
-      const value = Math.round(seconds / size);
-      return rtf.format(-value, unit);
-    }
-  }
-  return "";
-});
-
-let tickTimer = null;
 let pollTimer = null;
 const pollDelayMs = ref(1000);
 
@@ -266,7 +235,6 @@ async function fetchLatestBlock() {
   const prevHeight = latestHeight.value;
   chainIdDisplay.value = String(header.chain_id || "");
   latestHeight.value = newHeight;
-  latestTimeIso.value = String(header.time || "");
 
   if (prevHeight == null) return;
 
@@ -300,12 +268,10 @@ async function fetchNodeInfo() {
 onMounted(() => {
   fetchLatestBlock();
   fetchNodeInfo();
-  tickTimer = setInterval(() => (nowMs.value = Date.now()), 1000);
   scheduleNextPoll();
 });
 
 onBeforeUnmount(() => {
-  if (tickTimer) clearInterval(tickTimer);
   if (pollTimer) clearTimeout(pollTimer);
 });
 
