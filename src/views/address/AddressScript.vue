@@ -1,5 +1,5 @@
 <template>
-  <div class="h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
+  <div class="">
     <!-- Loading State -->
     <div
       v-if="isInitialLoading"

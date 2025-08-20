@@ -5,6 +5,8 @@
       <p class="text-sm text-gray-600">Owner: {{ address }}</p>
     </div>
 
+    <!-- Upload: set new storage entry -->
+
     <!-- Main: Controls and list -->
     <section>
       <form class="" @submit.prevent>
@@ -59,6 +61,95 @@
               <input v-model="form.reverse" type="checkbox" class="checkbox" />
             </label>
           </fieldset>
+          <fieldset
+            class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
+          >
+            <legend class="fieldset-legend">Metrics</legend>
+            <div class="text-sm">
+              <div v-if="metricsError" class="text-error">
+                {{ metricsError }}
+              </div>
+              <div v-else>
+                <table class="table table-compact table-sm w-full">
+                  <tbody>
+                    <tr>
+                      <td class="opacity-70 w-1/3 align-top">owner</td>
+                      <td class="align-top">
+                        <AddressDisplay
+                          :address="metrics.owner || address"
+                          :truncate="10"
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="opacity-70 align-top">total_bytes</td>
+                      <td class="align-top">
+                        <span class="font-mono">{{
+                          metrics.total_bytes || "0"
+                        }}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="opacity-70 align-top">min_stake_amount</td>
+                      <td class="align-top">
+                        <span class="font-mono">{{
+                          metrics.min_stake_amount || "0"
+                        }}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="opacity-70 align-top">current_stake_amount</td>
+                      <td class="align-top">
+                        <span class="font-mono">{{
+                          metrics.current_stake_amount || "0"
+                        }}</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </fieldset>
+
+          <form @submit.prevent="submitUpload">
+            <fieldset
+              class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
+            >
+              <legend class="fieldset-legend">Upload</legend>
+              <input
+                v-model.trim="upload.index"
+                type="text"
+                class="input"
+                placeholder="Index (e.g. user/123)"
+              />
+              <textarea
+                v-model="upload.data"
+                class="textarea min-h-24"
+                placeholder="Data (text/JSON)"
+              />
+              <div class="flex items-center gap-2">
+                <input
+                  ref="fileInput"
+                  type="file"
+                  class="hidden"
+                  @change="onFileChange"
+                />
+                <button type="button" class="btn btn-sm" @click="pickFile">
+                  Select file
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-primary"
+                  :disabled="uploadBusy || !upload.index"
+                >
+                  Set
+                </button>
+                <span v-if="uploadError" class="text-error text-sm">{{
+                  uploadError
+                }}</span>
+              </div>
+            </fieldset>
+          </form>
         </div>
       </form>
 
@@ -116,43 +207,73 @@
         </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
-          <thead>
-            <tr>
-              <th class="w-[28%]">index</th>
-              <th class="w-[44%]">data</th>
-              <th class="w-[14%]">height</th>
-              <th class="w-[14%]">timestamp</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="e in entries" :key="`${e.index}-${e.updated_height}`">
-              <td class="font-mono align-top break-all">{{ e.index }}</td>
-              <td class="font-mono whitespace-pre-wrap break-words align-top">
-                <div
-                  class="cursor-pointer"
-                  @click="toggleExpand(rowKey(e))"
-                  :title="
-                    isExpanded(rowKey(e))
-                      ? 'Click to collapse'
-                      : 'Click to expand'
-                  "
-                >
-                  {{ displayData(e) }}
-                </div>
-              </td>
-              <td class="align-top">{{ e.updated_height }}</td>
-              <td class="align-top">{{ e.updated_timestamp }}</td>
-            </tr>
-            <tr v-if="!isLoading && !error && !entries.length">
-              <td colspan="4" class="text-center opacity-70">No results</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Split view: list (left) and editor (right) with independent scroll -->
+      <div class="grid md:grid-cols-2 gap-4">
+        <!-- Left: entries list -->
+        <div class="overflow-x-auto h-[60vh] overflow-y-auto">
+          <table class="table table-zebra table-sm w-full">
+            <thead>
+              <tr>
+                <th class="w-[56%]">index</th>
+                <th class="w-[22%]">height</th>
+                <th class="w-[22%]">timestamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="e in entries"
+                :key="`${e.index}-${e.updated_height}`"
+                class="cursor-pointer"
+                :class="{ 'bg-base-200': isSelected(e) }"
+                @click="selectEntry(e)"
+              >
+                <td class="font-mono align-top break-all">{{ e.index }}</td>
+                <td class="align-top">{{ e.updated_height }}</td>
+                <td class="align-top">{{ e.updated_timestamp }}</td>
+              </tr>
+              <tr v-if="!isLoading && !error && !entries.length">
+                <td colspan="3" class="text-center opacity-70">No results</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Right: selected entry editor -->
+        <div class="h-[60vh] overflow-y-auto">
+          <fieldset
+            class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
+          >
+            <legend class="fieldset-legend">Entry</legend>
+            <div class="text-sm mb-2">
+              <div>
+                <span class="opacity-70">index:</span>
+                <span class="font-mono break-all">{{
+                  selectedIndex || "—"
+                }}</span>
+              </div>
+            </div>
+            <textarea
+              v-model="editorData"
+              class="textarea w-full min-h-48 h-[42vh]"
+              placeholder="Select a row to view/edit its data"
+            />
+            <div class="mt-2 flex items-center gap-2">
+              <button
+                class="btn btn-sm btn-primary"
+                :disabled="editorBusy || !selectedIndex"
+                @click="saveSelected"
+              >
+                Save
+              </button>
+              <span v-if="editorError" class="text-error text-sm">{{
+                editorError
+              }}</span>
+            </div>
+          </fieldset>
+        </div>
       </div>
 
-      <!-- Removed bottom next-page controls; page numbers shown above -->
+      <!-- Removed bottom next-page controls; page numbers shown above (kept removed) -->
     </section>
   </div>
 </template>
@@ -160,6 +281,8 @@
 <script setup>
 import { computed, ref, inject, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useWallet } from "@/composables/useWallet";
+import AddressDisplay from "@/components/AddressDisplay.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -170,6 +293,79 @@ const address = computed(
 const CHAIN_INFO = inject("chainInfo", {
   restUrl: "",
 });
+
+// Upload state
+const upload = ref({ index: "", data: "" });
+const fileInput = ref(null);
+const uploadBusy = ref(false);
+const uploadError = ref("");
+
+const { sendMsg } = useWallet();
+
+// Metrics state
+const metrics = ref({
+  owner: "",
+  total_bytes: "",
+  min_stake_amount: "",
+  current_stake_amount: "",
+});
+const metricsError = ref("");
+
+function pickFile() {
+  const el = fileInput.value;
+  if (el) el.click();
+}
+
+function onFileChange(e) {
+  uploadError.value = "";
+  const el = e?.target;
+  const file = el?.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    upload.value.data = String(reader.result || "");
+  };
+  reader.onerror = () => {
+    uploadError.value = "Failed to read file";
+  };
+  reader.readAsText(file);
+}
+
+async function submitUpload() {
+  uploadError.value = "";
+  if (!address.value) {
+    uploadError.value = "Missing owner address";
+    return;
+  }
+  if (!upload.value.index) {
+    uploadError.value = "Index is required";
+    return;
+  }
+  if (upload.value.data == null) upload.value.data = "";
+  uploadBusy.value = true;
+  try {
+    const msg = {
+      "@type": "/dysonprotocol.storage.v1.MsgStorageSet",
+      owner: String(address.value),
+      index: String(upload.value.index),
+      data: String(upload.value.data),
+    };
+    const res = await sendMsg({
+      msg,
+      executorAddress: String(address.value),
+      gasLimit: "auto",
+    });
+    if (!res?.success) throw new Error(res?.rawLog || `code=${res?.code}`);
+    // clear and refresh
+    upload.value.index = "";
+    upload.value.data = "";
+    await reload();
+  } catch (e) {
+    uploadError.value = e?.message || "Failed to set storage";
+  } finally {
+    uploadBusy.value = false;
+  }
+}
 
 const form = ref({
   index_prefix: String(route.query.index_prefix || ""),
@@ -202,8 +398,12 @@ const showPageNumbers = computed(() => Boolean(total.value));
 const isLoading = ref(false);
 const error = ref("");
 const entries = ref([]);
-const expandedRows = ref(new Set());
-const TRUNCATE_LEN = 100;
+
+// Selection/editor state
+const selectedIndex = ref("");
+const editorData = ref("");
+const editorBusy = ref(false);
+const editorError = ref("");
 
 // No filename assumptions; list uses raw entries
 
@@ -275,26 +475,51 @@ async function reload() {
   entries.value = [];
   total.value = "";
   try {
-    const u = new URL(
+    // Fetch metrics in parallel with list
+    const metricsUrl = new URL(
+      `${CHAIN_INFO.restUrl}/dysonprotocol/storage/v1/metrics`
+    );
+    metricsUrl.searchParams.set("owner", String(address.value));
+
+    const listUrl = new URL(
       `${CHAIN_INFO.restUrl}/dysonprotocol/storage/v1/storage_list`
     );
-    u.searchParams.set("owner", String(address.value));
-    u.searchParams.set("pagination.count_total", "true");
+    listUrl.searchParams.set("owner", String(address.value));
+    listUrl.searchParams.set("pagination.count_total", "true");
     if (form.value.index_prefix)
-      u.searchParams.set("index_prefix", form.value.index_prefix);
-    if (form.value.filter) u.searchParams.set("filter", form.value.filter);
-    if (form.value.extract) u.searchParams.set("extract", form.value.extract);
+      listUrl.searchParams.set("index_prefix", form.value.index_prefix);
+    if (form.value.filter)
+      listUrl.searchParams.set("filter", form.value.filter);
+    if (form.value.extract)
+      listUrl.searchParams.set("extract", form.value.extract);
     if (form.value.limit)
-      u.searchParams.set("pagination.limit", String(form.value.limit));
+      listUrl.searchParams.set("pagination.limit", String(form.value.limit));
     if (form.value.offset)
-      u.searchParams.set("pagination.offset", String(form.value.offset));
-    if (form.value.reverse) u.searchParams.set("pagination.reverse", "true");
+      listUrl.searchParams.set("pagination.offset", String(form.value.offset));
+    if (form.value.reverse)
+      listUrl.searchParams.set("pagination.reverse", "true");
 
-    const resp = await fetch(u.toString());
-    if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
-    const json = await resp.json();
+    const [metricsResp, listResp] = await Promise.all([
+      fetch(metricsUrl.toString()),
+      fetch(listUrl.toString()),
+    ]);
+    if (!metricsResp.ok) {
+      metricsError.value = `HTTP ${metricsResp.status} ${metricsResp.statusText}`;
+    } else {
+      const m = await metricsResp.json();
+      metrics.value = {
+        owner: String(m?.owner || address.value || ""),
+        total_bytes: String(m?.total_bytes || ""),
+        min_stake_amount: String(m?.min_stake_amount || ""),
+        current_stake_amount: String(m?.current_stake_amount || ""),
+      };
+      metricsError.value = "";
+    }
+
+    if (!listResp.ok)
+      throw new Error(`HTTP ${listResp.status} ${listResp.statusText}`);
+    const json = await listResp.json();
     const newEntries = Array.isArray(json?.entries) ? json.entries : [];
-    // Always replace when using offset-based pagination
     entries.value = newEntries;
     total.value = String(json?.pagination?.total || "");
   } catch (e) {
@@ -323,32 +548,47 @@ watch(
   { deep: true }
 );
 
-function rowKey(e) {
-  const h = String(e?.hash || "");
-  if (h) return h;
-  return `${String(e?.index || "")}-${String(e?.updated_height || "")}`;
-}
-
-function isExpanded(key) {
-  return expandedRows.value.has(key);
-}
-
-function toggleExpand(key) {
-  const s = new Set(expandedRows.value);
-  if (s.has(key)) s.delete(key);
-  else s.add(key);
-  expandedRows.value = s;
-}
-
 // Infinite scroll removed in favor of numbered pages
 
-function displayData(e) {
-  const key = rowKey(e);
-  const data = String(e?.data || "");
-  if (isExpanded(key)) return data;
-  if (data.length <= TRUNCATE_LEN) return data;
-  return data.slice(0, TRUNCATE_LEN) + "…";
+function isSelected(e) {
+  return selectedIndex.value && String(e?.index || "") === selectedIndex.value;
 }
 
-// tree component removed
+function selectEntry(e) {
+  selectedIndex.value = String(e?.index || "");
+  editorData.value = String(e?.data || "");
+  editorError.value = "";
+}
+
+async function saveSelected() {
+  editorError.value = "";
+  if (!address.value) {
+    editorError.value = "Missing owner address";
+    return;
+  }
+  if (!selectedIndex.value) {
+    editorError.value = "No entry selected";
+    return;
+  }
+  editorBusy.value = true;
+  try {
+    const msg = {
+      "@type": "/dysonprotocol.storage.v1.MsgStorageSet",
+      owner: String(address.value),
+      index: String(selectedIndex.value),
+      data: String(editorData.value || ""),
+    };
+    const res = await sendMsg({
+      msg,
+      executorAddress: String(address.value),
+      gasLimit: "auto",
+    });
+    if (!res?.success) throw new Error(res?.rawLog || `code=${res?.code}`);
+    await reload();
+  } catch (e) {
+    editorError.value = e?.message || "Failed to save";
+  } finally {
+    editorBusy.value = false;
+  }
+}
 </script>

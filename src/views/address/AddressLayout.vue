@@ -1,5 +1,5 @@
 <template>
-  <div class="h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
+  <div class="h-[calc(100vh-4rem)] overflow-hidden flex flex-col p">
     <div class="bg-base-100 flex-col items-start gap-2">
       <!-- Address and current tab -->
       <div class="text-sm p-2 flex items-center gap-2">
