@@ -1,6 +1,6 @@
 <template>
-  <div class="space-y-3">
-    <div class="text-lg font-semibold">Register Name</div>
+  <div class="space-y-4 w-1/2 mx-auto">
+    <div class="text-xl font-semibold">Register Name</div>
 
     <!-- Step 1: Select name -->
     <div :class="cardClass(1)" class="card card-border bg-base-100">
@@ -16,23 +16,19 @@
         <p class="text-sm">Enter your name; .dys is automatically appended.</p>
         <div :class="enabledClass(1)" class="space-y-2">
           <div>
-            <div class="mt-0">
+            <div class="join w-full">
+              <input
+                v-model.trim="nameMain"
+                type="text"
+                class="join-item input w-full"
+                placeholder="alice"
+                aria-describedby="name-suffix"
+              />
               <div
-                class="flex items-center rounded-md bg-base-100 px-3 outline-1 -outline-offset-1 outline-base-300 focus-within:outline-2 focus-within:-outline-offset-2"
+                id="name-suffix"
+                class="input join-item text-base-content/70 w-16"
               >
-                <input
-                  v-model.trim="nameMain"
-                  type="text"
-                  class="block min-w-0 grow py-1.5 pr-3 pl-1 text-base placeholder:text-gray-400 focus:outline-none sm:text-sm/6 dark:bg-transparent dark:text-white dark:placeholder:text-gray-500"
-                  placeholder="alice"
-                  aria-describedby="name-suffix"
-                />
-                <div
-                  id="name-suffix"
-                  class="shrink-0 text-base text-gray-500 select-none sm:text-sm/6 dark:text-gray-400"
-                >
-                  .dys
-                </div>
+                .dys
               </div>
             </div>
           </div>
@@ -58,312 +54,258 @@
               registered</span
             >
           </div>
-          <div class="card-actions justify-end">
-            <button
-              class="btn btn-primary"
-              :disabled="!(isValidName && nameAvailable)"
-              @click="step = Math.max(step, 2)"
-            >
-              Continue with {{ chosenName }}
-            </button>
-          </div>
         </div>
       </div>
     </div>
 
-    <!-- Step 2: Select wallet -->
-    <div :class="cardClass(2)" class="card card-border bg-base-100">
-      <div class="card-body">
-        <div class="flex items-center justify-between">
-          <h2 class="card-title">2. Select a wallet</h2>
-          <span
-            v-if="step > 2 && selectedExecutor"
-            class="badge badge-success badge-outline"
-            >Selected</span
-          >
-        </div>
-        <p class="text-sm">
-          Choose the wallet that will sign the two commit and reveal
-          transactions.
-        </p>
-        <div :class="enabledClass(2)" class="space-y-2">
-          <WalletSelector
-            v-model="selectedExecutor"
-            :show-locked="false"
-            button-class="btn-outline btn-primary"
-          />
-          <div v-if="hasExecutor" class="text-success text-sm">
-            Wallet selected, next estimate its value.
-          </div>
-          <div class="card-actions justify-end">
-            <button
-              class="btn btn-primary"
-              :disabled="!hasExecutor"
-              @click="step = Math.max(step, 3)"
+    <div
+      :class="collapseWrapperClass"
+      class="transition-all duration-300 ease-in-out overflow-hidden space-y-4"
+    >
+      <!-- Step 2: Estimate value -->
+      <div :class="cardClass(2)" class="card card-border bg-base-100">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h2 class="card-title">2. Estimate a value</h2>
+            <span
+              v-if="step > 2 && canProceedValue"
+              class="badge badge-success badge-outline"
+              >Ready</span
             >
-              Continue with {{ selectedWalletName }}
-            </button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step 3: Estimate value -->
-    <div :class="cardClass(3)" class="card card-border bg-base-100">
-      <div class="card-body">
-        <div class="flex items-center justify-between">
-          <h2 class="card-title">3. Estimate a value</h2>
-          <span
-            v-if="step > 3 && canProceedValue"
-            class="badge badge-success badge-outline"
-            >Ready</span
-          >
-        </div>
-        <p class="text-sm">
-          Set the valuation and denom. Annual fee is charged at reveal.
-        </p>
-        <div :class="enabledClass(3)" class="space-y-2">
-          <div class="join w-full">
-            <input
-              v-model.trim="valuationAmount"
-              type="text"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              class="input join-item"
-              placeholder="amount"
-            />
-            <select v-model="selectedDisplayDenom" class="select join-item">
-              <option disabled value="">Denom</option>
-              <option
-                v-for="opt in allowedDisplayOptions"
-                :key="opt.base"
-                :value="opt.display"
+          <p class="text-sm">
+            Set the valuation and denom. Annual fee is charged at reveal.
+          </p>
+          <div :class="enabledClass(2)" class="space-y-2">
+            <div class="join w-full">
+              <input
+                v-model.trim="valuationAmount"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                class="input join-item"
+                placeholder="amount"
+              />
+              <select v-model="selectedDisplayDenom" class="select join-item">
+                <option disabled value="">Denom</option>
+                <option
+                  v-for="opt in allowedDisplayOptions"
+                  :key="opt.base"
+                  :value="opt.display"
+                >
+                  {{ opt.display }}
+                </option>
+              </select>
+            </div>
+            <div
+              v-if="
+                hasNumericValuation && denomAllowed && annualFeeBase !== '0'
+              "
+              class="text-sm text-base-content/80"
+            >
+              Annual fee:
+              <span class="font-bold"
+                >{{ annualFeeDisplay }} {{ currentDisplayOpt?.display }}</span
               >
-                {{ opt.display }}
-              </option>
-            </select>
-          </div>
-          <div
-            v-if="hasNumericValuation && denomAllowed && annualFeeBase !== '0'"
-            class="text-sm text-base-content/80"
-          >
-            Annual fee:
-            <span class="font-bold"
-              >{{ annualFeeDisplay }} {{ currentDisplayOpt?.display }}</span
-            >
-          </div>
-          <div class="text-error text-xs" v-if="validationMessage">
-            {{ validationMessage }}
-          </div>
-          <div v-if="canProceedValue" class="text-success text-sm">
-            Your name is valued at
-            <span class="font-bold text-base-content"
-              >{{ valuationAmount }} {{ currentDisplayOpt?.display }}
-            </span>
-            and you will pay a fee of
-            <span class="font-bold text-base-content">
-              {{ annualFeeDisplay }} {{ currentDisplayOpt?.display }}
-            </span>
-            with the reveal transaction.
-          </div>
-
-          <div class="card-actions justify-end">
-            <button
-              class="btn btn-primary"
-              :disabled="!canProceedValue"
-              @click="step = Math.max(step, 4)"
-            >
-              {{ chosenName }} valued at {{ valuationAmount }}
-              {{ currentDisplayOpt?.display }}
-            </button>
+            </div>
+            <div class="text-error text-xs" v-if="validationMessage">
+              {{ validationMessage }}
+            </div>
+            <div v-if="canProceedValue" class="text-success text-sm">
+              Your name is valued at
+              <span class="font-bold text-base-content"
+                >{{ valuationAmount }} {{ currentDisplayOpt?.display }}
+              </span>
+              and you will pay a fee of
+              <span class="font-bold text-base-content">
+                {{ annualFeeDisplay }} {{ currentDisplayOpt?.display }}
+              </span>
+              with the reveal transaction.
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Step 4: Generate hash -->
-    <div :class="cardClass(4)" class="card card-border bg-base-100">
-      <div class="card-body">
-        <div class="flex items-center justify-between">
-          <h2 class="card-title">4. Generate hash</h2>
-        </div>
-        <p class="text-sm">
-          Create the commitment by hashing (name + salt + committer).
-        </p>
-        <div :class="enabledClass(4)" class="space-y-2">
-          <div class="join w-full">
-            <input
-              v-model.trim="salt"
-              class="input join-item"
-              placeholder="random salt"
-              :disabled="!!hexHash"
+      <!-- Step 3: Select wallet -->
+      <div :class="cardClass(3)" class="card card-border bg-base-100">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h2 class="card-title">3. Select a wallet</h2>
+            <span
+              v-if="step > 3 && selectedExecutor"
+              class="badge badge-success badge-outline"
+              >Selected</span
+            >
+          </div>
+          <p class="text-sm">
+            Choose the wallet that will sign the two commit and reveal
+            transactions.
+          </p>
+          <div :class="enabledClass(3)" class="space-y-2">
+            <WalletSelector
+              v-model="selectedExecutor"
+              :show-locked="false"
+              button-class="btn-outline btn-primary"
             />
-            <button
-              class="btn join-item btn-primary btn-outline"
-              @click="generateSalt"
-              :disabled="!!hexHash"
-            >
-              Generate
-            </button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <tbody>
-                <tr>
-                  <td class="font-semibold">Name</td>
-                  <td class="font-mono">{{ chosenName || "—" }}</td>
-                </tr>
-                <tr>
-                  <td class="font-semibold">Salt</td>
-                  <td class="font-mono">{{ salt || "—" }}</td>
-                </tr>
-                <tr>
-                  <td class="font-semibold">Commit hash</td>
-                  <td class="font-mono">{{ hexHash || "—" }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-if="hexHash" class="text-success text-sm">
-            Hash computed, next submit the commitment.
-          </div>
-          <div class="card-actions justify-end">
-            <button
-              class="btn btn-primary join-item"
-              @click="computeHash"
-              :disabled="!hasExecutor || !isValidName || !salt || !!hexHash"
-            >
-              Compute hash
-            </button>
+            <div v-if="hasExecutor" class="text-success text-sm">
+              Wallet selected, next generate the commitment hash.
+            </div>
+            <div class="text-error text-xs" v-if="walletFundsError">
+              {{ walletFundsError }}
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Step 5: Submit commitment -->
-    <div :class="cardClass(5)" class="card card-border bg-base-100">
-      <div class="card-body">
-        <div class="flex items-center justify-between">
-          <h2 class="card-title">5. Submit commitment</h2>
-          <span v-if="commitTxHash" class="badge badge-success badge-outline"
-            >Submitted</span
-          >
-        </div>
-        <p class="text-sm">
-          For the first transaction, submit the previously computed commitment
-          hash to prevent frontrunning.
-        </p>
-        <div :class="enabledClass(5)" class="space-y-2">
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <tbody>
-                <tr>
-                  <td class="font-semibold">Commit hash</td>
-                  <td class="font-mono">{{ hexHash || "—" }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="card-actions justify-end">
-            <button
-              class="btn btn-primary"
-              :disabled="!hexHash || isRegistering"
-              @click="commit"
+      <!-- Step 4: Submit commitment -->
+      <div :class="cardClass(4)" class="card card-border bg-base-100">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h2 class="card-title">4. Submit commitment</h2>
+            <span v-if="commitTxHash" class="badge badge-success badge-outline"
+              >Submitted</span
             >
-              Sign commit tx...
-            </button>
           </div>
-          <div class="text-error text-xs" v-if="commitError">
-            {{ commitError }}
+          <p class="text-sm">
+            Submit a commitment to prevent frontrunning. A random salt will be
+            used automatically.
+          </p>
+          <div :class="enabledClass(4)" class="space-y-2">
+            <div class="overflow-x-auto">
+              <table class="table table-zebra">
+                <tbody>
+                  <tr>
+                    <td class="font-semibold">Name</td>
+                    <td class="font-mono">{{ chosenName || "—" }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-semibold">Salt</td>
+                    <td class="font-mono">{{ salt || "—" }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-semibold">Valuation</td>
+                    <td>
+                      {{ valuationAmount || "0" }}
+                      {{ currentDisplayOpt?.display }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="font-semibold">
+                      Annual fee (amount paid at reveal)
+                    </td>
+                    <td>
+                      {{ annualFeeDisplay }}
+                      {{ currentDisplayOpt?.display }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="font-semibold">Commit hash</td>
+                    <td class="font-mono">{{ hexHash || "—" }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-actions justify-end">
+              <button
+                class="btn btn-primary"
+                :disabled="isRegistering || !canCommit"
+                @click="commit"
+              >
+                Sign commit tx...
+              </button>
+            </div>
+            <div class="text-error text-xs" v-if="commitError">
+              {{ commitError }}
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Step 6: Reveal -->
-    <div :class="cardClass(6)" class="card card-border bg-base-100">
-      <div class="card-body">
-        <div class="flex items-center justify-between">
-          <h2 class="card-title">6. Reveal</h2>
-          <span v-if="revealTxHash" class="badge badge-success badge-outline"
-            >Submitted</span
-          >
-        </div>
-        <p class="text-sm">
-          Reveal the original data. The annual fee of
-          <span class="font-medium">{{ annualFeeDisplay }}</span>
-          {{ currentDisplayOpt?.display }} will be charged.
-        </p>
-        <div :class="enabledClass(6)" class="space-y-2">
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <tbody>
-                <tr>
-                  <td class="font-semibold">Name</td>
-                  <td class="font-mono">{{ chosenName || "—" }}</td>
-                </tr>
-                <tr>
-                  <td class="font-semibold">Salt</td>
-                  <td class="font-mono">{{ salt || "—" }}</td>
-                </tr>
-                <tr>
-                  <td class="font-semibold">Valuation</td>
-                  <td>
-                    {{ valuationAmount || "0" }}
-                    {{ currentDisplayOpt?.display }}
-                  </td>
-                </tr>
-                <tr>
-                  <td class="font-semibold">Annual fee (amount paid now)</td>
-                  <td>
-                    {{ annualFeeDisplay }}
-                    {{ currentDisplayOpt?.display }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="card-actions justify-end">
-            <button
-              class="btn btn-primary"
-              :disabled="!hasExecutor || !isValidName || !salt || !hexHash"
-              @click="reveal"
+      <!-- Step 5: Reveal -->
+      <div :class="cardClass(5)" class="card card-border bg-base-100">
+        <div class="card-body">
+          <div class="flex items-center justify-between">
+            <h2 class="card-title">5. Reveal</h2>
+            <span v-if="revealTxHash" class="badge badge-success badge-outline"
+              >Submitted</span
             >
-              Sign reveal tx and pay annual fee
-            </button>
           </div>
-          <div class="text-error text-xs" v-if="revealError">
-            {{ revealError }}
-          </div>
-          <div
-            v-if="revealTxHash"
-            class="alert alert-success shadow-sm text-sm alert-soft"
-          >
-            Reveal Tx:
-            <router-link :to="`/txs/${revealTxHash}`" class="link">{{
-              shortHash(revealTxHash)
-            }}</router-link>
+          <p class="text-sm">
+            Reveal the original data. The annual fee of
+            <span class="font-medium">{{ annualFeeDisplay }}</span>
+            {{ currentDisplayOpt?.display }} will be charged.
+          </p>
+          <div :class="enabledClass(5)" class="space-y-2">
+            <div class="overflow-x-auto">
+              <table class="table table-zebra">
+                <tbody>
+                  <tr>
+                    <td class="font-semibold">Name</td>
+                    <td class="font-mono">{{ chosenName || "—" }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-semibold">Salt</td>
+                    <td class="font-mono">{{ salt || "—" }}</td>
+                  </tr>
+                  <tr>
+                    <td class="font-semibold">Valuation</td>
+                    <td>
+                      {{ valuationAmount || "0" }}
+                      {{ currentDisplayOpt?.display }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="font-semibold">Annual fee (amount paid now)</td>
+                    <td>
+                      {{ annualFeeDisplay }}
+                      {{ currentDisplayOpt?.display }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-actions justify-end">
+              <button
+                class="btn btn-primary"
+                :disabled="!hasExecutor || !isValidName || !salt || !hexHash"
+                @click="reveal"
+              >
+                Sign reveal tx and pay annual fee
+              </button>
+            </div>
+            <div class="text-error text-xs" v-if="revealError">
+              {{ revealError }}
+            </div>
+            <div
+              v-if="revealTxHash"
+              class="alert alert-success shadow-sm text-sm alert-soft"
+            >
+              Reveal Tx:
+              <router-link :to="`/txs/${revealTxHash}`" class="link">{{
+                shortHash(revealTxHash)
+              }}</router-link>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Step 7: Go to name -->
-    <div :class="cardClass(7)" class="card card-border bg-base-100">
-      <div class="card-body">
-        <h2 class="card-title">7. Congratulations!</h2>
-        <p class="text-sm">
-          Your name is now registered and you can view it details and manage it.
-        </p>
-        <div :class="enabledClass(7)" class="card-actions justify-end">
-          <router-link
-            :to="`/names/${chosenName}`"
-            v-if="step >= 7 && chosenName"
-            class="link"
-          >
-            <button class="btn btn-primary">Go to {{ chosenName }}</button>
-          </router-link>
-          <button class="btn" v-else disabled>Waiting for reveal…</button>
+      <!-- Step 6: Go to name -->
+      <div :class="cardClass(6)" class="card card-border bg-base-100">
+        <div class="card-body">
+          <h2 class="card-title">6. Congratulations!</h2>
+          <p class="text-sm">
+            Your name is now registered and you can view it details and manage
+            it.
+          </p>
+          <div :class="enabledClass(6)" class="card-actions justify-end">
+            <router-link
+              :to="`/names/${chosenName}`"
+              v-if="step >= 6 && chosenName"
+              class="link"
+            >
+              <button class="btn btn-primary">Go to {{ chosenName }}</button>
+            </router-link>
+            <button class="btn" v-else disabled>Waiting for reveal…</button>
+          </div>
         </div>
       </div>
     </div>
@@ -480,6 +422,7 @@ onMounted(() => {
   loadNameserviceParams();
   loadDenomMetadata();
   loadAnnualPct();
+  if (!salt.value) generateSalt();
   if (isWalletConnected.value) refreshBalance();
   balanceInterval = setInterval(() => {
     if (selectedExecutor.value || isWalletConnected.value) refreshBalance();
@@ -508,6 +451,7 @@ watch([chosenName], () => {
 onUnmounted(() => {
   if (balanceInterval) clearInterval(balanceInterval);
   if (nameCheckTimer) clearTimeout(nameCheckTimer);
+  if (hashComputeTimer) clearTimeout(hashComputeTimer);
 });
 
 const NameRegex = /^[a-z]([-a-z0-9]*[a-z0-9])?\.dys$/;
@@ -749,16 +693,6 @@ const validationMessage = computed(() => {
     );
     return `Denom not allowed. Allowed: ${allowedDisplays.join(", ") || "—"}`;
   }
-  if (hasNumericValuation.value && !hasFunds.value) {
-    const denomLabel =
-      currentDisplayOpt.value?.display || effectiveDisplayDenom.value || "dys";
-    const annualBase = String(annualFeeBase.value || "0");
-    if (annualBase === "0") return "";
-    const need = baseToDisplay(annualBase);
-    const have = baseToDisplay(availableBalance.value || "0");
-    const who = selectedExecutor.value ? selectedExecutor.value : "your wallet";
-    return `Insufficient funds for annual fee. Need ${need} ${denomLabel}, ${who} has ${have} ${denomLabel}.`;
-  }
   if (hasNumericValuation.value && !hasMinAnnual.value) {
     const pct = formatPercent(annualPctStr.value);
     const denomLabel = currentDisplayOpt.value?.display || "";
@@ -766,10 +700,24 @@ const validationMessage = computed(() => {
     const minDisplay = baseToDisplay(minBase.toString());
     return `Annual charge is ${pct}. So the minimum valuation is ${minDisplay} ${denomLabel}.`;
   }
-  if (hasNumericValuation.value && !annualWithinBalance.value)
-    return "Annual charge exceeds balance.";
-  if (!hasExecutor.value) return "Select a wallet.";
   return "";
+});
+
+const walletFundsError = computed(() => {
+  try {
+    if (!hasExecutor.value || !hasNumericValuation.value) return "";
+    const annualBase = String(annualFeeBase.value || "0");
+    if (annualBase === "0") return "";
+    if (hasFunds.value && annualWithinBalance.value) return "";
+    const denomLabel =
+      currentDisplayOpt.value?.display || effectiveDisplayDenom.value || "dys";
+    const need = baseToDisplay(annualBase);
+    const have = baseToDisplay(availableBalance.value || "0");
+    const who = selectedExecutor.value ? selectedExecutor.value : "your wallet";
+    return `Insufficient funds for annual fee. Need ${need} ${denomLabel}, ${who} has ${have} ${denomLabel}.`;
+  } catch {
+    return "";
+  }
 });
 
 const annualFeeBase = computed(() => {
@@ -825,7 +773,7 @@ async function computeHash() {
   if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
   const json = await resp.json();
   hexHash.value = json?.hex_hash || "";
-  if (hexHash.value) step.value = 5;
+  if (hexHash.value) step.value = Math.max(step.value, 4);
 }
 
 function shortHash(h) {
@@ -843,6 +791,8 @@ async function commit() {
     commitError.value = "No wallet selected.";
     return;
   }
+  if (!salt.value) generateSalt();
+  if (!hexHash.value) await computeHash();
   const msg = {
     "@type": "/dysonprotocol.nameservice.v1.MsgCommit",
     committer,
@@ -866,7 +816,7 @@ async function commit() {
     res?.fullResult?.raw?.tx_response?.code ??
     res?.rawSendMsgsResponse?.raw?.tx_response?.code ??
     -1;
-  if (res.success && Number(code) === 0) step.value = 6;
+  if (res.success && Number(code) === 0) step.value = 5;
   refreshBalance();
 }
 
@@ -886,12 +836,12 @@ async function reveal() {
     name: String(chosenName.value),
     salt: String(salt.value),
   };
-  step.value = Math.max(step.value, 6);
+  step.value = Math.max(step.value, 5);
 
   const res = await sendMsg({ msg, executorAddress: committer, gas: "auto" });
   if (!res.success) throw new Error(res.rawLog || `code=${res.code}`);
   revealTxHash.value = res.rawSendMsgsResponse?.raw?.tx_response?.txhash || "";
-  step.value = 7;
+  step.value = 6;
   refreshBalance();
   emit("registered", {
     name: String(chosenName.value || ""),
@@ -927,18 +877,49 @@ function cardClass(n) {
   return base + "border-base-300"; // future = gray
 }
 function enabledClass(n) {
-  if (step.value === n) return ""; // current step enabled
-  if (step.value > n) return "opacity-60 pointer-events-none"; // previous steps locked
-  return "opacity-60 pointer-events-none"; // future steps disabled
+  // Steps 1-4 are always enabled until commit is submitted
+  if (n <= 4) return commitTxHash.value ? "opacity-60 pointer-events-none" : "";
+  // For steps 5+, keep original step-based gating
+  if (step.value === n) return "";
+  if (step.value > n) return "opacity-60 pointer-events-none";
+  return "opacity-60 pointer-events-none";
 }
 
 const canProceedValue = computed(
-  () =>
+  () => hasNumericValuation.value && denomAllowed.value && hasMinAnnual.value
+);
+
+// Auto-recompute commit hash when prerequisites change
+let hashComputeTimer;
+let hashComputeToken = 0;
+watch([chosenName, () => selectedExecutor.value, () => salt.value], () => {
+  if (hashComputeTimer) clearTimeout(hashComputeTimer);
+  // Only compute when we have a wallet, a valid name, and a salt
+  if (!hasExecutor.value || !isValidName.value || !salt.value) {
+    return;
+  }
+  const myToken = ++hashComputeToken;
+  hashComputeTimer = setTimeout(async () => {
+    if (!hasExecutor.value || !isValidName.value || !salt.value) return;
+    await computeHash();
+    // token is informational in case of future concurrency needs
+    if (myToken !== hashComputeToken) return;
+  }, 300);
+});
+
+const canCommit = computed(() => {
+  return (
+    isValidName.value &&
+    hasExecutor.value &&
     hasNumericValuation.value &&
     denomAllowed.value &&
-    hasFunds.value &&
-    hasMinAnnual.value &&
-    annualWithinBalance.value &&
-    hasExecutor.value
+    hasMinAnnual.value
+  );
+});
+
+// Transition collapse for steps when name is empty (smooth grow/shrink)
+const hasName = computed(() => !!nameMain.value.trim());
+const collapseWrapperClass = computed(() =>
+  hasName.value ? "max-h-[4000px] opacity-100" : "max-h-0 opacity-0"
 );
 </script>

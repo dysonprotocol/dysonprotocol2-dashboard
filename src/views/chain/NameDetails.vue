@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-3xl mx-auto p-4 space-y-4 h-full min-h-0">
+  <div class="mx-auto p-4 space-y-4 h-full min-h-0 overflow-y-scroll">
     <h1 class="text-2xl font-semibold">Name: {{ routeName }}</h1>
 
     <div v-if="isLoading" class="text-base-content/70">Loading…</div>
@@ -16,18 +16,7 @@
           </div>
         </div>
       </div>
-      <div v-else class="space-y-3">
-        <div class="card bg-base-200 shadow">
-          <div class="card-body">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-              <div class="text-sm opacity-70">Resolved address</div>
-              <div class="sm:col-span-2 font-mono break-all">
-                <AddressDisplay :address="resolvedAddress" />
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <div class="card bg-base-200 shadow">
           <div class="card-body">
             <div class="flex items-center justify-between">
@@ -69,6 +58,12 @@
                   <th>Destination (URI)</th>
                   <td class="font-mono break-all">
                     <AddressDisplay :address="nft.uri" />
+                  </td>
+                </tr>
+                <tr>
+                  <th>Resolved Address</th>
+                  <td class="font-mono break-all">
+                    <AddressDisplay :address="resolvedAddress" />
                   </td>
                 </tr>
                 <tr>
@@ -125,6 +120,28 @@
         <div class="card bg-base-200 shadow">
           <div class="card-body gap-3">
             <div class="flex items-center justify-between">
+              <h2 class="card-title">Set Destination</h2>
+            </div>
+            <div class="text-xs opacity-70 mb-1">
+              Destination can be a bech32 address or another .dys name.
+            </div>
+            <input
+              v-model.trim="destination"
+              class="input input-bordered w-full font-mono"
+              placeholder="new destination (address or name)"
+              :disabled="isSettingDest"
+            />
+            <div v-if="setDestError" class="text-error text-sm">
+              {{ setDestError }}
+            </div>
+            <button
+              class="btn btn-primary"
+              :disabled="isSettingDest || !canSetDestination"
+              @click="setDestination"
+            >
+              Set Destination
+            </button>
+            <div class="flex items-center justify-between mt-2">
               <h2 class="card-title">Set Metadata</h2>
             </div>
             <div class="text-xs opacity-70 mb-1">
@@ -153,167 +170,157 @@
         <div class="card bg-base-200 shadow">
           <div class="card-body gap-3">
             <div class="flex items-center justify-between">
-              <h2 class="card-title">Set Destination</h2>
-            </div>
-            <div class="text-xs opacity-70 mb-1">
-              Destination can be a bech32 address or another .dys name.
-            </div>
-            <input
-              v-model.trim="destination"
-              class="input input-bordered w-full font-mono"
-              placeholder="new destination (address or name)"
-              :disabled="isSettingDest"
-            />
-            <div v-if="setDestError" class="text-error text-sm">
-              {{ setDestError }}
-            </div>
-            <button
-              class="btn btn-primary"
-              :disabled="isSettingDest || !canSetDestination"
-              @click="setDestination"
-            >
-              Set Destination
-            </button>
-          </div>
-        </div>
-
-        <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-          <legend class="fieldset-legend">Mint coin(s)</legend>
-
-          <div class="text-xs opacity-70 mb-2">
-            Destination:
-            <AddressDisplay :address="resolvedAddress" />
-          </div>
-          <form
-            class="grid grid-cols-1 md:grid-cols-2 gap-2"
-            @submit.prevent="mintCoins"
-          >
-            <ul class="list-disc list-inside">
-              <li class="text-xs opacity-70 mb-2">
-                Display Denom:
-                <span class="font-mono">{{ mintDisplayLabel }}</span>
-              </li>
-              <li class="text-xs opacity-70 mb-2">
-                Display amount:
-                <span class="font-mono">{{ mintAmountDisplayNormalized }}</span>
-              </li>
-              <li class="text-xs opacity-70 mb-2">
-                Decimal places:
-                <span v-if="mintDenom === routeName" class="font-mono">6</span>
-                <span v-else class="font-mono">0</span>
-              </li>
-              <li class="text-xs opacity-70 mb-2">
-                Base Denom:
-                <span class="font-mono">{{ mintDenom }}</span>
-              </li>
-              <li class="text-xs opacity-70 mb-2">
-                Base amount:
-                <span class="font-mono">{{ mintAmount }}</span>
-              </li>
-              <li
-                v-if="Number(estimatedFeeUdys || 0) > 0"
-                class="text-xs opacity-70 mb-2"
-              >
-                Fee:
-                <span class="font-mono">{{ estimatedFeeDisplay.amount }}</span>
-                {{ estimatedFeeDisplay.label }}
-                <span class="opacity-70"> ({{ estimatedFeeUdys }} udys) </span>
-              </li>
-              <li
-                v-if="Number(mintAmount || 0) > 0"
-                class="text-xs opacity-70 mb-2"
-              >
-                <span class="font-mono">{{ mintAmountDisplay }}</span>
-                {{ mintDisplayLabel }}
-                ==
-                <span class="font-mono">{{ mintAmount }}</span>
-                {{ mintDenom }}
-              </li>
-            </ul>
-            <div class="space-y-2">
-              <label class="input w-full">
-                <span class="label">Display Amount </span>
-                <input
-                  :value="mintAmountDisplay"
-                  @focus="isEditingDisplay = true"
-                  @blur="
-                    isEditingDisplay = false;
-                    mintAmountDisplay = normalizeDisplay(mintAmountDisplay);
-                  "
-                  @input="onDisplayInput"
-                  class=""
-                  placeholder="amount (display)"
-                  label="amount (display)"
-                  type="text"
-                  inputmode="decimal"
-                  pattern="^\d*(\.\d{0,6})?$"
-                  :disabled="denomBusy === 'mint'"
-                />
-              </label>
-              <label class="input w-full">
-                <span class="label">Display Denom</span>
-                <input class="input-ghost" :value="mintDisplayLabel" readonly />
-              </label>
-              <!-- confirm checkbox-->
-
-              <p class="flex items-center gap-2">
-                <input
-                  v-model="confirmMintChecked"
-                  type="checkbox"
-                  class="checkbox"
-                />
-                <span>
-                  I understand that minting
-                  <span class="font-mono">{{ mintAmountDisplay }}</span>
-                  {{ mintDisplayLabel }} will cost
-                  {{ estimatedFeeDisplay.amount }}
-                  {{ estimatedFeeDisplay.label }} and is non-refundable.
-                </span>
-              </p>
-
-              <button
-                class="btn btn-primary w-full mt-2"
-                :disabled="
-                  denomBusy === 'mint' || !canMint || !confirmMintChecked
-                "
-              >
-                mint
-              </button>
+              <h2 class="card-title">Denoms</h2>
             </div>
 
-            <div
-              v-if="denomErrMint"
-              class="join-item alert alert-error alert-soft mt-2"
-            >
-              {{ denomErrMint }}
-            </div>
-          </form>
-        </fieldset>
-
-        <div class="card bg-base-200 shadow">
-          <div class="card-body">
-            <div class="font-medium mb-2">Denoms</div>
-            <div v-if="isLoadingDenoms" class="text-base-content/70">
-              Loading…
-            </div>
-            <div v-else-if="denomsError" class="text-error">
-              {{ denomsError }}
-            </div>
-            <div v-else>
-              <div v-if="denoms.length === 0" class="text-base-content/70">
-                No denoms.
+            <div class="border rounded p-3 bg-base-100">
+              <div class="font-medium mb-2">Mint coin(s)</div>
+              <div class="text-xs opacity-70 mb-2">
+                Destination:
+                <AddressDisplay :address="resolvedAddress" />
               </div>
-              <ul v-else class="menu bg-base-100 rounded">
-                <li v-for="d in denoms" :key="d">
-                  <router-link
-                    :to="`/names/${encodeURIComponent(
-                      routeName
-                    )}/denoms/${encodeURIComponent(d)}`"
-                    class="font-mono"
-                    >{{ d }}</router-link
+              <form class="grid grid-cols-1" @submit.prevent="mintCoins">
+                <div class="space-y-2">
+                  <label class="input w-full">
+                    <span class="label">Display Amount </span>
+                    <input
+                      :value="mintAmountDisplay"
+                      @focus="isEditingDisplay = true"
+                      @blur="
+                        isEditingDisplay = false;
+                        mintAmountDisplay = normalizeDisplay(mintAmountDisplay);
+                      "
+                      @input="onDisplayInput"
+                      class=""
+                      placeholder="amount (display)"
+                      label="amount (display)"
+                      type="number"
+                      step="0.000001"
+                      :disabled="denomBusy === 'mint'"
+                    />
+                  </label>
+                  <label class="input w-full">
+                    <span class="label">Display Denom</span>
+                    <input
+                      class="input-ghost"
+                      :value="mintDisplayLabel"
+                      readonly
+                    />
+                  </label>
+
+                  <ul class="list-disc list-inside">
+                    <li class="text-xs opacity-70 mb-2">
+                      Display Denom:
+                      <span class="font-mono">{{ mintDisplayLabel }}</span>
+                    </li>
+                    <li class="text-xs opacity-70 mb-2">
+                      Display amount:
+                      <span class="font-mono">{{
+                        mintAmountDisplayNormalized
+                      }}</span>
+                    </li>
+                    <li class="text-xs opacity-70 mb-2">
+                      Decimal places:
+                      <span v-if="mintDenom === routeName" class="font-mono"
+                        >6</span
+                      >
+                      <span v-else class="font-mono">0</span>
+                    </li>
+                    <li class="text-xs opacity-70 mb-2">
+                      Base Denom:
+                      <span class="font-mono">{{ mintDenom }}</span>
+                    </li>
+                    <li class="text-xs opacity-70 mb-2">
+                      Base amount:
+                      <span class="font-mono">{{ mintAmount }}</span>
+                    </li>
+                    <li
+                      v-if="Number(estimatedFeeUdys || 0) > 0"
+                      class="text-xs opacity-70 mb-2"
+                    >
+                      Fee:
+                      <span class="font-mono">{{
+                        estimatedFeeDisplay.amount
+                      }}</span>
+                      {{ estimatedFeeDisplay.label }}
+                      <span class="opacity-70">
+                        ({{ estimatedFeeUdys }} udys)
+                      </span>
+                    </li>
+                    <li
+                      v-if="Number(mintAmount || 0) > 0"
+                      class="text-xs opacity-70 mb-2"
+                    >
+                      <span class="font-mono">{{ mintAmountDisplay }}</span>
+                      {{ mintDisplayLabel }}
+                      ==
+                      <span class="font-mono">{{ mintAmount }}</span>
+                      {{ mintDenom }}
+                    </li>
+                  </ul>
+
+                  <p class="flex items-center gap-2 my-4">
+                    <label
+                      class="cursor-pointer wrap-anywhere overflow-hidden"
+                      for="confirmMintChecked"
+                    >
+                      <input
+                        v-model="confirmMintChecked"
+                        id="confirmMintChecked"
+                        type="checkbox"
+                        class="checkbox mr-2"
+                      />
+
+                      I understand that minting
+                      <span class="font-mono">{{ mintAmountDisplay }}</span>
+                      {{ mintDisplayLabel }} will cost
+                      {{ estimatedFeeDisplay.amount }}
+                      {{ estimatedFeeDisplay.label }} and is non-refundable.
+                    </label>
+                  </p>
+
+                  <button
+                    class="btn btn-primary w-full mt-2"
+                    :disabled="
+                      denomBusy === 'mint' || !canMint || !confirmMintChecked
+                    "
                   >
-                </li>
-              </ul>
+                    mint
+                  </button>
+
+                  <div
+                    v-if="denomErrMint"
+                    class="join-item alert alert-error alert-soft mt-2"
+                  >
+                    {{ denomErrMint }}
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div>
+              <div v-if="isLoadingDenoms" class="text-base-content/70">
+                Loading…
+              </div>
+              <div v-else-if="denomsError" class="text-error">
+                {{ denomsError }}
+              </div>
+              <div v-else>
+                <div v-if="denoms.length === 0" class="text-base-content/70">
+                  No denoms.
+                </div>
+                <ul v-else class="menu bg-base-100 rounded">
+                  <li v-for="d in denoms" :key="d">
+                    <router-link
+                      :to="`/names/${encodeURIComponent(
+                        routeName
+                      )}/denoms/${encodeURIComponent(d)}`"
+                      class="font-mono"
+                      >{{ d }}</router-link
+                    >
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -326,6 +333,11 @@
 
             <div class="border rounded p-3 bg-base-100">
               <div class="font-medium mb-2">Create NFT Class</div>
+              <div class="text-xs opacity-70 mb-2">
+                {{ routeName }} is managed by destination:
+                <span class="font-mono">{{ resolvedAddress }}</span>
+              </div>
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <input
                   v-model.trim="classForm.classId"
@@ -358,10 +370,6 @@
                 placeholder="description (optional)"
                 :disabled="isSavingClass"
               ></textarea>
-              <div class="text-xs opacity-70 mt-2">
-                {{ routeName }} is managed by destination:
-                <span class="font-mono">{{ resolvedAddress }}</span>
-              </div>
               <div v-if="classSaveError" class="text-error text-sm mt-1">
                 {{ classSaveError }}
               </div>

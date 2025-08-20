@@ -1,8 +1,10 @@
 <template>
   <article
-    class="m-4 p-4 break-words overflow-hidden border border-base-300 rounded-lg"
+    class="m-4 p-4 break-words overflow-hidden border border-base-content/20 rounded-lg bg-base-200"
   >
-    <header class="mb-1 text-xs opacity-70 border-b border-base-300 pb-2">
+    <header
+      class="mb-1 text-xs opacity-70 border-b border-base-content/20 pb-2"
+    >
       <span>
         Post
         <a

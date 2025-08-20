@@ -32,9 +32,7 @@ export const useAddressStore = defineStore("address", () => {
       if (nameCache.value.has(input)) return nameCache.value.get(input);
 
       try {
-        const url = `${
-          chainInfo.restUrl
-        }/dysonprotocol/nameservice/v1/resolve_name/${encodeURIComponent(
+        const url = `${window.resolveRestUrl()}/dysonprotocol/nameservice/v1/resolve_name/${encodeURIComponent(
           input
         )}`;
         const resp = await fetch(url);

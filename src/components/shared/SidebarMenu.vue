@@ -122,9 +122,6 @@
 
         <!-- Chain Explorer -->
         <li>
-          <div class="text-xs/6 font-semibold text-base-content/60">
-            Chain Explorer
-          </div>
           <ul role="list" class="-mx-2 mt-2 space-y-1">
             <li v-for="explorer in explorerItems" :key="explorer.name">
               <router-link

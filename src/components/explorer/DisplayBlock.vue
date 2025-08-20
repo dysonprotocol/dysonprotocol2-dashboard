@@ -1,5 +1,5 @@
 <template>
-  <section class="w-full max-w-2xl mx-auto p-4 flex flex-col gap-6">
+  <section class="">
     <!-- Block Metadata as YAML -->
     <div class="bg-base-200 text-base-content overflow-x-auto">
       <pre><code>{{ yamlBlock }}</code></pre>

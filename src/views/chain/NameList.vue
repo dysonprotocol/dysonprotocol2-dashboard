@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-5xl mx-auto p-4 space-y-4">
+  <div class="max-w-5xl mx-auto p-4 space-y-4 overflow-y-scroll">
     <!-- Register Name Component -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
       <div class="lg:col-span-2 space-y-3">
