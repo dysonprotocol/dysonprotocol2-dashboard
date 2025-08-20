@@ -1,17 +1,119 @@
 <template>
   <div class="p-4">
     <h2 class="text-xl font-bold mb-2">Staking</h2>
-    <p class="text-sm text-gray-600 mb-4">
+    <p class="text-sm opacity-70 mb-4">
       Delegator: <AddressDisplay :address="address" />
     </p>
 
-    <!-- Delegations -->
-    <div class="bg-base-200 p-4 rounded mb-6">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold">Current Delegations</h3>
-        <button class="btn btn-xs" @click="loadDelegations">Reload</button>
+    <!-- Delegate / Undelegate Forms -->
+    <div class="card bg-base-200 mb-6">
+      <div class="card-body grid md:grid-cols-2 gap-4">
+        <form class="grid gap-2" @submit.prevent="submitDelegate">
+          <h3 class="font-semibold">Delegate</h3>
+          <div class="grid gap-2 sm:grid-cols-2 items-end">
+            <div>
+              <label class="label">
+                <span class="label-text">validator_address</span>
+              </label>
+              <select
+                v-model="delegateForm.validator"
+                class="select select-bordered w-full"
+              >
+                <option value="">Select validator…</option>
+                <option
+                  v-for="v in validators"
+                  :key="v.operator_address"
+                  :value="v.operator_address"
+                >
+                  {{
+                    (v.description?.moniker || v.operator_address) +
+                    " (" +
+                    v.status +
+                    ")"
+                  }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <AmountDenomSelector
+                :base-denoms="stakingAllowedBases"
+                :default-base-denom="bondDenom"
+                :disabled="isDelegating"
+                @update:base="onDelegateBaseUpdate"
+              />
+            </div>
+          </div>
+          <button
+            class="btn btn-primary btn-sm"
+            type="submit"
+            :disabled="isDelegating"
+          >
+            {{ isDelegating ? "Delegating…" : "Delegate" }}
+          </button>
+          <span class="text-error text-xs" v-if="delegateError">{{
+            delegateError
+          }}</span>
+        </form>
+
+        <form class="grid gap-2" @submit.prevent="submitUndelegate">
+          <h3 class="font-semibold">Undelegate</h3>
+          <div class="grid gap-2 sm:grid-cols-2 items-end">
+            <div>
+              <label class="label">
+                <span class="label-text">validator_address</span>
+              </label>
+              <select
+                v-model="undelegateForm.validator"
+                class="select select-bordered w-full"
+              >
+                <option value="">Select validator…</option>
+                <option
+                  v-for="v in validators"
+                  :key="v.operator_address"
+                  :value="v.operator_address"
+                >
+                  {{
+                    (v.description?.moniker || v.operator_address) +
+                    " (" +
+                    v.status +
+                    ")"
+                  }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <AmountDenomSelector
+                :base-denoms="stakingAllowedBases"
+                :default-base-denom="bondDenom"
+                :disabled="isUndelegating"
+                @update:base="onUndelegateBaseUpdate"
+              />
+            </div>
+          </div>
+          <button
+            class="btn btn-primary btn-sm"
+            type="submit"
+            :disabled="isUndelegating"
+          >
+            {{ isUndelegating ? "Undelegating…" : "Undelegate" }}
+          </button>
+          <span class="text-error text-xs" v-if="undelegateError">{{
+            undelegateError
+          }}</span>
+        </form>
       </div>
-      <div class="text-sm mb-2">
+    </div>
+    <!-- Delegations -->
+    <div class="card bg-base-200 mb-6">
+      <div class="card-body">
+        <div class="flex items-center justify-between">
+          <h3 class="card-title">Current Delegations</h3>
+          <div class="card-actions">
+            <button class="btn btn-xs" @click="loadDelegations">Reload</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body pt-0 text-sm">
         <span v-if="delegationsError" class="text-error">{{
           delegationsError
         }}</span>
@@ -20,7 +122,7 @@
           >{{ delegations.length }} delegation(s)</span
         >
       </div>
-      <div class="overflow-x-auto">
+      <div class="card-body pt-0 overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
           <thead>
             <tr>
@@ -64,17 +166,21 @@
     </div>
 
     <!-- Rewards -->
-    <div class="bg-base-200 p-4 rounded mb-6">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold">Rewards</h3>
-        <button class="btn btn-xs" @click="loadRewards">Reload</button>
+    <div class="card bg-base-200 mb-6">
+      <div class="card-body">
+        <div class="flex items-center justify-between">
+          <h3 class="card-title">Rewards</h3>
+          <div class="card-actions">
+            <button class="btn btn-xs" @click="loadRewards">Reload</button>
+          </div>
+        </div>
       </div>
-      <div class="text-sm mb-2">
+      <div class="card-body pt-0 text-sm">
         <span v-if="rewardsError" class="text-error">{{ rewardsError }}</span>
         <span v-else-if="isLoadingRewards">Loading…</span>
         <span v-else class="opacity-70">{{ rewards.length }} validator(s)</span>
       </div>
-      <div class="overflow-x-auto">
+      <div class="card-body pt-0 overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
           <thead>
             <tr>
@@ -123,19 +229,23 @@
     </div>
 
     <!-- Unbonding Delegations -->
-    <div class="bg-base-200 p-4 rounded mb-6">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold">Unbonding Delegations</h3>
-        <button class="btn btn-xs" @click="loadUnbondings">Reload</button>
+    <div class="card bg-base-200 mb-6">
+      <div class="card-body">
+        <div class="flex items-center justify-between">
+          <h3 class="card-title">Unbonding Delegations</h3>
+          <div class="card-actions">
+            <button class="btn btn-xs" @click="loadUnbondings">Reload</button>
+          </div>
+        </div>
       </div>
-      <div class="text-sm mb-2">
+      <div class="card-body pt-0 text-sm">
         <span v-if="unbondingsError" class="text-error">{{
           unbondingsError
         }}</span>
         <span v-else-if="isLoadingUnbondings">Loading…</span>
         <span v-else class="opacity-70">{{ unbondingCount }} entry(ies)</span>
       </div>
-      <div class="overflow-x-auto">
+      <div class="card-body pt-0 overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
           <thead>
             <tr>
@@ -187,95 +297,6 @@
           </tbody>
         </table>
       </div>
-    </div>
-
-    <!-- Delegate / Undelegate Forms -->
-    <div class="bg-base-200 p-4 rounded grid md:grid-cols-2 gap-4">
-      <form class="grid gap-2" @submit.prevent="submitDelegate">
-        <h3 class="font-semibold">Delegate</h3>
-        <label class="form-control">
-          <span class="label-text">validator_address</span>
-          <select
-            v-model="delegateForm.validator"
-            class="select select-bordered select-sm"
-          >
-            <option value="">Select validator…</option>
-            <option
-              v-for="v in validators"
-              :key="v.operator_address"
-              :value="v.operator_address"
-            >
-              {{
-                (v.description?.moniker || v.operator_address) +
-                " (" +
-                v.status +
-                ")"
-              }}
-            </option>
-          </select>
-        </label>
-        <div class="grid grid-cols-2 gap-2">
-          <AmountDenomSelector
-            :base-denoms="stakingAllowedBases"
-            :default-base-denom="bondDenom"
-            :disabled="isDelegating"
-            @update:base="onDelegateBaseUpdate"
-          />
-        </div>
-        <button
-          class="btn btn-primary btn-sm"
-          type="submit"
-          :disabled="isDelegating"
-        >
-          {{ isDelegating ? "Delegating…" : "Delegate" }}
-        </button>
-        <span class="text-error text-xs" v-if="delegateError">{{
-          delegateError
-        }}</span>
-      </form>
-
-      <form class="grid gap-2" @submit.prevent="submitUndelegate">
-        <h3 class="font-semibold">Undelegate</h3>
-        <label class="form-control">
-          <span class="label-text">validator_address</span>
-          <select
-            v-model="undelegateForm.validator"
-            class="select select-bordered select-sm"
-          >
-            <option value="">Select validator…</option>
-            <option
-              v-for="v in validators"
-              :key="v.operator_address"
-              :value="v.operator_address"
-            >
-              {{
-                (v.description?.moniker || v.operator_address) +
-                " (" +
-                v.status +
-                ")"
-              }}
-            </option>
-          </select>
-        </label>
-        <div class="grid grid-cols-2 gap-2">
-          <AmountDenomSelector
-            :base-denoms="stakingAllowedBases"
-            :default-base-denom="bondDenom"
-            :disabled="isUndelegating"
-            @update:base="onUndelegateBaseUpdate"
-          />
-        </div>
-        <button
-          class="btn btn-primary btn-sm"
-          type="submit"
-          :disabled="isUndelegating"
-        >
-          {{ isUndelegating ? "Undelegating…" : "Undelegate" }}
-        </button>
-        <span class="text-error text-xs" v-if="undelegateError">{{
-          undelegateError
-        }}</span>
-      </form>
     </div>
   </div>
 </template>
