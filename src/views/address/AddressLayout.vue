@@ -19,7 +19,7 @@
           v-for="tab in addressTabsInjected"
           :key="tab.path"
           :to="linkForTab(tab.path)"
-          class="tab"
+          class="tab md:text-lg text-xs"
           role="tab"
           :class="{ 'tab-active': currentTab === tab.path }"
         >

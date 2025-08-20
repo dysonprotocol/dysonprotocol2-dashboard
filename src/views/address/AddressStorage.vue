@@ -9,9 +9,9 @@
 
     <!-- Main: Controls and list -->
     <section>
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="lg:flex gap-4 pb-4 flex-wrap">
         <fieldset
-          class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
+          class="fieldset bg-base-200 border-base-300 rounded-box border p-4 lg:w-1/3 md:w-full"
         >
           <legend class="fieldset-legend">Metrics</legend>
           <div class="text-sm">
@@ -66,7 +66,7 @@
           </div>
         </fieldset>
 
-        <form class="" @submit.prevent>
+        <form class="lg:w-1/3 md:w-full" @submit.prevent>
           <div class="">
             <!-- Column 1: index_prefix, filter, extract -->
             <fieldset
@@ -76,19 +76,19 @@
               <input
                 v-model.trim="form.index_prefix"
                 type="text"
-                class="input"
+                class="input w-full"
                 placeholder="Index prefix (e.g. user/)"
               />
               <input
                 v-model.trim="form.filter"
                 type="text"
-                class="input"
+                class="input w-full"
                 placeholder='Filter (e.g. status == "active")'
               />
               <input
                 v-model.trim="form.extract"
                 type="text"
-                class="input"
+                class="input w-full"
                 placeholder="Extract (e.g. user.name)"
               />
             </fieldset>
