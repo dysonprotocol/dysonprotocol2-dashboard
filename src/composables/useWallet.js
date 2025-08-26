@@ -7,7 +7,7 @@ import {
   extractKdfConfiguration,
 } from '@cosmjs/proto-signing'
 import { useStorage } from '@vueuse/core'
-import { getChainInfo, sendMsgs, runScript } from '../utils/dysonTxUtils'
+import { getChainInfo, sendMsgs } from '../utils/dysonTxUtils'
 import { useDenom } from './useDenom'
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx.js'
 import { toBase64, fromBase64 } from '@cosmjs/encoding'
@@ -57,7 +57,7 @@ export function useWallet() {
     await loadChainIdFromApi()
 
     // Set up Keplr account change listener globally (only once)
-    if (!globalKeplrListenerSet) {
+    if (!globalKeplrListenerSet && typeof window !== 'undefined') {
       globalHandleKeplrAccountChange = handleKeplrAccountChange
       window.addEventListener('keplr_keystorechange', globalHandleKeplrAccountChange)
       globalKeplrListenerSet = true
@@ -66,7 +66,7 @@ export function useWallet() {
 
     if (selectedWallet.value) {
       if (selectedWallet.value.type === 'keplr') {
-        const provider = window.keplr
+        const provider = typeof window !== 'undefined' ? window.keplr : null
         if (!provider) {
           console.error('Keplr extension not found, please install it.')
           disconnectWallet()
@@ -111,13 +111,13 @@ export function useWallet() {
     // Immediately invalidate cached signer to force refresh
     state.activeWalletInstance = null
 
-    if (selectedWallet.value?.type !== 'keplr' || !window.keplr) {
+    if (selectedWallet.value?.type !== 'keplr' || typeof window === 'undefined' || !window.keplr) {
       console.log('Skipping: not a Keplr wallet or Keplr not available')
       console.log(
         'Condition details: type =',
         selectedWallet.value?.type,
         'window.keplr =',
-        !!window.keplr
+        typeof window !== 'undefined' && !!window.keplr
       )
       return
     }
@@ -407,7 +407,7 @@ export function useWallet() {
   }
 
   const connectExtension = async (type) => {
-    const provider = type === 'keplr' ? window.keplr : null
+    const provider = type === 'keplr' ? (typeof window !== 'undefined' ? window.keplr : null) : null
     if (!provider) {
       throw new Error(`Extension not found: ${type}`)
     }
@@ -604,7 +604,7 @@ export function useWallet() {
     const address = effective.address
 
     if (effective.type === 'keplr') {
-      const provider = window.keplr
+      const provider = typeof window !== 'undefined' ? window.keplr : null
       if (!provider) throw new Error('Keplr extension not found.')
       await suggestChainIfNeeded(provider)
       const offlineSigner = provider.getOfflineSigner(chainId.value)
@@ -650,7 +650,13 @@ export function useWallet() {
     return getChainInfo({ apiUrl: restUrl.value, address })
   }
 
-  const sendMsg = async ({ msg, gasLimit, memo = '', executorAddress = undefined }) => {
+  const sendMsg = async ({
+    msg,
+    gasLimit,
+    memo = '',
+    executorAddress = undefined,
+    grantee = undefined,
+  }) => {
     if (!executorAddress) {
       // enforce explicit executor for clarity and consistency
       throw new Error('executorAddress is required in sendMsg()')
@@ -667,14 +673,27 @@ export function useWallet() {
       },
       gasLimit,
       memo,
+      executorAddress,
+      grantee,
     })
 
-    const { walletInstance, address, type } = await getWallet(executorAddress)
+    // Choose signer: grantee (authz) or executor (direct)
+    const signerAddress = grantee || executorAddress
+    const { walletInstance, address, type } = await getWallet(signerAddress)
     console.log('👛 Retrieved wallet info:', {
       address,
       type,
       hasWalletInstance: !!walletInstance,
     })
+
+    // If grantee provided, wrap the inner msg in MsgExec
+    const finalMsg = grantee
+      ? {
+          '@type': '/cosmos.authz.v1beta1.MsgExec',
+          grantee,
+          msgs: [msg],
+        }
+      : msg
 
     let finalGasLimit = gasLimit
 
@@ -694,7 +713,7 @@ export function useWallet() {
         wallet: walletInstance,
         walletType: type,
         address,
-        msgs: [msg],
+        msgs: [finalMsg],
         memo,
         fee: buildFee(200000),
         simulate: true,
@@ -736,7 +755,7 @@ export function useWallet() {
         wallet: walletInstance,
         walletType: type,
         address,
-        msgs: [msg],
+        msgs: [finalMsg],
         memo,
         fee: buildFee(100000000),
         simulate: true,
@@ -782,7 +801,7 @@ export function useWallet() {
       wallet: walletInstance,
       walletType: type,
       address,
-      msgs: [msg],
+      msgs: [finalMsg],
       memo,
       fee,
       simulate: false,
@@ -804,8 +823,8 @@ export function useWallet() {
       addTransaction({
         txHash,
         timestamp: Date.now(),
-        type: msg?.['@type'] || 'unknown',
-        fromAddress: address,
+        type: finalMsg?.['@type'] || 'unknown',
+        fromAddress: address, // signer (grantee if authz)
         toAddress: msg?.address || msg?.to_address || msg?.recipient || '',
         amount: msg?.amount,
         status: result?.success ? 'success' : 'failed',
@@ -826,8 +845,11 @@ export function useWallet() {
     gasLimit = 100000000,
     simulate = false,
     executorAddress = undefined,
+    grantee = undefined,
   }) => {
-    const { walletInstance, address, type } = await getWallet(executorAddress)
+    // Choose signer: grantee (authz) or executor (direct)
+    const signerAddress = grantee || executorAddress
+    const { walletInstance, address, type } = await getWallet(signerAddress)
     if (!scriptAddress) {
       throw new Error('scriptAddress is required.')
     }
@@ -835,17 +857,27 @@ export function useWallet() {
     let finalGasLimit = gasLimit
     if (gasLimit === 'auto' && !simulate) {
       if (type === COSMJS_WALLET_TYPE) {
-        const simulationResult = await runScript({
+        // Build inner message
+        const innerMsg = {
+          '@type': '/dysonprotocol.script.v1.MsgExec',
+          executor_address: executorAddress,
+          script_address: scriptAddress,
+          function_name: functionName,
+          args,
+          kwargs,
+          extra_code: extraCode,
+          attached_messages: attachedMsg,
+        }
+        const finalMsgForSim = grantee
+          ? { '@type': '/cosmos.authz.v1beta1.MsgExec', grantee, msgs: [innerMsg] }
+          : innerMsg
+
+        const simulationResult = await sendMsgs({
           apiUrl: restUrl.value,
           wallet: walletInstance,
           walletType: type,
-          executorAddress: address,
-          scriptAddress,
-          functionName,
-          args,
-          kwargs,
-          extraCode,
-          attachedMsg,
+          address,
+          msgs: [finalMsgForSim],
           memo,
           fee: buildFee(100000000),
           simulate: true,
@@ -855,7 +887,12 @@ export function useWallet() {
           return simulationResult
         }
 
-        const gasUsed = parseInt(simulationResult.rawSendMsgsResponse?.gasUsed || '0')
+        let gasUsed = 0
+        if (simulationResult?.raw?.gas_info?.gas_used) {
+          gasUsed = parseInt(simulationResult.raw.gas_info.gas_used)
+        } else if (simulationResult?.gasUsed) {
+          gasUsed = parseInt(simulationResult.gasUsed)
+        }
         finalGasLimit = gasUsed > 0 ? Math.round(gasUsed * 1.5) : 100000000
       } else {
         // Skip gas estimation for Keplr wallets to avoid double signing
@@ -865,30 +902,96 @@ export function useWallet() {
     }
 
     const fee = buildFee(finalGasLimit)
+    // Build inner and final messages
+    const innerMsg = {
+      '@type': '/dysonprotocol.script.v1.MsgExec',
+      executor_address: executorAddress,
+      script_address: scriptAddress,
+      function_name: functionName,
+      args,
+      kwargs,
+      extra_code: extraCode,
+      attached_messages: attachedMsg,
+    }
+    const finalMsg = grantee
+      ? { '@type': '/cosmos.authz.v1beta1.MsgExec', grantee, msgs: [innerMsg] }
+      : innerMsg
 
-    const result = await runScript({
+    const sendResult = await sendMsgs({
       apiUrl: restUrl.value,
       wallet: walletInstance,
       walletType: type,
-      executorAddress: address,
-      scriptAddress,
-      functionName,
-      args,
-      kwargs,
-      extraCode,
-      attachedMsg,
+      address,
+      msgs: [finalMsg],
       memo,
       fee,
       simulate,
     })
 
+    // Parse script response similar to dysonTxUtils.runScript
+    const { kind, success, rawLog, raw } = sendResult
+    let scriptResponse = null
+    if (success) {
+      const events = kind === 'simulate' ? raw?.result?.events : raw?.tx_response?.events
+      if (Array.isArray(events)) {
+        const scriptEvt = events.find((e) => e.type === 'dysonprotocol.script.v1.EventExecScript')
+        const responseAttr = scriptEvt?.attributes?.find((a) => a.key === 'response')
+        const value = responseAttr?.value
+        if (value) {
+          try {
+            const parsed = JSON.parse(value.replace(/(: script execution error)$/, ''))
+            if (parsed.result && typeof parsed.result === 'string') {
+              try {
+                parsed.result = JSON.parse(parsed.result)
+              } catch (e) {
+                console.warn('[useWallet.runDysonScript] Failed to parse nested result JSON:', e)
+              }
+            }
+            scriptResponse = parsed.result
+          } catch {
+            scriptResponse = value
+          }
+        }
+      }
+    } else {
+      try {
+        if (raw?.message) {
+          const firstBrace = raw.message.indexOf('{')
+          const lastBrace = raw.message.lastIndexOf('}')
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            const jsonStr = raw.message.substring(firstBrace, lastBrace + 1)
+            scriptResponse = JSON.parse(jsonStr)
+          }
+        }
+        if (!scriptResponse && rawLog) {
+          const firstBrace = rawLog.indexOf('{')
+          const lastBrace = rawLog.lastIndexOf('}')
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            const jsonStr = rawLog.substring(firstBrace, lastBrace + 1)
+            scriptResponse = JSON.parse(jsonStr)
+          } else {
+            const cleanedLog = rawLog.replace(/(: script execution error)$/, '')
+            scriptResponse = JSON.parse(cleanedLog)
+          }
+        }
+      } catch {
+        scriptResponse = null
+      }
+    }
+
+    const result = {
+      kind,
+      success,
+      scriptResponse,
+      rawSendMsgsResponse: sendResult,
+    }
+
     if (!simulate) {
-      const sendRes = result.rawSendMsgsResponse
-      const txResp = sendRes?.raw?.tx_response
+      const txResp = sendResult?.raw?.tx_response
       const hasHash = Boolean(txResp?.txhash)
       if (hasHash) {
         const firstMsgType = String(
-          sendRes?.raw?.tx?.body?.messages?.[0]?.['@type'] || '/dysonprotocol.script.v1.MsgExec'
+          sendResult?.raw?.tx?.body?.messages?.[0]?.['@type'] || '/dysonprotocol.script.v1.MsgExec'
         )
         addTransaction({
           txHash: txResp.txhash,
@@ -1018,6 +1121,7 @@ export function useWallet() {
 
   return {
     // State
+    restUrl,
     rpcUrl,
     chainId,
     localCosmJsWallets,
@@ -1069,7 +1173,11 @@ export function useWallet() {
 
     // Cleanup function
     cleanup: () => {
-      if (globalKeplrListenerSet && globalHandleKeplrAccountChange) {
+      if (
+        globalKeplrListenerSet &&
+        globalHandleKeplrAccountChange &&
+        typeof window !== 'undefined'
+      ) {
         window.removeEventListener('keplr_keystorechange', globalHandleKeplrAccountChange)
         globalKeplrListenerSet = false
         console.log('Keplr event listener removed')

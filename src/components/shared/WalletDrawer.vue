@@ -15,9 +15,7 @@
 
       <div class="fixed inset-0 overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
-          <div
-            class="pointer-events-none fixed inset-y-0 right-0 flex max-w-2xl pl-10 sm:pl-16"
-          >
+          <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-2xl pl-10 sm:pl-16">
             <TransitionChild
               as="template"
               enter="transform transition ease-in-out duration-500 sm:duration-700"
@@ -30,12 +28,17 @@
               <DialogPanel class="pointer-events-auto w-screen max-w-md">
                 <div class="h-full flex flex-col bg-base-100 shadow-xl">
                   <!-- Header -->
-                  <div
-                    class="flex items-center justify-between p-4 border-b border-base-300"
-                  >
-                    <h2 class="text-lg font-semibold text-base-content">
-                      Wallet Manager
-                    </h2>
+                  <div class="flex items-center justify-between p-4 border-b border-base-300">
+                    <div class="flex items-center gap-2">
+                      <h2 class="text-lg font-semibold text-base-content">Wallet Manager</h2>
+                      <div v-if="authzInfo?.enabled" class="badge badge-info gap-1">
+                        <span>Authz:</span>
+                        <span>
+                          signing as {{ (authzInfo.grantee || '').slice(0, 8) }}… for
+                          {{ (authzInfo.granter || '').slice(0, 8) }}…
+                        </span>
+                      </div>
+                    </div>
                     <button
                       @click="$emit('close')"
                       class="btn btn-ghost btn-sm btn-circle"
@@ -63,24 +66,14 @@
                           <!-- Wallet Name and Actions -->
                           <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
-                              <img
-                                :src="keplrLogo"
-                                alt="Keplr"
-                                class="w-5 h-5"
-                              />
-                              <div
-                                class="font-medium text-base text-base-content"
-                              >
+                              <img :src="keplrLogo" alt="Keplr" class="w-5 h-5" />
+                              <div class="font-medium text-base text-base-content">
                                 {{ keplrWallet?.name }} (Keplr)
                               </div>
                             </div>
                             <div class="flex items-center gap-1">
                               <button
-                                @click.stop="
-                                  router.push(
-                                    `/address/${keplrWallet?.address}`
-                                  )
-                                "
+                                @click.stop="router.push(`/address/${keplrWallet?.address}`)"
                                 class="btn btn-ghost btn-xs"
                                 data-testid="view-keplr-address"
                               >
@@ -91,10 +84,7 @@
 
                           <!-- Address Header -->
                           <div class="text-xs text-base-content/80 mb-2">
-                            <AddressDisplay
-                              :address="keplrWallet?.address"
-                              :truncate="false"
-                            />
+                            <AddressDisplay :address="keplrWallet?.address" :truncate="false" />
                           </div>
 
                           <!-- Actions Row -->
@@ -108,7 +98,7 @@
                               :disabled="isKeplrSelected"
                               data-testid="select-keplr-wallet"
                             >
-                              {{ isKeplrSelected ? "Selected" : "Select" }}
+                              {{ isKeplrSelected ? 'Selected' : 'Select' }}
                             </button>
 
                             <button
@@ -132,13 +122,9 @@
                         >
                           <div class="flex items-center gap-3">
                             <img :src="keplrLogo" alt="Keplr" class="w-6 h-6" />
-                            <span class="font-medium text-base-content"
-                              >Keplr Wallet</span
-                            >
+                            <span class="font-medium text-base-content">Keplr Wallet</span>
                           </div>
-                          <span class="text-primary text-sm font-medium">
-                            Connect
-                          </span>
+                          <span class="text-primary text-sm font-medium"> Connect </span>
                         </button>
 
                         <div
@@ -176,9 +162,7 @@
                             </div>
                             <div class="flex items-center gap-1">
                               <button
-                                @click.stop="
-                                  router.push(`/address/${wallet.address}`)
-                                "
+                                @click.stop="router.push(`/address/${wallet.address}`)"
                                 class="btn btn-ghost btn-xs"
                                 :data-testid="`view-address-${wallet.name}`"
                               >
@@ -192,10 +176,7 @@
                             class="text-xs text-base-content/80 mb-2"
                             :data-testid="`wallet-address-${wallet.name}`"
                           >
-                            <AddressDisplay
-                              :address="wallet.address"
-                              :truncate="false"
-                            />
+                            <AddressDisplay :address="wallet.address" :truncate="false" />
                           </div>
 
                           <!-- Actions Row -->
@@ -221,8 +202,7 @@
                                   class="input input-xs w-20 text-xs"
                                   :class="{
                                     'input-error': unlockErrors[wallet.name],
-                                    'input-disabled':
-                                      unlockLoading[wallet.name],
+                                    'input-disabled': unlockLoading[wallet.name],
                                   }"
                                   :data-testid="`unlock-password-${wallet.name}`"
                                   :disabled="unlockLoading[wallet.name]"
@@ -244,11 +224,7 @@
                                     v-if="unlockLoading[wallet.name]"
                                     class="loading loading-spinner loading-xs mr-1"
                                   ></span>
-                                  {{
-                                    unlockLoading[wallet.name]
-                                      ? "Unlocking..."
-                                      : "Unlock"
-                                  }}
+                                  {{ unlockLoading[wallet.name] ? 'Unlocking...' : 'Unlock' }}
                                 </button>
                               </div>
                               <!-- Error message -->
@@ -285,10 +261,7 @@
                       <div class="text-sm font-medium mb-2 text-base-content">
                         Import New Wallet
                       </div>
-                      <form
-                        @submit.prevent="handleImport"
-                        data-testid="import-wallet-form"
-                      >
+                      <form @submit.prevent="handleImport" data-testid="import-wallet-form">
                         <div class="space-y-3">
                           <!-- Wallet Name -->
                           <input
@@ -373,10 +346,7 @@
                           :disabled="!canImport || loading"
                           data-testid="import-wallet-submit"
                         >
-                          <span
-                            v-if="loading"
-                            class="loading loading-spinner loading-sm"
-                          ></span>
+                          <span v-if="loading" class="loading loading-spinner loading-sm"></span>
                           <span v-else>Import Wallet</span>
                         </button>
                       </form>
@@ -413,18 +383,13 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch, reactive } from "vue";
-import {
-  Dialog,
-  DialogPanel,
-  TransitionChild,
-  TransitionRoot,
-} from "@headlessui/vue";
-import { XMarkIcon } from "@heroicons/vue/24/outline";
-import { useWallet } from "@/composables/useWallet";
-import { useRouter } from "vue-router";
-import AddressDisplay from "@/components/AddressDisplay.vue";
-import keplrLogo from "@/assets/images/keplr-logo-256.png";
+import { ref, computed, nextTick, watch, reactive } from 'vue'
+import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
+import { XMarkIcon } from '@heroicons/vue/24/outline'
+import { useWallet } from '@/composables/useWallet'
+import { useRouter } from 'vue-router'
+import AddressDisplay from '@/components/AddressDisplay.vue'
+import keplrLogo from '@/assets/images/keplr-logo-256.png'
 
 // Props & Emits
 defineProps({
@@ -432,9 +397,13 @@ defineProps({
     type: Boolean,
     default: false,
   },
-});
+  authzInfo: {
+    type: Object,
+    default: null,
+  },
+})
 
-defineEmits(["close"]);
+defineEmits(['close'])
 
 // Composables
 const {
@@ -449,22 +418,22 @@ const {
   generateMnemonic,
   disconnectWallet,
   selectWallet,
-} = useWallet();
+} = useWallet()
 
-const router = useRouter();
+const router = useRouter()
 
 // Form state
-const mnemonic = ref("");
-const newWalletName = ref("");
-const newWalletPassword = ref("");
-const seedBackedUp = ref(false);
-const loading = ref(false);
-const importError = ref("");
-const keplrError = ref("");
+const mnemonic = ref('')
+const newWalletName = ref('')
+const newWalletPassword = ref('')
+const seedBackedUp = ref(false)
+const loading = ref(false)
+const importError = ref('')
+const keplrError = ref('')
 
 // Unlock state per wallet - use reactive for better reactivity
-const unlockLoading = reactive({});
-const unlockErrors = reactive({});
+const unlockLoading = reactive({})
+const unlockErrors = reactive({})
 
 // Computed
 // Removed global selected wallet concept for signing; drawer remains for connect/unlock/remove only
@@ -475,190 +444,183 @@ const canImport = computed(
     newWalletPassword.value.trim() &&
     mnemonic.value.trim() &&
     seedBackedUp.value
-);
+)
 
 const hasKeplrWallet = computed(() => {
-  return unlockedWallets.value.some((w) => w.type === "keplr");
-});
+  return unlockedWallets.value.some((w) => w.type === 'keplr')
+})
 
 const keplrWallet = computed(() => {
-  return unlockedWallets.value.find((w) => w.type === "keplr");
-});
+  return unlockedWallets.value.find((w) => w.type === 'keplr')
+})
 
-const isKeplrSelected = computed(() => false);
+const isKeplrSelected = computed(() => false)
 
 // Watchers to reset form validation when inputs change
 watch([newWalletName, mnemonic], () => {
   // Clear password and uncheck confirmation when name or mnemonic changes
   if (newWalletPassword.value || seedBackedUp.value) {
-    newWalletPassword.value = "";
-    seedBackedUp.value = false;
+    newWalletPassword.value = ''
+    seedBackedUp.value = false
   }
-});
+})
 
 // Clear errors when form inputs change
 watch([mnemonic, newWalletName, newWalletPassword, seedBackedUp], () => {
   if (importError.value) {
-    importError.value = "";
+    importError.value = ''
   }
-});
+})
 
 // Add function to clear unlock error when user starts typing
 const clearUnlockError = (walletName) => {
   if (unlockErrors[walletName]) {
-    delete unlockErrors[walletName];
+    delete unlockErrors[walletName]
   }
-};
+}
 
 // Handle unlock button click by finding the password input
 const handleUnlockClick = (wallet) => {
-  if (unlockLoading[wallet.name]) return; // Prevent multiple clicks while loading
+  if (unlockLoading[wallet.name]) return // Prevent multiple clicks while loading
 
-  const input = document.querySelector(
-    `[data-testid="unlock-password-${wallet.name}"]`
-  );
+  const input = document.querySelector(`[data-testid="unlock-password-${wallet.name}"]`)
   if (input && input.value && input.value.trim()) {
-    handleInlineUnlock(wallet, input.value);
+    handleInlineUnlock(wallet, input.value)
   }
-};
+}
 
 // Helper functions
 
-const isWalletSelected = () => false;
+const isWalletSelected = () => false
 
 const isWalletUnlocked = (wallet) => {
-  return unlockedWallets.value.some((w) => w.address === wallet.address);
-};
+  return unlockedWallets.value.some((w) => w.address === wallet.address)
+}
 
-const selectWalletByName = () => {};
+const selectWalletByName = () => {}
 
 const handleRemoveWallet = (walletName) => {
   const confirmed = confirm(
     `Are you sure you want to remove wallet "${walletName}"?\n\nThis action cannot be undone. You will need to re-import this wallet using your recovery phrase.`
-  );
+  )
 
   if (confirmed) {
-    removeNamedCosmJsWallet(walletName);
+    removeNamedCosmJsWallet(walletName)
   }
-};
+}
 
 const handleRemoveAll = () => {
-  if (localCosmJsWallets.value.length === 0) return;
+  if (localCosmJsWallets.value.length === 0) return
 
-  const walletCount = localCosmJsWallets.value.length;
+  const walletCount = localCosmJsWallets.value.length
   const confirmed = confirm(
     `Are you sure you want to remove ALL ${walletCount} wallet${
-      walletCount > 1 ? "s" : ""
+      walletCount > 1 ? 's' : ''
     }?\n\nThis action cannot be undone. You will need to re-import all wallets using their recovery phrases.`
-  );
+  )
 
   if (confirmed) {
     // Disconnect first to clear active wallet
-    disconnectWallet();
+    disconnectWallet()
 
     // Remove all local wallets
-    const walletsToRemove = [...localCosmJsWallets.value];
+    const walletsToRemove = [...localCosmJsWallets.value]
     walletsToRemove.forEach((wallet) => {
-      removeNamedCosmJsWallet(wallet.name);
-    });
+      removeNamedCosmJsWallet(wallet.name)
+    })
   }
-};
+}
 
 // Actions
 
-const selectKeplrWallet = () => {};
+const selectKeplrWallet = () => {}
 
 const handleDisconnectAll = () => {
-  disconnectWallet();
+  disconnectWallet()
   // Clear unlocked wallets array
-  unlockedWallets.value.length = 0;
-};
+  unlockedWallets.value.length = 0
+}
 
 const generateSeed = async (wordCount) => {
   try {
-    loading.value = true;
-    mnemonic.value = await generateMnemonic(wordCount);
+    loading.value = true
+    mnemonic.value = await generateMnemonic(wordCount)
   } catch (err) {
-    console.error("Failed to generate mnemonic:", err);
+    console.error('Failed to generate mnemonic:', err)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const handleKeplr = async () => {
-  loading.value = true;
-  keplrError.value = "";
+  loading.value = true
+  keplrError.value = ''
   try {
     if (hasKeplrWallet.value) {
       // Disconnect Keplr wallet
-      const keplrWallet = unlockedWallets.value.find((w) => w.type === "keplr");
+      const keplrWallet = unlockedWallets.value.find((w) => w.type === 'keplr')
       if (keplrWallet) {
-        lockWallet(keplrWallet.name);
+        lockWallet(keplrWallet.name)
       }
     } else {
       // Connect Keplr
-      await connectExtension("keplr");
+      await connectExtension('keplr')
     }
   } catch (err) {
-    console.error("Keplr operation failed:", err);
-    keplrError.value = err.message || "Failed to connect to Keplr";
+    console.error('Keplr operation failed:', err)
+    keplrError.value = err.message || 'Failed to connect to Keplr'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const handleImport = async () => {
-  loading.value = true;
-  importError.value = "";
+  loading.value = true
+  importError.value = ''
   try {
     await importNamedCosmJsWallet(
       newWalletName.value.trim(),
       mnemonic.value.trim(),
       newWalletPassword.value
-    );
-    await connectNamedCosmJsWallet(
-      newWalletName.value.trim(),
-      newWalletPassword.value
-    );
+    )
+    await connectNamedCosmJsWallet(newWalletName.value.trim(), newWalletPassword.value)
     // Reset form
-    mnemonic.value = "";
-    newWalletName.value = "";
-    newWalletPassword.value = "";
-    seedBackedUp.value = false;
+    mnemonic.value = ''
+    newWalletName.value = ''
+    newWalletPassword.value = ''
+    seedBackedUp.value = false
   } catch (err) {
-    console.error("Wallet import failed:", err);
-    importError.value = err.message || "Failed to import wallet";
+    console.error('Wallet import failed:', err)
+    importError.value = err.message || 'Failed to import wallet'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const handleInlineUnlock = (wallet, password) => {
-  if (!password.trim()) return;
+  if (!password.trim()) return
 
   // Set loading state for this specific wallet
-  unlockLoading[wallet.name] = true;
-  unlockErrors[wallet.name] = "";
+  unlockLoading[wallet.name] = true
+  unlockErrors[wallet.name] = ''
 
   nextTick(() => {
     unlockWallet(wallet.name, password)
       .then(() => {
         // Clear password input on success
-        const input = document.querySelector(
-          `[data-testid="unlock-password-${wallet.name}"]`
-        );
-        if (input) input.value = "";
+        const input = document.querySelector(`[data-testid="unlock-password-${wallet.name}"]`)
+        if (input) input.value = ''
 
         // Clear any previous error
-        delete unlockErrors[wallet.name];
+        delete unlockErrors[wallet.name]
       })
       .catch((err) => {
-        console.error("Unlock failed:", err);
-        unlockErrors[wallet.name] = err.message || "Invalid password";
+        console.error('Unlock failed:', err)
+        unlockErrors[wallet.name] = err.message || 'Invalid password'
       })
       .finally(() => {
-        unlockLoading[wallet.name] = false;
-      });
-  });
-};
+        unlockLoading[wallet.name] = false
+      })
+  })
+}
 </script>
