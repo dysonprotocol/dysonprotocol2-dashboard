@@ -1,0 +1,10 @@
+<div id="disabled-filepond-demo" disabled></div>
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        FilePond.create(document.querySelector("#disabled-filepond-demo"), {
+            allowImagePreview: false,
+            credits: false,
+            disabled: true,
+        })
+    })
+</script>

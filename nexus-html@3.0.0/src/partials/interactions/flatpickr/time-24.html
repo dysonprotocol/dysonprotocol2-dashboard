@@ -1,0 +1,10 @@
+<input aria-label="Date picker" class="input max-w-56" id="time-24-flatpickr-demo" />
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#time-24-flatpickr-demo", {
+            defaultDate: new Date(),
+            mode: "time",
+            time_24hr: true,
+        })
+    })
+</script>

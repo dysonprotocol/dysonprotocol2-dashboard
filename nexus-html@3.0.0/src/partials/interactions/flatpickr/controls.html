@@ -1,0 +1,18 @@
+<div class="join" id="controls-flatpickr-demo">
+    <input aria-label="Date picker" class="input join-item max-w-48" data-input />
+    <button class="btn btn-outline border-base-300 btn-square join-item" data-toggle>
+        <span class="iconify lucide--calendar size-4"></span>
+    </button>
+    <button class="btn btn-outline border-base-300 btn-square join-item btn-error" data-clear>
+        <span class="iconify lucide--x size-4"></span>
+    </button>
+</div>
+
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#controls-flatpickr-demo", {
+            defaultDate: Date.now(),
+            wrap: true,
+        })
+    })
+</script>

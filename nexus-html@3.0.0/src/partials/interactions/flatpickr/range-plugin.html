@@ -1,0 +1,22 @@
+<div class="join">
+    <input
+        aria-label="Date picker"
+        class="input join-item max-w-32"
+        id="range-plugin-flatpickr-demo-1" />
+    <div
+        class="border-base-300 join-item bg-base-200 text-base-content/80 flex items-center border px-3 font-medium">
+        to
+    </div>
+    <input
+        aria-label="Date picker"
+        class="input join-item max-w-32"
+        id="range-plugin-flatpickr-demo-2" />
+</div>
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#range-plugin-flatpickr-demo-1", {
+            mode: "range",
+            plugins: [new rangePlugin({ input: "#range-plugin-flatpickr-demo-2" })],
+        })
+    })
+</script>

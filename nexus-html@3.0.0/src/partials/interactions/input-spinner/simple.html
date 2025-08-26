@@ -1,0 +1,27 @@
+<div class="flex items-center justify-center gap-3">
+    <button
+        class="btn btn-square"
+        data-spinner-control="simple-spinner-demo"
+        data-steps="-1"
+        aria-label="Decrement">
+        <span class="iconify lucide--minus size-4"></span>
+    </button>
+    <input
+        aria-label="Input Spinner"
+        id="simple-spinner-demo"
+        value="0"
+        type="number"
+        class="input no-spinner input-bordered w-40" />
+    <button
+        class="btn btn-square"
+        data-spinner-control="simple-spinner-demo"
+        aria-label="Increment">
+        <span class="iconify lucide--plus size-4"></span>
+    </button>
+</div>
+
+<script>
+    window.addEventListener("DOMContentLoaded", () => {
+        new InputSpinner("#simple-spinner-demo")
+    })
+</script>

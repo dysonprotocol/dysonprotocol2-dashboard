@@ -1,76 +1,67 @@
 // dysonTxUtils.js
-import {
-  Tx,
-  TxBody,
-  AuthInfo,
-  TxRaw,
-} from "cosmjs-types/cosmos/tx/v1beta1/tx.js";
-import { fromBase64, toBase64 } from "@cosmjs/encoding";
+import { Tx, TxBody, AuthInfo, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx.js'
+import { fromBase64, toBase64 } from '@cosmjs/encoding'
 
-import { DirectSecp256k1HdWallet, makeSignDoc } from "@cosmjs/proto-signing";
-import { Any } from "cosmjs-types/google/protobuf/any.js";
-import { SignMode } from "cosmjs-types/cosmos/tx/signing/v1beta1/signing.js";
-import { transactionConfig } from "./transactionModalConfig.js";
+import { DirectSecp256k1HdWallet, makeSignDoc } from '@cosmjs/proto-signing'
+import { Any } from 'cosmjs-types/google/protobuf/any.js'
+import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing.js'
+import { transactionConfig } from './transactionModalConfig.js'
 
-let DISABLE_CHECK_LEADING_ZERO_AMOUNTS = false;
+let DISABLE_CHECK_LEADING_ZERO_AMOUNTS = false
 
 const escapeHTML = (str) =>
   str.replace(
     /[&<>'"]/g,
     (tag) =>
       ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        "'": "&#39;",
-        '"': "&quot;",
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;',
       }[tag] || tag)
-  );
+  )
 
 /** Fetch chain info for address. */
 export async function getChainInfo({ apiUrl, address }) {
-  const nodeInfoResp = await fetch(
-    `${apiUrl}/cosmos/base/tendermint/v1beta1/node_info`
-  );
+  const nodeInfoResp = await fetch(`${apiUrl}/cosmos/base/tendermint/v1beta1/node_info`)
   if (!nodeInfoResp.ok) {
-    throw new Error(`Failed to fetch node info: ${await nodeInfoResp.text()}`);
+    throw new Error(`Failed to fetch node info: ${await nodeInfoResp.text()}`)
   }
-  const nodeInfoJson = await nodeInfoResp.json();
-  const chainId = nodeInfoJson.default_node_info.network;
+  const nodeInfoJson = await nodeInfoResp.json()
+  const chainId = nodeInfoJson.default_node_info.network
 
-  const acctInfoResp = await fetch(
-    `${apiUrl}/cosmos/auth/v1beta1/account_info/${address}`
-  );
+  const acctInfoResp = await fetch(`${apiUrl}/cosmos/auth/v1beta1/account_info/${address}`)
   if (!acctInfoResp.ok) {
     // try to parse as json: {"code":5,"message":"account dys123123 not found","details":[]}
-    const textErr = await acctInfoResp.text();
-    let jsonErr;
+    const textErr = await acctInfoResp.text()
+    let jsonErr
     try {
-      jsonErr = JSON.parse(textErr);
+      jsonErr = JSON.parse(textErr)
       if (jsonErr.code === 5) {
-        return { chainId, accountNumber: 0, sequence: 0 };
+        return { chainId, accountNumber: 0, sequence: 0 }
       }
     } catch {
       // ignore parse error
     }
-    throw new Error(`Failed to fetch account info: ${textErr}`);
+    throw new Error(`Failed to fetch account info: ${textErr}`)
   }
-  const acctInfoJson = await acctInfoResp.json();
-  const accountNumber = parseInt(acctInfoJson.info.account_number, 10);
-  const sequence = parseInt(acctInfoJson.info.sequence, 10);
+  const acctInfoJson = await acctInfoResp.json()
+  const accountNumber = parseInt(acctInfoJson.info.account_number, 10)
+  const sequence = parseInt(acctInfoJson.info.sequence, 10)
 
-  return { chainId, accountNumber, sequence };
+  return { chainId, accountNumber, sequence }
 }
 
 /** Build a base Tx object. */
-export function prepareTx({ msgs, memo = "", fee }) {
+export function prepareTx({ msgs, memo = '', fee }) {
   return {
     body: {
       messages: msgs,
       memo,
-      timeout_height: "0",
+      timeout_height: '0',
       unordered: false,
-      timeout_timestamp: "0001-01-01T00:00:00Z",
+      timeout_timestamp: '0001-01-01T00:00:00Z',
       extension_options: [],
       non_critical_extension_options: [],
     },
@@ -78,12 +69,12 @@ export function prepareTx({ msgs, memo = "", fee }) {
       signer_infos: [],
       fee: fee || {
         amount: [],
-        gas_limit: "200000",
+        gas_limit: '200000',
       },
       tip: null,
     },
     signatures: [],
-  };
+  }
 }
 
 /** Insert signer info so chain sees exactly 1 signer. */
@@ -91,14 +82,14 @@ export function addSignerInfo({ transaction, pubkey, sequence }) {
   transaction.auth_info.signer_infos = [
     {
       public_key: {
-        "@type": "/cosmos.crypto.secp256k1.PubKey",
+        '@type': '/cosmos.crypto.secp256k1.PubKey',
         key: toBase64(pubkey),
       },
-      mode_info: { single: { mode: "SIGN_MODE_DIRECT" } }, // SIGN_MODE_DIRECT
+      mode_info: { single: { mode: 'SIGN_MODE_DIRECT' } }, // SIGN_MODE_DIRECT
       sequence: String(sequence),
     },
-  ];
-  return transaction;
+  ]
+  return transaction
 }
 
 /**
@@ -107,18 +98,18 @@ export function addSignerInfo({ transaction, pubkey, sequence }) {
  */
 export async function encodeAndDecodeTx({ apiUrl, transaction }) {
   const encodeRes = await fetch(`${apiUrl}/cosmos/tx/v1beta1/encode`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ tx: transaction }),
-  });
+  })
   if (!encodeRes.ok) {
-    throw new Error(`Failed to encode transaction: ${await encodeRes.text()}`);
+    throw new Error(`Failed to encode transaction: ${await encodeRes.text()}`)
   }
-  const { tx_bytes: txBytesBase64 } = await encodeRes.json();
-  const protoTx = Tx.decode(fromBase64(txBytesBase64));
-  const bodyBytes = TxBody.encode(protoTx.body).finish();
-  const authInfoBytes = AuthInfo.encode(protoTx.authInfo).finish();
-  return { txBytesBase64, bodyBytes, authInfoBytes };
+  const { tx_bytes: txBytesBase64 } = await encodeRes.json()
+  const protoTx = Tx.decode(fromBase64(txBytesBase64))
+  const bodyBytes = TxBody.encode(protoTx.body).finish()
+  const authInfoBytes = AuthInfo.encode(protoTx.authInfo).finish()
+  return { txBytesBase64, bodyBytes, authInfoBytes }
 }
 
 /** Sign the Tx using CosmJS or Leap/Keplr signDirect. Returns raw bytes. */
@@ -137,9 +128,9 @@ export async function signTx({
     authInfoBytes,
     chainId,
     accountNumber: Number(accountNumber),
-  };
+  }
 
-  let directSignResponse;
+  let directSignResponse
   try {
     directSignResponse = await wallet.signDirect(address, {
       bodyBytes,
@@ -147,44 +138,44 @@ export async function signTx({
       chainId,
       accountNumber,
       sequence,
-    });
+    })
   } catch (err) {
-    if (err?.message?.includes("is not found in wallet")) {
+    if (err?.message?.includes('is not found in wallet')) {
       throw new Error(
         `Address mismatch: the selected address (${address}) is not active in Keplr. Switch account in Keplr or reconnect the wallet.`
-      );
+      )
     }
-    throw err;
+    throw err
   }
 
-  const { signed, signature } = directSignResponse;
+  const { signed, signature } = directSignResponse
   const txRaw = TxRaw.fromPartial({
     bodyBytes: signed.bodyBytes || bodyBytes,
     authInfoBytes: signed.authInfoBytes || authInfoBytes,
     signatures: [fromBase64(signature.signature)],
-  });
-  return TxRaw.encode(txRaw).finish();
+  })
+  return TxRaw.encode(txRaw).finish()
 }
 
 /** Strips trailing ": script execution error" if present. */
 function stripScriptSuffix(log) {
-  const suffix = ": script execution error";
-  return log.endsWith(suffix) ? log.slice(0, -suffix.length).trim() : log;
+  const suffix = ': script execution error'
+  return log.endsWith(suffix) ? log.slice(0, -suffix.length).trim() : log
 }
 
 /** Validate msg types appear in events => type="message" => attr.key="action". */
 function checkMissingMsgTypes(events, msgTypes) {
-  if (!Array.isArray(events)) return msgTypes;
-  const messageEvents = events.filter((e) => e.type === "message");
-  const foundActions = new Set();
+  if (!Array.isArray(events)) return msgTypes
+  const messageEvents = events.filter((e) => e.type === 'message')
+  const foundActions = new Set()
   for (const me of messageEvents) {
     for (const attr of me.attributes || []) {
-      if (attr.key === "action" && attr.value) {
-        foundActions.add(attr.value);
+      if (attr.key === 'action' && attr.value) {
+        foundActions.add(attr.value)
       }
     }
   }
-  return msgTypes.filter((t) => !foundActions.has(t));
+  return msgTypes.filter((t) => !foundActions.has(t))
 }
 
 /**
@@ -192,208 +183,208 @@ function checkMissingMsgTypes(events, msgTypes) {
  * then returns a unified result shape.
  */
 async function submitTx({ apiUrl, txRawBytesBase64, msgTypes, mode }) {
-  if (mode === "simulate") {
+  if (mode === 'simulate') {
     // Single POST => /simulate
     const simRes = await fetch(`${apiUrl}/cosmos/tx/v1beta1/simulate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tx_bytes: txRawBytesBase64 }),
-    });
+    })
     if (!simRes.ok) {
-      const textErr = await simRes.text();
+      const textErr = await simRes.text()
       try {
-        const jsonErr = JSON.parse(textErr);
+        const jsonErr = JSON.parse(textErr)
         return {
-          kind: "simulate",
+          kind: 'simulate',
           success: false,
           code: 1,
-          gasUsed: "0",
+          gasUsed: '0',
           rawLog: textErr, // Use full text error for better parsing
           raw: jsonErr,
-        };
+        }
       } catch {
         // ignore parse error
       }
 
       return {
-        kind: "simulate",
+        kind: 'simulate',
         success: false,
         code: 1,
-        gasUsed: "0",
+        gasUsed: '0',
         rawLog: textErr, // Use textErr instead of empty string
         raw: null,
-      };
+      }
     }
-    const simData = await simRes.json();
-    const gasUsed = simData?.gas_info?.gas_used || "0";
+    const simData = await simRes.json()
+    const gasUsed = simData?.gas_info?.gas_used || '0'
 
-    let code = 0;
-    let rawLog = "";
-    const events = simData?.result?.events || [];
+    let code = 0
+    let rawLog = ''
+    const events = simData?.result?.events || []
 
     // Check for script execution errors in simulation result
     if (simData?.result?.log) {
-      rawLog = simData.result.log;
+      rawLog = simData.result.log
       // If log contains script execution error, mark as failed
-      if (rawLog.includes("script execution error")) {
-        code = 1;
+      if (rawLog.includes('script execution error')) {
+        code = 1
         return {
-          kind: "simulate",
+          kind: 'simulate',
           success: false,
           code,
           gasUsed,
           rawLog,
           raw: simData,
-        };
+        }
       }
     }
 
     // check missing message types
-    const missingTypes = checkMissingMsgTypes(events, msgTypes);
+    const missingTypes = checkMissingMsgTypes(events, msgTypes)
     if (missingTypes.length > 0) {
-      code = 1;
-      rawLog = "";
+      code = 1
+      rawLog = ''
       return {
-        kind: "simulate",
+        kind: 'simulate',
         success: false,
         code,
         gasUsed,
         rawLog,
         raw: simData,
-      };
+      }
     }
     return {
-      kind: "simulate",
+      kind: 'simulate',
       success: true,
       code,
       gasUsed,
       rawLog,
       raw: simData,
-    };
+    }
   }
 
   // mode === "broadcast"
   // 1) broadcast
   const broadcastRes = await fetch(`${apiUrl}/cosmos/tx/v1beta1/txs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       tx_bytes: txRawBytesBase64,
-      mode: "BROADCAST_MODE_SYNC",
+      mode: 'BROADCAST_MODE_SYNC',
     }),
-  });
+  })
   if (!broadcastRes.ok) {
-    const textErr = await broadcastRes.text();
+    const textErr = await broadcastRes.text()
     return {
-      kind: "broadcast",
+      kind: 'broadcast',
       success: false,
       code: 1,
-      gasUsed: "0",
+      gasUsed: '0',
       rawLog: `Broadcast error: ${textErr}`,
       raw: null,
-    };
+    }
   }
-  const broadcastData = await broadcastRes.json();
-  const txHash = broadcastData?.tx_response?.txhash;
+  const broadcastData = await broadcastRes.json()
+  const txHash = broadcastData?.tx_response?.txhash
   if (!txHash) {
     return {
-      kind: "broadcast",
+      kind: 'broadcast',
       success: false,
       code: 1,
-      gasUsed: "0",
-      rawLog: "No txhash in broadcast response",
+      gasUsed: '0',
+      rawLog: 'No txhash in broadcast response',
       raw: broadcastData,
-    };
+    }
   }
 
   // Check if broadcast failed immediately (code != 0)
-  const broadcastCode = broadcastData?.tx_response?.code || 0;
+  const broadcastCode = broadcastData?.tx_response?.code || 0
   if (broadcastCode !== 0) {
-    const broadcastLog = broadcastData?.tx_response?.raw_log || "";
-    const broadcastGasUsed = broadcastData?.tx_response?.gas_used || "0";
+    const broadcastLog = broadcastData?.tx_response?.raw_log || ''
+    const broadcastGasUsed = broadcastData?.tx_response?.gas_used || '0'
     return {
-      kind: "broadcast",
+      kind: 'broadcast',
       success: false,
       code: broadcastCode,
       gasUsed: broadcastGasUsed,
       rawLog: broadcastLog,
       raw: broadcastData,
-    };
+    }
   }
 
   // 2) poll for final
-  const maxAttempts = 10;
-  const intervalMs = 1000;
-  let finalData = null;
+  const maxAttempts = 10
+  const intervalMs = 1000
+  let finalData = null
   for (let i = 0; i < maxAttempts; i++) {
-    const res = await fetch(`${apiUrl}/cosmos/tx/v1beta1/txs/${txHash}`);
+    const res = await fetch(`${apiUrl}/cosmos/tx/v1beta1/txs/${txHash}`)
     if (res.ok) {
-      finalData = await res.json();
-      break;
+      finalData = await res.json()
+      break
     }
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
   }
   if (!finalData) {
     return {
-      kind: "broadcast",
+      kind: 'broadcast',
       success: false,
       code: 1,
-      gasUsed: "0",
+      gasUsed: '0',
       rawLog: `Transaction not found after ${maxAttempts} attempts: ${txHash}`,
       raw: null,
-    };
+    }
   }
 
   // 3) parse final
-  const txResp = finalData?.tx_response;
+  const txResp = finalData?.tx_response
   if (!txResp) {
     return {
-      kind: "broadcast",
+      kind: 'broadcast',
       success: false,
       code: 1,
-      gasUsed: "0",
-      rawLog: "No tx_response in final data",
+      gasUsed: '0',
+      rawLog: 'No tx_response in final data',
       raw: finalData,
-    };
+    }
   }
-  const code = txResp.code || 0;
-  const gasUsed = txResp.gas_used || "0";
-  const rawOriginalLog = txResp.raw_log || "";
-  const strippedLog = stripScriptSuffix(rawOriginalLog);
+  const code = txResp.code || 0
+  const gasUsed = txResp.gas_used || '0'
+  const rawOriginalLog = txResp.raw_log || ''
+  const strippedLog = stripScriptSuffix(rawOriginalLog)
 
   // code != 0 => failure
   if (code !== 0) {
     return {
-      kind: "broadcast",
+      kind: 'broadcast',
       success: false,
       code,
       gasUsed,
       rawLog: rawOriginalLog,
       raw: finalData,
-    };
+    }
   }
 
   // code=0 => success => check missing msg types
-  const events = txResp.events || [];
-  const missingTypes = checkMissingMsgTypes(events, msgTypes);
+  const events = txResp.events || []
+  const missingTypes = checkMissingMsgTypes(events, msgTypes)
   if (missingTypes.length > 0) {
     return {
-      kind: "broadcast",
+      kind: 'broadcast',
       success: false,
       code,
       gasUsed,
       rawLog: rawOriginalLog,
       raw: finalData,
-    };
+    }
   }
   return {
-    kind: "broadcast",
+    kind: 'broadcast',
     success: true,
     code,
     gasUsed,
     rawLog: strippedLog,
     raw: finalData,
-  };
+  }
 }
 
 /**
@@ -440,7 +431,7 @@ function defaultTransactionModal(msgs, memo, fee, chainId, address) {
               white-space: pre-wrap;
               font-family: 'Courier New', monospace;
               font-size: 12px;
-            ">${chainId || ""}</pre>
+            ">${chainId || ''}</pre>
           </div>
 
           <div style="margin-bottom: 15px;">
@@ -456,7 +447,7 @@ function defaultTransactionModal(msgs, memo, fee, chainId, address) {
               white-space: pre-wrap;
               font-family: 'Courier New', monospace;
               font-size: 12px;
-            ">${address || ""}</pre>
+            ">${address || ''}</pre>
           </div>
 
           <div style="margin-bottom: 15px;">
@@ -485,11 +476,7 @@ function defaultTransactionModal(msgs, memo, fee, chainId, address) {
               font-family: 'Courier New', monospace;
               font-size: 12px;
             ">${escapeHTML(
-              JSON.stringify(
-                fee || { amount: [], gas_limit: "200000" },
-                null,
-                2
-              )
+              JSON.stringify(fee || { amount: [], gas_limit: '200000' }, null, 2)
             )}</pre>
           </div>
           
@@ -506,7 +493,7 @@ function defaultTransactionModal(msgs, memo, fee, chainId, address) {
               white-space: pre-wrap;
               font-family: 'Courier New', monospace;
               font-size: 12px;
-            ">${escapeHTML(memo || "")}</pre>
+            ">${escapeHTML(memo || '')}</pre>
           </div>
           
           <div style="text-align: right;">
@@ -529,61 +516,60 @@ function defaultTransactionModal(msgs, memo, fee, chainId, address) {
           </div>
         </div>
       </div>
-    `;
+    `
 
     // Add modal to DOM
-    document.body.insertAdjacentHTML("beforeend", modalHtml);
-    const modal = document.getElementById("txModal");
+    document.body.insertAdjacentHTML('beforeend', modalHtml)
+    const modal = document.getElementById('txModal')
 
     // Handle button clicks
-    document.getElementById("cancelBtn").onclick = () => {
-      modal.remove();
-      resolve(null); // User cancelled
-    };
+    document.getElementById('cancelBtn').onclick = () => {
+      modal.remove()
+      resolve(null) // User cancelled
+    }
 
-    document.getElementById("confirmBtn").onclick = () => {
+    document.getElementById('confirmBtn').onclick = () => {
       try {
         // Parse edited content
-        const msgsText = document.getElementById("msgsEditor").textContent;
-        const memoText = document.getElementById("memoEditor").textContent;
-        const feeText = document.getElementById("feeEditor").textContent;
+        const msgsText = document.getElementById('msgsEditor').textContent
+        const memoText = document.getElementById('memoEditor').textContent
+        const feeText = document.getElementById('feeEditor').textContent
 
-        const editedMsgs = JSON.parse(msgsText);
-        const editedMemo = memoText.trim();
-        const editedFee = JSON.parse(feeText);
+        const editedMsgs = JSON.parse(msgsText)
+        const editedMemo = memoText.trim()
+        const editedFee = JSON.parse(feeText)
 
-        modal.remove();
+        modal.remove()
         resolve({
           msgs: editedMsgs,
           memo: editedMemo,
           fee: editedFee,
-        });
+        })
       } catch (error) {
         alert(
-          "Invalid JSON format. Please check your edits and try again.\n\nError: " +
-            error.message
-        );
+          'Invalid JSON format. Please check your edits and try again.\n\nError: ' + error.message
+        )
       }
-    };
+    }
 
     // Close modal when clicking outside
     modal.onclick = (e) => {
       if (e.target === modal) {
-        modal.remove();
-        resolve(null);
+        modal.remove()
+        resolve(null)
       }
-    };
+    }
 
     // Handle Escape key
     const handleEscape = (e) => {
-      if (e.key === "Escape") {
-        modal.remove();
-        document.removeEventListener("keydown", handleEscape);
-        resolve(null);
+      if (e.key === 'Escape') {
+        modal.remove()
+        document.removeEventListener('keydown', handleEscape)
+        resolve(null)
       }
-    };
-    document.addEventListener("keydown", handleEscape);
-  });
+    }
+    document.addEventListener('keydown', handleEscape)
+  })
 }
 
 /**
@@ -600,88 +586,85 @@ export async function sendMsgs({
   walletType,
   address,
   msgs,
-  memo = "",
+  memo = '',
   fee,
   simulate = false,
 }) {
   // Show confirmation dialog before proceeding if simulate is false
-  let finalMsgs = msgs;
-  let finalMemo = memo;
-  let finalFee = fee;
+  let finalMsgs = msgs
+  let finalMemo = memo
+  let finalFee = fee
 
   // Check for leading "0"s in amounts recursively
   // if the check is disabled, just continue
-  const leadingZeroAmounts = collectLeadingZeroAmounts(msgs);
+  const leadingZeroAmounts = collectLeadingZeroAmounts(msgs)
   if (leadingZeroAmounts.length > 0) {
     console.warn(
       `dysonTxUtils.sendMsgs() warning: leading zero amounts are interpreted by the chain as hex not int and this is rarely what you want: ${leadingZeroAmounts
         .map((l) => `${l.path}: ${l.amount}`)
-        .join(", ")}`
-    );
+        .join(', ')}`
+    )
     if (DISABLE_CHECK_LEADING_ZERO_AMOUNTS) {
-      console.warn(
-        "Use dysonTxUtils.setDisableCheckLeadingZeroAmounts(false) to raise an error..."
-      );
+      console.warn('Use dysonTxUtils.setDisableCheckLeadingZeroAmounts(false) to raise an error...')
     } else {
       console.error(
-        "Use dysonTxUtils.setDisableCheckLeadingZeroAmounts(true) to not raise an error..."
-      );
+        'Use dysonTxUtils.setDisableCheckLeadingZeroAmounts(true) to not raise an error...'
+      )
       return {
-        kind: "broadcast",
+        kind: 'broadcast',
         success: false,
         code: -1,
-        gasUsed: "0",
+        gasUsed: '0',
         rawLog: `dysonTxUtils.sendMsgs() Error: leading zero amounts are interpreted by the chain as hex not int and this is rarely what you want: ${leadingZeroAmounts
           .map((l) => `${l.path}: ${l.amount}`)
-          .join(", ")}`,
+          .join(', ')}`,
         raw: null,
-      };
+      }
     }
   }
 
   const { chainId, accountNumber, sequence } = await getChainInfo({
     apiUrl,
     address,
-  });
+  })
 
   if (!simulate) {
-    const modalHandler =
-      transactionConfig.modalHandler || defaultTransactionModal;
-    const userInput = await modalHandler(msgs, memo, fee, chainId, address);
+    const modalHandler = transactionConfig.modalHandler || defaultTransactionModal
+    const userInput = await modalHandler(msgs, memo, fee, chainId, address)
 
     if (!userInput) {
       // User cancelled
       return {
-        kind: "broadcast",
+        kind: 'broadcast',
         success: false,
         code: -1, // Custom code for user cancellation
-        gasUsed: "0",
-        rawLog: "Transaction cancelled by user",
+        gasUsed: '0',
+        rawLog: 'Transaction cancelled by user',
         raw: null,
-      };
+      }
     }
 
     // Use the edited values
-    finalMsgs = userInput.msgs;
-    finalMemo = userInput.memo;
-    finalFee = userInput.fee;
+    finalMsgs = userInput.msgs
+    finalMemo = userInput.memo
+    finalFee = userInput.fee
   }
 
   let transaction = prepareTx({
     msgs: finalMsgs,
     memo: finalMemo,
     fee: finalFee,
-  });
-  const [{ pubkey }] = await wallet.getAccounts();
-  transaction = addSignerInfo({ transaction, pubkey, sequence });
+  })
+  const [{ pubkey }] = await wallet.getAccounts()
+  transaction = addSignerInfo({ transaction, pubkey, sequence })
 
   // We'll capture each message's @type
-  const msgTypes = finalMsgs.map((m) => m["@type"] || "");
+  const msgTypes = finalMsgs.map((m) => m['@type'] || '')
 
   const { txBytesBase64, bodyBytes, authInfoBytes } = await encodeAndDecodeTx({
     apiUrl,
     transaction,
-  });
+  })
   const signedTxRawBytes = await signTx({
     wallet,
     walletType,
@@ -691,11 +674,11 @@ export async function sendMsgs({
     sequence,
     bodyBytes,
     authInfoBytes,
-  });
-  const signedTxRawB64 = toBase64(signedTxRawBytes);
+  })
+  const signedTxRawB64 = toBase64(signedTxRawBytes)
 
-  const mode = simulate ? "simulate" : "broadcast";
-  return submitTx({ apiUrl, txRawBytesBase64: signedTxRawB64, msgTypes, mode });
+  const mode = simulate ? 'simulate' : 'broadcast'
+  return submitTx({ apiUrl, txRawBytesBase64: signedTxRawB64, msgTypes, mode })
 }
 
 /**
@@ -708,17 +691,17 @@ export async function runScript({
   walletType,
   executorAddress,
   scriptAddress,
-  functionName = "",
-  args = "",
-  kwargs = "",
-  extraCode = "",
+  functionName = '',
+  args = '',
+  kwargs = '',
+  extraCode = '',
   attachedMsg = [],
-  memo = "",
+  memo = '',
   fee,
   simulate = false,
 }) {
   const msg = {
-    "@type": "/dysonprotocol.script.v1.MsgExec",
+    '@type': '/dysonprotocol.script.v1.MsgExec',
     executor_address: executorAddress,
     script_address: scriptAddress,
     function_name: functionName,
@@ -726,10 +709,10 @@ export async function runScript({
     kwargs,
     extra_code: extraCode,
     attached_messages: attachedMsg,
-  };
+  }
 
-  if (scriptAddress === "") {
-    throw new Error("scriptAddress is required");
+  if (scriptAddress === '') {
+    throw new Error('scriptAddress is required')
   }
 
   const sendResult = await sendMsgs({
@@ -741,47 +724,46 @@ export async function runScript({
     memo,
     fee,
     simulate,
-  });
+  })
 
-  const { kind, success, code, rawLog, raw } = sendResult;
-  let scriptResponse = null;
+  const { kind, success, code, rawLog, raw } = sendResult
+  let scriptResponse = null
 
   if (success) {
     // parse from events
-    const events =
-      kind === "simulate" ? raw?.result?.events : raw?.tx_response?.events;
-    scriptResponse = parseScriptResponse(events);
+    const events = kind === 'simulate' ? raw?.result?.events : raw?.tx_response?.events
+    scriptResponse = parseScriptResponse(events)
   } else {
     // parse from rawLog if code != 0
     try {
       // First try to parse from raw.message (some error types)
       if (raw?.message) {
-        const firstBrace = raw.message.indexOf("{");
-        const lastBrace = raw.message.lastIndexOf("}");
+        const firstBrace = raw.message.indexOf('{')
+        const lastBrace = raw.message.lastIndexOf('}')
 
         if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-          const jsonStr = raw.message.substring(firstBrace, lastBrace + 1);
-          scriptResponse = JSON.parse(jsonStr);
+          const jsonStr = raw.message.substring(firstBrace, lastBrace + 1)
+          scriptResponse = JSON.parse(jsonStr)
         }
       }
 
       // Fall back to parsing from rawLog if raw.message parsing failed
       if (!scriptResponse && rawLog) {
-        const firstBrace = rawLog.indexOf("{");
-        const lastBrace = rawLog.lastIndexOf("}");
+        const firstBrace = rawLog.indexOf('{')
+        const lastBrace = rawLog.lastIndexOf('}')
 
         if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
           // Extract JSON between first { and last }
-          const jsonStr = rawLog.substring(firstBrace, lastBrace + 1);
-          scriptResponse = JSON.parse(jsonStr);
+          const jsonStr = rawLog.substring(firstBrace, lastBrace + 1)
+          scriptResponse = JSON.parse(jsonStr)
         } else {
           // Final fallback: try removing trailing ": script execution error"
-          const cleanedLog = rawLog.replace(/(: script execution error)$/, "");
-          scriptResponse = JSON.parse(cleanedLog);
+          const cleanedLog = rawLog.replace(/(: script execution error)$/, '')
+          scriptResponse = JSON.parse(cleanedLog)
         }
       }
     } catch {
-      scriptResponse = null;
+      scriptResponse = null
     }
   }
 
@@ -790,33 +772,29 @@ export async function runScript({
     success,
     scriptResponse,
     rawSendMsgsResponse: sendResult,
-  };
+  }
 }
 
 function parseScriptResponse(events) {
-  if (!Array.isArray(events)) return null;
-  const scriptEvt = events.find(
-    (e) => e.type === "dysonprotocol.script.v1.EventExecScript"
-  );
-  if (!scriptEvt?.attributes) return null;
+  if (!Array.isArray(events)) return null
+  const scriptEvt = events.find((e) => e.type === 'dysonprotocol.script.v1.EventExecScript')
+  if (!scriptEvt?.attributes) return null
 
-  const responseAttr = scriptEvt.attributes.find((a) => a.key === "response");
-  if (!responseAttr?.value) return null;
+  const responseAttr = scriptEvt.attributes.find((a) => a.key === 'response')
+  if (!responseAttr?.value) return null
 
   try {
-    const parsed = JSON.parse(
-      responseAttr.value.replace(/(: script execution error)$/, "")
-    );
-    if (parsed.result && typeof parsed.result === "string") {
+    const parsed = JSON.parse(responseAttr.value.replace(/(: script execution error)$/, ''))
+    if (parsed.result && typeof parsed.result === 'string') {
       try {
-        parsed.result = JSON.parse(parsed.result);
+        parsed.result = JSON.parse(parsed.result)
       } catch {
         // ignore parse error
       }
     }
-    return parsed.result;
+    return parsed.result
   } catch {
-    return responseAttr.value; // fallback
+    return responseAttr.value // fallback
   }
 }
 
@@ -825,37 +803,37 @@ function parseScriptResponse(events) {
  * This DOES NOT broadcast or simulate. Just signs.
  */
 export async function signData({ apiUrl, wallet, walletType, address, data }) {
-  const { accountNumber } = await getChainInfo({ apiUrl, address });
-  const sequence = "0";
-  const chainId = "";
+  const { accountNumber } = await getChainInfo({ apiUrl, address })
+  const sequence = '0'
+  const chainId = ''
 
   // Create the /offchain.MsgSignArbitraryData message
   const msg = {
-    "@type": "/offchain.MsgSignArbitraryData",
+    '@type': '/dysonprotocol.script.v1.MsgArbitraryData',
     signer: address,
-    app_domain: "dysond",
+    app_domain: 'dysond',
     data: data, // Provide as string or base64 if needed
-  };
+  }
   const fee = {
     amount: [],
-    gas_limit: "0",
-    payer: "",
-    granter: "",
-  };
-  const memo = "";
+    gas_limit: '0',
+    payer: '',
+    granter: '',
+  }
+  const memo = ''
   // Build the Tx with one message
-  let transaction = prepareTx({ msgs: [msg], memo, fee });
-  console.log("prepareTx transaction", transaction);
-  const [{ pubkey }] = await wallet.getAccounts();
-  transaction = addSignerInfo({ transaction, pubkey, sequence });
-  console.log("addSignerInfo transaction", transaction);
-  console.log("Pubkey", pubkey);
+  let transaction = prepareTx({ msgs: [msg], memo, fee })
+  console.log('prepareTx transaction', transaction)
+  const [{ pubkey }] = await wallet.getAccounts()
+  transaction = addSignerInfo({ transaction, pubkey, sequence })
+  console.log('addSignerInfo transaction', transaction)
+  console.log('Pubkey', pubkey)
 
   // Encode/decode
   const { bodyBytes, authInfoBytes } = await encodeAndDecodeTx({
     apiUrl,
     transaction,
-  });
+  })
 
   // Sign
   const signedTxRawBytes = await signTx({
@@ -867,7 +845,7 @@ export async function signData({ apiUrl, wallet, walletType, address, data }) {
     sequence,
     bodyBytes,
     authInfoBytes,
-  });
+  })
 
   // Return as base64 (or raw Uint8Array if you prefer)
   /*
@@ -878,21 +856,21 @@ export async function signData({ apiUrl, wallet, walletType, address, data }) {
   };
   */
   //transaction.signatures = decodedTxRaw.signatures.map(toBase64);
-  const decodedTxRaw = decodeTxRaw(signedTxRawBytes);
+  const decodedTxRaw = decodeTxRaw(signedTxRawBytes)
   return {
     authInfo: decodedTxRaw.authInfo,
     body: decodedTxRaw.body,
     signatures: decodedTxRaw.signatures,
-  };
+  }
 }
 
 export function decodeTxRaw(tx) {
-  const txRaw = TxRaw.decode(tx);
+  const txRaw = TxRaw.decode(tx)
   return {
     authInfo: AuthInfo.decode(txRaw.authInfoBytes),
     body: TxBody.decode(txRaw.bodyBytes),
     signatures: txRaw.signatures.map(toBase64),
-  };
+  }
 }
 
 /**
@@ -908,44 +886,44 @@ export function decodeTxRaw(tx) {
  * @returns {Array<{path: string, amount: any}>}
  */
 export function collectLeadingZeroAmounts(data) {
-  const results = [];
+  const results = []
 
   /** @param {*} node   current value
       @param {string} p current path */
   function walk(node, p) {
     // Arrays
     if (Array.isArray(node)) {
-      node.forEach((item, i) => walk(item, `${p}[${i}]`));
-      return;
+      node.forEach((item, i) => walk(item, `${p}[${i}]`))
+      return
     }
 
     // Objects
-    if (node && typeof node === "object") {
+    if (node && typeof node === 'object') {
       for (const [k, v] of Object.entries(node)) {
-        const path = p ? `${p}.${k}` : k;
-        if (k === "amount" && String(v).trim().startsWith("0")) {
-          results.push({ path, amount: v });
+        const path = p ? `${p}.${k}` : k
+        if (k === 'amount' && String(v).trim().startsWith('0')) {
+          results.push({ path, amount: v })
         }
-        walk(v, path);
+        walk(v, path)
       }
-      return;
+      return
     }
 
     // Strings → always try to parse as JSON
-    if (typeof node === "string") {
+    if (typeof node === 'string') {
       try {
-        const parsed = JSON.parse(node);
-        walk(parsed, p);
+        const parsed = JSON.parse(node)
+        walk(parsed, p)
       } catch {
         /* ignore non-JSON strings */
       }
     }
   }
 
-  walk(data, "");
-  return results;
+  walk(data, '')
+  return results
 }
 
 export function setDisableCheckLeadingZeroAmounts(disable) {
-  DISABLE_CHECK_LEADING_ZERO_AMOUNTS = Boolean(disable);
+  DISABLE_CHECK_LEADING_ZERO_AMOUNTS = Boolean(disable)
 }

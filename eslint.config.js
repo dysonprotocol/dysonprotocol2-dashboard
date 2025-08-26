@@ -1,8 +1,8 @@
-import js from "@eslint/js";
-import vue from "eslint-plugin-vue";
-import typescript from "@typescript-eslint/eslint-plugin";
-import typescriptParser from "@typescript-eslint/parser";
-import playwright from "eslint-plugin-playwright";
+import js from '@eslint/js'
+import vue from 'eslint-plugin-vue'
+import typescript from '@typescript-eslint/eslint-plugin'
+import typescriptParser from '@typescript-eslint/parser'
+import playwright from 'eslint-plugin-playwright'
 
 export default [
   // Apply to all files
@@ -10,48 +10,60 @@ export default [
 
   // Vue files configuration
   {
-    files: ["**/*.vue"],
+    files: ['**/*.vue'],
     languageOptions: {
       globals: {
-        window: "readonly",
-        document: "readonly",
-        console: "readonly",
-        setTimeout: "readonly",
-        fetch: "readonly",
-        crypto: "readonly",
-        TextEncoder: "readonly",
-        atob: "readonly",
+        window: 'readonly',
+        document: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        fetch: 'readonly',
+        crypto: 'readonly',
+        TextEncoder: 'readonly',
+        atob: 'readonly',
+        URLSearchParams: 'readonly',
       },
-      parser: "vue-eslint-parser",
+      parser: 'vue-eslint-parser',
       parserOptions: {
         parser: typescriptParser,
-        ecmaVersion: "latest",
-        sourceType: "module",
+        ecmaVersion: 'latest',
+        sourceType: 'module',
       },
     },
     plugins: {
       vue,
-      "@typescript-eslint": typescript,
+      '@typescript-eslint': typescript,
     },
     rules: {
-      ...vue.configs["vue3-essential"].rules,
-      ...vue.configs["vue3-strongly-recommended"].rules,
-      ...vue.configs["vue3-recommended"].rules,
+      ...vue.configs['vue3-essential'].rules,
+      ...vue.configs['vue3-strongly-recommended'].rules,
+      ...vue.configs['vue3-recommended'].rules,
     },
   },
 
   // TypeScript files configuration
   {
-    files: ["**/*.ts", "**/*.tsx"],
+    files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        fetch: 'readonly',
+        crypto: 'readonly',
+        TextEncoder: 'readonly',
+        atob: 'readonly',
+        URLSearchParams: 'readonly',
+      },
       parser: typescriptParser,
       parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
+        ecmaVersion: 'latest',
+        sourceType: 'module',
       },
     },
     plugins: {
-      "@typescript-eslint": typescript,
+      '@typescript-eslint': typescript,
     },
     rules: {
       ...typescript.configs.recommended.rules,
@@ -60,72 +72,68 @@ export default [
 
   // JavaScript files configuration
   {
-    files: ["**/*.js", "**/*.jsx", "**/*.mjs", "**/*.cjs"],
+    files: ['**/*.js', '**/*.jsx', '**/*.mjs', '**/*.cjs'],
     languageOptions: {
       globals: {
-        window: "readonly",
-        document: "readonly",
-        console: "readonly",
-        setTimeout: "readonly",
-        fetch: "readonly",
-        crypto: "readonly",
-        TextEncoder: "readonly",
-        atob: "readonly",
+        window: 'readonly',
+        document: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        fetch: 'readonly',
+        crypto: 'readonly',
+        TextEncoder: 'readonly',
+        atob: 'readonly',
+        URLSearchParams: 'readonly',
       },
-      ecmaVersion: "latest",
-      sourceType: "module",
+      ecmaVersion: 'latest',
+      sourceType: 'module',
     },
   },
 
   // Playwright e2e tests configuration
   {
-    files: [
-      "e2e/**/*.{js,ts}",
-      "tests/**/*.{js,ts}",
-      "**/*.spec.{js,ts}",
-      "**/*.test.{js,ts}",
-    ],
+    files: ['e2e/**/*.{js,ts}', 'tests/**/*.{js,ts}', '**/*.spec.{js,ts}', '**/*.test.{js,ts}'],
     plugins: {
       playwright,
     },
     rules: {
       // Forbid waitForTimeout usage in tests
-      "playwright/no-wait-for-timeout": "error",
+      'playwright/no-wait-for-timeout': 'error',
 
       // Other recommended Playwright rules
-      "playwright/expect-expect": "error",
-      "playwright/max-nested-describe": "error",
-      "playwright/missing-playwright-await": "error",
-      "playwright/no-conditional-in-test": "error",
-      "playwright/no-element-handle": "error",
-      "playwright/no-eval": "error",
-      "playwright/no-focused-test": "error",
-      "playwright/no-force-option": "warn",
-      "playwright/no-nested-step": "error",
-      "playwright/no-page-pause": "warn",
-      "playwright/no-skipped-test": "warn",
-      "playwright/no-useless-await": "error",
-      "playwright/prefer-strict-equal": "error",
-      "playwright/prefer-to-be": "error",
-      "playwright/prefer-to-contain": "error",
-      "playwright/prefer-to-have-length": "error",
-      "playwright/require-top-level-describe": "error",
-      "playwright/valid-describe-callback": "error",
-      "playwright/valid-expect": "error",
-      "playwright/valid-title": "error",
+      'playwright/expect-expect': 'error',
+      'playwright/max-nested-describe': 'error',
+      'playwright/missing-playwright-await': 'error',
+      'playwright/no-conditional-in-test': 'error',
+      'playwright/no-element-handle': 'error',
+      'playwright/no-eval': 'error',
+      'playwright/no-focused-test': 'error',
+      'playwright/no-force-option': 'warn',
+      'playwright/no-nested-step': 'error',
+      'playwright/no-page-pause': 'warn',
+      'playwright/no-skipped-test': 'warn',
+      'playwright/no-useless-await': 'error',
+      'playwright/prefer-strict-equal': 'error',
+      'playwright/prefer-to-be': 'error',
+      'playwright/prefer-to-contain': 'error',
+      'playwright/prefer-to-have-length': 'error',
+      'playwright/require-top-level-describe': 'error',
+      'playwright/valid-describe-callback': 'error',
+      'playwright/valid-expect': 'error',
+      'playwright/valid-title': 'error',
     },
   },
 
   // General no-restricted-syntax rule as fallback for any missed cases
   {
-    files: ["**/*.{js,ts,vue}"],
+    files: ['**/*.{js,ts,vue}'],
     rules: {
-      "no-restricted-syntax": [
-        "error",
+      'no-restricted-syntax': [
+        'error',
         {
           selector: "CallExpression[callee.property.name='waitForTimeout']",
           message:
-            "waitForTimeout is forbidden. Use more reliable selectors or wait conditions like waitForSelector, waitForLoadState, or expect with timeout options.",
+            'waitForTimeout is forbidden. Use more reliable selectors or wait conditions like waitForSelector, waitForLoadState, or expect with timeout options.',
         },
       ],
     },
@@ -134,11 +142,11 @@ export default [
   // Ignore patterns
   {
     ignores: [
-      "dist/**",
-      "node_modules/**",
-      ".vitepress/**",
-      "playwright-report/**",
-      "test-results/**",
+      'dist/**',
+      'node_modules/**',
+      '.vitepress/**',
+      'playwright-report/**',
+      'test-results/**',
     ],
   },
-];
+]

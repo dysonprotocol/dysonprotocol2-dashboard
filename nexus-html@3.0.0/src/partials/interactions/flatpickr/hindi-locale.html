@@ -1,0 +1,13 @@
+<input aria-label="Date picker" class="input max-w-56" id="hindi-locale-flatpickr-demo" />
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#hindi-locale-flatpickr-demo", {
+            inline: true,
+            locale: "hi",
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+            defaultDate: Date.now(),
+        })
+    })
+</script>

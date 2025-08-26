@@ -1,1 +1,0 @@
-import{_ as o}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{b as r,e as n,o as t}from"./index-DiNa1K2J.js";const s={};function p(l,e){return t(),r("div",null,e[0]||(e[0]=[n("h1",null,"Code Snippets",-1),n("p",null,"Future API & Learning PBI - Code snippets placeholder",-1)]))}const d=o(s,[["render",p]]);export{d as default};

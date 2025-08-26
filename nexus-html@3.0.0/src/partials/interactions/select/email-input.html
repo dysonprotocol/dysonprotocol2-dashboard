@@ -1,0 +1,20 @@
+<input
+    aria-label="Select email"
+    id="email-input-select-demo"
+    type="text"
+    value="denish@mail.com"
+    placeholder="Enter something" />
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        new Choices("#email-input-select-demo", {
+            allowHTML: true,
+            editItems: true,
+            removeItemButton: true,
+            addItemFilter: (value) => {
+                if (!value) return false
+                const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                return new RegExp(regex.source, "i").test(value)
+            },
+        })
+    })
+</script>

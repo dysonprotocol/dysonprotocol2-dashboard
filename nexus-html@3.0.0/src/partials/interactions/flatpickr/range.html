@@ -1,0 +1,10 @@
+<input aria-label="Date picker" class="input max-w-56" id="range-flatpickr-demo" />
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#range-flatpickr-demo", {
+            defaultDate: [new Date(), new Date(Date.now() + 4 * 24 * 60 * 60 * 1000)],
+            inline: true,
+            mode: "range",
+        })
+    })
+</script>

@@ -1,0 +1,10 @@
+<input aria-label="Date picker" class="input max-w-56" id="week-number-flatpickr-demo" />
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#week-number-flatpickr-demo", {
+            defaultDate: Date.now(),
+            inline: true,
+            weekNumbers: true,
+        })
+    })
+</script>

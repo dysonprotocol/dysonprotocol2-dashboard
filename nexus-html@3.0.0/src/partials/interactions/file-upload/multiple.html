@@ -1,0 +1,12 @@
+<div id="multiple-filepond-demo"></div>
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        FilePond.registerPlugin(FilePondPluginImagePreview)
+
+        FilePond.create(document.querySelector("#multiple-filepond-demo"), {
+            credits: false,
+            allowImageCrop: false,
+            allowMultiple: true,
+        })
+    })
+</script>

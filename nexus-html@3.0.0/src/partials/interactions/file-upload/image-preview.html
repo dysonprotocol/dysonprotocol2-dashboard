@@ -1,0 +1,11 @@
+<div id="image-preview-filepond-demo"></div>
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        FilePond.registerPlugin(FilePondPluginImagePreview)
+
+        FilePond.create(document.querySelector("#image-preview-filepond-demo"), {
+            allowImagePreview: true,
+            credits: false,
+        })
+    })
+</script>

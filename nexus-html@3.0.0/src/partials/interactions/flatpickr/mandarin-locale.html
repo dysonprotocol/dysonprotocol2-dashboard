@@ -1,0 +1,13 @@
+<input aria-label="Date picker" class="input max-w-56" id="mandarin-flatpickr-demo" />
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#mandarin-flatpickr-demo", {
+            inline: true,
+            locale: "zh",
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+            defaultDate: Date.now(),
+        })
+    })
+</script>

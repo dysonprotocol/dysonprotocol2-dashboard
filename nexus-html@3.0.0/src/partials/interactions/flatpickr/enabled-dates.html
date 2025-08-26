@@ -1,0 +1,14 @@
+<input aria-label="Date picker" class="input max-w-56" id="enabled-dates-flatpickr-demo" />
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#enabled-dates-flatpickr-demo", {
+            defaultDate: new Date(),
+            inline: true,
+            enable: [
+                new Date(Date.now() - 24 * 60 * 60 * 1000),
+                new Date(),
+                new Date(Date.now() + 24 * 60 * 60 * 1000),
+            ],
+        })
+    })
+</script>

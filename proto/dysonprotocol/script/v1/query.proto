@@ -1,0 +1,212 @@
+// Since: cosmos-sdk 0.46
+syntax = "proto3";
+
+package dysonprotocol.script.v1;
+
+import "dysonprotocol/script/v1/script.proto";
+import "dysonprotocol/script/v1/tx.proto";
+import "dysonprotocol/script/v1/params.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos_proto/cosmos.proto";
+import "amino/amino.proto";
+
+option go_package = "dysonprotocol.com/x/script/types";
+
+// Query is the dysonprotocol.script.v1 Query service.
+service Query {
+
+  // ScriptInfo queries script info based on script address
+  rpc ScriptInfo(QueryScriptInfoRequest) returns (QueryScriptInfoResponse) {
+    option (google.api.http).get =
+        "/dysonprotocol/script/v1/script_info/{address}";
+  };
+
+  // EncodeJson encodes a JSON string to bytes.
+  rpc EncodeJson(QueryEncodeJsonRequest) returns (QueryEncodeJsonResponse) {
+    option (google.api.http).get = "/dysonprotocol/script/v1/encode_json";
+  }
+
+  // DecodeBytes decodes bytes to a JSON string.
+  rpc DecodeBytes(QueryDecodeBytesRequest) returns (QueryDecodeBytesResponse) {
+    option (google.api.http).get = "/dysonprotocol/script/v1/decode_bytes";
+  }
+
+  // VerifyTx verifies a transaction.
+  rpc VerifyTx(QueryVerifyTxRequest) returns (QueryVerifyTxResponse) {
+    option (google.api.http).get = "/dysonprotocol/script/v1/verify_tx";
+  }
+
+  // Params queries the parameters of the script module.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/dysonprotocol/script/v1/params";
+  }
+
+  // Queries the WSGI web application function of a script.
+  rpc Web(WebRequest) returns (WebResponse) {
+    option (google.api.http) = {
+      post : "/dysonprotocol/script/v1/web_request"
+      body : "*"
+    };
+  }
+
+  // Run executes a script function in read-only mode without modifying
+  // state.
+  rpc Run(RunScript) returns (ResponseRunScript) {
+    option (google.api.http) = {
+      post : "/dysonprotocol/script/v1/run"
+      body : "*"
+    };
+  }
+
+  // GetBlock returns the current block information.
+  rpc GetBlock(QueryGetBlockRequest) returns (QueryGetBlockResponse) {
+    option (google.api.http).get = "/dysonprotocol/script/v1/block";
+  }
+}
+
+// WebRequest is the Service/Web request type.
+message WebRequest {
+  // script_address is the bech32 account address of the script.
+  string script_address = 1;
+  // script_name is the name of the script (e.g., "example.dys").
+  string script_name = 2;
+  // httprequest is the http request.
+  string httprequest = 3;
+}
+
+// WebResponse is the Service/Web response type.
+message WebResponse {
+  // httpresponse is the http response.
+  string httpresponse = 1;
+}
+
+// QueryScriptInfoRequest is the Query/ScriptInfo request type.
+message QueryScriptInfoRequest {
+  // address is the account address of the script.
+  string address = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+}
+
+// QueryScriptInfoResponse is the Query/ScriptInfo response type.
+message QueryScriptInfoResponse {
+  // info is the ScriptInfo of the script.
+  Script script = 1;
+}
+
+// QueryEncodeJsonRequest is the Query/EncodeJson request type.
+message QueryEncodeJsonRequest {
+  // json is the json string to encode.
+  string json = 1;
+}
+
+// QueryEncodeJsonResponse is the Query/EncodeJson response type.
+message QueryEncodeJsonResponse {
+  // bytes is the encoded bytes.
+  bytes bytes = 1;
+}
+
+// QueryDecodeBytesRequest is the Query/DecodeBytes request type.
+message QueryDecodeBytesRequest {
+  string type_url = 1;
+  // bytes is the encoded bytes.
+  bytes bytes = 2;
+}
+
+// QueryDecodeBytesResponse is the Query/DecodeBytes response type.
+message QueryDecodeBytesResponse {
+  // json is the decoded json string.
+  string json = 1;
+}
+
+message QueryVerifyTxRequest {
+  // The transaction as a JSON string
+  string tx_json = 1;
+}
+
+// QueryVerifyTxResponse will return the signer address of the MsgArbitraryData
+// or error if the signature is invalid
+message QueryVerifyTxResponse {
+  // The signer address of the MsgArbitraryData
+  string signer = 1;
+}
+
+// QueryParamsRequest is the request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is the response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [ (gogoproto.nullable) = false ];
+}
+
+// RunScript is the Query/Run request type.
+message RunScript {
+  // executor is the account address used to execute the script
+  string executor_address = 1
+      [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+
+  // address is the script bech32 address to execute.
+  string script_address = 2;
+
+  // script_name is the optional nameservice name of the script to execute
+  // (e.g., "example.dys")
+  string script_name = 3;
+
+  // Only if the executor is the owner of the script will the optional
+  // extra_code be temporary appended to the script for this message before
+  // calling the function
+  string extra_code = 4;
+
+  // The function name to run
+  string function_name = 5;
+
+  // The positional arguments to pass to the function (*args) encoded as a json
+  // list
+  string args = 6;
+
+  // The keyword arguments to pass to the function (**kwargs) encoded as a json
+  // dict
+  string kwargs = 7;
+
+  // The list of messages to run before the script.
+  repeated google.protobuf.Any attached_messages = 8;
+}
+
+// ResponseRunScript is the Query/Run response type.
+message ResponseRunScript {
+  // result is the execution result returned by the script function.
+  string result = 1;
+
+  // Results of the attached messages.
+  repeated google.protobuf.Any attached_message_results = 2;
+}
+
+// QueryGetBlockRequest is the Query/GetBlock request type.
+message QueryGetBlockRequest {}
+
+// QueryGetBlockResponse is the Query/GetBlock response type.
+message QueryGetBlockResponse {
+  // block_height is the height of the block.
+  int64 block_height = 1;
+
+  // block_time is the time of the block.
+  google.protobuf.Timestamp block_time = 2
+      [ (gogoproto.nullable) = false, (gogoproto.stdtime) = true ];
+
+  // chain_id is the chain ID.
+  string chain_id = 3;
+
+  // block_hash is the hash of the block.
+  bytes block_hash = 4;
+
+  // app_hash is the application hash.
+  bytes app_hash = 5;
+
+  // proposer_address is the address of the block proposer.
+  string proposer_address = 6;
+}

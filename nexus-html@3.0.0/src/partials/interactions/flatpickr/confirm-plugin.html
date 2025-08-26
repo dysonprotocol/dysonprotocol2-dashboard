@@ -1,0 +1,16 @@
+<input aria-label="Date picker" class="input max-w-56" id="confirm-plugin-flatpickr-demo" />
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#confirm-plugin-flatpickr-demo", {
+            defaultDate: Date.now(),
+            closeOnSelect: false,
+            plugins: [
+                confirmDatePlugin({
+                    confirmIcon: "<span class='iconify lucide--check'></span>",
+                    confirmText: "OK",
+                    showAlways: true,
+                }),
+            ],
+        })
+    })
+</script>

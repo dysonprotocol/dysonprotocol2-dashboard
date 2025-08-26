@@ -1,0 +1,14 @@
+<select id="disabled-select-demo" aria-label="Select" disabled>
+    <option value="">Select an option</option>
+    <option value="apple">Apple</option>
+    <option value="banana">Banana</option>
+    <option disabled value="orange">Orange</option>
+    <option value="carrot">Carrot</option>
+    <option value="broccoli">Broccoli</option>
+    <option value="spinach">Spinach</option>
+</select>
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        new Choices("#disabled-select-demo")
+    })
+</script>

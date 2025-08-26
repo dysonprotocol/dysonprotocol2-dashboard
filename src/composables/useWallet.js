@@ -1,465 +1,426 @@
-import { computed, reactive, inject } from "vue";
+import { computed, reactive, inject } from 'vue'
 import {
   DirectSecp256k1HdWallet,
   makeSignDoc,
   makeSignBytes,
   executeKdf,
   extractKdfConfiguration,
-} from "@cosmjs/proto-signing";
-import { useStorage } from "@vueuse/core";
-import { getChainInfo, sendMsgs, runScript } from "../utils/dysonTxUtils";
-import { useDenom } from "./useDenom";
-import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx.js";
-import { toBase64, fromBase64 } from "@cosmjs/encoding";
+} from '@cosmjs/proto-signing'
+import { useStorage } from '@vueuse/core'
+import { getChainInfo, sendMsgs, runScript } from '../utils/dysonTxUtils'
+import { useDenom } from './useDenom'
+import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx.js'
+import { toBase64, fromBase64 } from '@cosmjs/encoding'
 
-const COSMJS_WALLET_TYPE = "cosmjs";
+const COSMJS_WALLET_TYPE = 'cosmjs'
 
 // Global event listener state to prevent multiple listeners
-let globalKeplrListenerSet = false;
-let globalHandleKeplrAccountChange = null;
+let globalKeplrListenerSet = false
+let globalHandleKeplrAccountChange = null
 
 export function useWallet() {
   // Inject chain info from App.vue
-  const CHAIN_INFO = inject("chainInfo", {
-    restUrl: "",
-    bech32Prefix: "dys2",
-  });
+  const CHAIN_INFO = inject('chainInfo', {
+    restUrl: '',
+    bech32Prefix: 'dys2',
+  })
 
   // Persisted state
-  const restUrl = computed(() => CHAIN_INFO.restUrl);
-  const chainId = useStorage("chainId", "");
-  const rpcUrl = useStorage("rpcUrl", "");
-  const nodeInfo = useStorage("nodeInfo", null);
-  const localCosmJsWallets = useStorage("localCosmJsWallets", []);
-  const gasPrice = useStorage("gasPrice", 0.0);
+  const restUrl = computed(() => CHAIN_INFO.restUrl)
+  const chainId = useStorage('chainId', '')
+  const rpcUrl = useStorage('rpcUrl', '')
+  const nodeInfo = useStorage('nodeInfo', null)
+  const localCosmJsWallets = useStorage('localCosmJsWallets', [])
+  const gasPrice = useStorage('gasPrice', 0.0)
 
-  const selectedAuthorIdentity = useStorage("selectedAuthorIdentity", null);
-  const txHistory = useStorage("txHistory", []);
+  const selectedAuthorIdentity = useStorage('selectedAuthorIdentity', null)
+  const txHistory = useStorage('txHistory', [])
 
   // New unlocked wallets management
-  const unlockedWallets = useStorage("unlockedWallets", []);
-  const selectedWalletIndex = useStorage("selectedWalletIndex", 0);
+  const unlockedWallets = useStorage('unlockedWallets', [])
+  const selectedWalletIndex = useStorage('selectedWalletIndex', 0)
 
   // Ephemeral state
   const state = reactive({
     activeWalletInstance: null,
     isLoading: true,
     addressNames: {},
-  });
+  })
 
   // Computed
-  const selectedWallet = computed(
-    () => unlockedWallets.value[selectedWalletIndex.value] || null
-  );
-  const isWalletConnected = computed(() => !!selectedWallet.value?.address);
+  const selectedWallet = computed(() => unlockedWallets.value[selectedWalletIndex.value] || null)
+  const isWalletConnected = computed(() => !!selectedWallet.value?.address)
 
   // INITIALIZATION
   const init = async () => {
-    console.log("useWallet init");
-    await loadChainIdFromApi();
+    console.log('useWallet init')
+    await loadChainIdFromApi()
 
     // Set up Keplr account change listener globally (only once)
     if (!globalKeplrListenerSet) {
-      globalHandleKeplrAccountChange = handleKeplrAccountChange;
-      window.addEventListener(
-        "keplr_keystorechange",
-        globalHandleKeplrAccountChange
-      );
-      globalKeplrListenerSet = true;
-      console.log("Keplr event listener set up globally");
+      globalHandleKeplrAccountChange = handleKeplrAccountChange
+      window.addEventListener('keplr_keystorechange', globalHandleKeplrAccountChange)
+      globalKeplrListenerSet = true
+      console.log('Keplr event listener set up globally')
     }
 
     if (selectedWallet.value) {
-      if (selectedWallet.value.type === "keplr") {
-        const provider = window.keplr;
+      if (selectedWallet.value.type === 'keplr') {
+        const provider = window.keplr
         if (!provider) {
-          console.error("Keplr extension not found, please install it.");
-          disconnectWallet();
+          console.error('Keplr extension not found, please install it.')
+          disconnectWallet()
         } else {
-          const offlineSigner = provider.getOfflineSigner(chainId.value);
-          state.activeWalletInstance = offlineSigner;
-          await restoreAuthorIdentity();
+          const offlineSigner = provider.getOfflineSigner(chainId.value)
+          state.activeWalletInstance = offlineSigner
+          await restoreAuthorIdentity()
         }
       } else if (selectedWallet.value.type === COSMJS_WALLET_TYPE) {
         const walletData = localCosmJsWallets.value.find(
           (w) => w.name === selectedWallet.value.name
-        );
-        if (walletData && walletData._pass && walletData._pass.trim() !== "") {
+        )
+        if (walletData && walletData._pass && walletData._pass.trim() !== '') {
           try {
-            await connectNamedCosmJsWallet(walletData.name, walletData._pass);
-            await restoreAuthorIdentity();
+            await connectNamedCosmJsWallet(walletData.name, walletData._pass)
+            await restoreAuthorIdentity()
           } catch (error) {
-            console.error(
-              "Auto reconnection failed for wallet",
-              walletData.name,
-              error
-            );
+            console.error('Auto reconnection failed for wallet', walletData.name, error)
           }
         }
       }
     }
 
     // TODO: remove this development helper
-    if (localCosmJsWallets.value.length === 0 && chainId.value === "cahin-a") {
+    if (localCosmJsWallets.value.length === 0 && chainId.value === 'cahin-a') {
       const seed =
-        "public feature teach face federal matrix throw legend bridge brass diary beach typical doll evoke weapon among crane regret trust enact swarm brother outside";
-      console.log("creating default wallet");
-      await importNamedCosmJsWallet("alice", seed, "password");
-      await connectNamedCosmJsWallet("alice", "password");
+        'public feature teach face federal matrix throw legend bridge brass diary beach typical doll evoke weapon among crane regret trust enact swarm brother outside'
+      console.log('creating default wallet')
+      await importNamedCosmJsWallet('alice', seed, 'password')
+      await connectNamedCosmJsWallet('alice', 'password')
     }
 
-    state.isLoading = false;
-  };
+    state.isLoading = false
+  }
 
   // KEPLR ACCOUNT CHANGE HANDLER
   const handleKeplrAccountChange = async () => {
-    console.log("Keplr account changed, updating wallet state");
-    console.log("Current selectedWallet:", selectedWallet.value);
-    console.log("Current unlockedWallets:", unlockedWallets.value);
+    console.log('Keplr account changed, updating wallet state')
+    console.log('Current selectedWallet:', selectedWallet.value)
+    console.log('Current unlockedWallets:', unlockedWallets.value)
 
     // Immediately invalidate cached signer to force refresh
-    state.activeWalletInstance = null;
+    state.activeWalletInstance = null
 
-    if (selectedWallet.value?.type !== "keplr" || !window.keplr) {
-      console.log("Skipping: not a Keplr wallet or Keplr not available");
+    if (selectedWallet.value?.type !== 'keplr' || !window.keplr) {
+      console.log('Skipping: not a Keplr wallet or Keplr not available')
       console.log(
-        "Condition details: type =",
+        'Condition details: type =',
         selectedWallet.value?.type,
-        "window.keplr =",
+        'window.keplr =',
         !!window.keplr
-      );
-      return;
+      )
+      return
     }
 
     try {
       // Ensure chain is enabled and get new account info
-      await window.keplr.enable(chainId.value);
-      const key = await window.keplr.getKey(chainId.value);
-      console.log("New Keplr key:", key);
+      await window.keplr.enable(chainId.value)
+      const key = await window.keplr.getKey(chainId.value)
+      console.log('New Keplr key:', key)
 
       // Clone unlockedWallets to ensure reactivity and storage persistence
-      let wallets = [...unlockedWallets.value];
-      const keplrIndex = wallets.findIndex((w) => w.type === "keplr");
-      console.log("Keplr index in wallets:", keplrIndex);
+      let wallets = [...unlockedWallets.value]
+      const keplrIndex = wallets.findIndex((w) => w.type === 'keplr')
+      console.log('Keplr index in wallets:', keplrIndex)
 
       const newKeplrWallet = {
         name: key.name,
         address: key.bech32Address,
-        type: "keplr",
-      };
+        type: 'keplr',
+      }
 
       if (keplrIndex === -1) {
         // First time seeing this Keplr account - add it
-        console.log("Adding new Keplr wallet:", newKeplrWallet);
-        wallets.push(newKeplrWallet);
-        selectedWalletIndex.value = wallets.length - 1;
+        console.log('Adding new Keplr wallet:', newKeplrWallet)
+        wallets.push(newKeplrWallet)
+        selectedWalletIndex.value = wallets.length - 1
       } else {
         // Replace existing Keplr wallet (prevents duplicates)
-        console.log(
-          "Replacing existing Keplr wallet at index",
-          keplrIndex,
-          "with:",
-          newKeplrWallet
-        );
-        wallets.splice(keplrIndex, 1, newKeplrWallet);
-        selectedWalletIndex.value = keplrIndex;
+        console.log('Replacing existing Keplr wallet at index', keplrIndex, 'with:', newKeplrWallet)
+        wallets.splice(keplrIndex, 1, newKeplrWallet)
+        selectedWalletIndex.value = keplrIndex
       }
 
-      console.log("Before update - unlockedWallets:", unlockedWallets.value);
-      console.log("About to set unlockedWallets to:", wallets);
+      console.log('Before update - unlockedWallets:', unlockedWallets.value)
+      console.log('About to set unlockedWallets to:', wallets)
 
       // Assign the new array to trigger reactivity and persistence
-      unlockedWallets.value = wallets;
+      unlockedWallets.value = wallets
 
-      console.log("After update - unlockedWallets:", unlockedWallets.value);
-      console.log("selectedWalletIndex:", selectedWalletIndex.value);
+      console.log('After update - unlockedWallets:', unlockedWallets.value)
+      console.log('selectedWalletIndex:', selectedWalletIndex.value)
 
       // Update offline signer
-      state.activeWalletInstance = window.keplr.getOfflineSigner(chainId.value);
+      state.activeWalletInstance = window.keplr.getOfflineSigner(chainId.value)
 
       // Clear cached address names since they're invalid now
-      state.addressNames = {};
+      state.addressNames = {}
 
       // Restore author identity for new account
-      await restoreAuthorIdentity();
+      await restoreAuthorIdentity()
 
-      console.log(
-        "✅ Wallet state update complete for new account:",
-        key.bech32Address
-      );
+      console.log('✅ Wallet state update complete for new account:', key.bech32Address)
     } catch (error) {
-      console.error(
-        "Failed to update wallet state after Keplr account change:",
-        error
-      );
+      console.error('Failed to update wallet state after Keplr account change:', error)
     }
-  };
+  }
 
   // UNLOCKED WALLETS MANAGEMENT
   const unlockWallet = async (name, password) => {
-    const walletData = localCosmJsWallets.value.find((w) => w.name === name);
-    if (!walletData) throw new Error(`No local wallet named "${name}".`);
-    if (!password.trim())
-      throw new Error("Password required to unlock wallet.");
+    const walletData = localCosmJsWallets.value.find((w) => w.name === name)
+    if (!walletData) throw new Error(`No local wallet named "${name}".`)
+    if (!password.trim()) throw new Error('Password required to unlock wallet.')
 
-    const kdfConf = extractKdfConfiguration(walletData.encrypted);
-    const encryptionKey = await executeKdf(password, kdfConf);
+    const kdfConf = extractKdfConfiguration(walletData.encrypted)
+    const encryptionKey = await executeKdf(password, kdfConf)
     const wallet = await DirectSecp256k1HdWallet.deserializeWithEncryptionKey(
       walletData.encrypted,
       encryptionKey
-    );
-    const address = (await wallet.getAccounts())[0].address;
+    )
+    const address = (await wallet.getAccounts())[0].address
 
-    const existingIndex = unlockedWallets.value.findIndex(
-      (w) => w.name === name
-    );
+    const existingIndex = unlockedWallets.value.findIndex((w) => w.name === name)
     if (existingIndex === -1) {
       unlockedWallets.value.push({
         name,
         address,
         type: COSMJS_WALLET_TYPE,
         _pass: password,
-      });
+      })
     } else {
-      unlockedWallets.value[existingIndex]._pass = password;
+      unlockedWallets.value[existingIndex]._pass = password
     }
-  };
+  }
 
   const lockWallet = (name) => {
-    const index = unlockedWallets.value.findIndex((w) => w.name === name);
+    const index = unlockedWallets.value.findIndex((w) => w.name === name)
     if (index !== -1) {
-      unlockedWallets.value.splice(index, 1);
+      unlockedWallets.value.splice(index, 1)
       if (selectedWalletIndex.value >= unlockedWallets.value.length) {
-        selectedWalletIndex.value = Math.max(
-          0,
-          unlockedWallets.value.length - 1
-        );
+        selectedWalletIndex.value = Math.max(0, unlockedWallets.value.length - 1)
       }
       if (selectedWallet.value?.name === name) {
-        disconnectWallet();
+        disconnectWallet()
       }
     }
-  };
+  }
 
   const selectWallet = (index) => {
-    console.log("🔀 selectWallet() called", {
+    console.log('🔀 selectWallet() called', {
       index,
       unlockedWalletsLength: unlockedWallets.value.length,
       validIndex: index >= 0 && index < unlockedWallets.value.length,
       currentSelectedWalletIndex: selectedWalletIndex.value,
-    });
+    })
 
     if (index >= 0 && index < unlockedWallets.value.length) {
-      selectedWalletIndex.value = index;
+      selectedWalletIndex.value = index
       // Clear active wallet instance to force re-initialization
-      state.activeWalletInstance = null;
-      console.log("✅ Wallet selected:", unlockedWallets.value[index]);
+      state.activeWalletInstance = null
+      console.log('✅ Wallet selected:', unlockedWallets.value[index])
     } else {
-      console.error("❌ Invalid wallet index:", {
+      console.error('❌ Invalid wallet index:', {
         index,
         unlockedWalletsLength: unlockedWallets.value.length,
-      });
+      })
     }
-  };
+  }
 
   // SIGNER METHODS
   const getSignerAddress = () => {
-    console.log("📧 getSignerAddress() called", {
+    console.log('📧 getSignerAddress() called', {
       selectedWallet: selectedWallet.value,
       hasAddress: !!selectedWallet.value?.address,
-    });
+    })
 
     if (!selectedWallet.value?.address) {
-      console.error("❌ No wallet connected - selectedWallet address missing");
-      throw new Error("No wallet connected.");
+      console.error('❌ No wallet connected - selectedWallet address missing')
+      throw new Error('No wallet connected.')
     }
 
-    const address = selectedWallet.value.address;
-    console.log("✉️ Returning signer address:", address);
-    return address;
-  };
+    const address = selectedWallet.value.address
+    console.log('✉️ Returning signer address:', address)
+    return address
+  }
 
   // AUTHOR IDENTITY METHODS
   const getAuthorIdentity = () => {
     if (!isWalletConnected.value) {
-      throw new Error("No wallet connected.");
+      throw new Error('No wallet connected.')
     }
-    return selectedAuthorIdentity.value || getSignerAddress();
-  };
+    return selectedAuthorIdentity.value || getSignerAddress()
+  }
 
   const setAuthorIdentity = async (identity) => {
     if (!isWalletConnected.value) {
-      throw new Error("No wallet connected.");
+      throw new Error('No wallet connected.')
     }
 
     if (identity !== getSignerAddress()) {
-      const isValid = await validateNameForCurrentWallet(identity);
+      const isValid = await validateNameForCurrentWallet(identity)
       if (!isValid) {
-        throw new Error(
-          `Identity "${identity}" does not resolve to current wallet address.`
-        );
+        throw new Error(`Identity "${identity}" does not resolve to current wallet address.`)
       }
     }
 
-    selectedAuthorIdentity.value = identity;
-  };
+    selectedAuthorIdentity.value = identity
+  }
 
   const getAvailableAuthorIdentities = async () => {
     if (!isWalletConnected.value) {
-      return [];
+      return []
     }
 
-    const address = getSignerAddress();
-    const names = await fetchNamesByDestination(address);
+    const address = getSignerAddress()
+    const names = await fetchNamesByDestination(address)
 
-    const identities = [address];
+    const identities = [address]
     names.forEach((name) => {
       if (name !== address && !identities.includes(name)) {
-        identities.push(name);
+        identities.push(name)
       }
-    });
+    })
 
-    return identities;
-  };
+    return identities
+  }
 
   const getDisplayTextForIdentity = (identity) => {
-    const address = getSignerAddress();
+    const address = getSignerAddress()
 
     if (identity === address) {
-      if (identity.length <= 13) return identity;
-      return identity.slice(0, 10) + "..." + identity.slice(-5);
+      if (identity.length <= 13) return identity
+      return identity.slice(0, 10) + '...' + identity.slice(-5)
     }
 
-    return identity;
-  };
+    return identity
+  }
 
   const restoreAuthorIdentity = async () => {
     if (selectedAuthorIdentity.value) {
       try {
         if (selectedAuthorIdentity.value !== getSignerAddress()) {
-          const isValid = await validateNameForCurrentWallet(
-            selectedAuthorIdentity.value
-          );
+          const isValid = await validateNameForCurrentWallet(selectedAuthorIdentity.value)
           if (!isValid) {
             console.warn(
-              "Stored author identity is no longer valid for current wallet, resetting to wallet address"
-            );
-            selectedAuthorIdentity.value = getSignerAddress();
-            return;
+              'Stored author identity is no longer valid for current wallet, resetting to wallet address'
+            )
+            selectedAuthorIdentity.value = getSignerAddress()
+            return
           }
         }
       } catch (error) {
-        console.warn(
-          "Error validating stored author identity, resetting to wallet address:",
-          error
-        );
-        selectedAuthorIdentity.value = getSignerAddress();
+        console.warn('Error validating stored author identity, resetting to wallet address:', error)
+        selectedAuthorIdentity.value = getSignerAddress()
       }
     } else {
-      selectedAuthorIdentity.value = getSignerAddress();
+      selectedAuthorIdentity.value = getSignerAddress()
     }
-  };
+  }
 
   const validateNameForCurrentWallet = async (name) => {
     if (!isWalletConnected.value) {
-      return false;
+      return false
     }
 
     try {
-      const address = getSignerAddress();
-      const names = await fetchNamesByDestination(address);
-      return names.includes(name);
+      const address = getSignerAddress()
+      const names = await fetchNamesByDestination(address)
+      return names.includes(name)
     } catch (error) {
-      console.error("Error validating name:", error);
-      return false;
+      console.error('Error validating name:', error)
+      return false
     }
-  };
+  }
 
   const disconnectWallet = () => {
-    unlockedWallets.value = [];
-    selectedWalletIndex.value = 0;
-    state.activeWalletInstance = null;
-    selectedAuthorIdentity.value = null;
-    state.addressNames = {};
-  };
+    unlockedWallets.value = []
+    selectedWalletIndex.value = 0
+    state.activeWalletInstance = null
+    selectedAuthorIdentity.value = null
+    state.addressNames = {}
+  }
 
   // NAME RESOLUTION METHODS
   const fetchNamesByDestination = async (address) => {
     if (state.addressNames[address]) {
-      return state.addressNames[address];
+      return state.addressNames[address]
     }
 
     try {
-      const url = `${restUrl.value}/dysonprotocol/nameservice/v1/names_by_destination/${address}`;
+      const url = `${restUrl.value}/dysonprotocol/nameservice/v1/names_by_destination/${address}`
 
-      const resp = await fetch(url);
+      const resp = await fetch(url)
       if (!resp.ok) {
         console.warn(
           `[useWallet] Failed to fetch names for address ${address}: ${resp.status} ${resp.statusText}`
-        );
-        state.addressNames[address] = [];
-        return [];
+        )
+        state.addressNames[address] = []
+        return []
       }
 
-      const json = await resp.json();
-      const names = json.names || [];
-      state.addressNames[address] = names;
+      const json = await resp.json()
+      const names = json.names || []
+      state.addressNames[address] = names
 
-      return names;
+      return names
     } catch (error) {
-      console.error(
-        `[useWallet] Error fetching names for address ${address}:`,
-        error
-      );
-      state.addressNames[address] = [];
-      return [];
+      console.error(`[useWallet] Error fetching names for address ${address}:`, error)
+      state.addressNames[address] = []
+      return []
     }
-  };
+  }
 
   // WALLET CONNECTION METHODS
   const connectNamedCosmJsWallet = async (name, password) => {
-    const walletData = localCosmJsWallets.value.find((w) => w.name === name);
-    if (!walletData) throw new Error(`No local wallet named "${name}".`);
-    if (!password.trim())
-      throw new Error("Password required to unlock wallet.");
+    const walletData = localCosmJsWallets.value.find((w) => w.name === name)
+    if (!walletData) throw new Error(`No local wallet named "${name}".`)
+    if (!password.trim()) throw new Error('Password required to unlock wallet.')
 
-    const kdfConf = extractKdfConfiguration(walletData.encrypted);
-    const encryptionKey = await executeKdf(password, kdfConf);
+    const kdfConf = extractKdfConfiguration(walletData.encrypted)
+    const encryptionKey = await executeKdf(password, kdfConf)
     const wallet = await DirectSecp256k1HdWallet.deserializeWithEncryptionKey(
       walletData.encrypted,
       encryptionKey
-    );
-    state.activeWalletInstance = wallet;
+    )
+    state.activeWalletInstance = wallet
 
-    await unlockWallet(name, password);
+    await unlockWallet(name, password)
 
     // Set the newly connected wallet as the selected wallet
-    const walletIndex = unlockedWallets.value.findIndex((w) => w.name === name);
+    const walletIndex = unlockedWallets.value.findIndex((w) => w.name === name)
     if (walletIndex !== -1) {
-      selectedWalletIndex.value = walletIndex;
+      selectedWalletIndex.value = walletIndex
     }
 
-    state.addressNames = {};
-    await restoreAuthorIdentity();
-  };
+    state.addressNames = {}
+    await restoreAuthorIdentity()
+  }
 
   const connectExtension = async (type) => {
-    const provider = type === "keplr" ? window.keplr : null;
+    const provider = type === 'keplr' ? window.keplr : null
     if (!provider) {
-      throw new Error(`Extension not found: ${type}`);
+      throw new Error(`Extension not found: ${type}`)
     }
-    await loadChainIdFromApi();
-    await suggestChainIfNeeded(provider);
+    await loadChainIdFromApi()
+    await suggestChainIfNeeded(provider)
 
-    const offlineSigner = provider.getOfflineSigner(chainId.value);
-    let { name, bech32Address: address } = await provider.getKey(chainId.value);
+    const offlineSigner = provider.getOfflineSigner(chainId.value)
+    let { name, bech32Address: address } = await provider.getKey(chainId.value)
 
     // Check if this wallet is already in unlockedWallets
-    const existingIndex = unlockedWallets.value.findIndex(
-      (w) => w.address === address
-    );
+    const existingIndex = unlockedWallets.value.findIndex((w) => w.address === address)
 
-    state.activeWalletInstance = offlineSigner;
+    state.activeWalletInstance = offlineSigner
 
     if (existingIndex === -1) {
       // Add new wallet if not already present
@@ -467,64 +428,62 @@ export function useWallet() {
         name: String(name),
         address: String(address),
         type: String(type),
-      });
+      })
       // Set as selected wallet
-      selectedWalletIndex.value = unlockedWallets.value.length - 1;
+      selectedWalletIndex.value = unlockedWallets.value.length - 1
     } else {
       // Set existing wallet as selected
-      selectedWalletIndex.value = existingIndex;
+      selectedWalletIndex.value = existingIndex
     }
 
-    state.addressNames = {};
-    await restoreAuthorIdentity();
-  };
+    state.addressNames = {}
+    await restoreAuthorIdentity()
+  }
 
   // UTILITIES
   const loadChainIdFromApi = async () => {
     const base =
       CHAIN_INFO.restUrl ||
-      (typeof window !== "undefined" &&
-      typeof window.resolveRestUrl === "function"
+      (typeof window !== 'undefined' && typeof window.resolveRestUrl === 'function'
         ? window.resolveRestUrl()
-        : "");
-    if (!base)
-      throw new Error("REST URL is not configured (chainInfo.restUrl)");
-    const url = `${base}/cosmos/base/tendermint/v1beta1/node_info`;
-    const resp = await fetch(url);
+        : '')
+    if (!base) throw new Error('REST URL is not configured (chainInfo.restUrl)')
+    const url = `${base}/cosmos/base/tendermint/v1beta1/node_info`
+    const resp = await fetch(url)
     if (!resp.ok) {
-      throw new Error(`Failed to fetch node_info: ${await resp.text()}`);
+      throw new Error(`Failed to fetch node_info: ${await resp.text()}`)
     }
-    const json = await resp.json();
+    const json = await resp.json()
 
     // Persist full node_info with build_deps removed to avoid huge payloads
-    const sanitized = { ...json };
+    const sanitized = { ...json }
     if (
       sanitized &&
-      typeof sanitized === "object" &&
+      typeof sanitized === 'object' &&
       sanitized.application_version &&
-      typeof sanitized.application_version === "object" &&
-      "build_deps" in sanitized.application_version
+      typeof sanitized.application_version === 'object' &&
+      'build_deps' in sanitized.application_version
     ) {
-      delete sanitized.application_version.build_deps;
+      delete sanitized.application_version.build_deps
     }
-    nodeInfo.value = sanitized;
-    const discovered = json?.default_node_info?.network;
+    nodeInfo.value = sanitized
+    const discovered = json?.default_node_info?.network
     if (!discovered) {
-      throw new Error("No chainId found in node_info response.");
+      throw new Error('No chainId found in node_info response.')
     }
-    chainId.value = discovered;
+    chainId.value = discovered
 
-    const rawRpcAddr = json?.default_node_info?.other?.rpc_address || "";
+    const rawRpcAddr = json?.default_node_info?.other?.rpc_address || ''
     const normalizedRpc = String(rawRpcAddr)
       .trim()
-      .replace(/^tcp:\/\//, "http://");
-    if (normalizedRpc) rpcUrl.value = normalizedRpc;
-  };
+      .replace(/^tcp:\/\//, 'http://')
+    if (normalizedRpc) rpcUrl.value = normalizedRpc
+  }
 
   const suggestChainIfNeeded = async (provider) => {
-    const name = chainId.value.includes("mainnet")
-      ? "DysonProtocol2"
-      : `DysonProtocol2 (${chainId.value})`;
+    const name = chainId.value.includes('mainnet')
+      ? 'DysonProtocol2'
+      : `DysonProtocol2 (${chainId.value})`
 
     const chainInfo = {
       chainId: chainId.value,
@@ -533,188 +492,172 @@ export function useWallet() {
       rest: restUrl.value,
       bip44: { coinType: 118 },
       bech32Config: {
-        bech32PrefixAccAddr: "dys2",
-        bech32PrefixAccPub: "dys2pub",
-        bech32PrefixValAddr: "dys2valoper",
-        bech32PrefixValPub: "dys2valoperpub",
-        bech32PrefixConsAddr: "dys2valcons",
-        bech32PrefixConsPub: "dys2valconspub",
+        bech32PrefixAccAddr: 'dys2',
+        bech32PrefixAccPub: 'dys2pub',
+        bech32PrefixValAddr: 'dys2valoper',
+        bech32PrefixValPub: 'dys2valoperpub',
+        bech32PrefixConsAddr: 'dys2valcons',
+        bech32PrefixConsPub: 'dys2valconspub',
       },
-      currencies: [
-        { coinDenom: "DYS2", coinMinimalDenom: "udys", coinDecimals: 6 },
-      ],
+      currencies: [{ coinDenom: 'DYS2', coinMinimalDenom: 'udys', coinDecimals: 6 }],
       feeCurrencies: [
         {
-          coinDenom: "DYS2",
-          coinMinimalDenom: "udys",
+          coinDenom: 'DYS2',
+          coinMinimalDenom: 'udys',
           coinDecimals: 6,
           gasPriceStep: { low: 0.0, average: 0.0, high: 0.00002 },
         },
       ],
       stakeCurrency: {
-        coinDenom: "DYS2",
-        coinMinimalDenom: "udys",
+        coinDenom: 'DYS2',
+        coinMinimalDenom: 'udys',
         coinDecimals: 6,
       },
-    };
+    }
 
     try {
-      await provider.enable(chainId.value);
+      await provider.enable(chainId.value)
     } catch {
-      await provider.experimentalSuggestChain(chainInfo);
-      await provider.enable(chainId.value);
+      await provider.experimentalSuggestChain(chainInfo)
+      await provider.enable(chainId.value)
     }
-  };
+  }
 
   const buildFee = (gasLimit) => {
-    const limit = Number(gasLimit) || 200000;
-    const price = Number(gasPrice.value) || 0;
-    const totalAmount = Math.floor(limit * price);
+    const limit = Number(gasLimit) || 200000
+    const price = Number(gasPrice.value) || 0
+    const totalAmount = Math.floor(limit * price)
 
     return {
-      amount: [{ denom: "udys", amount: String(totalAmount) }],
+      amount: [{ denom: 'udys', amount: String(totalAmount) }],
       gas_limit: String(limit),
-    };
-  };
+    }
+  }
 
   // LOCAL WALLET METHODS
-  const listLocalCosmJsWallets = () => [...localCosmJsWallets.value];
+  const listLocalCosmJsWallets = () => [...localCosmJsWallets.value]
 
   const generateMnemonic = async (length = 24) => {
-    const wallet = await DirectSecp256k1HdWallet.generate(length);
-    return wallet.mnemonic;
-  };
+    const wallet = await DirectSecp256k1HdWallet.generate(length)
+    return wallet.mnemonic
+  }
 
   const importNamedCosmJsWallet = async (name, mnemonic, password) => {
-    if (!name.trim()) throw new Error("Wallet name is required.");
-    if (!mnemonic.trim()) throw new Error("Mnemonic is empty.");
-    if (!password.trim()) throw new Error("Password is required.");
+    if (!name.trim()) throw new Error('Wallet name is required.')
+    if (!mnemonic.trim()) throw new Error('Mnemonic is empty.')
+    if (!password.trim()) throw new Error('Password is required.')
 
     if (localCosmJsWallets.value.find((w) => w.name === name.trim())) {
-      throw new Error(`Wallet "${name}" already exists.`);
+      throw new Error(`Wallet "${name}" already exists.`)
     }
 
     const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
       prefix: CHAIN_INFO.bech32Prefix,
-    });
+    })
     const kdfConfig = {
-      algorithm: "argon2id",
+      algorithm: 'argon2id',
       params: { outputLength: 32, opsLimit: 24, memLimitKib: 12 * 1024 },
-    };
-    const encryptionKey = await executeKdf(password, kdfConfig);
-    const encrypted = await wallet.serializeWithEncryptionKey(
-      encryptionKey,
-      kdfConfig
-    );
-    const address = (await wallet.getAccounts())[0].address;
+    }
+    const encryptionKey = await executeKdf(password, kdfConfig)
+    const encrypted = await wallet.serializeWithEncryptionKey(encryptionKey, kdfConfig)
+    const address = (await wallet.getAccounts())[0].address
 
     localCosmJsWallets.value.push({
       name: name.trim(),
       encrypted,
       _pass: password,
       address,
-    });
-  };
+    })
+  }
 
   const removeNamedCosmJsWallet = (name) => {
-    const idx = localCosmJsWallets.value.findIndex((w) => w.name === name);
-    if (idx === -1) throw new Error(`Wallet "${name}" not found.`);
+    const idx = localCosmJsWallets.value.findIndex((w) => w.name === name)
+    if (idx === -1) throw new Error(`Wallet "${name}" not found.`)
 
     if (selectedWallet.value?.name === name) {
-      disconnectWallet();
+      disconnectWallet()
     }
-    lockWallet(name);
-    localCosmJsWallets.value.splice(idx, 1);
-  };
+    lockWallet(name)
+    localCosmJsWallets.value.splice(idx, 1)
+  }
 
   const getWallet = async (overrideAddress) => {
-    console.log("🔍 getWallet() called", {
+    console.log('🔍 getWallet() called', {
       selectedWalletType: selectedWallet.value?.type,
       selectedWalletAddress: selectedWallet.value?.address,
       hasActiveInstance: !!state.activeWalletInstance,
       overrideAddress,
-    });
+    })
 
     const effective = (() => {
       if (overrideAddress) {
-        const w = unlockedWallets.value.find(
-          (u) => u.address === overrideAddress
-        );
-        if (!w) throw new Error("Requested wallet is not unlocked.");
-        return w;
+        const w = unlockedWallets.value.find((u) => u.address === overrideAddress)
+        if (!w) throw new Error('Requested wallet is not unlocked.')
+        return w
       }
       if (!selectedWallet.value?.address) {
-        throw new Error("No wallet connected.");
+        throw new Error('No wallet connected.')
       }
-      return selectedWallet.value;
-    })();
+      return selectedWallet.value
+    })()
 
-    const address = effective.address;
+    const address = effective.address
 
-    if (effective.type === "keplr") {
-      const provider = window.keplr;
-      if (!provider) throw new Error("Keplr extension not found.");
-      await suggestChainIfNeeded(provider);
-      const offlineSigner = provider.getOfflineSigner(chainId.value);
+    if (effective.type === 'keplr') {
+      const provider = window.keplr
+      if (!provider) throw new Error('Keplr extension not found.')
+      await suggestChainIfNeeded(provider)
+      const offlineSigner = provider.getOfflineSigner(chainId.value)
 
       // Verify the signer matches the requested address
-      const [{ address: signerAddr }] = await offlineSigner.getAccounts();
+      const [{ address: signerAddr }] = await offlineSigner.getAccounts()
       if (signerAddr !== address) {
         throw new Error(
           `Address mismatch: requested address (${address}) is not active in Keplr. Switch account in Keplr or reconnect the wallet.`
-        );
+        )
       }
-      state.activeWalletInstance = offlineSigner;
+      state.activeWalletInstance = offlineSigner
     } else if (effective.type === COSMJS_WALLET_TYPE) {
-      const unlocked = unlockedWallets.value.find((u) => u.address === address);
+      const unlocked = unlockedWallets.value.find((u) => u.address === address)
       if (!unlocked || !unlocked._pass) {
-        throw new Error(
-          "Wallet session expired. Please unlock the wallet again."
-        );
+        throw new Error('Wallet session expired. Please unlock the wallet again.')
       }
-      const walletData = localCosmJsWallets.value.find(
-        (w) => w.name === effective.name
-      );
+      const walletData = localCosmJsWallets.value.find((w) => w.name === effective.name)
       if (!walletData) {
-        throw new Error("Wallet data not found. Please reconnect your wallet.");
+        throw new Error('Wallet data not found. Please reconnect your wallet.')
       }
-      const kdfConf = extractKdfConfiguration(walletData.encrypted);
-      const encryptionKey = await executeKdf(unlocked._pass, kdfConf);
+      const kdfConf = extractKdfConfiguration(walletData.encrypted)
+      const encryptionKey = await executeKdf(unlocked._pass, kdfConf)
       const wallet = await DirectSecp256k1HdWallet.deserializeWithEncryptionKey(
         walletData.encrypted,
         encryptionKey
-      );
-      state.activeWalletInstance = wallet;
+      )
+      state.activeWalletInstance = wallet
     }
 
     if (!state.activeWalletInstance) {
-      throw new Error("Wallet session expired. Please reconnect your wallet.");
+      throw new Error('Wallet session expired. Please reconnect your wallet.')
     }
 
     return {
       ...effective,
       walletInstance: state.activeWalletInstance,
-    };
-  };
+    }
+  }
 
   const getAccountInfo = async () => {
-    const { address } = await getWallet();
-    return getChainInfo({ apiUrl: restUrl.value, address });
-  };
+    const { address } = await getWallet()
+    return getChainInfo({ apiUrl: restUrl.value, address })
+  }
 
-  const sendMsg = async ({
-    msg,
-    gasLimit,
-    memo = "",
-    executorAddress = undefined,
-  }) => {
+  const sendMsg = async ({ msg, gasLimit, memo = '', executorAddress = undefined }) => {
     if (!executorAddress) {
       // enforce explicit executor for clarity and consistency
-      throw new Error("executorAddress is required in sendMsg()");
+      throw new Error('executorAddress is required in sendMsg()')
     }
-    console.log("💸 useWallet.sendMsg() called", {
+    console.log('💸 useWallet.sendMsg() called', {
       msg: {
-        type: msg["@type"],
+        type: msg['@type'],
         creator: msg.creator,
         address: msg.address,
         path: msg.path,
@@ -724,30 +667,28 @@ export function useWallet() {
       },
       gasLimit,
       memo,
-    });
+    })
 
-    const { walletInstance, address, type } = await getWallet(executorAddress);
-    console.log("👛 Retrieved wallet info:", {
+    const { walletInstance, address, type } = await getWallet(executorAddress)
+    console.log('👛 Retrieved wallet info:', {
       address,
       type,
       hasWalletInstance: !!walletInstance,
-    });
+    })
 
-    let finalGasLimit = gasLimit;
+    let finalGasLimit = gasLimit
 
     // Skip gas estimation for Keplr wallets to avoid double signing.
     // If caller requests auto, use a generous default to prevent under-gassing.
-    if (type === "keplr") {
-      console.log(
-        "⛽ Skipping simulation for Keplr. Using fallback gas when auto/null."
-      );
-      if (gasLimit === "auto" || gasLimit == null || gasLimit == undefined) {
-        finalGasLimit = 100000000;
+    if (type === 'keplr') {
+      console.log('⛽ Skipping simulation for Keplr. Using fallback gas when auto/null.')
+      if (gasLimit === 'auto' || gasLimit == null || gasLimit == undefined) {
+        finalGasLimit = 100000000
       } else {
-        finalGasLimit = gasLimit;
+        finalGasLimit = gasLimit
       }
     } else if (gasLimit == null || gasLimit == undefined) {
-      console.log("⛽ No gas limit provided, running simulation...");
+      console.log('⛽ No gas limit provided, running simulation...')
       const simulationResult = await sendMsgs({
         apiUrl: restUrl.value,
         wallet: walletInstance,
@@ -757,45 +698,39 @@ export function useWallet() {
         memo,
         fee: buildFee(200000),
         simulate: true,
-      });
+      })
 
-      console.log("🧪 Simulation result:", {
+      console.log('🧪 Simulation result:', {
         success: simulationResult.success,
         code: simulationResult.code,
         rawLog: simulationResult.rawLog,
-        gasUsed:
-          simulationResult?.raw?.gas_info?.gas_used ||
-          simulationResult?.gasUsed,
-      });
+        gasUsed: simulationResult?.raw?.gas_info?.gas_used || simulationResult?.gasUsed,
+      })
 
       if (!simulationResult.success) {
         const errorMsg =
-          simulationResult.rawLog ||
-          simulationResult.raw?.message ||
-          "Simulation failed";
-        console.error("❌ Gas estimation failed:", {
+          simulationResult.rawLog || simulationResult.raw?.message || 'Simulation failed'
+        console.error('❌ Gas estimation failed:', {
           code: simulationResult.code,
           errorMsg,
-        });
-        throw new Error(
-          `Gas estimation failed, code: [${simulationResult.code}] ${errorMsg}`
-        );
+        })
+        throw new Error(`Gas estimation failed, code: [${simulationResult.code}] ${errorMsg}`)
       }
 
-      let gasUsed = 0;
+      let gasUsed = 0
       if (simulationResult?.raw?.gas_info?.gas_used) {
-        gasUsed = parseInt(simulationResult.raw.gas_info.gas_used);
+        gasUsed = parseInt(simulationResult.raw.gas_info.gas_used)
       } else if (simulationResult?.gasUsed) {
-        gasUsed = parseInt(simulationResult.gasUsed);
+        gasUsed = parseInt(simulationResult.gasUsed)
       }
 
-      finalGasLimit = gasUsed > 0 ? Math.ceil(gasUsed * 1.5) : 200000;
-      console.log("⛽ Calculated gas limit:", {
+      finalGasLimit = gasUsed > 0 ? Math.ceil(gasUsed * 1.5) : 200000
+      console.log('⛽ Calculated gas limit:', {
         gasUsed,
         finalGasLimit,
-      });
-    } else if (gasLimit === "auto") {
-      console.log("⛽ Auto gas limit requested...");
+      })
+    } else if (gasLimit === 'auto') {
+      console.log('⛽ Auto gas limit requested...')
       const simulationResult = await sendMsgs({
         apiUrl: restUrl.value,
         wallet: walletInstance,
@@ -805,49 +740,43 @@ export function useWallet() {
         memo,
         fee: buildFee(100000000),
         simulate: true,
-      });
+      })
 
-      console.log("🧪 Auto gas simulation result:", {
+      console.log('🧪 Auto gas simulation result:', {
         success: simulationResult.success,
         code: simulationResult.code,
         rawLog: simulationResult.rawLog,
-        gasUsed:
-          simulationResult?.raw?.gas_info?.gas_used ||
-          simulationResult?.gasUsed,
-      });
+        gasUsed: simulationResult?.raw?.gas_info?.gas_used || simulationResult?.gasUsed,
+      })
 
       if (!simulationResult.success) {
         const errorMsg =
-          simulationResult.rawLog ||
-          simulationResult.raw?.message ||
-          "Simulation failed";
-        console.error("❌ Auto gas estimation failed:", {
+          simulationResult.rawLog || simulationResult.raw?.message || 'Simulation failed'
+        console.error('❌ Auto gas estimation failed:', {
           code: simulationResult.code,
           errorMsg,
-        });
-        throw new Error(
-          `Gas estimation failed, code: [${simulationResult.code}] ${errorMsg}`
-        );
+        })
+        throw new Error(`Gas estimation failed, code: [${simulationResult.code}] ${errorMsg}`)
       }
 
-      let gasUsed = 0;
+      let gasUsed = 0
       if (simulationResult?.raw?.gas_info?.gas_used) {
-        gasUsed = parseInt(simulationResult.raw.gas_info.gas_used);
+        gasUsed = parseInt(simulationResult.raw.gas_info.gas_used)
       } else if (simulationResult?.gasUsed) {
-        gasUsed = parseInt(simulationResult.gasUsed);
+        gasUsed = parseInt(simulationResult.gasUsed)
       }
 
-      finalGasLimit = gasUsed > 0 ? Math.ceil(gasUsed * 1.5) : 100000000;
-      console.log("⛽ Auto calculated gas limit:", {
+      finalGasLimit = gasUsed > 0 ? Math.ceil(gasUsed * 1.5) : 100000000
+      console.log('⛽ Auto calculated gas limit:', {
         gasUsed,
         finalGasLimit,
-      });
+      })
     }
 
-    const fee = buildFee(finalGasLimit);
-    console.log("💰 Built fee:", fee);
+    const fee = buildFee(finalGasLimit)
+    console.log('💰 Built fee:', fee)
 
-    console.log("📡 Sending transaction...");
+    console.log('📡 Sending transaction...')
     const result = await sendMsgs({
       apiUrl: restUrl.value,
       wallet: walletInstance,
@@ -857,10 +786,10 @@ export function useWallet() {
       memo,
       fee,
       simulate: false,
-    });
+    })
 
-    const txResp = result?.raw?.tx_response;
-    console.log("📨 Send transaction result:", {
+    const txResp = result?.raw?.tx_response
+    console.log('📨 Send transaction result:', {
       success: result?.success,
       code: result?.code,
       rawLog: result?.rawLog,
@@ -868,43 +797,43 @@ export function useWallet() {
       gasUsed: txResp?.gas_used || null,
       gasWanted: txResp?.gas_wanted || null,
       fullResult: result,
-    });
+    })
 
-    const txHash = txResp?.txhash;
+    const txHash = txResp?.txhash
     if (txHash) {
       addTransaction({
         txHash,
         timestamp: Date.now(),
-        type: msg?.["@type"] || "unknown",
+        type: msg?.['@type'] || 'unknown',
         fromAddress: address,
-        toAddress: msg?.address || msg?.to_address || msg?.recipient || "",
+        toAddress: msg?.address || msg?.to_address || msg?.recipient || '',
         amount: msg?.amount,
-        status: result?.success ? "success" : "failed",
-      });
+        status: result?.success ? 'success' : 'failed',
+      })
     }
 
-    return result;
-  };
+    return result
+  }
 
   const runDysonScript = async ({
     scriptAddress,
-    functionName = "",
-    args = "",
-    kwargs = "",
-    extraCode = "",
+    functionName = '',
+    args = '',
+    kwargs = '',
+    extraCode = '',
     attachedMsg = [],
-    memo = "",
+    memo = '',
     gasLimit = 100000000,
     simulate = false,
     executorAddress = undefined,
   }) => {
-    const { walletInstance, address, type } = await getWallet(executorAddress);
+    const { walletInstance, address, type } = await getWallet(executorAddress)
     if (!scriptAddress) {
-      throw new Error("scriptAddress is required.");
+      throw new Error('scriptAddress is required.')
     }
 
-    let finalGasLimit = gasLimit;
-    if (gasLimit === "auto" && !simulate) {
+    let finalGasLimit = gasLimit
+    if (gasLimit === 'auto' && !simulate) {
       if (type === COSMJS_WALLET_TYPE) {
         const simulationResult = await runScript({
           apiUrl: restUrl.value,
@@ -920,26 +849,22 @@ export function useWallet() {
           memo,
           fee: buildFee(100000000),
           simulate: true,
-        });
+        })
 
         if (!simulationResult.success) {
-          return simulationResult;
+          return simulationResult
         }
 
-        const gasUsed = parseInt(
-          simulationResult.rawSendMsgsResponse?.gasUsed || "0"
-        );
-        finalGasLimit = gasUsed > 0 ? Math.round(gasUsed * 1.5) : 100000000;
+        const gasUsed = parseInt(simulationResult.rawSendMsgsResponse?.gasUsed || '0')
+        finalGasLimit = gasUsed > 0 ? Math.round(gasUsed * 1.5) : 100000000
       } else {
         // Skip gas estimation for Keplr wallets to avoid double signing
-        console.log(
-          "⛽ Skipping gas estimation for Keplr wallet to avoid double signing"
-        );
-        finalGasLimit = 100000000;
+        console.log('⛽ Skipping gas estimation for Keplr wallet to avoid double signing')
+        finalGasLimit = 100000000
       }
     }
 
-    const fee = buildFee(finalGasLimit);
+    const fee = buildFee(finalGasLimit)
 
     const result = await runScript({
       apiUrl: restUrl.value,
@@ -955,17 +880,16 @@ export function useWallet() {
       memo,
       fee,
       simulate,
-    });
+    })
 
     if (!simulate) {
-      const sendRes = result.rawSendMsgsResponse;
-      const txResp = sendRes?.raw?.tx_response;
-      const hasHash = Boolean(txResp?.txhash);
+      const sendRes = result.rawSendMsgsResponse
+      const txResp = sendRes?.raw?.tx_response
+      const hasHash = Boolean(txResp?.txhash)
       if (hasHash) {
         const firstMsgType = String(
-          sendRes?.raw?.tx?.body?.messages?.[0]?.["@type"] ||
-            "/dysonprotocol.script.v1.MsgExec"
-        );
+          sendRes?.raw?.tx?.body?.messages?.[0]?.['@type'] || '/dysonprotocol.script.v1.MsgExec'
+        )
         addTransaction({
           txHash: txResp.txhash,
           timestamp: Date.now(),
@@ -973,101 +897,97 @@ export function useWallet() {
           fromAddress: address,
           toAddress: scriptAddress,
           amount: undefined,
-          status: result.success ? "success" : "failed",
-        });
+          status: result.success ? 'success' : 'failed',
+        })
       }
     }
 
-    return result;
-  };
+    return result
+  }
 
   // SIGNING METHODS
-  const signArbitraryData = async ({ data }) => {
-    const { walletInstance, address } = await getWallet();
-    const apiUrl = restUrl.value;
+  const signArbitraryData = async ({ address, data = '', msg = null }) => {
+    const { walletInstance } = await getWallet(address)
+    const apiUrl = restUrl.value
 
     let transaction = {
       body: {
-        messages: [
-          {
-            "@type": "/offchain.MsgSignArbitraryData",
-            app_domain: "dysond",
-            signer: address,
-            data: data,
-          },
-        ],
-        memo: "",
-        timeout_height: "0",
+        messages: msg
+          ? [msg]
+          : [
+              {
+                '@type': '/dysonprotocol.script.v1.MsgArbitraryData',
+                app_domain: 'dysond',
+                signer: address,
+                data: data,
+              },
+            ],
+        memo: '',
+        timeout_height: '0',
         unordered: false,
-        timeout_timestamp: "0001-01-01T00:00:00Z",
+        timeout_timestamp: '0001-01-01T00:00:00Z',
         extension_options: [],
         non_critical_extension_options: [],
       },
       auth_info: {
         signer_infos: [],
-        fee: { amount: [], gas_limit: "0", payer: "", granter: "" },
+        fee: { amount: [], gas_limit: '0', payer: '', granter: '' },
         tip: null,
       },
       signatures: [],
-    };
+    }
 
-    const [{ pubkey }] = await state.activeWalletInstance.getAccounts();
+    const [{ pubkey }] = await state.activeWalletInstance.getAccounts()
     transaction.auth_info.signer_infos = [
       {
         public_key: {
-          "@type": "/cosmos.crypto.secp256k1.PubKey",
+          '@type': '/cosmos.crypto.secp256k1.PubKey',
           key: toBase64(pubkey),
         },
-        mode_info: { single: { mode: "SIGN_MODE_DIRECT" } },
-        sequence: "0",
+        mode_info: { single: { mode: 'SIGN_MODE_DIRECT' } },
+        sequence: '0',
       },
-    ];
+    ]
 
-    console.log("transaction", transaction);
+    console.log('transaction', transaction)
     const encodeRes = await fetch(`${apiUrl}/cosmos/tx/v1beta1/encode`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tx: transaction }),
-    });
+    })
     if (!encodeRes.ok) {
-      throw new Error(`Failed to encode: ${await encodeRes.text()}`);
+      throw new Error(`Failed to encode: ${await encodeRes.text()}`)
     }
-    const encodedTx = await encodeRes.json();
-    console.log("encodedTx", encodedTx);
+    const encodedTx = await encodeRes.json()
+    console.log('encodedTx', encodedTx)
 
-    const tx = TxRaw.decode(fromBase64(encodedTx.tx_bytes));
-    console.log("tx", tx);
-    const chainIdForSign = "";
-    const accountNumber = "0";
+    const tx = TxRaw.decode(fromBase64(encodedTx.tx_bytes))
+    console.log('tx', tx)
+    const chainIdForSign = ''
+    const accountNumber = '0'
 
-    const signDoc = makeSignDoc(
-      tx.bodyBytes,
-      tx.authInfoBytes,
-      chainIdForSign,
-      accountNumber
-    );
-    const debugSignBytes = makeSignBytes(signDoc);
-    console.log("debugSignBytes", toBase64(debugSignBytes));
-    const sig = await walletInstance.signDirect(address, signDoc);
-    console.log("sig", sig);
-    transaction.signatures = [sig.signature.signature];
-    return transaction;
-  };
+    const signDoc = makeSignDoc(tx.bodyBytes, tx.authInfoBytes, chainIdForSign, accountNumber)
+    const debugSignBytes = makeSignBytes(signDoc)
+    console.log('debugSignBytes', toBase64(debugSignBytes))
+    const sig = await walletInstance.signDirect(address, signDoc)
+    console.log('sig', sig)
+    transaction.signatures = [sig.signature.signature]
+    return transaction
+  }
 
   // DENOMINATION METADATA METHODS
   const loadDenomMetadata = async () => {
     // Backwards-compatible adapter to new useDenom()
-    await denom.ensureDenomsLoaded();
-  };
+    await denom.ensureDenomsLoaded()
+  }
 
   // Denom helpers
-  const denom = useDenom();
-  const getDisplayOptions = ({ allowedBases }) =>
-    denom.getDisplayOptions({ allowedBases });
+  const denom = useDenom()
+  const getDisplayOptions = ({ allowedBases }) => denom.getDisplayOptions({ allowedBases })
 
-  const normalizeFromDisplay = (args) => denom.normalizeFromDisplay(args);
+  const normalizeFromDisplay = (args) => denom.normalizeFromDisplay(args)
 
-  const normalizeCoin = (args) => denom.normalizeCoin(args);
+  const normalizeCoin = (args) => denom.normalizeCoin(args)
 
   // TRANSACTION HISTORY METHODS
   const addTransaction = (txMetadata) => {
@@ -1079,22 +999,22 @@ export function useWallet() {
       toAddress: txMetadata.toAddress,
       amount: txMetadata.amount,
       status: txMetadata.status,
-    };
+    }
 
     // Add to beginning of array (most recent first)
-    txHistory.value.unshift(transaction);
+    txHistory.value.unshift(transaction)
 
     // Keep only last 100 transactions to prevent storage bloat
     if (txHistory.value.length > 100) {
-      txHistory.value = txHistory.value.slice(0, 100);
+      txHistory.value = txHistory.value.slice(0, 100)
     }
-  };
+  }
 
   const removeTransaction = (txHash) => {
-    if (!txHash) return;
-    const idx = txHistory.value.findIndex((t) => t.txHash === txHash);
-    if (idx !== -1) txHistory.value.splice(idx, 1);
-  };
+    if (!txHash) return
+    const idx = txHistory.value.findIndex((t) => t.txHash === txHash)
+    if (idx !== -1) txHistory.value.splice(idx, 1)
+  }
 
   return {
     // State
@@ -1150,13 +1070,10 @@ export function useWallet() {
     // Cleanup function
     cleanup: () => {
       if (globalKeplrListenerSet && globalHandleKeplrAccountChange) {
-        window.removeEventListener(
-          "keplr_keystorechange",
-          globalHandleKeplrAccountChange
-        );
-        globalKeplrListenerSet = false;
-        console.log("Keplr event listener removed");
+        window.removeEventListener('keplr_keystorechange', globalHandleKeplrAccountChange)
+        globalKeplrListenerSet = false
+        console.log('Keplr event listener removed')
       }
     },
-  };
+  }
 }

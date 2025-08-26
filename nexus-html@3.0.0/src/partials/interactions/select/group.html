@@ -1,0 +1,25 @@
+<select aria-label="Select" id="group-select-demo">
+    <option value="">Select an option</option>
+
+    <optgroup label="Fruits">
+        <option value="apple">Apple</option>
+        <option value="banana">Banana</option>
+        <option disabled value="orange">Orange</option>
+    </optgroup>
+
+    <optgroup label="Vegetables">
+        <option value="carrot">Carrot</option>
+        <option value="broccoli">Broccoli</option>
+        <option value="spinach">Spinach</option>
+    </optgroup>
+
+    <optgroup label="Others">
+        <option value="bread">Bread</option>
+        <option value="milk">Milk</option>
+    </optgroup>
+</select>
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        new Choices("#group-select-demo")
+    })
+</script>

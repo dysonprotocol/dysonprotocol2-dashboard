@@ -1,0 +1,160 @@
+syntax = "proto3";
+package dysonprotocol.nameservice.v1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "dysonprotocol/nameservice/v1/nameservice.proto";
+import "dysonprotocol/nameservice/v1/params.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/tendermint/v1beta1/query.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos_proto/cosmos.proto";
+import "dysonprotocol/nft/v1beta1/nft.proto";
+
+option go_package = "dysonprotocol.com/x/nameservice/types";
+
+// Query defines the gRPC querier service.
+service Query {
+
+  // ComputeHash computes the hash for a name, salt, and committer address
+  rpc ComputeHash(ComputeHashRequest) returns (ComputeHashResponse) {
+    option (google.api.http).get = "/dysonprotocol/nameservice/v1/compute_hash";
+  }
+
+  // ResolveName resolves a name to address or returns the address if already
+  // valid
+  rpc ResolveName(QueryResolveNameRequest) returns (QueryResolveNameResponse) {
+    option (google.api.http).get =
+        "/dysonprotocol/nameservice/v1/resolve_name/{name_or_address}";
+  }
+
+  // Params queries the nameservice module parameters
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/dysonprotocol/nameservice/v1/params";
+  }
+
+  // QueryNamesByDestination queries all names pointing to a destination address
+  rpc QueryNamesByDestination(QueryNamesByDestinationRequest)
+      returns (QueryNamesByDestinationResponse) {
+    option (google.api.http).get =
+        "/dysonprotocol/nameservice/v1/names_by_destination/{destination}";
+  }
+
+  // QueryNFTClassesByName lists NFT class IDs under a given root name
+  rpc QueryNFTClassesByName(QueryNFTClassesByNameRequest)
+      returns (QueryNFTClassesByNameResponse) {
+    option (google.api.http).get =
+        "/dysonprotocol/nameservice/v1/nftclasses_by_name/{name}";
+  }
+
+  // QueryDenomByName lists denoms under a given root name along with details
+  rpc QueryDenomByName(QueryDenomByNameRequest)
+      returns (QueryDenomByNameResponse) {
+    option (google.api.http).get =
+        "/dysonprotocol/nameservice/v1/denoms_by_name/{name}";
+  }
+}
+
+// ComputeHashRequest is a request to compute the hash for a name and salt
+message ComputeHashRequest {
+  // name is the name to compute the hash for
+  string name = 1;
+  // salt is the salt to use for the hash computation
+  string salt = 2;
+  // committer is the committer address
+  string committer = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+}
+
+// ComputeHashResponse contains the computed hash as a hex string
+message ComputeHashResponse {
+  // hex_hash is the computed hash as a hex string
+  string hex_hash = 1;
+}
+
+// QueryResolveNameRequest is request type for the Query/ResolveName RPC method.
+message QueryResolveNameRequest {
+  // name_or_address is either a nameservice name or a valid address
+  string name_or_address = 1;
+}
+
+// QueryResolveNameResponse is response type for the Query/ResolveName RPC
+// method.
+message QueryResolveNameResponse {
+  // address is the resolved address
+  string address = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+}
+
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [ (gogoproto.nullable) = false ];
+}
+
+// QueryNamesByDestinationRequest is request type for the
+// to list names by destination address or name
+message QueryNamesByDestinationRequest {
+  // destination is the name or address to find names for
+  string destination = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message QueryNamesByDestinationResponse {
+  // names is the list of name strings pointing to the destination address
+  repeated string names = 1;
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryNFTClassesByNameRequest is request type for the
+// Query/QueryNFTClassesByName RPC method.
+message QueryNFTClassesByNameRequest {
+  // name is the root name to list classes for
+  string name = 1;
+  // subclass_prefix optionally filters to a sub-path under the name (e.g.
+  // "/foo") If empty, all classes under the root including the base class are
+  // returned
+  string subclass_prefix = 3;
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryNFTClassesByNameResponse is response type for the
+// Query/QueryNFTClassesByName RPC method.
+message QueryNFTClassesByNameResponse {
+  // class_ids is the list of NFT class IDs under the provided root name
+  repeated string class_ids = 1;
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// DenomDetails provides basic information about a custom denom
+message DenomDetails {
+  // denom is the full denom string (e.g. "foo.dys/bar:baz")
+  string denom = 1;
+}
+
+// QueryDenomByNameRequest is request type for the Query/QueryDenomByName RPC
+// method.
+message QueryDenomByNameRequest {
+  // name is the root name to list denoms for
+  string name = 1;
+  // subdenom_prefix optionally filters to a sub-path under the name (e.g.
+  // "/foo") If empty, all denoms under the root including the base denom are
+  // returned
+  string subdenom_prefix = 3;
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryDenomByNameResponse is response type for the
+// Query/QueryDenomByName RPC method.
+message QueryDenomByNameResponse {
+  // denoms is the list of denom details under the provided root name
+  repeated DenomDetails denoms = 1;
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}

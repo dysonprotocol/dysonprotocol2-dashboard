@@ -1,0 +1,19 @@
+syntax = "proto3";
+package dysonprotocol.storage.v1;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "dysonprotocol.com/x/storage/types";
+
+// Params defines the parameters for the storage module.
+message Params {
+  // max_storage_size defines the maximum storage size in bytes that can be
+  // stored per owner
+  uint64 max_storage_size = 1
+      [ (gogoproto.moretags) = "yaml:\"max_storage_size\"" ];
+
+  // storage_stake_multiple defines the stake requirement multiplier per byte
+  // stored. Value "0" disables stake requirements entirely.
+  string storage_stake_multiple = 2
+      [ (gogoproto.moretags) = "yaml:\"storage_stake_multiple\"" ];
+}
