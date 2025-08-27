@@ -1,15 +1,9 @@
 <template>
   <!-- Inner sidebar content shared by mobile and desktop -->
-  <div
-    class="flex grow flex-col gap-y-5 overflow-y-auto bg-base-100 px-6 pb-4 overflow-scroll"
-  >
+  <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-base-100 px-6 pb-4 overflow-scroll">
     <!-- Header -->
     <div class="flex h-16 shrink-0 items-center">
-      <router-link
-        to="/"
-        aria-label="Dyson Protocol"
-        class="flex items-center gap-2"
-      >
+      <router-link to="/" aria-label="Dyson Protocol" class="flex items-center gap-2">
         <img :src="logoSrc" alt="Dyson Protocol" class="h-6 w-auto" />
         <span class="text-xl font-bold">Dyson Protocol 2</span>
       </router-link>
@@ -20,29 +14,20 @@
       <ul role="list" class="flex flex-1 flex-col gap-y-7">
         <li>
           <!-- Chain status above Dashboard -->
-          <div
-            class="-mx-2 mb-2 rounded-md px-2 py-1 text-xs text-base-content/60"
-          >
+          <div class="-mx-2 mb-2 rounded-md px-2 py-1 text-xs text-base-content/60">
             <div class="flex items-center justify-between gap-2">
               <span class="truncate">Chain ID:</span>
-              <span
-                :class="[
-                  'font-mono',
-                  isNonMainnet ? 'text-error' : 'text-base-content/80',
-                ]"
-                >{{ chainIdDisplay || chainId || "…" }}</span
-              >
+              <span :class="['font-mono', isNonMainnet ? 'text-error' : 'text-base-content/80']">{{
+                chainIdDisplay || chainId || '…'
+              }}</span>
             </div>
             <div class="flex items-center justify-between gap-2">
               <span class="truncate">Height:</span>
               <span class="font-mono text-base-content/80">
-                {{ latestHeight != null ? latestHeight : "…" }}
+                {{ latestHeight != null ? latestHeight : '…' }}
               </span>
             </div>
-            <div
-              class="flex items-center justify-between gap-2"
-              v-if="nodeVersion || nodeCommit"
-            >
+            <div class="flex items-center justify-between gap-2" v-if="nodeVersion || nodeCommit">
               <span class="truncate">Version:</span>
               <span class="font-mono text-base-content/80">
                 <span v-if="nodeVersion">
@@ -68,10 +53,7 @@
                 </span>
               </span>
             </div>
-            <div
-              class="flex items-center justify-between gap-2"
-              v-if="gitShortCommit"
-            >
+            <div class="flex items-center justify-between gap-2" v-if="gitShortCommit">
               <span class="truncate">Dashboard:</span>
               <span class="font-mono text-base-content/80">
                 <a
@@ -104,9 +86,7 @@
                 <component
                   :is="item.icon"
                   :class="[
-                    item.current
-                      ? 'text-primary'
-                      : 'text-base-content/60 group-hover:text-primary',
+                    item.current ? 'text-primary' : 'text-base-content/60 group-hover:text-primary',
                     'size-6 shrink-0',
                   ]"
                   aria-hidden="true"
@@ -178,11 +158,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, inject } from "vue";
-import { useRoute } from "vue-router";
-import { useWallet } from "@/composables/useWallet";
-import { useTheme } from "@/composables/useTheme";
-import WalletCards from "@/components/shared/WalletCards.vue";
+import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue'
+import { useRoute } from 'vue-router'
+import { useWallet } from '@/composables/useWallet'
+import { useTheme } from '@/composables/useTheme'
+import WalletCards from '@/components/shared/WalletCards.vue'
 import {
   DocumentTextIcon,
   CodeBracketIcon,
@@ -192,88 +172,84 @@ import {
   FolderIcon,
   ClockIcon,
   UserGroupIcon,
-} from "@heroicons/vue/24/outline";
+} from '@heroicons/vue/24/outline'
 
-import logoDark from "@/assets/images/dys.svg";
-import logoLight from "@/assets/images/dys-inverted.svg";
+import logoDark from '@/assets/images/dys.svg'
+import logoLight from '@/assets/images/dys-inverted.svg'
 
-const route = useRoute();
+const route = useRoute()
 
-const { unlockedWallets, chainId } = useWallet();
-const chainInfo = inject("chainInfo", { restUrl: "" });
-const { theme } = useTheme();
+const { unlockedWallets, chainId } = useWallet()
+const chainInfo = inject('chainInfo', { restUrl: '' })
+const { theme } = useTheme()
 
 // Use colored logo on light theme, inverted on dark theme
-const logoSrc = computed(() => (theme.value === "dark" ? logoLight : logoDark));
+const logoSrc = computed(() => (theme.value === 'dark' ? logoLight : logoDark))
 
 // Chain status (latest block)
-const latestHeight = ref(null);
-const chainIdDisplay = ref("");
+const latestHeight = ref(null)
+const chainIdDisplay = ref('')
 
 // Node info
-const nodeVersion = ref("");
-const nodeCommit = ref("");
+const nodeVersion = ref('')
+const nodeCommit = ref('')
 
 const isNonMainnet = computed(() => {
-  const id = String(
-    chainIdDisplay.value || (chainId && chainId.value) || ""
-  ).toLowerCase();
-  if (!id) return false;
-  return !id.includes("mainnet");
-});
+  const id = String(chainIdDisplay.value || (chainId && chainId.value) || '').toLowerCase()
+  if (!id) return false
+  return !id.includes('mainnet')
+})
 
-let pollTimer = null;
-const pollDelayMs = ref(1000);
+let pollTimer = null
+const pollDelayMs = ref(1000)
 
 async function fetchLatestBlock() {
-  const url = `${chainInfo.restUrl}/cosmos/base/tendermint/v1beta1/blocks/latest`;
-  const resp = await fetch(url);
-  const json = await resp.json();
-  const header = json?.block?.header || json?.sdk_block?.header;
-  if (!header) return;
-  const newHeight = Number(header.height);
-  const prevHeight = latestHeight.value;
-  chainIdDisplay.value = String(header.chain_id || "");
-  latestHeight.value = newHeight;
+  const url = `${chainInfo.restUrl}/cosmos/base/tendermint/v1beta1/blocks/latest`
+  const resp = await fetch(url)
+  const json = await resp.json()
+  const header = json?.block?.header || json?.sdk_block?.header
+  if (!header) return
+  const newHeight = Number(header.height)
+  const prevHeight = latestHeight.value
+  chainIdDisplay.value = String(header.chain_id || '')
+  latestHeight.value = newHeight
 
-  if (prevHeight == null) return;
+  if (prevHeight == null) return
 
-  const delta = newHeight - prevHeight;
+  const delta = newHeight - prevHeight
   if (delta <= 0) {
-    pollDelayMs.value = Math.round(pollDelayMs.value * 1.05);
+    pollDelayMs.value = Math.round(pollDelayMs.value * 1.05)
   } else {
-    pollDelayMs.value = Math.round(pollDelayMs.value * 0.95);
+    pollDelayMs.value = Math.round(pollDelayMs.value * 0.95)
   }
 }
 
 function scheduleNextPoll() {
-  if (pollTimer) clearTimeout(pollTimer);
+  if (pollTimer) clearTimeout(pollTimer)
   pollTimer = setTimeout(async () => {
-    await fetchLatestBlock();
-    scheduleNextPoll();
-  }, pollDelayMs.value);
+    await fetchLatestBlock()
+    scheduleNextPoll()
+  }, pollDelayMs.value)
 }
 
 async function fetchNodeInfo() {
-  const url = `${chainInfo.restUrl}/cosmos/base/tendermint/v1beta1/node_info`;
-  const resp = await fetch(url);
-  const json = await resp.json();
-  const app = json?.application_version;
-  nodeVersion.value = String(
-    app?.version || json?.default_node_info?.version || ""
-  );
-  nodeCommit.value = String(app?.git_commit || "");
+  const url = `${chainInfo.restUrl}/cosmos/base/tendermint/v1beta1/node_info`
+  const resp = await fetch(url)
+  const json = await resp.json()
+  const app = json?.application_version
+  nodeVersion.value = String(app?.version || json?.default_node_info?.version || '')
+  nodeCommit.value = String(app?.git_commit || '')
 }
 
 onMounted(() => {
-  fetchLatestBlock();
-  fetchNodeInfo();
-  scheduleNextPoll();
-});
+  fetchLatestBlock()
+  fetchNodeInfo()
+  scheduleNextPoll()
+})
 
 onBeforeUnmount(() => {
-  if (pollTimer) clearTimeout(pollTimer);
-});
+  if (pollTimer) clearTimeout(pollTimer)
+})
 
 // Keplr UI/state handled inside WalletCards
 
@@ -294,62 +270,60 @@ const navigation = computed(() => [
     current: route.path === "/api",
   },
   */
-]);
+])
 
 const explorerItems = computed(() => [
   {
-    name: "Names",
-    href: "/name",
+    name: 'Names',
+    href: '/name',
     icon: TagIcon,
-    current: route.path.startsWith("/name"),
+    current: route.path.startsWith('/name'),
   },
   {
-    name: "Blocks",
-    href: "/blocks",
+    name: 'Blocks',
+    href: '/blocks',
     icon: CubeIcon,
-    current: route.path.startsWith("/blocks"),
+    current: route.path.startsWith('/blocks'),
   },
   {
-    name: "Transactions",
-    href: "/txs",
+    name: 'Transactions',
+    href: '/txs',
     icon: FolderIcon,
-    current: route.path.startsWith("/txs"),
+    current: route.path.startsWith('/txs'),
   },
   {
-    name: "Crontasks",
-    href: "/tasks",
+    name: 'Crontasks',
+    href: '/tasks',
     icon: ClockIcon,
-    current: route.path.startsWith("/tasks"),
+    current: route.path.startsWith('/tasks'),
   },
   {
-    name: "Validators",
-    href: "/validators",
+    name: 'Validators',
+    href: '/validators',
     icon: UserGroupIcon,
-    current: route.path.startsWith("/validators"),
+    current: route.path.startsWith('/validators'),
   },
-]);
+])
 
 function truncateAddress(addr) {
-  if (!addr) return "";
-  if (addr.length <= 12) return addr;
-  return `${addr.slice(0, 6)}...${addr.slice(-6)}`;
+  if (!addr) return ''
+  if (addr.length <= 12) return addr
+  return `${addr.slice(0, 6)}...${addr.slice(-6)}`
 }
 
 // Build metadata
-const gitShortCommit =
-  typeof __GIT_COMMIT__ !== "undefined" && __GIT_COMMIT__ ? __GIT_COMMIT__ : "";
+const gitShortCommit = typeof __GIT_COMMIT__ !== 'undefined' && __GIT_COMMIT__ ? __GIT_COMMIT__ : ''
 
 // Repo URLs
-const dashboardRepo =
-  "https://github.com/dysonprotocol/dysonprotocol2-dashboard";
-const nodeRepo = "https://github.com/dysonprotocol/dysonprotocol2";
+const dashboardRepo = 'https://github.com/dysonprotocol/dysonprotocol2-dashboard'
+const nodeRepo = 'https://github.com/dysonprotocol/dysonprotocol2'
 const dashboardCommitUrl = computed(() =>
-  gitShortCommit ? `${dashboardRepo}/commit/${gitShortCommit}` : "#"
-);
+  gitShortCommit ? `${dashboardRepo}/commit/${gitShortCommit}` : '#'
+)
 const nodeCommitUrl = computed(() =>
-  nodeCommit.value ? `${nodeRepo}/commit/${nodeCommit.value}` : "#"
-);
+  nodeCommit.value ? `${nodeRepo}/commit/${nodeCommit.value}` : '#'
+)
 const nodeBranchUrl = computed(() =>
-  nodeVersion.value ? `${nodeRepo}/tree/${nodeVersion.value}` : "#"
-);
+  nodeVersion.value ? `${nodeRepo}/tree/${nodeVersion.value}` : '#'
+)
 </script>
