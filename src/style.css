@@ -29,6 +29,12 @@ body,
   max-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  top: 0;
+  bottom: 0;
+  z-index: 10;
+  will-change: margin, top, max-height, border-radius;
+  @apply transition-[margin,_top,_max-height,_border-radius] ease-in-out duration-300 motion-reduce:transition-none;
 }
 
 /* Desktop: checkbox hides sidebar */
