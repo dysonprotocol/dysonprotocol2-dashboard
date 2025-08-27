@@ -3,7 +3,7 @@
     <span
       @click="copy"
       :title="address"
-      class="font-mono cursor-pointer hover:text-primary text-xs"
+      class="font-mono cursor-pointer hover:text-primary text-xs break-all"
     >
       {{
         truncate && truncate < address.length

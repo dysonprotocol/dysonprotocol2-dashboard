@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+@plugin 'daisyui';
+
+/****  Plugins  ****/
+/* Animations */
+@plugin "tailwindcss-motion";
+
+/* Iconify (Lucide icons) */
+@plugin "@iconify/tailwind4" {
+  prefixes: lucide, hugeicons, ri;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+/* Sidebar toggle (Nexus-style) */
+:root {
+  --layout-sidebar-width: 25rem;
+}
+
+#layout-sidebar {
+  width: var(--layout-sidebar-width);
+  min-width: var(--layout-sidebar-width);
+  height: 100vh;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Desktop: checkbox hides sidebar */
+#layout-sidebar-toggle-trigger:checked ~ #layout-sidebar {
+  margin-inline-start: calc(var(--layout-sidebar-width) * -1);
+}
+
+/* Hover lane */
+#layout-sidebar-hover {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 11;
+  display: none;
+}
+
+#layout-sidebar-hover-trigger:checked ~ #layout-sidebar {
+  position: fixed;
+  z-index: 12;
+  margin-inline-start: calc(var(--layout-sidebar-width) * -1);
+}
+
+#layout-sidebar-hover-trigger:checked ~ #layout-sidebar-hover {
+  display: block;
+}
+
+/* Reveal on hover when hover mode is active */
+#layout-sidebar-hover:hover ~ #layout-sidebar,
+#layout-sidebar-hover-trigger:checked ~ #layout-sidebar:hover {
+  z-index: 12;
+  margin-inline-start: 0;
+}
+
+/* Mobile: hidden by default, shown when checked */
+@media (max-width: 1024px) {
+  #layout-sidebar {
+    position: fixed;
+    z-index: 500;
+  }
+
+  #layout-sidebar-toggle-trigger:not(:checked) ~ #layout-sidebar {
+    margin-inline-start: calc(var(--layout-sidebar-width) * -1);
+  }
+
+  #layout-sidebar-toggle-trigger:checked ~ #layout-sidebar {
+    margin-inline-start: 0;
+  }
+
+  #layout-sidebar-toggle-trigger:checked ~ #layout-sidebar-backdrop {
+    background-color: color-mix(in oklab, var(--fallback-bc, oklch(var(--bc) / 1)) 5%, transparent);
+    position: fixed;
+    inset: 0;
+    z-index: 499;
+    transition: all 150ms;
+  }
+}
+
+/* Topbar mimic Nexus sticky behavior and border */
+#layout-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  max-height: 4rem;
+  min-height: 4rem;
+  border-bottom: 1px solid var(--fallback-b2, oklch(var(--b2) / 1));
+}
