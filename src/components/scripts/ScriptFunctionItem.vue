@@ -108,7 +108,8 @@
           <WalletSelector
             v-model="selectedExecutor"
             :show-locked="true"
-            :default-address="address"
+            :default-address="selectedExecutor"
+            :default-grantee="selectedGranteeAddress"
             :button-class="'btn-sm join-item'"
             :msg-type-filter="msgTypeFilter"
             @update:executor-address="onExecutorAddress"
@@ -166,8 +167,9 @@ const storageKey = computed(() => `${props.address}_${props.func.function_name}`
 const isOpen = computed(() => openStates.value[storageKey.value] ?? false)
 const toggle = () => (openStates.value[storageKey.value] = !isOpen.value)
 
-// Per-function executor persistence
+// Per-function executor/grantee persistence
 const functionExecutors = useStorage('script-function-executors', {})
+const functionGrantees = useStorage('script-function-grantees', {})
 const selectedExecutor = ref('')
 // Authz selection state
 const isAuthz = ref(false)
@@ -244,6 +246,7 @@ watch(
     kwargsInput.value = paramInputs.value[k]
     if (!functionExecutors.value[k]) functionExecutors.value[k] = props.address
     selectedExecutor.value = functionExecutors.value[k]
+    selectedGranteeAddress.value = functionGrantees.value[k] || ''
     // validate
     validateJson(kwargsInput.value)
     nextTick(() => textareaRef.value && autoResize({ target: textareaRef.value }))
@@ -258,6 +261,10 @@ watch(kwargsInput, (v) => {
 
 watch(selectedExecutor, (v) => {
   functionExecutors.value[storageKey.value] = v
+})
+
+watch(selectedGranteeAddress, (v) => {
+  functionGrantees.value[storageKey.value] = v || ''
 })
 
 function validateJson(v) {

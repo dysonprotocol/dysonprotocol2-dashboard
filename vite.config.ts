@@ -51,6 +51,28 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    proxy: {
+      '/cosmos': {
+        target: 'http://localhost:1317',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/dysonprotocol': {
+        target: 'http://localhost:1317',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/swagger': {
+        target: 'http://localhost:1317',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/ibc': {
+        target: 'http://localhost:1317',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   build: {
     outDir: 'dist',

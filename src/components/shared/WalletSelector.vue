@@ -98,12 +98,16 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/20/solid'
 import { useWallet } from '@/composables/useWallet'
 import AddressDisplay from '@/components/AddressDisplay.vue'
+import { useAxiosRepo } from '@pinia-orm/axios'
+import { useRepo } from 'pinia-orm'
+import { Grant } from '@/orm/models/authz/Grant'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
   allowedAddresses: { type: Array, default: null },
   showLocked: { type: Boolean, default: true },
   defaultAddress: { type: String, default: '' },
+  defaultGrantee: { type: String, default: '' },
   buttonClass: { type: String, default: '' },
   msgTypeFilter: { type: Function, default: null },
 })
@@ -184,49 +188,27 @@ function applyFilter(grants, filter) {
     .map((x) => ({ grant: x.g, notes: x.res.notes || '' }))
 }
 
-async function fetchGranteeGrants(baseUrl, grantee) {
-  let url = `${baseUrl}/cosmos/authz/v1beta1/grants/grantee/${grantee}`
-  const all = []
-  let nextKey = null
-  try {
-    do {
-      const qs = new URLSearchParams()
-      if (nextKey) qs.set('pagination.key', nextKey)
-      const full = qs.toString() ? `${url}?${qs}` : url
-      const resp = await fetch(full)
-      if (!resp.ok) throw new Error(`fetch grants failed: ${resp.status} ${resp.statusText}`)
-      const json = await resp.json()
-      all.push(...(json.grants || []))
-      nextKey = json.pagination?.next_key || null
-    } while (nextKey)
-  } catch (err) {
-    console.warn(`[WalletSelector] Failed to fetch grants for ${grantee}:`, err)
-    return []
-  }
-  return all
-}
-
 const filteredByGrantee = ref({})
 
 async function refreshAuthz() {
-  const base = restUrl.value
   const filter = props.msgTypeFilter
   const unlocked = unlockedWallets.value.map((w) => w.address)
   const entries = {}
-  await Promise.all(
-    unlocked.map(async (addr) => {
-      const grants = await fetchGranteeGrants(base, addr)
-      const filtered = applyFilter(grants, filter)
-      entries[addr] = filtered.map((f) => ({
-        isAuthz: true,
-        granterAddress: f.grant.granter,
-        granteeAddress: f.grant.grantee,
-        notes: f.notes,
-        expiration: f.grant.expiration || null,
-        grant: f.grant,
-      }))
-    })
-  )
+  const api = useAxiosRepo(Grant).api()
+  const repo = useRepo(Grant)
+  await Promise.allSettled(unlocked.map((addr) => api.fetchByGrantee(addr)))
+  unlocked.forEach((addr) => {
+    const grants = repo.where('grantee', addr).get()
+    const filtered = applyFilter(grants, filter)
+    entries[addr] = filtered.map((f) => ({
+      isAuthz: true,
+      granterAddress: f.grant.granter,
+      granteeAddress: f.grant.grantee,
+      notes: f.notes,
+      expiration: f.grant.expiration || null,
+      grant: f.grant,
+    }))
+  })
   filteredByGrantee.value = entries
 }
 
@@ -256,15 +238,47 @@ const groupedOptions = computed(() => {
     )
     return { wallet: w, directAllowed, authzOptions }
   })
-  // Default selection behavior for direct address if requested
+  return groups
+})
+
+// Prefer Authz when both defaults are provided; fall back to direct if none selected
+function ensureDefaultSelection() {
+  // Try Authz first
+  if (props.defaultAddress && props.defaultGrantee) {
+    const groups = groupedOptions.value
+    const signerGroup = groups.find(
+      (g) => g.wallet.isUnlocked && g.wallet.address === props.defaultGrantee
+    )
+    const auth = signerGroup?.authzOptions.find((a) => a.granterAddress === props.defaultAddress)
+    if (signerGroup && auth) {
+      const already =
+        !!selectedAuthz.value &&
+        selectedAuthz.value.granter === auth.granterAddress &&
+        selectedAuthz.value.grantee === signerGroup.wallet.address
+      if (!already) selectAuthz(signerGroup.wallet, auth)
+      return
+    }
+  }
+  // Then direct only if no explicit selection
   if (!props.modelValue && props.defaultAddress) {
-    const canDefault = groups.some(
-      (g) => g.wallet.isUnlocked && g.wallet.address === props.defaultAddress
+    const canDefault = groupedOptions.value.some(
+      (g) => g.wallet.isUnlocked && g.wallet.address === props.defaultAddress && g.directAllowed
     )
     if (canDefault) emit('update:modelValue', props.defaultAddress)
   }
-  return groups
+}
+
+// Run on mount and when inputs change
+onMounted(() => {
+  ensureDefaultSelection()
 })
+
+watch(
+  () => [props.defaultAddress, props.defaultGrantee, props.modelValue],
+  () => ensureDefaultSelection()
+)
+
+watch(groupedOptions, () => ensureDefaultSelection())
 
 // Track selected authz locally for label and checks
 const selectedAuthz = ref(null)
