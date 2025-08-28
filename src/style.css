@@ -33,8 +33,6 @@ body,
   top: 0;
   bottom: 0;
   z-index: 10;
-  will-change: margin, top, max-height, border-radius;
-  @apply transition-[margin,_top,_max-height,_border-radius] ease-in-out duration-300 motion-reduce:transition-none;
 }
 
 /* Desktop: checkbox hides sidebar */
@@ -42,35 +40,13 @@ body,
   margin-inline-start: calc(var(--layout-sidebar-width) * -1);
 }
 
-/* Hover lane */
-#layout-sidebar-hover {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 11;
-  display: none;
-}
-
-#layout-sidebar-hover-trigger:checked ~ #layout-sidebar {
-  position: fixed;
-  z-index: 12;
-  margin-inline-start: calc(var(--layout-sidebar-width) * -1);
-}
-
-#layout-sidebar-hover-trigger:checked ~ #layout-sidebar-hover {
-  display: block;
-}
-
-/* Reveal on hover when hover mode is active */
-#layout-sidebar-hover:hover ~ #layout-sidebar,
-#layout-sidebar-hover-trigger:checked ~ #layout-sidebar:hover {
-  z-index: 12;
-  margin-inline-start: 0;
-}
+/* Removed hover lane behavior */
 
 /* Mobile: hidden by default, shown when checked */
 @media (max-width: 1024px) {
+  :root {
+    --layout-sidebar-width: 20rem;
+  }
   #layout-sidebar {
     position: fixed;
     z-index: 500;

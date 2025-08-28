@@ -19,7 +19,7 @@ const escapeHTML = (str) =>
         '>': '&gt;',
         "'": '&#39;',
         '"': '&quot;',
-      }[tag] || tag)
+      })[tag] || tag
   )
 
 /** Fetch chain info for address. */

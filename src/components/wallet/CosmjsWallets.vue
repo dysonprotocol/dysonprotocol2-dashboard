@@ -2,12 +2,31 @@
   <div class="space-y-2">
     <div v-for="wallet in localCosmJsWallets" :key="wallet.name" class="collapse collapse-arrow">
       <input type="checkbox" />
-      <div class="collapse-title font-medium">
-        <div class="text-base">{{ wallet.name }}</div>
+      <div class="collapse-title">
+        <div class="text-base" :class="{ 'font-bold': route.params.address === wallet.address }">
+          {{ wallet.name }}
+        </div>
       </div>
       <div class="collapse-content text-sm">
         <div class="text-xs text-base-content/80 mb-2 break-all">
           <AddressDisplay :address="wallet.address" :truncate="0" />
+        </div>
+        <div class="mt-1 text-xs grid grid-cols-4 gap-2">
+          <RouterLink
+            v-for="item in linkItems(wallet.address)"
+            :key="item.text"
+            :to="item.to"
+            v-slot="{ href, navigate, isExactActive }"
+          >
+            <a
+              :href="href"
+              @click="navigate"
+              class="link link-hover"
+              :class="{ 'font-bold': isExactActive }"
+            >
+              {{ item.text }}
+            </a>
+          </RouterLink>
         </div>
         <div class="flex items-center justify-between gap-2 mt-2">
           <div class="">
@@ -104,6 +123,7 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { useWallet } from '@/composables/useWallet'
 import AddressDisplay from '@/components/AddressDisplay.vue'
+import { RouterLink, useRoute } from 'vue-router'
 
 const {
   unlockedWallets,
@@ -115,6 +135,8 @@ const {
   importNamedCosmJsWallet,
   connectNamedCosmJsWallet,
 } = useWallet()
+
+const route = useRoute()
 
 const unlockPassword = reactive({})
 const unlockErrors = reactive({})
@@ -188,4 +210,18 @@ watch([newWalletName, mnemonic], () => {
   }
   if (importError.value) importError.value = ''
 })
+
+function linkItems(address) {
+  if (!address) return []
+  return [
+    { text: 'Summary', to: { name: 'AddressSummary', params: { address } } },
+    { text: 'Coins', to: { name: 'AddressCoins', params: { address } } },
+    { text: 'NFTs', to: { name: 'AddressNFTs', params: { address } } },
+    { text: 'Staking', to: { name: 'AddressStaking', params: { address } } },
+    { text: 'Names', to: { name: 'AddressNames', params: { address } } },
+    { text: 'Script', to: { name: 'AddressScript', params: { address } } },
+    { text: 'Storage', to: { name: 'AddressStorage', params: { address } } },
+    { text: 'Tasks', to: { name: 'AddressTasks', params: { address } } },
+  ]
+}
 </script>

@@ -121,7 +121,7 @@ const emit = defineEmits([
   'update:authzNotes',
   'update:selectedGrant',
 ])
-const { unlockedWallets, localCosmJsWallets, loadDenomMetadata, restUrl, chainId } = useWallet()
+const { unlockedWallets, localCosmJsWallets, loadDenomMetadata, chainId } = useWallet()
 
 onMounted(async () => {
   try {
@@ -222,7 +222,7 @@ onMounted(() => {
 watch(
   () => [
     unlockedWallets.value.map((w) => w.address).join(','),
-    restUrl.value,
+    // removed restUrl dependency
     chainId.value,
     props.msgTypeFilter,
   ],

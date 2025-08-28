@@ -1,14 +1,19 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import namesRoutes from './modules/names'
+import addressRoutes from './modules/address'
+import explorerRoutes from './modules/explorer'
+import miscRoutes from './modules/misc'
+import redirectRoutes from './modules/redirects'
 
-const NameList = () => import('@/views/chain/NameList.vue')
-const NameDetails = () => import('@/views/chain/NameDetails.vue')
-const DemoPiniaOrm = () => import('../views/DemoPiniaOrm.vue')
+const Index = () => import('@/views/Index.vue')
 
 const routes: RouteRecordRaw[] = [
-  { path: '/', redirect: '/names' },
-  { path: '/names', name: 'NameList', component: NameList },
-  { path: '/names/:name', name: 'NameDetails', component: NameDetails, props: true },
-  { path: '/demo-pinia-orm', name: 'DemoPiniaOrm', component: DemoPiniaOrm },
+  { path: '/', name: 'Index', component: Index },
+  ...namesRoutes,
+  ...redirectRoutes,
+  ...explorerRoutes,
+  ...addressRoutes,
+  ...miscRoutes,
 ]
 
 const router = createRouter({

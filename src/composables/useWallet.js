@@ -1,4 +1,5 @@
-import { computed, reactive, inject } from 'vue'
+import { computed, reactive } from 'vue'
+import api from '@/orm/http'
 import {
   DirectSecp256k1HdWallet,
   makeSignDoc,
@@ -18,14 +19,8 @@ let globalKeplrListenerSet = false
 let globalHandleKeplrAccountChange = null
 
 export function useWallet() {
-  // Inject chain info from App.vue
-  const CHAIN_INFO = inject('chainInfo', {
-    restUrl: '',
-    bech32Prefix: 'dys2',
-  })
-
   // Persisted state
-  const restUrl = computed(() => CHAIN_INFO.restUrl)
+  const restUrl = api.defaults.baseURL
   const chainId = useStorage('chainId', '')
   const rpcUrl = useStorage('rpcUrl', '')
   const nodeInfo = useStorage('nodeInfo', null)
@@ -124,19 +119,18 @@ export function useWallet() {
   const fetchNamesByDestination = async (address) => {
     if (state.addressNames[address]) return state.addressNames[address]
     try {
-      const url = `${restUrl.value}/dysonprotocol/nameservice/v1/names_by_destination/${address}`
-      const resp = await fetch(url)
-      if (!resp.ok) {
-        console.warn(
-          `[useWallet] Failed to fetch names for address ${address}: ${resp.status} ${resp.statusText}`
-        )
+      const url = `/dysonprotocol/nameservice/v1/names_by_destination/${address}`
+      try {
+        const resp = await api.get(url)
+        const json = resp.data
+        const names = json.names || []
+        state.addressNames[address] = names
+        return names
+      } catch (error) {
+        console.warn(`[useWallet] Failed to fetch names for address ${address}:`, error)
         state.addressNames[address] = []
         return []
       }
-      const json = await resp.json()
-      const names = json.names || []
-      state.addressNames[address] = names
-      return names
     } catch (error) {
       console.error(`[useWallet] Error fetching names for address ${address}:`, error)
       state.addressNames[address] = []
@@ -186,16 +180,8 @@ export function useWallet() {
 
   // UTILITIES
   const loadChainIdFromApi = async () => {
-    const base =
-      CHAIN_INFO.restUrl ||
-      (typeof window !== 'undefined' && typeof window.resolveRestUrl === 'function'
-        ? window.resolveRestUrl()
-        : '')
-    if (!base) throw new Error('REST URL is not configured (chainInfo.restUrl)')
-    const url = `${base}/cosmos/base/tendermint/v1beta1/node_info`
-    const resp = await fetch(url)
-    if (!resp.ok) throw new Error(`Failed to fetch node_info: ${await resp.text()}`)
-    const json = await resp.json()
+    const resp = await api.get('/cosmos/base/tendermint/v1beta1/node_info')
+    const json = resp.data
 
     const sanitized = { ...json }
     if (
@@ -292,7 +278,7 @@ export function useWallet() {
     }
 
     const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
-      prefix: CHAIN_INFO.bech32Prefix,
+      prefix: 'dys2',
     })
     const kdfConfig = {
       algorithm: 'argon2id',
@@ -704,7 +690,6 @@ export function useWallet() {
 
   return {
     // State
-    restUrl,
     rpcUrl,
     chainId,
     localCosmJsWallets,

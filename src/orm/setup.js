@@ -1,15 +1,11 @@
 import { createORM } from 'pinia-orm'
 import { createPiniaOrmAxios } from '@pinia-orm/axios'
-import axios from 'axios'
-import { setupCache } from 'axios-cache-interceptor'
+import api from './http'
 
 // Install Pinia ORM and Axios plugin on a given pinia instance
 export function setupPiniaOrm(pinia) {
   // Enhance axios with cache interceptor and default 1s TTL for GETs
-  const axiosCached = setupCache(axios, {
-    ttl: 1000,
-  })
-  axiosCached.defaults.baseURL = '' // TODO allow to set baseURL
+  const axiosCached = api
 
   const orm = createORM({
     model: {

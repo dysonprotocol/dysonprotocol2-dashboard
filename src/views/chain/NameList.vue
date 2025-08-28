@@ -37,7 +37,7 @@
                 </td>
                 <td>
                   <a
-                    :href="`${chainInfo.restUrl}/redirect-to-dwapp/${nft.id}`"
+                    :href="`/redirect-to-dwapp/${nft.id}`"
                     class="link inline-flex items-center"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRepo } from 'pinia-orm'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import RegisterName from '@/components/names/RegisterName.vue'
@@ -68,7 +68,7 @@ const allError = ref('')
 const repo = useRepo(NftItem)
 const api = useAxiosRepo(NftItem).api()
 
-const chainInfo = inject('chainInfo', { restUrl: '' })
+const chainInfo = { restUrl: '' }
 
 function getDisplayInfoForBase(baseDenom) {
   // Minimal: assume udys -> dys2

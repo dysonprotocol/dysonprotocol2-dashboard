@@ -80,15 +80,15 @@
 </template>
 
 <script setup>
-import { ref, computed, inject, watchEffect } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import RegisterName from '@/components/names/RegisterName.vue'
 import { useWallet } from '@/composables/useWallet'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
+import api from '@/orm/http'
 
 const route = useRoute()
 const routeName = computed(() => String(route.params.name || ''))
-const chainInfo = inject('chainInfo', { restUrl: '' })
 
 const isLoading = ref(false)
 const error = ref('')
@@ -162,39 +162,21 @@ async function fetchResolveName(name) {
   nft.value = null
   ownerAddress.value = ''
   try {
-    const url = `${
-      chainInfo.restUrl
-    }/dysonprotocol/nameservice/v1/resolve_name/${encodeURIComponent(name)}`
-    const resp = await fetch(url)
-    if (resp.ok) {
-      const json = await resp.json()
-      resolvedAddress.value = json?.address || ''
-    } else if (resp.status === 400 || resp.status === 404) {
-      resolvedAddress.value = ''
-    } else {
-      throw new Error(`HTTP ${resp.status} ${resp.statusText}`)
-    }
-    const nftUrl = `${
-      chainInfo.restUrl
-    }/dysonprotocol/nft/v1beta1/nft?class_id=nameservice.dys&id=${encodeURIComponent(name)}`
-    const nftResp = await fetch(nftUrl)
-    if (nftResp.ok) {
-      const nftJson = await nftResp.json()
-      nft.value = nftJson?.nft || null
-    } else {
-      nft.value = null
-    }
+    const resp = await api.get(
+      `/dysonprotocol/nameservice/v1/resolve_name/${encodeURIComponent(name)}`
+    )
+    resolvedAddress.value = resp?.data?.address || ''
+
+    const nftResp = await api.get(
+      `/dysonprotocol/nft/v1beta1/nft?class_id=nameservice.dys&id=${encodeURIComponent(name)}`
+    )
+    nft.value = nftResp?.data?.nft || null
     destination.value = nft.value?.uri || ''
-    const ownerUrl = `${
-      chainInfo.restUrl
-    }/dysonprotocol/nft/v1beta1/owner?class_id=nameservice.dys&id=${encodeURIComponent(name)}`
-    const ownerResp = await fetch(ownerUrl)
-    if (ownerResp.ok) {
-      const ownerJson = await ownerResp.json()
-      ownerAddress.value = ownerJson?.owner || ''
-    } else {
-      ownerAddress.value = ''
-    }
+
+    const ownerResp = await api.get(
+      `/dysonprotocol/nft/v1beta1/owner?class_id=nameservice.dys&id=${encodeURIComponent(name)}`
+    )
+    ownerAddress.value = ownerResp?.data?.owner || ''
   } catch (e) {
     error.value = e?.message || 'Failed to resolve name'
   } finally {
