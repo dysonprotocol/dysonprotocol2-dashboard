@@ -7,7 +7,7 @@
     <div class="collapse-content text-sm">
       <div v-if="isKeplrConnected" class="mb-2">
         <p class="text-xs text-base-content/80">Connected</p>
-        <AddressDisplay :address="address" :truncate="0" />
+        <AddressDisplay :address="address" :truncate="10" />
       </div>
       <div v-else-if="!isKeplrAvailable" class="text-xs text-base-content/80 mb-2">
         Keplr not available
@@ -30,7 +30,7 @@
         </button>
         <div v-if="errorMessage" class="text-error text-xs">{{ errorMessage }}</div>
       </div>
-      <div v-if="isKeplrConnected && links.length" class="mt-2 text-xs grid grid-cols-4 gap-2">
+      <div v-if="isKeplrConnected && links.length" class="mt-2 text-xs grid grid-cols-3 gap-2">
         <RouterLink
           v-for="item in links"
           :key="item.text"
@@ -63,7 +63,7 @@ const route = useRoute()
 
 const keplrWallet = computed(() => unlockedWallets.value.find((w) => w.type === 'keplr') || null)
 const address = computed(() => keplrWallet.value?.address || '')
-const isKeplrConnected = computed(() => Boolean(keplrWallet.value))
+const isKeplrConnected = computed(() => Boolean(keplrWallet.value) && isKeplrAvailable.value)
 
 const isCurrentAddress = computed(() => route.params.address === address.value)
 
@@ -85,6 +85,7 @@ const links = computed(() => {
     { text: 'Script', to: { name: 'AddressScript', params: { address: addr } } },
     { text: 'Storage', to: { name: 'AddressStorage', params: { address: addr } } },
     { text: 'Tasks', to: { name: 'AddressTasks', params: { address: addr } } },
+    { text: 'Authz', to: { name: 'AddressAuthz', params: { address: addr } } },
   ]
 })
 

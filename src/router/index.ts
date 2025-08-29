@@ -9,6 +9,11 @@ const Index = () => import('@/views/Index.vue')
 
 const routes: RouteRecordRaw[] = [
   { path: '/', name: 'Index', component: Index },
+  {
+    path: '/demo-pinia-orm',
+    name: 'DemoPiniaOrm',
+    component: () => import('@/views/DemoPiniaOrm.vue'),
+  },
   ...namesRoutes,
   ...redirectRoutes,
   ...explorerRoutes,

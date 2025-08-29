@@ -19,7 +19,7 @@ body,
 
 /* Sidebar toggle (Nexus-style) */
 :root {
-  --layout-sidebar-width: 25rem;
+  --layout-sidebar-width: 16rem;
 }
 
 #layout-sidebar {
@@ -40,12 +40,9 @@ body,
   margin-inline-start: calc(var(--layout-sidebar-width) * -1);
 }
 
-/* Removed hover lane behavior */
-
 /* Mobile: hidden by default, shown when checked */
 @media (max-width: 1024px) {
   :root {
-    --layout-sidebar-width: 20rem;
   }
   #layout-sidebar {
     position: fixed;

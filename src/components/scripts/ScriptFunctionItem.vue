@@ -1,21 +1,21 @@
 <template>
   <div class="collapse collapse-arrow">
     <input type="checkbox" :checked="isOpen" @change="toggle" />
-    <div class="collapse-title font-semibold">{{ func.function_name }}</div>
+    <div class="collapse-title">
+      <span class="font-semibold font-mono text-sm">{{
+        func.signature || func.function_name
+      }}</span>
+      <pre class="text-sm whitespace-pre-wrap">{{ func.docstring }}</pre>
+    </div>
     <div class="collapse-content">
-      <div v-if="func.docstring" class="mb-4 p-3">
-        <div class="text-sm whitespace-pre-wrap">{{ func.docstring }}</div>
-      </div>
-
       <div v-if="hasParameters">
         <label class="block text-sm font-medium mb-2">Parameters:</label>
         <textarea
           v-model="kwargsInput"
           ref="textareaRef"
-          class="textarea textarea-bordered w-full text-sm font-mono resize-none"
+          class="textarea textarea-bordered w-full text-sm font-mono resize-y"
           :placeholder="placeholder"
-          @input="autoResize($event)"
-        />
+        ></textarea>
         <div v-if="jsonError" class="text-error text-xs mt-1">
           {{ jsonError }}
         </div>
@@ -36,25 +36,25 @@
             @update:base="onSendBaseUpdate"
           />
           <div class="text-xs opacity-70 mt-1">
-            From <AddressDisplay :address="selectedExecutor" :truncate="5" /> to
-            <AddressDisplay :address="address" :truncate="5" />
+            From
+            <span class="font-mono text-xs font-bold">
+              <AddressDisplay :address="selectedExecutor" :truncate="5" />
+            </span>
+            to
+            <span class="font-mono text-xs font-bold">
+              <AddressDisplay :address="address" :truncate="5" />
+            </span>
           </div>
         </div>
       </div>
 
       <!-- Error Display -->
       <div v-if="errorText" class="mt-4 break-all">
-        <div class="alert alert-error text-base-content alert-outline">
-          <div class="text-sm">
-            <div class="font-medium">{{ errorHeader }}</div>
-          </div>
-        </div>
+        <div class="font-medium text-error">{{ errorHeader }}:</div>
         <div class="mt-2">
-          <div class="font-medium text-xs opacity-80">Error:</div>
-          <pre
-            class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-words"
-            >{{ errorText }}</pre
-          >
+          <pre class="text-xs mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words">{{
+            errorText
+          }}</pre>
           <div v-if="exception" class="mt-2 text-xs">
             <button class="link link-error" @click="goToException">
               Go to line {{ exception.lineno }}:{{ exception.col_offset }}
@@ -64,26 +64,20 @@
       </div>
 
       <!-- Success Display -->
-      <div v-if="result" class="mt-4 break-all">
-        <div class="alert alert-success text-base-content alert-outline">
-          <div class="text-sm">
-            <div class="font-medium">
-              {{ result.simulate ? 'Simulation' : 'Execution' }} Successful
-            </div>
-          </div>
+      <div v-if="result" class="mt-2 break-all">
+        <div class="text-sm font-medium text-success">
+          {{ result.simulate ? 'Simulation' : 'Execution' }} Successful
         </div>
         <div>
           <div v-if="result.result !== null" class="mt-2">
             <div class="font-medium text-xs opacity-80">Result:</div>
-            <pre class="text-xs bg-base-200 p-2 mt-1 max-h-64 overflow-x-auto wrap-anywhere">{{
+            <pre class="text-xs mt-1 max-h-64 overflow-x-auto wrap-anywhere">{{
               formatResult(result.result)
             }}</pre>
           </div>
           <div v-if="result.stdout" class="mt-2">
             <div class="font-medium text-xs opacity-80">Output:</div>
-            <pre class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-x-auto">{{
-              result.stdout
-            }}</pre>
+            <pre class="text-xs mt-1 max-h-32 overflow-x-auto">{{ result.stdout }}</pre>
           </div>
           <div class="mt-2 text-xs opacity-80 flex gap-4">
             <span>Gas: {{ formatNumber(result.gasConsumed) }}</span>
@@ -91,7 +85,7 @@
           </div>
           <div v-if="!result.simulate && result.txHash" class="mt-2">
             <div class="font-medium text-xs opacity-80">Transaction:</div>
-            <div class="text-xs bg-base-200 p-2 mt-1">
+            <div class="text-xs mt-1">
               <div>
                 Hash:
                 <TxHashDisplay :hash="result.txHash" :truncate="8" />
@@ -102,7 +96,7 @@
         </div>
       </div>
 
-      <!-- Actions + Executor (joined) -->
+      <!-- Actions -->
       <div class="mt-4 flex justify-end">
         <div class="join">
           <WalletSelector
@@ -110,7 +104,7 @@
             :show-locked="true"
             :default-address="selectedExecutor"
             :default-grantee="selectedGranteeAddress"
-            :button-class="'btn-sm join-item'"
+            :button-class="'btn-primary join-item'"
             :msg-type-filter="msgTypeFilter"
             @update:executor-address="onExecutorAddress"
             @update:grantee-address="onGranteeAddress"
@@ -118,19 +112,20 @@
             @update:authz-notes="onAuthzNotes"
             @update:selected-grant="onSelectedGrant"
           />
-          <button
-            @click="simulate"
-            class="btn btn-sm join-item"
-            :disabled="isSimulating || !!jsonError || hasUnsavedChanges"
-          >
-            {{ isSimulating ? 'Simulating...' : 'Simulate' }}
-          </button>
+
           <button
             @click="execute"
-            class="btn btn-sm btn-primary join-item"
+            class="btn btn-primary join-item"
             :disabled="isExecuting || !!jsonError || hasUnsavedChanges"
           >
             {{ isExecuting ? 'Sending...' : 'Tx' }}
+          </button>
+          <button
+            @click="simulate"
+            class="btn join-item"
+            :disabled="isSimulating || !!jsonError || hasUnsavedChanges"
+          >
+            {{ isSimulating ? 'Simulating...' : 'Simulate' }}
           </button>
         </div>
       </div>
@@ -143,7 +138,8 @@ import { computed, ref, watch, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useGoToException } from '@/composables/useGoToException'
 import { useStorage } from '@vueuse/core'
-import { useWallet } from '@/composables/useWallet'
+import { useAxiosRepo } from '@pinia-orm/axios'
+import Script from '@/orm/models/script/Script'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
 import TxHashDisplay from '@/components/TxHashDisplay.vue'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
@@ -156,7 +152,6 @@ const props = defineProps({
 })
 const emit = defineEmits(['function-executed', 'focus-code'])
 
-const wallet = useWallet()
 const route = useRoute()
 const router = useRouter()
 const { goToException: goTo } = useGoToException()
@@ -224,20 +219,6 @@ function buildKwargsPlaceholder(f) {
   return JSON.stringify(form, null, 2)
 }
 
-function autoResize(event) {
-  const textarea = event.target
-  if (!textarea) return
-  textarea.style.height = 'auto'
-  const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight) || 20
-  const padding =
-    parseInt(window.getComputedStyle(textarea).paddingTop) +
-    parseInt(window.getComputedStyle(textarea).paddingBottom)
-  const minHeight = lineHeight * 3 + padding
-  const maxHeight = lineHeight * 10 + padding
-  const newHeight = Math.max(minHeight, Math.min(maxHeight, textarea.scrollHeight))
-  textarea.style.height = `${newHeight}px`
-}
-
 watch(
   () => props.func,
   (f) => {
@@ -247,9 +228,7 @@ watch(
     if (!functionExecutors.value[k]) functionExecutors.value[k] = props.address
     selectedExecutor.value = functionExecutors.value[k]
     selectedGranteeAddress.value = functionGrantees.value[k] || ''
-    // validate
     validateJson(kwargsInput.value)
-    nextTick(() => textareaRef.value && autoResize({ target: textareaRef.value }))
   },
   { immediate: true }
 )
@@ -310,15 +289,19 @@ async function run(simulate) {
       attached.push(msgSend)
     }
 
-    const res = await wallet.runDysonScript({
-      scriptAddress: props.address,
-      functionName: props.func.function_name,
-      kwargs: kwargsInput.value || '{}',
-      attachedMsg: attached,
-      simulate,
-      executorAddress: selectedExecutor.value,
-      grantee: isAuthz.value ? selectedGranteeAddress.value : undefined,
-    })
+    const res = await useAxiosRepo(Script)
+      .api()
+      .runDysonScript({
+        scriptAddress: props.address,
+        functionName: props.func.function_name,
+        kwargs: kwargsInput.value || '{}',
+        attachedMsg: attached,
+        simulate,
+        executorAddress: selectedExecutor.value,
+        grantee: isAuthz.value ? selectedGranteeAddress.value : undefined,
+      })
+
+    // Prioritize parsed exception (wallet already extracts JSON from error strings)
     if (res.scriptResponse?.exception) {
       const ex = res.scriptResponse.exception
       const msg = `${ex.context}: ${ex.msg}\nLine ${ex.lineno}, column ${ex.col_offset}\nCode: ${ex.source_segment}`
@@ -331,6 +314,14 @@ async function run(simulate) {
         error: errorText.value,
         simulate,
       })
+    } else if (!res?.success) {
+      // Fall back to raw messages when no parsed scriptResponse is available
+      const raw = res?.rawSendMsgsResponse?.raw
+      const rawLog = res?.rawSendMsgsResponse?.rawLog
+      const errMsg = raw?.message || rawLog || 'Script execution failed'
+      errorText.value = String(errMsg)
+      context.value = { simulate }
+      emit('function-executed', { func: props.func, error: errorText.value, simulate })
     } else if (res.scriptResponse) {
       const out = {
         result: res.scriptResponse.result,
@@ -348,12 +339,21 @@ async function run(simulate) {
         res,
         simulate,
       })
-    } else if (!res.success) {
-      errorText.value = res.rawSendMsgsResponse?.rawLog || 'Script execution failed'
-      context.value = { simulate }
+    } else {
+      // Success but no scriptResponse payload
+      result.value = {
+        result: null,
+        stdout: '',
+        gasConsumed: 0,
+        nodesExecuted: 0,
+        simulate,
+        txHash: !simulate ? res.rawSendMsgsResponse?.raw?.tx_response?.txhash : null,
+        blockHeight: !simulate ? res.rawSendMsgsResponse?.raw?.tx_response?.height : null,
+      }
       emit('function-executed', {
         func: props.func,
-        error: errorText.value,
+        kwargs: JSON.parse(kwargsInput.value || '{}'),
+        res,
         simulate,
       })
     }
@@ -415,7 +415,6 @@ function onSelectedGrant(g) {
 function goToException() {
   const ex = exception.value
   if (!ex) return
-  emit('focus-code')
   goTo({
     exception: ex,
     baseLineCount: 0, // function item errors always refer to base script

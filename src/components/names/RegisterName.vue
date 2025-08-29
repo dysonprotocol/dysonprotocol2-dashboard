@@ -3,7 +3,7 @@
     <h2 class="text-xl font-semibold">Register Name</h2>
 
     <!-- Step 1: Select name -->
-    <div class="card card-border bg-base-100" :class="cardClass(1)">
+    <div class="card card-border" :class="cardClass(1)">
       <div class="card-body space-y-2">
         <div class="flex items-center justify-between">
           <h2 class="card-title">1. Select a name</h2>
@@ -49,7 +49,7 @@
       class="transition-all duration-300 ease-in-out overflow-hidden space-y-4"
     >
       <!-- Step 2: Estimate value -->
-      <div class="card card-border bg-base-100" :class="cardClass(2)">
+      <div class="card card-border" :class="cardClass(2)">
         <div class="card-body space-y-2">
           <div class="flex items-center justify-between">
             <h2 class="card-title">2. Estimate a value</h2>

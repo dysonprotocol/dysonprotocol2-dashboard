@@ -12,7 +12,7 @@
       <Sidebar />
       <div class="flex min-w-0 grow flex-col min-h-0 overflow-auto">
         <Topbar />
-        <div id="layout-content" class="p-4">
+        <div id="layout-content">
           <router-view />
         </div>
       </div>

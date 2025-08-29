@@ -259,7 +259,7 @@
         </table>
       </div>
 
-      <div class="h-px bg-gray-200" />
+      <div class="h-px" />
       <h4 class="text-sm font-semibold opacity-70">Names by Destination</h4>
       <div class="text-sm opacity-70">
         count: <code>{{ namesByDestCount }}</code>
@@ -283,9 +283,9 @@
         </table>
       </div>
 
-      <div class="h-px bg-gray-200" />
+      <div class="h-px" />
 
-      <div class="h-px bg-gray-200" />
+      <div class="h-px" />
       <h4 class="text-sm font-semibold opacity-70">Params snapshot</h4>
       <div class="text-xs opacity-70 grid grid-cols-2 gap-x-2">
         <div>

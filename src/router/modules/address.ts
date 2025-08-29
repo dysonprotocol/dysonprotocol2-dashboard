@@ -1,7 +1,17 @@
 import type { RouteRecordRaw } from 'vue-router'
 
-const AddressLayout = { template: '<router-view />' }
-const Placeholder = () => import('../../views/Placeholder.vue')
+const AddressLayout = () => import('@/views/address/AddressLayout.vue')
+const AddressScript = () => import('@/views/address/AddressScript.vue')
+const AddressFunction = () => import('@/views/address/AddressFunction.vue')
+const AddressNames = () => import('@/views/address/AddressNames.vue')
+const AddressCoins = () => import('@/views/address/AddressCoins.vue')
+const AddressStorage = () => import('@/views/address/AddressStorage.vue')
+const AddressStoragePath = () => import('@/views/address/AddressStoragePath.vue')
+const AddressTasks = () => import('@/views/address/AddressTasks.vue')
+const AddressStaking = () => import('@/views/address/AddressStaking.vue')
+const AddressNFTs = () => import('@/views/address/AddressNFTs.vue')
+const AddressAuthz = () => import('@/views/address/AddressAuthz.vue')
+const AddressSummary = () => import('@/views/address/AddressSummary.vue')
 
 export const addressRoutes: RouteRecordRaw[] = [
   {
@@ -12,72 +22,79 @@ export const addressRoutes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'AddressSummary',
-        component: Placeholder,
+        component: AddressSummary,
         props: true,
         meta: { title: 'Address Summary' },
       },
       {
         path: 'script',
         name: 'AddressScript',
-        component: Placeholder,
+        component: AddressScript,
         props: true,
         meta: { title: 'Address Script' },
       },
       {
         path: 'script/:functionName',
         name: 'AddressFunction',
-        component: Placeholder,
+        component: AddressFunction,
         props: true,
         meta: { title: 'Address Function' },
       },
       {
         path: 'names',
         name: 'AddressNames',
-        component: Placeholder,
+        component: AddressNames,
         props: true,
         meta: { title: 'Address Names' },
       },
       {
         path: 'coins',
         name: 'AddressCoins',
-        component: Placeholder,
+        component: AddressCoins,
         props: true,
         meta: { title: 'Address Coins' },
       },
       {
         path: 'storage',
         name: 'AddressStorage',
-        component: Placeholder,
+        component: AddressStorage,
         props: true,
         meta: { title: 'Address Storage' },
       },
       {
         path: 'storage/:pathMatch(.*)',
         name: 'AddressStoragePath',
-        component: Placeholder,
+        component: AddressStoragePath,
         props: true,
         meta: { title: 'Address Storage Path' },
       },
       {
         path: 'tasks',
         name: 'AddressTasks',
-        component: Placeholder,
+        component: AddressTasks,
         props: true,
         meta: { title: 'Address Tasks' },
       },
       {
         path: 'staking',
         name: 'AddressStaking',
-        component: Placeholder,
+        component: AddressStaking,
         props: true,
         meta: { title: 'Address Staking' },
       },
       {
         path: 'nfts',
         name: 'AddressNFTs',
-        component: Placeholder,
+        component: AddressNFTs,
         props: true,
         meta: { title: 'Address NFTs' },
+      },
+      {
+        path: 'authz',
+        name: 'AddressAuthz',
+        component: AddressAuthz,
+        props: true,
+        meta: { title: 'Address Authz' },
       },
     ],
   },

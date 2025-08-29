@@ -2,6 +2,7 @@ import { Model } from 'pinia-orm'
 import type { Request } from '@pinia-orm/axios'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import ScriptParams from './Params'
+import { parseScriptFunctions, extractDocstring } from '../../../utils/pythonParser.js'
 
 type ScriptResponse = {
   script?: {
@@ -22,12 +23,19 @@ export class Script extends Model {
       version: this.string('0'),
       code: this.string(''),
       update_height: this.string('0'),
+      functions: this.attr([]),
+      docstring: this.string(''),
     }
   }
 
   static config = {
     axiosApi: {
       actions: {
+        // Local types for wallet bridge
+        // NOTE: The wallet composable is JavaScript; we define minimal TypeScript facades here
+        // to avoid 'any' while preserving the actual runtime shape.
+        // Keep these narrow to what we call from here.
+        // Args for wallet.runDysonScript
         // Internal: access configured axios instance without ORM persistence
         // Note: Request from pinia-orm/axios exposes an axios instance
         async fetchInfo(this: Request, address: string) {
@@ -36,12 +44,20 @@ export class Script extends Model {
               const s = data?.script || {}
               const addr = String(s?.address || address || '')
               if (!addr) return []
+              const codeStr = String(s?.code ?? '')
+              const functions: unknown[] =
+                (parseScriptFunctions as (src: string) => unknown[])(codeStr) || []
+              const docstring = (extractDocstring as (src: string | undefined | null) => string)(
+                codeStr
+              )
               return [
                 {
                   address: addr,
                   version: String(s?.version ?? '0'),
-                  code: String(s?.code ?? ''),
+                  code: codeStr,
                   update_height: String(s?.update_height ?? '0'),
+                  functions,
+                  docstring,
                 },
               ]
             },
@@ -102,6 +118,62 @@ export class Script extends Model {
           const resp = await client.post(`/dysonprotocol/script/v1/web_request`, payload)
           const d = resp?.data as { httpresponse?: string } | undefined
           return String(d?.httpresponse || '')
+        },
+        async runDysonScript(
+          this: Request,
+          params: {
+            scriptAddress: string
+            functionName: string
+            args?: string
+            kwargs?: string
+            extraCode?: string
+            attachedMsg?: unknown[]
+            memo?: string
+            gasLimit?: number | 'auto'
+            simulate?: boolean
+            executorAddress: string
+            grantee?: string
+          }
+        ) {
+          type WalletRunDysonArgs = {
+            scriptAddress: string
+            functionName: string
+            args?: string
+            kwargs?: string
+            extraCode?: string
+            attachedMsg?: unknown[]
+            memo?: string
+            gasLimit?: number | 'auto'
+            simulate?: boolean
+            executorAddress: string
+            grantee?: string
+          }
+          type WalletRunDysonResult = {
+            kind?: string
+            success: boolean
+            scriptResponse: unknown
+            rawSendMsgsResponse: unknown
+          }
+          type WalletModule = {
+            useWallet: () => {
+              runDysonScript: (a: WalletRunDysonArgs) => Promise<WalletRunDysonResult>
+            }
+          }
+          const mod = (await import('@/composables/useWallet.js')) as unknown as WalletModule
+          const wallet = mod.useWallet()
+          return wallet.runDysonScript({
+            scriptAddress: params.scriptAddress,
+            functionName: params.functionName,
+            args: params.args ?? '',
+            kwargs: params.kwargs ?? '',
+            extraCode: params.extraCode ?? '',
+            attachedMsg: params.attachedMsg ?? [],
+            memo: params.memo ?? '',
+            gasLimit: params.gasLimit ?? 100000000,
+            simulate: Boolean(params.simulate),
+            executorAddress: params.executorAddress,
+            grantee: params.grantee,
+          } as WalletRunDysonArgs)
         },
         async run(
           this: Request,

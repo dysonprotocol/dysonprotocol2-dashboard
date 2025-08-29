@@ -27,7 +27,6 @@ export default defineConfig({
   define: {
     'process.env.NODE_ENV': '"production"',
     'process.env': {},
-    global: 'window',
     __DEV__: 'false',
     __VUE_PROD_DEVTOOLS__: 'false',
     __VUE_OPTIONS_API__: 'true',
@@ -39,9 +38,7 @@ export default defineConfig({
   optimizeDeps: {
     esbuildOptions: {
       target: 'es2020',
-      define: {
-        global: 'window',
-      },
+      define: {},
     },
   },
   server: {

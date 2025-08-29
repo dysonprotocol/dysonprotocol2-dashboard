@@ -9,23 +9,11 @@
       </div>
       <div class="collapse-content text-sm">
         <div class="text-xs text-base-content/80 mb-2 break-all">
-          <AddressDisplay :address="wallet.address" :truncate="0" />
+          <AddressDisplay :address="wallet.address" :truncate="10" />
         </div>
-        <div class="mt-1 text-xs grid grid-cols-4 gap-2">
-          <RouterLink
-            v-for="item in linkItems(wallet.address)"
-            :key="item.text"
-            :to="item.to"
-            v-slot="{ href, navigate, isExactActive }"
-          >
-            <a
-              :href="href"
-              @click="navigate"
-              class="link link-hover"
-              :class="{ 'font-bold': isExactActive }"
-            >
-              {{ item.text }}
-            </a>
+        <div class="mt-1 text-xs grid grid-cols-3 gap-2">
+          <RouterLink v-for="item in linkItems(wallet.address)" :key="item.text" :to="item.to">
+            {{ item.text }}
           </RouterLink>
         </div>
         <div class="flex items-center justify-between gap-2 mt-2">
@@ -222,6 +210,15 @@ function linkItems(address) {
     { text: 'Script', to: { name: 'AddressScript', params: { address } } },
     { text: 'Storage', to: { name: 'AddressStorage', params: { address } } },
     { text: 'Tasks', to: { name: 'AddressTasks', params: { address } } },
+    { text: 'Authz', to: { name: 'AddressAuthz', params: { address } } },
   ]
 }
 </script>
+
+<style scoped>
+@import '@/style.css';
+
+.router-link-exact-active {
+  @apply font-bold;
+}
+</style>

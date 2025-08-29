@@ -53,6 +53,9 @@ export function useWallet() {
       globalKeplrListenerSet = true
     }
 
+    // Validate any persisted Keplr wallet entry; remove if not actually connected/authorized
+    await validatePersistedKeplrWallet()
+
     state.isLoading = false
   }
 
@@ -214,7 +217,7 @@ export function useWallet() {
       chainId: chainId.value,
       chainName: name,
       rpc: rpcUrl.value,
-      rest: restUrl.value,
+      rest: restUrl,
       bip44: { coinType: 118 },
       bech32Config: {
         bech32PrefixAccAddr: 'dys2',
@@ -244,11 +247,69 @@ export function useWallet() {
     }
   }
 
+  // Ensure that a persisted Keplr wallet really is available and authorized
+  const validatePersistedKeplrWallet = async () => {
+    const idx = Array.isArray(unlockedWallets.value)
+      ? unlockedWallets.value.findIndex((w) => w.type === 'keplr')
+      : -1
+    if (idx === -1) return
+
+    if (typeof window === 'undefined' || !window.keplr) {
+      // Keplr not available: drop stale persisted entry
+      try {
+        unlockedWallets.value.splice(idx, 1)
+      } catch (e) {
+        console.warn('[useWallet] Failed to remove stale Keplr entry when provider missing:', e)
+      }
+      if (state.activeWalletInstance) state.activeWalletInstance = null
+      return
+    }
+
+    try {
+      await suggestChainIfNeeded(window.keplr)
+      const key = await window.keplr.getKey(chainId.value)
+      const updated = { name: key.name, address: key.bech32Address, type: 'keplr' }
+      try {
+        unlockedWallets.value.splice(idx, 1, updated)
+      } catch (e) {
+        console.warn('[useWallet] Failed to update persisted Keplr wallet entry:', e)
+      }
+      state.activeWalletInstance = window.keplr.getOfflineSigner(chainId.value)
+      state.addressNames = {}
+    } catch (error) {
+      // Not authorized or failed: remove persisted entry to avoid false "connected" state
+      console.warn('[useWallet] Persisted Keplr wallet invalid; removing it:', error)
+      try {
+        unlockedWallets.value.splice(idx, 1)
+      } catch (e) {
+        console.warn('[useWallet] Failed to remove invalid Keplr entry:', e)
+      }
+      if (state.activeWalletInstance) state.activeWalletInstance = null
+    }
+  }
+
   const buildFee = (gasLimit) => {
     const limit = Number(gasLimit) || 200000
     const price = Number(gasPrice.value) || 0
     const totalAmount = Math.floor(limit * price)
     return { amount: [{ denom: 'udys', amount: String(totalAmount) }], gas_limit: String(limit) }
+  }
+
+  // Extract embedded Dyson error JSON from a text blob. Looks for '{"cumsize":' ... last '}'.
+  const extractDysonErrorJson = (text) => {
+    if (!text || typeof text !== 'string') return null
+    const marker = '{"cumsize":'
+    const start = text.indexOf(marker)
+    if (start === -1) return null
+    const end = text.lastIndexOf('}')
+    if (end === -1 || end <= start) return null
+    const candidate = text.substring(start, end + 1)
+    try {
+      return JSON.parse(candidate)
+    } catch (e) {
+      console.warn('[useWallet] Failed to JSON.parse embedded Dyson error payload:', e)
+      return null
+    }
   }
 
   // LOCAL WALLET METHODS
@@ -341,7 +402,7 @@ export function useWallet() {
 
   const getAccountInfo = async (address) => {
     if (!address) throw new Error('Explicit address required for getAccountInfo()')
-    return getChainInfo({ apiUrl: restUrl.value, address })
+    return getChainInfo({ apiUrl: restUrl, address })
   }
 
   const sendMsg = async ({
@@ -367,7 +428,7 @@ export function useWallet() {
       else finalGasLimit = gasLimit
     } else if (gasLimit == null || gasLimit == undefined) {
       const simulationResult = await sendMsgs({
-        apiUrl: restUrl.value,
+        apiUrl: restUrl,
         wallet: walletInstance,
         walletType: type,
         address,
@@ -388,7 +449,7 @@ export function useWallet() {
       finalGasLimit = gasUsed > 0 ? Math.ceil(gasUsed * 1.5) : 200000
     } else if (gasLimit === 'auto') {
       const simulationResult = await sendMsgs({
-        apiUrl: restUrl.value,
+        apiUrl: restUrl,
         wallet: walletInstance,
         walletType: type,
         address,
@@ -411,7 +472,7 @@ export function useWallet() {
 
     const fee = buildFee(finalGasLimit)
     const result = await sendMsgs({
-      apiUrl: restUrl.value,
+      apiUrl: restUrl,
       wallet: walletInstance,
       walletType: type,
       address,
@@ -472,7 +533,7 @@ export function useWallet() {
           ? { '@type': '/cosmos.authz.v1beta1.MsgExec', grantee, msgs: [innerMsg] }
           : innerMsg
         const simulationResult = await sendMsgs({
-          apiUrl: restUrl.value,
+          apiUrl: restUrl,
           wallet: walletInstance,
           walletType: type,
           address,
@@ -508,7 +569,7 @@ export function useWallet() {
       : innerMsg
 
     const sendResult = await sendMsgs({
-      apiUrl: restUrl.value,
+      apiUrl: restUrl,
       wallet: walletInstance,
       walletType: type,
       address,
@@ -536,7 +597,7 @@ export function useWallet() {
                 // ignore parse error of nested JSON
               }
             }
-            scriptResponse = parsed.result
+            scriptResponse = parsed
           } catch {
             scriptResponse = value
           }
@@ -544,7 +605,9 @@ export function useWallet() {
       }
     } else {
       try {
-        if (raw?.message) {
+        if (raw?.message) scriptResponse = extractDysonErrorJson(raw.message)
+        if (!scriptResponse && rawLog) scriptResponse = extractDysonErrorJson(rawLog)
+        if (!scriptResponse && raw?.message) {
           const firstBrace = raw.message.indexOf('{')
           const lastBrace = raw.message.lastIndexOf('}')
           if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -563,7 +626,8 @@ export function useWallet() {
             scriptResponse = JSON.parse(cleanedLog)
           }
         }
-      } catch {
+      } catch (err) {
+        console.warn('[useWallet] Failed to parse script error JSON:', err)
         scriptResponse = null
       }
     }
@@ -593,7 +657,7 @@ export function useWallet() {
   // SIGNING METHODS
   const signArbitraryData = async ({ address, data = '', msg = null }) => {
     const { walletInstance } = await getWallet(address)
-    const apiUrl = restUrl.value
+    const apiUrl = restUrl
 
     let transaction = {
       body: {
