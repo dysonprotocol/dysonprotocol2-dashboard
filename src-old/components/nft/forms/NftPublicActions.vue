@@ -1,15 +1,24 @@
 <template>
   <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-    <legend class="fieldset-legend">Public actions</legend>
+    <legend class="fieldset-legend">
+      Public actions
+    </legend>
 
     <!-- Place bid -->
     <form @submit.prevent="placeBid">
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-        <legend class="fieldset-legend">Place bid</legend>
-        <div v-if="!isListed" class="alert alert-warning alert-soft mb-2">
+        <legend class="fieldset-legend">
+          Place bid
+        </legend>
+        <div
+          v-if="!isListed"
+          class="alert alert-warning alert-soft mb-2"
+        >
           NFT is not listed.
         </div>
-        <div class="text-xs opacity-70 mb-1">Bidder</div>
+        <div class="text-xs opacity-70 mb-1">
+          Bidder
+        </div>
         <WalletSelector
           v-model="bidder"
           :show-locked="false"
@@ -21,13 +30,18 @@
             class="input join-item w-full"
             placeholder="amount"
             :disabled="busy === 'bid' || !isListed"
-          />
+          >
           <select
             v-model="bidSelectedDisplayDenom"
             class="select join-item"
             :disabled="busy === 'bid' || !isListed"
           >
-            <option disabled value="">Denom</option>
+            <option
+              disabled
+              value=""
+            >
+              Denom
+            </option>
             <option
               v-for="opt in allowedDisplayOptions"
               :key="opt.base"
@@ -44,7 +58,10 @@
           place bid
         </button>
 
-        <div v-if="err" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="err"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ err }}
         </div>
       </fieldset>
@@ -53,11 +70,18 @@
     <!-- Claim bid -->
     <form @submit.prevent="claimBid">
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3 mt-3">
-        <legend class="fieldset-legend">Claim bid</legend>
-        <div v-if="!hasCurrentBid" class="alert alert-warning alert-soft mb-2">
+        <legend class="fieldset-legend">
+          Claim bid
+        </legend>
+        <div
+          v-if="!hasCurrentBid"
+          class="alert alert-warning alert-soft mb-2"
+        >
           No current bid to claim.
         </div>
-        <div class="text-xs opacity-70 mb-1">Bidder</div>
+        <div class="text-xs opacity-70 mb-1">
+          Bidder
+        </div>
         <WalletSelector
           v-model="bidder"
           :show-locked="false"
@@ -69,7 +93,10 @@
         >
           claim bid
         </button>
-        <div v-if="errClaim" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="errClaim"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ errClaim }}
         </div>
       </fieldset>

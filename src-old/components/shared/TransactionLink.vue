@@ -1,13 +1,17 @@
 <template>
   <div class="flex items-center gap-2">
-    <button @click="handleClick" :class="buttonClasses" :title="hash">
+    <button
+      :class="buttonClasses"
+      :title="hash"
+      @click="handleClick"
+    >
       {{ displayText }}
     </button>
     <button
       v-if="copyable"
-      @click="copyHash"
       class="btn btn-ghost btn-sm p-1 opacity-50 hover:opacity-100"
       title="Copy transaction hash"
+      @click="copyHash"
     >
       <svg
         class="w-4 h-4"
@@ -23,7 +27,10 @@
         />
       </svg>
     </button>
-    <div v-if="status" :class="statusClasses">
+    <div
+      v-if="status"
+      :class="statusClasses"
+    >
       {{ status }}
     </div>
   </div>

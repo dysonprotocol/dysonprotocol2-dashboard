@@ -1,10 +1,12 @@
 <template>
   <div class="border rounded p-2">
     <div class="font-mono text-sm">
-      {{ fn.function_name }}(<span>{{ paramList }}</span
-      >)
+      {{ fn.function_name }}(<span>{{ paramList }}</span>)
     </div>
-    <div v-if="fn.docstring" class="text-xs text-muted-foreground mt-1">
+    <div
+      v-if="fn.docstring"
+      class="text-xs text-muted-foreground mt-1"
+    >
       {{ fn.docstring }}
     </div>
     <div class="text-xs text-muted-foreground mt-1">

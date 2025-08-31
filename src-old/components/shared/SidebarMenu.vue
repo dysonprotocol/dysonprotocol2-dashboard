@@ -3,15 +3,26 @@
   <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-base-100 px-6 pb-4 overflow-scroll">
     <!-- Header -->
     <div class="flex h-16 shrink-0 items-center">
-      <router-link to="/" aria-label="Dyson Protocol" class="flex items-center gap-2">
-        <img :src="logoSrc" alt="Dyson Protocol" class="h-6 w-auto" />
+      <router-link
+        to="/"
+        aria-label="Dyson Protocol"
+        class="flex items-center gap-2"
+      >
+        <img
+          :src="logoSrc"
+          alt="Dyson Protocol"
+          class="h-6 w-auto"
+        >
         <span class="text-xl font-bold">Dyson Protocol 2</span>
       </router-link>
     </div>
 
     <!-- Main Navigation -->
     <nav class="flex flex-1 flex-col">
-      <ul role="list" class="flex flex-1 flex-col gap-y-7">
+      <ul
+        role="list"
+        class="flex flex-1 flex-col gap-y-7"
+      >
         <li>
           <!-- Chain status above Dashboard -->
           <div class="-mx-2 mb-2 rounded-md px-2 py-1 text-xs text-base-content/60">
@@ -27,7 +38,10 @@
                 {{ latestHeight != null ? latestHeight : '…' }}
               </span>
             </div>
-            <div class="flex items-center justify-between gap-2" v-if="nodeVersion || nodeCommit">
+            <div
+              v-if="nodeVersion || nodeCommit"
+              class="flex items-center justify-between gap-2"
+            >
               <span class="truncate">Version:</span>
               <span class="font-mono text-base-content/80">
                 <span v-if="nodeVersion">
@@ -53,7 +67,10 @@
                 </span>
               </span>
             </div>
-            <div class="flex items-center justify-between gap-2" v-if="gitShortCommit">
+            <div
+              v-if="gitShortCommit"
+              class="flex items-center justify-between gap-2"
+            >
               <span class="truncate">Dashboard:</span>
               <span class="font-mono text-base-content/80">
                 <a
@@ -72,8 +89,14 @@
           </div>
 
           <!-- Main navigation (no Dashboard) -->
-          <ul role="list" class="-mx-2 mt-1 space-y-1">
-            <li v-for="item in navigation" :key="item.name">
+          <ul
+            role="list"
+            class="-mx-2 mt-1 space-y-1"
+          >
+            <li
+              v-for="item in navigation"
+              :key="item.name"
+            >
               <router-link
                 :to="item.href"
                 :class="[
@@ -99,8 +122,14 @@
 
         <!-- Chain Explorer -->
         <li>
-          <ul role="list" class="-mx-2 mt-2 space-y-1">
-            <li v-for="explorer in explorerItems" :key="explorer.name">
+          <ul
+            role="list"
+            class="-mx-2 mt-2 space-y-1"
+          >
+            <li
+              v-for="explorer in explorerItems"
+              :key="explorer.name"
+            >
               <router-link
                 :to="explorer.href"
                 :class="[
@@ -153,7 +182,7 @@
     </nav>
 
     <!-- Footer actions -->
-    <div class="mt-auto flex items-center gap-3 pt-2"></div>
+    <div class="mt-auto flex items-center gap-3 pt-2" />
   </div>
 </template>
 

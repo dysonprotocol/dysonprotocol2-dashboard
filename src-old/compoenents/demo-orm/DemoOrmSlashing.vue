@@ -1,10 +1,22 @@
 <template>
-  <h2 class="text-xl font-semibold" id="slashing">Slashing</h2>
+  <h2
+    id="slashing"
+    class="text-xl font-semibold"
+  >
+    Slashing
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Slashing: Params</h3>
+      <h3 class="font-semibold">
+        Slashing: Params
+      </h3>
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="loadParams">Load Params</button>
+        <button
+          class="btn btn-primary"
+          @click="loadParams"
+        >
+          Load Params
+        </button>
       </div>
       <div class="text-sm">
         <div>
@@ -23,21 +35,47 @@
           slash_fraction_downtime: <code>{{ params?.slash_fraction_downtime }}</code>
         </div>
       </div>
-      <div v-if="paramsError" class="text-sm text-red-600">{{ paramsError }}</div>
+      <div
+        v-if="paramsError"
+        class="text-sm text-red-600"
+      >
+        {{ paramsError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Slashing: Signing Info</h3>
+      <h3 class="font-semibold">
+        Slashing: Signing Info
+      </h3>
       <div class="grid gap-2">
-        <input v-model="consAddr" class="input w-full" placeholder="consensus address" />
+        <input
+          v-model="consAddr"
+          class="input w-full"
+          placeholder="consensus address"
+        >
         <div class="flex gap-2">
-          <button class="btn btn-primary" @click="loadSigningInfo">By Address</button>
-          <button class="btn btn-secondary" @click="loadSigningInfos">All</button>
+          <button
+            class="btn btn-primary"
+            @click="loadSigningInfo"
+          >
+            By Address
+          </button>
+          <button
+            class="btn btn-secondary"
+            @click="loadSigningInfos"
+          >
+            All
+          </button>
         </div>
       </div>
       <ul class="list-disc pl-6 text-sm max-h-56 overflow-auto">
-        <li v-for="s in signingInfos" :key="s.cons_address">
-          <div class="font-mono">{{ s.cons_address }}</div>
+        <li
+          v-for="s in signingInfos"
+          :key="s.cons_address"
+        >
+          <div class="font-mono">
+            {{ s.cons_address }}
+          </div>
           <div class="opacity-70">
             start_height=<code>{{ s.start_height }}</code> index_offset=<code>{{
               s.index_offset
@@ -53,21 +91,42 @@
           </div>
         </li>
       </ul>
-      <div v-if="signingError" class="text-sm text-red-600">{{ signingError }}</div>
+      <div
+        v-if="signingError"
+        class="text-sm text-red-600"
+      >
+        {{ signingError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Slashing: Unjail</h3>
+      <h3 class="font-semibold">
+        Slashing: Unjail
+      </h3>
       <input
         v-model="validatorAddr"
         class="input w-full"
         placeholder="validator operator address"
-      />
-      <input v-model="unjailMemo" class="input w-full" placeholder="memo (optional)" />
+      >
+      <input
+        v-model="unjailMemo"
+        class="input w-full"
+        placeholder="memo (optional)"
+      >
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="submitUnjail">Unjail</button>
+        <button
+          class="btn btn-primary"
+          @click="submitUnjail"
+        >
+          Unjail
+        </button>
       </div>
-      <div v-if="unjailError" class="text-sm text-red-600">{{ unjailError }}</div>
+      <div
+        v-if="unjailError"
+        class="text-sm text-red-600"
+      >
+        {{ unjailError }}
+      </div>
     </div>
   </section>
 </template>

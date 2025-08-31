@@ -1,6 +1,9 @@
 <template>
   <section>
-    <span v-if="error" class="text-error">{{ error }}</span>
+    <span
+      v-if="error"
+      class="text-error"
+    >{{ error }}</span>
     <span v-else-if="loading">Loading…</span>
 
     <div
@@ -9,12 +12,15 @@
       class="mx-auto w-1/2"
     >
       <NuanceTaggedPost
-        :tag="it.tag"
         :id="it.id"
+        :tag="it.tag"
         :post="it.post || placeholderPost"
       />
     </div>
-    <div v-if="!loading && !error && items.length === 0" class="opacity-70">
+    <div
+      v-if="!loading && !error && items.length === 0"
+      class="opacity-70"
+    >
       No posts
     </div>
   </section>

@@ -1,29 +1,50 @@
 <template>
   <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-    <legend class="fieldset-legend">Name destination address actions</legend>
+    <legend class="fieldset-legend">
+      Name destination address actions
+    </legend>
 
     <div class="text-xs opacity-70 mb-2">
       Root name destination:
-      <AddressDisplay :address="nameDestination" :truncate="0" />
+      <AddressDisplay
+        :address="nameDestination"
+        :truncate="0"
+      />
     </div>
 
     <!-- Burn -->
-    <form class="mb-3" @submit.prevent="burnNft">
+    <form
+      class="mb-3"
+      @submit.prevent="burnNft"
+    >
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-        <legend class="fieldset-legend">Burn NFT</legend>
-        <button class="btn btn-error btn-sm" :disabled="busy === 'burn'">
+        <legend class="fieldset-legend">
+          Burn NFT
+        </legend>
+        <button
+          class="btn btn-error btn-sm"
+          :disabled="busy === 'burn'"
+        >
           burn
         </button>
-        <div v-if="err.burn" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="err.burn"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ err.burn }}
         </div>
       </fieldset>
     </form>
 
     <!-- Move -->
-    <form class="mb-3" @submit.prevent="moveNft">
+    <form
+      class="mb-3"
+      @submit.prevent="moveNft"
+    >
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-        <legend class="fieldset-legend">Force Move NFT</legend>
+        <legend class="fieldset-legend">
+          Force Move NFT
+        </legend>
         <p class="text-xs opacity-70 mb-2">
           MsgMoveNft force moves an NFT to a new account.
         </p>
@@ -33,7 +54,7 @@
             class="input join-item w-full"
             placeholder="to address"
             :disabled="busy === 'move'"
-          />
+          >
           <button
             class="btn join-item btn-primary"
             :disabled="busy === 'move' || !moveTo"
@@ -41,7 +62,10 @@
             move
           </button>
         </div>
-        <div v-if="err.move" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="err.move"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ err.move }}
         </div>
       </fieldset>
@@ -50,31 +74,39 @@
     <!-- Metadata -->
     <form @submit.prevent="setMetadata">
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-        <legend class="fieldset-legend">Set metadata</legend>
+        <legend class="fieldset-legend">
+          Set metadata
+        </legend>
         <div class="grid grid-cols-1 gap-2">
           <textarea
             v-model.trim="meta.metadata"
             class="textarea textarea-bordered w-full"
             placeholder="metadata (text/json)"
             :disabled="busy === 'metadata'"
-          ></textarea>
+          />
           <input
             v-model.trim="meta.uri"
             class="input input-bordered w-full"
             placeholder="uri (optional)"
             :disabled="busy === 'metadata'"
-          />
+          >
           <input
             v-model.trim="meta.uriHash"
             class="input input-bordered w-full"
             placeholder="uri hash (optional)"
             :disabled="busy === 'metadata'"
-          />
+          >
         </div>
-        <button class="btn btn-primary btn-sm" :disabled="busy === 'metadata'">
+        <button
+          class="btn btn-primary btn-sm"
+          :disabled="busy === 'metadata'"
+        >
           save
         </button>
-        <div v-if="err.metadata" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="err.metadata"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ err.metadata }}
         </div>
       </fieldset>

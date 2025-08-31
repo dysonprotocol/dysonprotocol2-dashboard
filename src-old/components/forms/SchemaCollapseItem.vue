@@ -1,6 +1,9 @@
 <template>
   <div class="collapse bg-base-200">
-    <input type="checkbox" @change="onToggle" />
+    <input
+      type="checkbox"
+      @change="onToggle"
+    >
     <div class="collapse-title text-sm font-mono">
       {{ title }}
     </div>
@@ -10,21 +13,25 @@
         <span>{{ path }}</span>
       </div>
 
-      <div v-if="isLoading" class="py-6">
-        <span class="loading loading-spinner"></span>
+      <div
+        v-if="isLoading"
+        class="py-6"
+      >
+        <span class="loading loading-spinner" />
       </div>
 
       <template v-else>
         <div class="mb-4">
-          <label class="label"
-            ><span class="label-text">Initial data</span></label
-          >
+          <label class="label"><span class="label-text">Initial data</span></label>
           <textarea
             v-model="dataJson"
             class="textarea textarea-bordered w-full font-mono text-xs"
             rows="4"
-          ></textarea>
-          <div v-if="dataError" class="text-error text-xs mt-1">
+          />
+          <div
+            v-if="dataError"
+            class="text-error text-xs mt-1"
+          >
             {{ dataError }}
           </div>
         </div>

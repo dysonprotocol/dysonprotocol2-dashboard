@@ -1,8 +1,13 @@
 <template>
   <div class="p-4 space-y-4">
-    <h1 class="text-xl font-semibold">TanStack DB-style Demo</h1>
+    <h1 class="text-xl font-semibold">
+      TanStack DB-style Demo
+    </h1>
 
-    <form class="grid gap-3 max-w-2xl" @submit.prevent>
+    <form
+      class="grid gap-3 max-w-2xl"
+      @submit.prevent
+    >
       <label class="grid gap-1">
         <span class="text-sm opacity-70">Owner address</span>
         <input
@@ -10,24 +15,50 @@
           type="text"
           class="input input-bordered"
           placeholder="dys2..."
-        />
+        >
       </label>
 
-      <div class="text-sm opacity-70">REST Base: {{ apiBase }}</div>
+      <div class="text-sm opacity-70">
+        REST Base: {{ apiBase }}
+      </div>
 
       <div class="flex items-center gap-2">
-        <button class="btn btn-primary" @click="refetchAll" :disabled="isAnyLoading">Query</button>
-        <span v-if="isAnyLoading" class="loading loading-spinner loading-sm"></span>
-        <span v-if="isAnyError" class="text-error">Error</span>
+        <button
+          class="btn btn-primary"
+          :disabled="isAnyLoading"
+          @click="refetchAll"
+        >
+          Query
+        </button>
+        <span
+          v-if="isAnyLoading"
+          class="loading loading-spinner loading-sm"
+        />
+        <span
+          v-if="isAnyError"
+          class="text-error"
+        >Error</span>
       </div>
     </form>
 
     <div class="grid gap-6 md:grid-cols-2">
       <section class="space-y-2">
-        <h2 class="font-semibold">Bank denoms</h2>
-        <div class="text-xs opacity-70">{{ balancesUrl }}</div>
-        <div v-if="balancesLoading" class="text-sm opacity-70">Loading balances…</div>
-        <div v-else-if="balancesError" class="text-error text-sm">
+        <h2 class="font-semibold">
+          Bank denoms
+        </h2>
+        <div class="text-xs opacity-70">
+          {{ balancesUrl }}
+        </div>
+        <div
+          v-if="balancesLoading"
+          class="text-sm opacity-70"
+        >
+          Loading balances…
+        </div>
+        <div
+          v-else-if="balancesError"
+          class="text-error text-sm"
+        >
           {{ balancesErrorMessage }}
         </div>
         <div v-else>
@@ -37,10 +68,16 @@
           >
             No balances
           </div>
-          <div v-else class="overflow-x-auto rounded border">
+          <div
+            v-else
+            class="overflow-x-auto rounded border"
+          >
             <table class="table w-full">
               <thead>
-                <tr v-for="headerGroup in balanceTable.getHeaderGroups()" :key="headerGroup.id">
+                <tr
+                  v-for="headerGroup in balanceTable.getHeaderGroups()"
+                  :key="headerGroup.id"
+                >
                   <th
                     v-for="header in headerGroup.headers"
                     :key="header.id"
@@ -56,13 +93,20 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="row in balanceTable.getRowModel().rows" :key="row.id" class="hover">
+                <tr
+                  v-for="row in balanceTable.getRowModel().rows"
+                  :key="row.id"
+                  class="hover"
+                >
                   <td
                     v-for="cell in row.getVisibleCells()"
                     :key="cell.id"
                     class="px-3 py-2 border-b"
                   >
-                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                    <FlexRender
+                      :render="cell.column.columnDef.cell"
+                      :props="cell.getContext()"
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -72,10 +116,22 @@
       </section>
 
       <section class="space-y-2">
-        <h2 class="font-semibold">Owned NFTs</h2>
-        <div class="text-xs opacity-70">{{ nftsUrl }}</div>
-        <div v-if="nftsLoading" class="text-sm opacity-70">Loading NFTs…</div>
-        <div v-else-if="nftsError" class="text-error text-sm">
+        <h2 class="font-semibold">
+          Owned NFTs
+        </h2>
+        <div class="text-xs opacity-70">
+          {{ nftsUrl }}
+        </div>
+        <div
+          v-if="nftsLoading"
+          class="text-sm opacity-70"
+        >
+          Loading NFTs…
+        </div>
+        <div
+          v-else-if="nftsError"
+          class="text-error text-sm"
+        >
           {{ nftsErrorMessage }}
         </div>
         <div v-else>
@@ -85,10 +141,16 @@
           >
             No NFTs
           </div>
-          <div v-else class="overflow-x-auto rounded border">
+          <div
+            v-else
+            class="overflow-x-auto rounded border"
+          >
             <table class="table w-full">
               <thead>
-                <tr v-for="headerGroup in nftTable.getHeaderGroups()" :key="headerGroup.id">
+                <tr
+                  v-for="headerGroup in nftTable.getHeaderGroups()"
+                  :key="headerGroup.id"
+                >
                   <th
                     v-for="header in headerGroup.headers"
                     :key="header.id"
@@ -104,13 +166,20 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="row in nftTable.getRowModel().rows" :key="row.id" class="hover">
+                <tr
+                  v-for="row in nftTable.getRowModel().rows"
+                  :key="row.id"
+                  class="hover"
+                >
                   <td
                     v-for="cell in row.getVisibleCells()"
                     :key="cell.id"
                     class="px-3 py-2 border-b"
                   >
-                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                    <FlexRender
+                      :render="cell.column.columnDef.cell"
+                      :props="cell.getContext()"
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -120,11 +189,16 @@
       </section>
     </div>
 
-    <details v-if="isAnyError" class="border rounded p-3">
-      <summary class="cursor-pointer select-none">Errors</summary>
+    <details
+      v-if="isAnyError"
+      class="border rounded p-3"
+    >
+      <summary class="cursor-pointer select-none">
+        Errors
+      </summary>
       <pre class="p-3 rounded border border-error text-error overflow-auto max-h-[40vh]"><code>{{
         `balances: ${balancesErrorMessage || 'ok'}\n` +
-        `nfts: ${nftsErrorMessage || 'ok'}`
+          `nfts: ${nftsErrorMessage || 'ok'}`
       }}</code></pre>
     </details>
   </div>

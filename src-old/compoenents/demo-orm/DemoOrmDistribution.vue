@@ -1,15 +1,38 @@
 <template>
-  <h2 class="text-xl font-semibold" id="distribution">Distribution</h2>
+  <h2
+    id="distribution"
+    class="text-xl font-semibold"
+  >
+    Distribution
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Distribution: Delegator Rewards</h3>
+      <h3 class="font-semibold">
+        Distribution: Delegator Rewards
+      </h3>
       <div class="flex gap-2">
-        <input v-model="delFrom" class="input w-full" placeholder="delegator address" />
-        <button class="btn btn-primary" @click="loadDelegatorRewards">All</button>
+        <input
+          v-model="delFrom"
+          class="input w-full"
+          placeholder="delegator address"
+        >
+        <button
+          class="btn btn-primary"
+          @click="loadDelegatorRewards"
+        >
+          All
+        </button>
       </div>
       <div class="flex gap-2">
-        <input v-model="delValoper" class="input w-full" placeholder="validator valoper" />
-        <button class="btn btn-primary" @click="loadDelegatorRewardByValidator">
+        <input
+          v-model="delValoper"
+          class="input w-full"
+          placeholder="validator valoper"
+        >
+        <button
+          class="btn btn-primary"
+          @click="loadDelegatorRewardByValidator"
+        >
           By Validator
         </button>
       </div>
@@ -22,28 +45,61 @@
           <span class="opacity-70">{{ r.denom }}</span>
         </li>
       </ul>
-      <h4 class="font-semibold">Total</h4>
-      <button class="btn btn-primary" @click="loadDelegatorTotal">Load Total</button>
+      <h4 class="font-semibold">
+        Total
+      </h4>
+      <button
+        class="btn btn-primary"
+        @click="loadDelegatorTotal"
+      >
+        Load Total
+      </button>
       <ul class="list-disc pl-6 text-sm">
-        <li v-for="t in delegatorTotals" :key="t.delegator_address + ':' + t.denom">
+        <li
+          v-for="t in delegatorTotals"
+          :key="t.delegator_address + ':' + t.denom"
+        >
           <code>{{ t.amount }}</code> <span class="opacity-70">{{ t.denom }}</span>
         </li>
       </ul>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <form class="space-y-2" @submit.prevent="withdrawDelegatorReward">
+      <form
+        class="space-y-2"
+        @submit.prevent="withdrawDelegatorReward"
+      >
         <fieldset class="space-y-2">
           <legend class="text-sm font-semibold opacity-70">
             /cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward
           </legend>
-          <input v-model="wdDelegator" class="input w-full" placeholder="delegator address" />
-          <input v-model="wdValoper" class="input w-full" placeholder="validator valoper" />
-          <input v-model="withdrawMemo" class="input w-full" placeholder="memo (optional)" />
+          <input
+            v-model="wdDelegator"
+            class="input w-full"
+            placeholder="delegator address"
+          >
+          <input
+            v-model="wdValoper"
+            class="input w-full"
+            placeholder="validator valoper"
+          >
+          <input
+            v-model="withdrawMemo"
+            class="input w-full"
+            placeholder="memo (optional)"
+          >
           <div class="flex gap-2">
-            <button class="btn btn-primary" type="submit">Withdraw Reward</button>
+            <button
+              class="btn btn-primary"
+              type="submit"
+            >
+              Withdraw Reward
+            </button>
           </div>
-          <div v-if="withdrawRewardError" class="text-sm text-red-600">
+          <div
+            v-if="withdrawRewardError"
+            class="text-sm text-red-600"
+          >
             {{ withdrawRewardError }}
           </div>
         </fieldset>
@@ -51,15 +107,34 @@
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <form class="space-y-2" @submit.prevent="setWithdrawAddress">
+      <form
+        class="space-y-2"
+        @submit.prevent="setWithdrawAddress"
+      >
         <fieldset class="space-y-2">
           <legend class="text-sm font-semibold opacity-70">
             /cosmos.distribution.v1beta1.MsgSetWithdrawAddress
           </legend>
-          <input v-model="swaDelegator" class="input w-full" placeholder="delegator address" />
-          <input v-model="withdrawAddr" class="input w-full" placeholder="new withdraw address" />
-          <button class="btn btn-primary" type="submit">Set Withdraw Address</button>
-          <div v-if="setWithdrawAddrError" class="text-sm text-red-600">
+          <input
+            v-model="swaDelegator"
+            class="input w-full"
+            placeholder="delegator address"
+          >
+          <input
+            v-model="withdrawAddr"
+            class="input w-full"
+            placeholder="new withdraw address"
+          >
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            Set Withdraw Address
+          </button>
+          <div
+            v-if="setWithdrawAddrError"
+            class="text-sm text-red-600"
+          >
             {{ setWithdrawAddrError }}
           </div>
         </fieldset>
@@ -67,42 +142,96 @@
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Distribution: Validator Commission & Community Pool</h3>
+      <h3 class="font-semibold">
+        Distribution: Validator Commission & Community Pool
+      </h3>
       <div class="flex gap-2">
-        <input v-model="srcValoper" class="input w-full" placeholder="validator valoper" />
-        <button class="btn btn-primary" @click="loadValidatorCommission">Load Commission</button>
+        <input
+          v-model="srcValoper"
+          class="input w-full"
+          placeholder="validator valoper"
+        >
+        <button
+          class="btn btn-primary"
+          @click="loadValidatorCommission"
+        >
+          Load Commission
+        </button>
       </div>
-      <form class="space-y-2" @submit.prevent="withdrawCommission">
+      <form
+        class="space-y-2"
+        @submit.prevent="withdrawCommission"
+      >
         <fieldset class="space-y-2">
           <legend class="text-sm font-semibold opacity-70">
             /cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission
           </legend>
           <div class="flex gap-2">
-            <input v-model="commissionSigner" class="input w-full" placeholder="signer address" />
-            <button class="btn btn-primary" type="submit">Withdraw Commission</button>
+            <input
+              v-model="commissionSigner"
+              class="input w-full"
+              placeholder="signer address"
+            >
+            <button
+              class="btn btn-primary"
+              type="submit"
+            >
+              Withdraw Commission
+            </button>
           </div>
-          <div v-if="withdrawCommissionError" class="text-sm text-red-600">
+          <div
+            v-if="withdrawCommissionError"
+            class="text-sm text-red-600"
+          >
             {{ withdrawCommissionError }}
           </div>
         </fieldset>
       </form>
       <ul class="list-disc pl-6 text-sm">
-        <li v-for="c in validatorCommissions" :key="c.validator_address + ':' + c.denom">
+        <li
+          v-for="c in validatorCommissions"
+          :key="c.validator_address + ':' + c.denom"
+        >
           <code>{{ c.amount }}</code> <span class="opacity-70">{{ c.denom }}</span>
         </li>
       </ul>
-      <h4 class="font-semibold">Community Pool</h4>
+      <h4 class="font-semibold">
+        Community Pool
+      </h4>
       <div class="flex gap-2 mt-2">
-        <input v-model="poolFrom" class="input w-full" placeholder="from address" />
-        <input v-model="poolAmount" class="input w-40" placeholder="amount" />
-        <input v-model="poolDenom" class="input w-28" placeholder="denom" />
-        <button class="btn btn-primary" @click="fundCommunityPool">Fund</button>
+        <input
+          v-model="poolFrom"
+          class="input w-full"
+          placeholder="from address"
+        >
+        <input
+          v-model="poolAmount"
+          class="input w-40"
+          placeholder="amount"
+        >
+        <input
+          v-model="poolDenom"
+          class="input w-28"
+          placeholder="denom"
+        >
+        <button
+          class="btn btn-primary"
+          @click="fundCommunityPool"
+        >
+          Fund
+        </button>
       </div>
-      <div v-if="fundCommunityPoolError" class="text-sm text-red-600">
+      <div
+        v-if="fundCommunityPoolError"
+        class="text-sm text-red-600"
+      >
         {{ fundCommunityPoolError }}
       </div>
       <ul class="list-disc pl-6 text-sm">
-        <li v-for="p in communityPool" :key="p.denom">
+        <li
+          v-for="p in communityPool"
+          :key="p.denom"
+        >
           <code>{{ p.amount }}</code> <span class="opacity-70">{{ p.denom }}</span>
         </li>
       </ul>

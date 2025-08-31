@@ -2,7 +2,9 @@
   <div class="p-4 max-w-5xl mx-auto">
     <div class="flex items-center justify-between gap-4 flex-wrap">
       <div>
-        <h1 class="text-2xl font-bold">Validator Details</h1>
+        <h1 class="text-2xl font-bold">
+          Validator Details
+        </h1>
         <div class="text-sm text-base-content/60 mt-1 font-mono break-all">
           <AddressDisplay :address="valAddress" />
         </div>
@@ -10,21 +12,38 @@
     </div>
 
     <div class="mt-4">
-      <div v-if="isLoading" class="text-base-content/70">Loading…</div>
-      <div v-else-if="error" class="alert alert-error">{{ error }}</div>
+      <div
+        v-if="isLoading"
+        class="text-base-content/70"
+      >
+        Loading…
+      </div>
+      <div
+        v-else-if="error"
+        class="alert alert-error"
+      >
+        {{ error }}
+      </div>
 
-      <div v-else class="space-y-4">
+      <div
+        v-else
+        class="space-y-4"
+      >
         <div class="card bg-base-200 shadow">
           <div class="card-body">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">moniker</div>
+                <div class="opacity-70">
+                  moniker
+                </div>
                 <div class="sm:col-span-2 font-medium">
                   {{ validator?.description?.moniker || "" }}
                 </div>
               </div>
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">operator</div>
+                <div class="opacity-70">
+                  operator
+                </div>
                 <div class="sm:col-span-2 font-mono break-all">
                   <AddressDisplay
                     :address="validator?.operator_address || ''"
@@ -32,17 +51,25 @@
                 </div>
               </div>
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">status</div>
-                <div class="sm:col-span-2">{{ validator?.status }}</div>
+                <div class="opacity-70">
+                  status
+                </div>
+                <div class="sm:col-span-2">
+                  {{ validator?.status }}
+                </div>
               </div>
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">jailed</div>
+                <div class="opacity-70">
+                  jailed
+                </div>
                 <div class="sm:col-span-2">
                   {{ validator?.jailed ? "true" : "false" }}
                 </div>
               </div>
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">tokens</div>
+                <div class="opacity-70">
+                  tokens
+                </div>
                 <div class="sm:col-span-2 font-mono">
                   <span v-if="bondDenom">
                     {{
@@ -56,19 +83,25 @@
                 </div>
               </div>
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">delegator_shares</div>
+                <div class="opacity-70">
+                  delegator_shares
+                </div>
                 <div class="sm:col-span-2 font-mono">
                   {{ validator?.delegator_shares }}
                 </div>
               </div>
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">commission</div>
+                <div class="opacity-70">
+                  commission
+                </div>
                 <div class="sm:col-span-2 font-mono">
                   {{ validator?.commission?.commission_rates?.rate || "" }}
                 </div>
               </div>
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">min_self_delegation</div>
+                <div class="opacity-70">
+                  min_self_delegation
+                </div>
                 <div class="sm:col-span-2 font-mono">
                   <span v-if="bondDenom">
                     {{
@@ -85,19 +118,25 @@
                 </div>
               </div>
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">unbonding_height</div>
+                <div class="opacity-70">
+                  unbonding_height
+                </div>
                 <div class="sm:col-span-2 font-mono">
                   {{ validator?.unbonding_height || "" }}
                 </div>
               </div>
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">unbonding_time</div>
+                <div class="opacity-70">
+                  unbonding_time
+                </div>
                 <div class="sm:col-span-2 font-mono">
                   {{ validator?.unbonding_time || "" }}
                 </div>
               </div>
               <div class="grid grid-cols-3 items-center gap-2">
-                <div class="opacity-70">consensus_pubkey</div>
+                <div class="opacity-70">
+                  consensus_pubkey
+                </div>
                 <div class="sm:col-span-2 font-mono break-all">
                   {{ validator?.consensus_pubkey?.key || "" }}
                 </div>
@@ -109,24 +148,39 @@
         <div class="card bg-base-200 shadow">
           <div class="card-body">
             <div class="flex items-center justify-between">
-              <h2 class="card-title">Delegations</h2>
+              <h2 class="card-title">
+                Delegations
+              </h2>
               <div class="text-sm opacity-70">
                 {{ delegations.length }} delegation(s)
               </div>
             </div>
-            <div v-if="isLoadingDelegations" class="text-base-content/70">
+            <div
+              v-if="isLoadingDelegations"
+              class="text-base-content/70"
+            >
               Loading…
             </div>
-            <div v-else-if="delegationsError" class="text-error">
+            <div
+              v-else-if="delegationsError"
+              class="text-error"
+            >
               {{ delegationsError }}
             </div>
-            <div v-else class="overflow-x-auto">
+            <div
+              v-else
+              class="overflow-x-auto"
+            >
               <table class="table table-sm">
                 <thead>
                   <tr>
                     <th>delegator</th>
-                    <th class="text-right">shares</th>
-                    <th class="text-right">balance</th>
+                    <th class="text-right">
+                      shares
+                    </th>
+                    <th class="text-right">
+                      balance
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -134,8 +188,8 @@
                     v-for="d in delegations"
                     :key="
                       d?.delegation?.delegator_address +
-                      ':' +
-                      d?.delegation?.validator_address
+                        ':' +
+                        d?.delegation?.validator_address
                     "
                   >
                     <td class="font-mono break-all">
@@ -162,7 +216,12 @@
                     </td>
                   </tr>
                   <tr v-if="delegations.length === 0">
-                    <td colspan="3" class="opacity-70">No delegations</td>
+                    <td
+                      colspan="3"
+                      class="opacity-70"
+                    >
+                      No delegations
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -173,18 +232,29 @@
         <div class="card bg-base-200 shadow">
           <div class="card-body">
             <div class="flex items-center justify-between">
-              <h2 class="card-title">Unbonding Delegations</h2>
+              <h2 class="card-title">
+                Unbonding Delegations
+              </h2>
               <div class="text-sm opacity-70">
                 {{ unbondingsCount }} entry/entries
               </div>
             </div>
-            <div v-if="isLoadingUnbondings" class="text-base-content/70">
+            <div
+              v-if="isLoadingUnbondings"
+              class="text-base-content/70"
+            >
               Loading…
             </div>
-            <div v-else-if="unbondingsError" class="text-error">
+            <div
+              v-else-if="unbondingsError"
+              class="text-error"
+            >
               {{ unbondingsError }}
             </div>
-            <div v-else class="overflow-x-auto">
+            <div
+              v-else
+              class="overflow-x-auto"
+            >
               <table class="table table-sm">
                 <thead>
                   <tr>
@@ -193,7 +263,10 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="u in unbondings" :key="u?.delegator_address">
+                  <tr
+                    v-for="u in unbondings"
+                    :key="u?.delegator_address"
+                  >
                     <td class="font-mono break-all">
                       <AddressDisplay :address="u?.delegator_address || ''" />
                     </td>
@@ -220,7 +293,10 @@
                     </td>
                   </tr>
                   <tr v-if="unbondings.length === 0">
-                    <td colspan="2" class="opacity-70">
+                    <td
+                      colspan="2"
+                      class="opacity-70"
+                    >
                       No unbonding delegations
                     </td>
                   </tr>

@@ -5,11 +5,14 @@
         <div class="join">
           <button
             v-if="canEdit"
-            @click="save"
             class="btn btn-primary join-item"
             :disabled="isSaving || !hasChanges"
+            @click="save"
           >
-            <span v-if="isSaving" class="loading loading-spinner loading-xs mr-1"></span>
+            <span
+              v-if="isSaving"
+              class="loading loading-spinner loading-xs mr-1"
+            />
             {{ isSaving ? 'Saving...' : 'Save' }}
           </button>
 
@@ -27,13 +30,29 @@
           />
         </div>
 
-        <div v-if="errorMessage" class="text-error text-sm ml-2">
+        <div
+          v-if="errorMessage"
+          class="text-error text-sm ml-2"
+        >
           {{ errorMessage }}
-          <button @click="clearError" class="btn btn-xs btn-ghost ml-1">✕</button>
+          <button
+            class="btn btn-xs btn-ghost ml-1"
+            @click="clearError"
+          >
+            ✕
+          </button>
         </div>
-        <div v-if="showSuccess" class="text-success text-sm ml-2">
+        <div
+          v-if="showSuccess"
+          class="text-success text-sm ml-2"
+        >
           Script saved!
-          <button @click="clearSuccessMessage" class="btn btn-xs btn-ghost ml-1">✕</button>
+          <button
+            class="btn btn-xs btn-ghost ml-1"
+            @click="clearSuccessMessage"
+          >
+            ✕
+          </button>
         </div>
       </div>
       <div class="text-sm text-base-content/60 flex items-center gap-2">
@@ -45,7 +64,7 @@
         ref="editorEl"
         class="monaco-editor-container"
         :style="{ height: editorHeightPx + 'px' }"
-      ></div>
+      />
     </div>
   </div>
 </template>

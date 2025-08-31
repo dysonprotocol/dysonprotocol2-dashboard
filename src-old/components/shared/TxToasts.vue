@@ -11,11 +11,14 @@
       class="alert alert-soft shadow wrap-anywhere flex items-center justify-between flex-wrap gap-4"
     >
       <span class="text-sm">
-        <span class="">{{ item.type || "unknown" }}</span
-        >:
+        <span class="">{{ item.type || "unknown" }}</span>:
         <span class="">{{ item.status }}</span>
       </span>
-      <TransactionLink :hash="item.txHash" :truncate="8" variant="link" />
+      <TransactionLink
+        :hash="item.txHash"
+        :truncate="8"
+        variant="link"
+      />
       <button
         class="btn btn-ghost btn-xs ml-1"
         @click="$emit('dismiss', item.txHash)"

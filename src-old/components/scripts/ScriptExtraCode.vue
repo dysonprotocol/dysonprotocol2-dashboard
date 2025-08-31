@@ -1,16 +1,32 @@
 <template>
-  <div v-if="isAddressKnown" ref="rootEl" class="collapse bg-base-100 w-full min-w-0">
-    <input type="checkbox" :checked="isCollapsed" @change="toggleCollapse" />
-    <div class="collapse-title font-semibold">Extra Code</div>
+  <div
+    v-if="isAddressKnown"
+    ref="rootEl"
+    class="collapse bg-base-100 w-full min-w-0"
+  >
+    <input
+      type="checkbox"
+      :checked="isCollapsed"
+      @change="toggleCollapse"
+    >
+    <div class="collapse-title font-semibold">
+      Extra Code
+    </div>
     <div class="collapse-content">
       <div class="form-control min-w-0">
-        <div ref="editorEl" class="h-24 w-full min-w-0 border border-base-300"></div>
+        <div
+          ref="editorEl"
+          class="h-24 w-full min-w-0 border border-base-300"
+        />
         <div class="text-xs opacity-60 wrap-anywhere">
           This code will be temporarily appended to the script before calling the function
         </div>
 
         <!-- Error Display -->
-        <div v-if="errorText" class="mt-4 break-all">
+        <div
+          v-if="errorText"
+          class="mt-4 break-all"
+        >
           <div class="alert alert-error text-base-content alert-outline">
             <div class="text-sm">
               <div class="font-medium">
@@ -19,13 +35,20 @@
             </div>
           </div>
           <div class="mt-2">
-            <div class="font-medium text-xs opacity-80">Error:</div>
+            <div class="font-medium text-xs opacity-80">
+              Error:
+            </div>
             <pre
               class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-words"
-              >{{ errorText }}</pre
+            >{{ errorText }}</pre>
+            <div
+              v-if="exception"
+              class="mt-2 text-xs"
             >
-            <div v-if="exception" class="mt-2 text-xs">
-              <button class="link link-error" @click="goToException">
+              <button
+                class="link link-error"
+                @click="goToException"
+              >
                 Go to line {{ exception.lineno }}:{{ exception.col_offset }}
               </button>
             </div>
@@ -33,7 +56,10 @@
         </div>
 
         <!-- Success Display -->
-        <div v-if="result" class="mt-4 break-all">
+        <div
+          v-if="result"
+          class="mt-4 break-all"
+        >
           <div class="alert alert-success text-base-content alert-outline">
             <div class="text-sm">
               <div class="font-medium">
@@ -42,14 +68,24 @@
             </div>
           </div>
           <div>
-            <div v-if="result.result !== null" class="mt-2">
-              <div class="font-medium text-xs opacity-80">Result:</div>
+            <div
+              v-if="result.result !== null"
+              class="mt-2"
+            >
+              <div class="font-medium text-xs opacity-80">
+                Result:
+              </div>
               <pre class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto">{{
                 formatResult(result.result)
               }}</pre>
             </div>
-            <div v-if="result.stdout" class="mt-2">
-              <div class="font-medium text-xs opacity-80">Output:</div>
+            <div
+              v-if="result.stdout"
+              class="mt-2"
+            >
+              <div class="font-medium text-xs opacity-80">
+                Output:
+              </div>
               <pre class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto">{{
                 result.stdout
               }}</pre>
@@ -58,14 +94,24 @@
               <span>Gas: {{ formatNumber(result.gasConsumed) }}</span>
               <span>Nodes: {{ formatNumber(result.nodesExecuted) }}</span>
             </div>
-            <div v-if="!result.simulate && result.txHash" class="mt-2">
-              <div class="font-medium text-xs opacity-80">Transaction:</div>
+            <div
+              v-if="!result.simulate && result.txHash"
+              class="mt-2"
+            >
+              <div class="font-medium text-xs opacity-80">
+                Transaction:
+              </div>
               <div class="text-xs bg-base-200 p-2 mt-1">
                 <div>
                   Hash:
-                  <TxHashDisplay :hash="result.txHash" :truncate="8" />
+                  <TxHashDisplay
+                    :hash="result.txHash"
+                    :truncate="8"
+                  />
                 </div>
-                <div v-if="result.blockHeight">Block: {{ result.blockHeight }}</div>
+                <div v-if="result.blockHeight">
+                  Block: {{ result.blockHeight }}
+                </div>
               </div>
             </div>
           </div>
@@ -88,18 +134,18 @@
               @update:selected-grant="onSelectedGrant"
             />
             <button
-              @click="simulate"
               class="btn btn-sm join-item"
               :disabled="
                 isSimulating || !extraCode.trim() || !selectedExecutor || hasUnsavedChanges
               "
+              @click="simulate"
             >
               {{ isSimulating ? 'Simulating...' : 'Simulate' }}
             </button>
             <button
-              @click="execute"
               class="btn btn-sm btn-primary join-item"
               :disabled="isExecuting || !extraCode.trim() || !selectedExecutor || hasUnsavedChanges"
+              @click="execute"
             >
               {{ isExecuting ? 'Sending...' : 'Tx' }}
             </button>

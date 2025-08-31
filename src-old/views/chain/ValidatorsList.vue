@@ -1,7 +1,11 @@
 <template>
   <div class="p-4">
-    <h2 class="text-xl font-bold mb-2">Validators</h2>
-    <p class="text-sm text-gray-600 mb-4">Current validator set</p>
+    <h2 class="text-xl font-bold mb-2">
+      Validators
+    </h2>
+    <p class="text-sm text-gray-600 mb-4">
+      Current validator set
+    </p>
 
     <div class="bg-base-200 p-4 rounded mb-4 grid gap-3">
       <div class="flex flex-wrap gap-2 items-end">
@@ -25,7 +29,7 @@
             max="200"
             type="number"
             class="input input-bordered input-sm"
-          />
+          >
         </label>
         <label class="form-control flex-1 min-w-64">
           <span class="label-text">pagination.key</span>
@@ -34,9 +38,14 @@
             type="text"
             class="input input-bordered input-sm"
             placeholder="base64 page key"
-          />
+          >
         </label>
-        <button class="btn btn-sm" @click="apply">Apply</button>
+        <button
+          class="btn btn-sm"
+          @click="apply"
+        >
+          Apply
+        </button>
         <button
           class="btn btn-ghost btn-sm"
           :disabled="!form.key"
@@ -44,17 +53,25 @@
         >
           Reset
         </button>
-        <span class="flex-1"></span>
-        <button class="btn btn-sm" :disabled="!nextKey" @click="nextPage">
+        <span class="flex-1" />
+        <button
+          class="btn btn-sm"
+          :disabled="!nextKey"
+          @click="nextPage"
+        >
           Next
         </button>
       </div>
       <div class="text-sm">
-        <span v-if="error" class="text-error">{{ error }}</span>
+        <span
+          v-if="error"
+          class="text-error"
+        >{{ error }}</span>
         <span v-else-if="isLoading">Loading…</span>
-        <span v-else class="opacity-70"
-          >{{ validators.length }} validator(s)</span
-        >
+        <span
+          v-else
+          class="opacity-70"
+        >{{ validators.length }} validator(s)</span>
       </div>
     </div>
 
@@ -72,25 +89,38 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="v in validators" :key="v.operator_address">
+          <tr
+            v-for="v in validators"
+            :key="v.operator_address"
+          >
             <td>{{ v.description?.moniker || "" }}</td>
             <td class="font-mono break-all">
               <router-link
                 class="link"
                 :to="`/validators/${v.operator_address}`"
-                >{{ v.operator_address }}</router-link
               >
+                {{ v.operator_address }}
+              </router-link>
             </td>
             <td>{{ v.status }}</td>
             <td>{{ v.jailed ? "true" : "false" }}</td>
-            <td class="font-mono">{{ v.tokens }}</td>
-            <td class="font-mono">{{ v.delegator_shares }}</td>
+            <td class="font-mono">
+              {{ v.tokens }}
+            </td>
+            <td class="font-mono">
+              {{ v.delegator_shares }}
+            </td>
             <td class="font-mono">
               {{ v.commission?.commission_rates?.rate }}
             </td>
           </tr>
           <tr v-if="!isLoading && !error && validators.length === 0">
-            <td colspan="7" class="text-center opacity-70">No validators</td>
+            <td
+              colspan="7"
+              class="text-center opacity-70"
+            >
+              No validators
+            </td>
           </tr>
         </tbody>
       </table>

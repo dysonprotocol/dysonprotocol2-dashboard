@@ -1,13 +1,31 @@
 <template>
-  <h2 class="text-xl font-semibold" id="script">Script</h2>
+  <h2
+    id="script"
+    class="text-xl font-semibold"
+  >
+    Script
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-4 p-4 border rounded">
-      <h3 class="font-semibold">Queries</h3>
+      <h3 class="font-semibold">
+        Queries
+      </h3>
       <div class="space-y-2">
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Script Info</h4>
-          <input v-model="infoAddress" class="input w-full" placeholder="script address" />
-          <button class="btn btn-primary" @click="fetchInfo">Fetch</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Script Info
+          </h4>
+          <input
+            v-model="infoAddress"
+            class="input w-full"
+            placeholder="script address"
+          >
+          <button
+            class="btn btn-primary"
+            @click="fetchInfo"
+          >
+            Fetch
+          </button>
           <div class="text-xs opacity-70 grid grid-cols-2 gap-x-2">
             <div>
               version=<code>{{ scriptVersion }}</code>
@@ -16,15 +34,30 @@
               height=<code>{{ scriptHeight }}</code>
             </div>
           </div>
-          <div v-if="infoError" class="text-sm text-red-600">{{ infoError }}</div>
-          <div v-if="infoErrorData" class="text-xs opacity-70">
+          <div
+            v-if="infoError"
+            class="text-sm text-red-600"
+          >
+            {{ infoError }}
+          </div>
+          <div
+            v-if="infoErrorData"
+            class="text-xs opacity-70"
+          >
             <code class="break-words">{{ infoErrorData }}</code>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Params</h4>
-          <button class="btn btn-primary" @click="fetchParams">Fetch</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Params
+          </h4>
+          <button
+            class="btn btn-primary"
+            @click="fetchParams"
+          >
+            Fetch
+          </button>
           <div class="text-xs opacity-70 grid grid-cols-2 gap-x-2">
             <div>
               max_rel=<code>{{ params.max_relative_historical_blocks }}</code>
@@ -33,47 +66,99 @@
               abs_cutoff=<code>{{ params.absolute_historical_block_cutoff }}</code>
             </div>
           </div>
-          <div v-if="paramsError" class="text-sm text-red-600">{{ paramsError }}</div>
-          <div v-if="paramsErrorData" class="text-xs opacity-70">
+          <div
+            v-if="paramsError"
+            class="text-sm text-red-600"
+          >
+            {{ paramsError }}
+          </div>
+          <div
+            v-if="paramsErrorData"
+            class="text-xs opacity-70"
+          >
             <code class="break-words">{{ paramsErrorData }}</code>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Encode JSON</h4>
+          <h4 class="text-sm font-semibold opacity-70">
+            Encode JSON
+          </h4>
           <textarea
             v-model="encJson"
             class="textarea w-full"
-            placeholder='{"foo":"bar"}'
+            placeholder="{&quot;foo&quot;:&quot;bar&quot;}"
             rows="6"
-          ></textarea>
-          <button class="btn" @click="doEncode">Encode</button>
+          />
+          <button
+            class="btn"
+            @click="doEncode"
+          >
+            Encode
+          </button>
           <div class="text-xs opacity-70">
             bytes=<code class="break-words">{{ encBytes }}</code>
           </div>
-          <div v-if="encError" class="text-sm text-red-600">{{ encError }}</div>
-          <div v-if="encErrorData" class="text-xs opacity-70">
+          <div
+            v-if="encError"
+            class="text-sm text-red-600"
+          >
+            {{ encError }}
+          </div>
+          <div
+            v-if="encErrorData"
+            class="text-xs opacity-70"
+          >
             <code class="break-words">{{ encErrorData }}</code>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Decode Bytes</h4>
-          <input v-model="decTypeUrl" class="input w-full" placeholder="type_url" />
-          <input v-model="decBytes" class="input w-full" placeholder="base64 bytes" />
-          <button class="btn" @click="doDecode">Decode</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Decode Bytes
+          </h4>
+          <input
+            v-model="decTypeUrl"
+            class="input w-full"
+            placeholder="type_url"
+          >
+          <input
+            v-model="decBytes"
+            class="input w-full"
+            placeholder="base64 bytes"
+          >
+          <button
+            class="btn"
+            @click="doDecode"
+          >
+            Decode
+          </button>
           <div class="text-xs opacity-70">
             json=<code class="break-words">{{ decJson }}</code>
           </div>
-          <div v-if="decError" class="text-sm text-red-600">{{ decError }}</div>
-          <div v-if="decErrorData" class="text-xs opacity-70">
+          <div
+            v-if="decError"
+            class="text-sm text-red-600"
+          >
+            {{ decError }}
+          </div>
+          <div
+            v-if="decErrorData"
+            class="text-xs opacity-70"
+          >
             <code class="break-words">{{ decErrorData }}</code>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Sign Arbitrary Data</h4>
-          <input v-model="signAddress" class="input w-full" placeholder="signer address" />
+          <h4 class="text-sm font-semibold opacity-70">
+            Sign Arbitrary Data
+          </h4>
+          <input
+            v-model="signAddress"
+            class="input w-full"
+            placeholder="signer address"
+          >
           <textarea
             v-model="signData"
             class="textarea w-full"
@@ -84,66 +169,164 @@
             v-model="signMsg"
             class="textarea w-full"
             rows="6"
-            placeholder='optional full msg JSON (overrides data), e.g. {"@type":"/dysonprotocol.script.v1.MsgArbitraryData","signer":"...","data":"...","app_domain":"dysond"}'
+            placeholder="optional full msg JSON (overrides data), e.g. {&quot;@type&quot;:&quot;/dysonprotocol.script.v1.MsgArbitraryData&quot;,&quot;signer&quot;:&quot;...&quot;,&quot;data&quot;:&quot;...&quot;,&quot;app_domain&quot;:&quot;dysond&quot;}"
           />
-          <button class="btn" @click="doSignArbitrary">Sign</button>
+          <button
+            class="btn"
+            @click="doSignArbitrary"
+          >
+            Sign
+          </button>
           <div class="text-xs opacity-70">
             tx=<code class="break-words">{{ signResult }}</code>
           </div>
-          <div v-if="signError" class="text-sm text-red-600">{{ signError }}</div>
-          <div v-if="signErrorData" class="text-xs opacity-70">
+          <div
+            v-if="signError"
+            class="text-sm text-red-600"
+          >
+            {{ signError }}
+          </div>
+          <div
+            v-if="signErrorData"
+            class="text-xs opacity-70"
+          >
             <code class="break-words">{{ signErrorData }}</code>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Verify Tx</h4>
-          <input v-model="txJson" class="input w-full" placeholder='{"body":...}' />
-          <button class="btn" @click="doVerify">Verify</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Verify Tx
+          </h4>
+          <input
+            v-model="txJson"
+            class="input w-full"
+            placeholder="{&quot;body&quot;:...}"
+          >
+          <button
+            class="btn"
+            @click="doVerify"
+          >
+            Verify
+          </button>
           <div class="text-xs opacity-70">
             signer=<code>{{ signer }}</code>
           </div>
-          <div v-if="verifyError" class="text-sm text-red-600">{{ verifyError }}</div>
-          <div v-if="verifyErrorData" class="text-xs opacity-70">
+          <div
+            v-if="verifyError"
+            class="text-sm text-red-600"
+          >
+            {{ verifyError }}
+          </div>
+          <div
+            v-if="verifyErrorData"
+            class="text-xs opacity-70"
+          >
             <code class="break-words">{{ verifyErrorData }}</code>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Web</h4>
-          <input v-model="webAddress" class="input w-full" placeholder="script address" />
-          <input v-model="webName" class="input w-full" placeholder="script name (optional)" />
-          <textarea v-model="webRequest" class="textarea w-full" placeholder="httprequest" />
-          <button class="btn" @click="doWeb">Call</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Web
+          </h4>
+          <input
+            v-model="webAddress"
+            class="input w-full"
+            placeholder="script address"
+          >
+          <input
+            v-model="webName"
+            class="input w-full"
+            placeholder="script name (optional)"
+          >
+          <textarea
+            v-model="webRequest"
+            class="textarea w-full"
+            placeholder="httprequest"
+          />
+          <button
+            class="btn"
+            @click="doWeb"
+          >
+            Call
+          </button>
           <div class="text-xs opacity-70">
             resp=<code class="break-words">{{ webResponse }}</code>
           </div>
-          <div v-if="webError" class="text-sm text-red-600">{{ webError }}</div>
-          <div v-if="webErrorData" class="text-xs opacity-70">
+          <div
+            v-if="webError"
+            class="text-sm text-red-600"
+          >
+            {{ webError }}
+          </div>
+          <div
+            v-if="webErrorData"
+            class="text-xs opacity-70"
+          >
             <code class="break-words">{{ webErrorData }}</code>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Run</h4>
-          <input v-model="runExec" class="input w-full" placeholder="executor" />
-          <input v-model="runAddress" class="input w-full" placeholder="script address" />
-          <input v-model="runName" class="input w-full" placeholder="script name (optional)" />
-          <input v-model="runFunc" class="input w-full" placeholder="function name" />
-          <input v-model="runArgs" class="input w-full" placeholder="args JSON []" />
-          <input v-model="runKwargs" class="input w-full" placeholder="kwargs JSON {}" />
+          <h4 class="text-sm font-semibold opacity-70">
+            Run
+          </h4>
+          <input
+            v-model="runExec"
+            class="input w-full"
+            placeholder="executor"
+          >
+          <input
+            v-model="runAddress"
+            class="input w-full"
+            placeholder="script address"
+          >
+          <input
+            v-model="runName"
+            class="input w-full"
+            placeholder="script name (optional)"
+          >
+          <input
+            v-model="runFunc"
+            class="input w-full"
+            placeholder="function name"
+          >
+          <input
+            v-model="runArgs"
+            class="input w-full"
+            placeholder="args JSON []"
+          >
+          <input
+            v-model="runKwargs"
+            class="input w-full"
+            placeholder="kwargs JSON {}"
+          >
           <textarea
             v-model="runExtra"
             class="textarea w-full"
             rows="4"
             placeholder="extra_code (optional)"
           />
-          <button class="btn" @click="doRun">Run</button>
+          <button
+            class="btn"
+            @click="doRun"
+          >
+            Run
+          </button>
           <div class="text-xs opacity-70">
             result=<code class="break-words">{{ runResult }}</code>
           </div>
-          <div v-if="runError" class="text-sm text-red-600">{{ runError }}</div>
-          <div v-if="runErrorData" class="text-xs opacity-70">
+          <div
+            v-if="runError"
+            class="text-sm text-red-600"
+          >
+            {{ runError }}
+          </div>
+          <div
+            v-if="runErrorData"
+            class="text-xs opacity-70"
+          >
             <code class="break-words">{{ runErrorData }}</code>
           </div>
         </div>
@@ -151,66 +334,190 @@
     </div>
 
     <div class="space-y-4 p-4 border rounded">
-      <h3 class="font-semibold">Actions</h3>
+      <h3 class="font-semibold">
+        Actions
+      </h3>
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Update Script</h4>
-        <input v-model="updAddress" class="input w-full" placeholder="script address" />
-        <textarea v-model="updCode" class="textarea w-full" placeholder="code" />
-        <input v-model="updMemo" class="input w-full" placeholder="memo (optional)" />
-        <button class="btn btn-primary" @click="updateScript">Update</button>
-        <div v-if="updError" class="text-sm text-red-600">{{ updError }}</div>
-        <div v-if="updErrorData" class="text-xs opacity-70">
+        <h4 class="text-sm font-semibold opacity-70">
+          Update Script
+        </h4>
+        <input
+          v-model="updAddress"
+          class="input w-full"
+          placeholder="script address"
+        >
+        <textarea
+          v-model="updCode"
+          class="textarea w-full"
+          placeholder="code"
+        />
+        <input
+          v-model="updMemo"
+          class="input w-full"
+          placeholder="memo (optional)"
+        >
+        <button
+          class="btn btn-primary"
+          @click="updateScript"
+        >
+          Update
+        </button>
+        <div
+          v-if="updError"
+          class="text-sm text-red-600"
+        >
+          {{ updError }}
+        </div>
+        <div
+          v-if="updErrorData"
+          class="text-xs opacity-70"
+        >
           <code class="break-words">{{ updErrorData }}</code>
         </div>
       </div>
 
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Exec Script</h4>
-        <input v-model="execAddress" class="input w-full" placeholder="executor" />
-        <input v-model="execScriptAddr" class="input w-full" placeholder="script address" />
-        <input v-model="execScriptName" class="input w-full" placeholder="script name (optional)" />
-        <input v-model="execFunc" class="input w-full" placeholder="function" />
-        <input v-model="execArgs" class="input w-full" placeholder="args JSON []" />
-        <input v-model="execKwargs" class="input w-full" placeholder="kwargs JSON {}" />
-        <input v-model="execMemo" class="input w-full" placeholder="memo (optional)" />
-        <button class="btn btn-primary" @click="execScript">Exec</button>
-        <div v-if="execError" class="text-sm text-red-600">{{ execError }}</div>
-        <div v-if="execErrorData" class="text-xs opacity-70">
+        <h4 class="text-sm font-semibold opacity-70">
+          Exec Script
+        </h4>
+        <input
+          v-model="execAddress"
+          class="input w-full"
+          placeholder="executor"
+        >
+        <input
+          v-model="execScriptAddr"
+          class="input w-full"
+          placeholder="script address"
+        >
+        <input
+          v-model="execScriptName"
+          class="input w-full"
+          placeholder="script name (optional)"
+        >
+        <input
+          v-model="execFunc"
+          class="input w-full"
+          placeholder="function"
+        >
+        <input
+          v-model="execArgs"
+          class="input w-full"
+          placeholder="args JSON []"
+        >
+        <input
+          v-model="execKwargs"
+          class="input w-full"
+          placeholder="kwargs JSON {}"
+        >
+        <input
+          v-model="execMemo"
+          class="input w-full"
+          placeholder="memo (optional)"
+        >
+        <button
+          class="btn btn-primary"
+          @click="execScript"
+        >
+          Exec
+        </button>
+        <div
+          v-if="execError"
+          class="text-sm text-red-600"
+        >
+          {{ execError }}
+        </div>
+        <div
+          v-if="execErrorData"
+          class="text-xs opacity-70"
+        >
           <code class="break-words">{{ execErrorData }}</code>
         </div>
       </div>
 
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Create New Script</h4>
-        <input v-model="newCreator" class="input w-full" placeholder="creator address" />
-        <textarea v-model="newCode" class="textarea w-full" placeholder="code" />
-        <input v-model="newMemo" class="input w-full" placeholder="memo (optional)" />
-        <button class="btn btn-primary" @click="createNewScript">Create</button>
-        <div v-if="newError" class="text-sm text-red-600">{{ newError }}</div>
-        <div v-if="newErrorData" class="text-xs opacity-70">
+        <h4 class="text-sm font-semibold opacity-70">
+          Create New Script
+        </h4>
+        <input
+          v-model="newCreator"
+          class="input w-full"
+          placeholder="creator address"
+        >
+        <textarea
+          v-model="newCode"
+          class="textarea w-full"
+          placeholder="code"
+        />
+        <input
+          v-model="newMemo"
+          class="input w-full"
+          placeholder="memo (optional)"
+        >
+        <button
+          class="btn btn-primary"
+          @click="createNewScript"
+        >
+          Create
+        </button>
+        <div
+          v-if="newError"
+          class="text-sm text-red-600"
+        >
+          {{ newError }}
+        </div>
+        <div
+          v-if="newErrorData"
+          class="text-xs opacity-70"
+        >
           <code class="break-words">{{ newErrorData }}</code>
         </div>
       </div>
 
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Update Params</h4>
-        <input v-model="paramsAuthority" class="input w-full" placeholder="authority" />
+        <h4 class="text-sm font-semibold opacity-70">
+          Update Params
+        </h4>
+        <input
+          v-model="paramsAuthority"
+          class="input w-full"
+          placeholder="authority"
+        >
         <textarea
           v-model="paramsPayload"
           class="textarea w-full"
-          placeholder='{"max_relative_historical_blocks":"1000"}'
+          placeholder="{&quot;max_relative_historical_blocks&quot;:&quot;1000&quot;}"
         />
-        <input v-model="paramsMemo" class="input w-full" placeholder="memo (optional)" />
-        <button class="btn btn-primary" @click="updateParams">Update</button>
-        <div v-if="paramsSendError" class="text-sm text-red-600">{{ paramsSendError }}</div>
-        <div v-if="paramsSendErrorData" class="text-xs opacity-70">
+        <input
+          v-model="paramsMemo"
+          class="input w-full"
+          placeholder="memo (optional)"
+        >
+        <button
+          class="btn btn-primary"
+          @click="updateParams"
+        >
+          Update
+        </button>
+        <div
+          v-if="paramsSendError"
+          class="text-sm text-red-600"
+        >
+          {{ paramsSendError }}
+        </div>
+        <div
+          v-if="paramsSendErrorData"
+          class="text-xs opacity-70"
+        >
           <code class="break-words">{{ paramsSendErrorData }}</code>
         </div>
       </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">In-memory</h3>
+      <h3 class="font-semibold">
+        In-memory
+      </h3>
       <div class="text-sm opacity-70">
         count: <code>{{ scriptsCount }}</code>
       </div>
@@ -224,8 +531,13 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="s in scriptsList" :key="s.address">
-              <td class="font-mono">{{ s.address }}</td>
+            <tr
+              v-for="s in scriptsList"
+              :key="s.address"
+            >
+              <td class="font-mono">
+                {{ s.address }}
+              </td>
               <td>
                 <code>{{ s.version }}</code>
               </td>

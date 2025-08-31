@@ -1,41 +1,96 @@
 <template>
-  <h2 class="text-xl font-semibold" id="tx">Tx</h2>
+  <h2
+    id="tx"
+    class="text-xl font-semibold"
+  >
+    Tx
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Tx: By Hash</h3>
-      <input v-model="txHash" class="input w-full" placeholder="tx hash" />
-      <button class="btn btn-primary" @click="loadByHash">Fetch</button>
+      <h3 class="font-semibold">
+        Tx: By Hash
+      </h3>
+      <input
+        v-model="txHash"
+        class="input w-full"
+        placeholder="tx hash"
+      >
+      <button
+        class="btn btn-primary"
+        @click="loadByHash"
+      >
+        Fetch
+      </button>
       <div class="text-sm mt-2">
         height=<code>{{ one?.height }}</code> code=<code>{{ one?.code }}</code>
       </div>
-      <div v-if="byHashError" class="text-sm text-red-600">{{ byHashError }}</div>
+      <div
+        v-if="byHashError"
+        class="text-sm text-red-600"
+      >
+        {{ byHashError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Tx: Search</h3>
-      <input v-model="query" class="input w-full" placeholder="events or query string" />
+      <h3 class="font-semibold">
+        Tx: Search
+      </h3>
+      <input
+        v-model="query"
+        class="input w-full"
+        placeholder="events or query string"
+      >
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="search">Search</button>
+        <button
+          class="btn btn-primary"
+          @click="search"
+        >
+          Search
+        </button>
       </div>
-      <div v-if="searchError" class="text-sm text-red-600">{{ searchError }}</div>
+      <div
+        v-if="searchError"
+        class="text-sm text-red-600"
+      >
+        {{ searchError }}
+      </div>
       <ul class="list-disc pl-6 text-sm max-h-56 overflow-auto">
-        <li v-for="r in all" :key="r.hash">
+        <li
+          v-for="r in all"
+          :key="r.hash"
+        >
           <span class="font-mono">{{ r.hash }}</span>
           <span class="opacity-70">
-            h=<code>{{ r.height }}</code> code=<code>{{ r.code }}</code></span
-          >
+            h=<code>{{ r.height }}</code> code=<code>{{ r.code }}</code></span>
         </li>
       </ul>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Tx: Block With Txs</h3>
-      <input v-model="blockHeight" class="input w-full" placeholder="height" />
-      <button class="btn btn-primary" @click="loadBlock">Fetch Block</button>
+      <h3 class="font-semibold">
+        Tx: Block With Txs
+      </h3>
+      <input
+        v-model="blockHeight"
+        class="input w-full"
+        placeholder="height"
+      >
+      <button
+        class="btn btn-primary"
+        @click="loadBlock"
+      >
+        Fetch Block
+      </button>
       <div class="text-sm">
         count=<code>{{ countInBlock }}</code>
       </div>
-      <div v-if="blockError" class="text-sm text-red-600">{{ blockError }}</div>
+      <div
+        v-if="blockError"
+        class="text-sm text-red-600"
+      >
+        {{ blockError }}
+      </div>
     </div>
   </section>
 </template>

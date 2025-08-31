@@ -83,6 +83,7 @@ export class LatestValidatorSet extends Model {
       address: this.string(''),
       voting_power: this.string('0'),
       proposer_priority: this.string('0'),
+      pub_key: this.attr({}),
     }
   }
 
@@ -99,6 +100,7 @@ export class LatestValidatorSet extends Model {
                   address?: string
                   voting_power?: string | number
                   proposer_priority?: string | number
+                  pub_key?: { key?: string; [k: string]: unknown }
                 }>
               }
             }) => {
@@ -109,6 +111,7 @@ export class LatestValidatorSet extends Model {
                   address: String(v.address),
                   voting_power: String(v.voting_power ?? '0'),
                   proposer_priority: String(v.proposer_priority ?? '0'),
+                  pub_key: v.pub_key ?? {},
                 }))
             },
           })
@@ -128,6 +131,7 @@ export class ValidatorSetByHeight extends Model {
       address: this.string(''),
       voting_power: this.string('0'),
       proposer_priority: this.string('0'),
+      pub_key: this.attr({}),
     }
   }
 
@@ -145,6 +149,7 @@ export class ValidatorSetByHeight extends Model {
                   address?: string
                   voting_power?: string | number
                   proposer_priority?: string | number
+                  pub_key?: { key?: string; [k: string]: unknown }
                 }>
               }
             }) => {
@@ -157,6 +162,7 @@ export class ValidatorSetByHeight extends Model {
                   address: String(v.address),
                   voting_power: String(v.voting_power ?? '0'),
                   proposer_priority: String(v.proposer_priority ?? '0'),
+                  pub_key: v.pub_key ?? {},
                 }))
             },
           })

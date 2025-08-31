@@ -1,15 +1,17 @@
 <template>
   <div class="container mx-auto p-6">
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold mb-4">Wallet Management</h1>
+      <h1 class="text-3xl font-bold mb-4">
+        Wallet Management
+      </h1>
       <p class="text-gray-600 mb-8">
         Manage your wallets and send transactions.
       </p>
 
       <button
-        @click="openDrawer"
         class="btn btn-primary btn-lg"
         data-testid="open-wallet-drawer"
+        @click="openDrawer"
       >
         <WalletIcon class="w-5 h-5 mr-2" />
         Open Wallet Manager
@@ -25,7 +27,10 @@
             Bank Send Demo
           </h2>
 
-          <form @submit.prevent="handleReviewTransaction" class="space-y-4">
+          <form
+            class="space-y-4"
+            @submit.prevent="handleReviewTransaction"
+          >
             <!-- Wallet Selection -->
             <div class="form-control">
               <label class="label">
@@ -46,7 +51,7 @@
                 class="input input-bordered w-full font-mono text-sm"
                 data-testid="recipient-address"
                 required
-              />
+              >
             </div>
 
             <!-- Amount and Denomination -->
@@ -64,14 +69,18 @@
                   class="input input-bordered join-item"
                   data-testid="amount-input"
                   required
-                />
+                >
                 <select
                   v-model="denomination"
                   class="select select-bordered join-item flex-1"
                   data-testid="denomination-select"
                 >
-                  <option value="udys">udys</option>
-                  <option value="dys">DYS</option>
+                  <option value="udys">
+                    udys
+                  </option>
+                  <option value="dys">
+                    DYS
+                  </option>
                 </select>
               </div>
             </div>
@@ -87,7 +96,7 @@
                 placeholder="Transaction memo..."
                 class="input input-bordered w-full"
                 data-testid="memo-input"
-              />
+              >
             </div>
 
             <!-- Error Display -->
@@ -109,7 +118,7 @@
               <span
                 v-if="loading"
                 class="loading loading-spinner loading-sm"
-              ></span>
+              />
               <span v-else>Send Transaction</span>
             </button>
           </form>
@@ -118,7 +127,10 @@
     </div>
 
     <!-- Wallet Drawer -->
-    <WalletDrawer :open="drawerOpen" @close="closeDrawer" />
+    <WalletDrawer
+      :open="drawerOpen"
+      @close="closeDrawer"
+    />
   </div>
 </template>
 

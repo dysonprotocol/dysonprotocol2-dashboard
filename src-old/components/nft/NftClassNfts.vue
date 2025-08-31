@@ -4,7 +4,9 @@
     <div class="card bg-base-200 mb-4">
       <div class="card-body gap-3">
         <div class="flex items-center justify-between">
-          <div class="text-lg font-medium">Mint NFT</div>
+          <div class="text-lg font-medium">
+            Mint NFT
+          </div>
           <button
             class="btn btn-sm btn-primary"
             :disabled="!canMint || isLoading"
@@ -19,19 +21,19 @@
             class="input input-bordered w-full"
             placeholder="nft id"
             :disabled="false"
-          />
+          >
           <input
             v-model.trim="mintForm.uri"
             class="input input-bordered w-full"
             placeholder="uri (optional)"
             :disabled="false"
-          />
+          >
           <input
             v-model.trim="mintForm.uriHash"
             class="input input-bordered w-full"
             placeholder="uri hash (optional)"
             :disabled="false"
-          />
+          >
         </div>
         <div class="text-xs opacity-70">
           Owner: <span class="font-mono">{{ rootNameOwner }}</span>
@@ -44,13 +46,32 @@
         Class: <span class="font-mono">{{ classId }}</span>
       </h2>
     </div>
-    <div v-if="isLoading" class="text-base-content/70 mt-2">Loading…</div>
-    <div v-else-if="error" class="text-error mt-2">{{ error }}</div>
-    <div v-else class="mt-2">
-      <div v-if="classNFTs.length === 0" class="text-base-content/70">
+    <div
+      v-if="isLoading"
+      class="text-base-content/70 mt-2"
+    >
+      Loading…
+    </div>
+    <div
+      v-else-if="error"
+      class="text-error mt-2"
+    >
+      {{ error }}
+    </div>
+    <div
+      v-else
+      class="mt-2"
+    >
+      <div
+        v-if="classNFTs.length === 0"
+        class="text-base-content/70"
+      >
         No NFTs in this class.
       </div>
-      <div v-else class="overflow-x-auto">
+      <div
+        v-else
+        class="overflow-x-auto"
+      >
         <table class="table">
           <thead>
             <tr>
@@ -60,7 +81,10 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="n in classNFTs" :key="n.id">
+            <tr
+              v-for="n in classNFTs"
+              :key="n.id"
+            >
               <td class="font-mono">
                 <router-link
                   :to="`/names/${encodeURIComponent(
@@ -74,7 +98,10 @@
                 </router-link>
               </td>
               <td>
-                <div v-if="n.data?.listed" class="badge badge-success">
+                <div
+                  v-if="n.data?.listed"
+                  class="badge badge-success"
+                >
                   listed
                 </div>
                 <span v-else>—</span>

@@ -3,38 +3,51 @@
     <div class="divide-y divide-gray-200">
       <!-- Executor selector moved to top -->
       <div class="bg-base-100 p-3">
-        <div class="text-xs opacity-70 mb-1">Executor</div>
+        <div class="text-xs opacity-70 mb-1">
+          Executor
+        </div>
         <WalletSelector
           v-model="selectedExecutor"
           :show-locked="true"
           :default-address="props.address"
         />
-        <div v-if="!selectedExecutor" class="text-xs text-error mt-1">
+        <div
+          v-if="!selectedExecutor"
+          class="text-xs text-error mt-1"
+        >
           Select the script address wallet to execute
         </div>
       </div>
 
       <!-- Extra Code Section (shown only when executor is the script address) -->
-      <div v-show="canEditExtra" class="collapse bg-base-100">
+      <div
+        v-show="canEditExtra"
+        class="collapse bg-base-100"
+      >
         <input
           type="checkbox"
           :checked="isExtraCodeCollapsed"
           @change="toggleExtraCodeCollapse"
-        />
-        <div class="collapse-title font-semibold">Extra Code</div>
+        >
+        <div class="collapse-title font-semibold">
+          Extra Code
+        </div>
         <div class="collapse-content">
           <div class="form-control">
             <div
               ref="extraCodeEditorEl"
               class="h-24 border border-base-300"
-            ></div>
+            />
             <div class="text-xs opacity-60 wrap-anywhere">
               This code will be temporarily appended to the script before
               calling the function
             </div>
 
             <!-- Extra Code Error Display -->
-            <div v-if="extraCodeError" class="mt-4 break-all">
+            <div
+              v-if="extraCodeError"
+              class="mt-4 break-all"
+            >
               <div class="alert alert-error text-base-content alert-outline">
                 <div class="text-sm">
                   <div class="font-medium">
@@ -47,12 +60,16 @@
                 </div>
               </div>
               <div class="mt-2">
-                <div class="font-medium text-xs opacity-80">Error:</div>
+                <div class="font-medium text-xs opacity-80">
+                  Error:
+                </div>
                 <pre
                   class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-words"
-                  >{{ extraCodeError }}</pre
+                >{{ extraCodeError }}</pre>
+                <div
+                  v-if="extraCodeException"
+                  class="mt-2 text-xs"
                 >
-                <div v-if="extraCodeException" class="mt-2 text-xs">
                   <button
                     class="link link-error"
                     @click="highlightExtraCode(extraCodeException)"
@@ -66,7 +83,10 @@
             </div>
 
             <!-- Extra Code Success Result Display -->
-            <div v-if="extraCodeResult" class="mt-4 break-all">
+            <div
+              v-if="extraCodeResult"
+              class="mt-4 break-all"
+            >
               <div class="alert alert-success text-base-content alert-outline">
                 <div class="text-sm">
                   <div class="font-medium">
@@ -77,32 +97,36 @@
               </div>
               <div>
                 <!-- Result Value -->
-                <div v-if="extraCodeResult.result !== null" class="mt-2">
-                  <div class="font-medium text-xs opacity-80">Result:</div>
+                <div
+                  v-if="extraCodeResult.result !== null"
+                  class="mt-2"
+                >
+                  <div class="font-medium text-xs opacity-80">
+                    Result:
+                  </div>
                   <pre
                     class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto"
-                    >{{ formatResult(extraCodeResult.result) }}</pre
-                  >
+                  >{{ formatResult(extraCodeResult.result) }}</pre>
                 </div>
 
                 <!-- Stdout -->
-                <div v-if="extraCodeResult.stdout" class="mt-2">
-                  <div class="font-medium text-xs opacity-80">Output:</div>
+                <div
+                  v-if="extraCodeResult.stdout"
+                  class="mt-2"
+                >
+                  <div class="font-medium text-xs opacity-80">
+                    Output:
+                  </div>
                   <pre
                     class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto"
-                    >{{ extraCodeResult.stdout }}</pre
-                  >
+                  >{{ extraCodeResult.stdout }}</pre>
                 </div>
 
                 <!-- Performance Stats -->
                 <div class="mt-2 text-xs opacity-80 flex gap-4">
-                  <span
-                    >Gas: {{ formatNumber(extraCodeResult.gasConsumed) }}</span
-                  >
-                  <span
-                    >Nodes:
-                    {{ formatNumber(extraCodeResult.nodesExecuted) }}</span
-                  >
+                  <span>Gas: {{ formatNumber(extraCodeResult.gasConsumed) }}</span>
+                  <span>Nodes:
+                    {{ formatNumber(extraCodeResult.nodesExecuted) }}</span>
                 </div>
 
                 <!-- Transaction Info (for actual transactions) -->
@@ -110,7 +134,9 @@
                   v-if="!extraCodeResult.simulate && extraCodeResult.txHash"
                   class="mt-2"
                 >
-                  <div class="font-medium text-xs opacity-80">Transaction:</div>
+                  <div class="font-medium text-xs opacity-80">
+                    Transaction:
+                  </div>
                   <div class="text-xs bg-base-200 p-2 mt-1">
                     <div>
                       Hash:
@@ -130,22 +156,22 @@
             <!-- Action Buttons -->
             <div class="mt-4 flex justify-end gap-2">
               <button
-                @click="simulateExtraCode"
                 class="btn btn-sm btn-accent"
                 :disabled="
                   isSimulatingExtraCode ||
-                  !extraCode.trim() ||
-                  !selectedExecutor
+                    !extraCode.trim() ||
+                    !selectedExecutor
                 "
+                @click="simulateExtraCode"
               >
                 {{ isSimulatingExtraCode ? "Simulating..." : "Simulate" }}
               </button>
               <button
-                @click="executeExtraCode"
                 class="btn btn-sm btn-primary"
                 :disabled="
                   isExecutingExtraCode || !extraCode.trim() || !selectedExecutor
                 "
+                @click="executeExtraCode"
               >
                 {{ isExecutingExtraCode ? "Sending..." : "Tx" }}
               </button>
@@ -155,9 +181,16 @@
       </div>
 
       <!-- No Functions Message -->
-      <div v-if="functions.length === 0" class="text-center py-8 text-gray-500">
-        <div class="text-sm">No functions found</div>
-        <div class="text-xs mt-1">Add function definitions to your script</div>
+      <div
+        v-if="functions.length === 0"
+        class="text-center py-8 text-gray-500"
+      >
+        <div class="text-sm">
+          No functions found
+        </div>
+        <div class="text-xs mt-1">
+          Add function definitions to your script
+        </div>
       </div>
 
       <div
@@ -169,24 +202,31 @@
           type="checkbox"
           :checked="isCollapsed(func.function_name)"
           @change="toggleCollapse(func.function_name)"
-        />
-        <div class="collapse-title font-semibold">{{ func.function_name }}</div>
+        >
+        <div class="collapse-title font-semibold">
+          {{ func.function_name }}
+        </div>
         <div class="collapse-content">
           <!-- Function Docstring -->
-          <div v-if="func.docstring" class="mb-4 p-3 bg-base-200 -md">
-            <div class="text-sm whitespace-pre-wrap">{{ func.docstring }}</div>
+          <div
+            v-if="func.docstring"
+            class="mb-4 p-3 bg-base-200 -md"
+          >
+            <div class="text-sm whitespace-pre-wrap">
+              {{ func.docstring }}
+            </div>
           </div>
 
           <!-- Parameters Section -->
           <div v-if="hasParameters(func)">
             <label class="block text-sm font-medium mb-2">Parameters:</label>
             <textarea
-              v-model="kwargsInputs[func.function_name]"
               ref="textareas"
+              v-model="kwargsInputs[func.function_name]"
               class="textarea textarea-bordered w-full text-sm font-mono resize-none"
               :placeholder="getKwargsPlaceholder(func)"
               @input="autoResize($event)"
-            ></textarea>
+            />
             <div
               v-if="jsonErrors[func.function_name]"
               class="text-error text-xs mt-1"
@@ -194,7 +234,10 @@
               {{ jsonErrors[func.function_name] }}
             </div>
           </div>
-          <div v-else class="text-center py-4 text-base-content/60 text-sm">
+          <div
+            v-else
+            class="text-center py-4 text-base-content/60 text-sm"
+          >
             {{ getNoParametersMessage(func) }}
           </div>
 
@@ -214,11 +257,12 @@
               <div>
                 <!-- Error Details -->
                 <div class="mt-2">
-                  <div class="font-medium text-xs opacity-80">Error:</div>
+                  <div class="font-medium text-xs opacity-80">
+                    Error:
+                  </div>
                   <pre
                     class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-words"
-                    >{{ executionErrors[func.function_name] }}</pre
-                  >
+                  >{{ executionErrors[func.function_name] }}</pre>
                   <div
                     v-if="executionException[func.function_name]"
                     class="mt-2 text-xs"
@@ -266,13 +310,14 @@
                   v-if="executionResults[func.function_name].result !== null"
                   class="mt-2"
                 >
-                  <div class="font-medium text-xs opacity-80">Result:</div>
+                  <div class="font-medium text-xs opacity-80">
+                    Result:
+                  </div>
                   <pre
                     class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto"
-                    >{{
+                  >{{
                       formatResult(executionResults[func.function_name].result)
-                    }}</pre
-                  >
+                  }}</pre>
                 </div>
 
                 <!-- Stdout -->
@@ -280,42 +325,41 @@
                   v-if="executionResults[func.function_name].stdout"
                   class="mt-2"
                 >
-                  <div class="font-medium text-xs opacity-80">Output:</div>
+                  <div class="font-medium text-xs opacity-80">
+                    Output:
+                  </div>
                   <pre
                     class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto"
-                    >{{ executionResults[func.function_name].stdout }}</pre
-                  >
+                  >{{ executionResults[func.function_name].stdout }}</pre>
                 </div>
 
                 <!-- Performance Stats -->
                 <div class="mt-2 text-xs opacity-80 flex gap-4">
-                  <span
-                    >Gas:
+                  <span>Gas:
                     {{
                       formatNumber(
                         executionResults[func.function_name].gasConsumed
                       )
-                    }}</span
-                  >
-                  <span
-                    >Nodes:
+                    }}</span>
+                  <span>Nodes:
                     {{
                       formatNumber(
                         executionResults[func.function_name].nodesExecuted
                       )
-                    }}</span
-                  >
+                    }}</span>
                 </div>
 
                 <!-- Transaction Info (for actual transactions) -->
                 <div
                   v-if="
                     !executionResults[func.function_name].simulate &&
-                    executionResults[func.function_name].txHash
+                      executionResults[func.function_name].txHash
                   "
                   class="mt-2"
                 >
-                  <div class="font-medium text-xs opacity-80">Transaction:</div>
+                  <div class="font-medium text-xs opacity-80">
+                    Transaction:
+                  </div>
                   <div class="text-xs bg-base-200 p-2 mt-1">
                     <div>
                       Hash:
@@ -339,24 +383,24 @@
           <!-- Action Buttons -->
           <div class="mt-4 flex justify-end gap-2">
             <button
-              @click="simulateFunction(func)"
               class="btn btn-sm btn-accent"
               :disabled="
                 isSimulating[func.function_name] ||
-                hasJsonError(func.function_name)
+                  hasJsonError(func.function_name)
               "
+              @click="simulateFunction(func)"
             >
               {{
                 isSimulating[func.function_name] ? "Simulating..." : "Simulate"
               }}
             </button>
             <button
-              @click="executeFunction(func)"
               class="btn btn-sm btn-primary"
               :disabled="
                 isExecuting[func.function_name] ||
-                hasJsonError(func.function_name)
+                  hasJsonError(func.function_name)
               "
+              @click="executeFunction(func)"
             >
               {{ isExecuting[func.function_name] ? "Sending..." : "Tx" }}
             </button>

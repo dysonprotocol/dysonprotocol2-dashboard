@@ -2,20 +2,24 @@
   <div class="join">
     <input
       :value="amountDisplay"
-      @input="onAmountInput"
       type="number"
       min="0"
       step="0.000001"
       placeholder="Amount"
       class="input input-md join-item"
       :disabled="disabled"
-    />
+      @input="onAmountInput"
+    >
     <select
       v-model="selectedBaseDenom"
       class="select select-md join-item"
       :disabled="disabled || options.length === 0"
     >
-      <option v-for="opt in options" :key="opt.base" :value="opt.base">
+      <option
+        v-for="opt in options"
+        :key="opt.base"
+        :value="opt.base"
+      >
         {{ opt.display }}
       </option>
     </select>

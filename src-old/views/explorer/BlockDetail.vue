@@ -4,7 +4,12 @@
     <div class="breadcrumbs text-sm">
       <ul>
         <li>
-          <router-link to="/blocks" class="link link-hover">Blocks</router-link>
+          <router-link
+            to="/blocks"
+            class="link link-hover"
+          >
+            Blocks
+          </router-link>
         </li>
         <li>Block {{ height }}</li>
       </ul>
@@ -12,7 +17,9 @@
 
     <!-- Block Header -->
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">Block {{ height }}</h1>
+      <h1 class="text-2xl font-bold">
+        Block {{ height }}
+      </h1>
       <div class="flex gap-2">
         <router-link
           v-if="prevHeight"
@@ -32,20 +39,32 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="flex justify-center items-center py-12">
-      <span class="loading loading-spinner loading-lg"></span>
+    <div
+      v-if="isLoading"
+      class="flex justify-center items-center py-12"
+    >
+      <span class="loading loading-spinner loading-lg" />
     </div>
 
     <!-- Error State -->
-    <div v-else-if="hasError" class="alert alert-error">
+    <div
+      v-else-if="hasError"
+      class="alert alert-error"
+    >
       <span>{{ errorMessage }}</span>
     </div>
 
     <!-- Block Data -->
-    <DisplayBlock v-else-if="blockData" :blockData="blockData" />
+    <DisplayBlock
+      v-else-if="blockData"
+      :block-data="blockData"
+    />
 
     <!-- Not Found State -->
-    <div v-else class="alert alert-warning">
+    <div
+      v-else
+      class="alert alert-warning"
+    >
       <span>Block {{ height }} not found.</span>
     </div>
   </section>

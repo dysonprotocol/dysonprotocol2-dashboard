@@ -1,11 +1,15 @@
 <template>
   <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">Crontasks</h2>
+    <h2 class="text-xl font-bold mb-4">
+      Crontasks
+    </h2>
 
     <!-- Section 1: Scheduled (by timestamp) -->
     <div class="bg-base-200 p-4 rounded mb-6">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold">Scheduled (by timestamp)</h3>
+        <h3 class="font-semibold">
+          Scheduled (by timestamp)
+        </h3>
         <div class="flex gap-2 items-end">
           <label class="form-control w-28">
             <span class="label-text">limit</span>
@@ -15,7 +19,7 @@
               max="200"
               type="number"
               class="input input-bordered input-sm"
-            />
+            >
           </label>
           <label class="form-control min-w-64">
             <span class="label-text">pagination.key</span>
@@ -24,9 +28,14 @@
               type="text"
               class="input input-bordered input-sm"
               placeholder="base64 page key"
-            />
+            >
           </label>
-          <button class="btn btn-sm" @click="loadScheduled">Reload</button>
+          <button
+            class="btn btn-sm"
+            @click="loadScheduled"
+          >
+            Reload
+          </button>
           <button
             class="btn btn-ghost btn-sm"
             :disabled="!scheduled.nextKey"
@@ -50,13 +59,17 @@
         </div>
       </div>
       <div class="text-sm mb-2">
-        <span v-if="scheduled.error" class="text-error">{{
+        <span
+          v-if="scheduled.error"
+          class="text-error"
+        >{{
           scheduled.error
         }}</span>
         <span v-else-if="scheduled.loading">Loading…</span>
-        <span v-else class="opacity-70"
-          >{{ scheduled.items.length }} task(s)</span
-        >
+        <span
+          v-else
+          class="opacity-70"
+        >{{ scheduled.items.length }} task(s)</span>
       </div>
       <div class="overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
@@ -71,30 +84,49 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="t in scheduled.items" :key="t.task_id">
+            <tr
+              v-for="t in scheduled.items"
+              :key="t.task_id"
+            >
               <td class="font-mono">
-                <router-link class="link" :to="`/tasks/${t.task_id}`">{{
-                  t.task_id
-                }}</router-link>
-              </td>
-              <td class="font-mono break-all">{{ t.creator }}</td>
-              <td class="font-mono">{{ t.scheduled_timestamp }}</td>
-              <td class="font-mono">{{ t.expiry_timestamp }}</td>
-              <td class="font-mono">{{ t.task_gas_limit }}</td>
-              <td class="font-mono">
-                <span v-if="t.task_gas_fee"
-                  >{{ t.task_gas_fee.amount }} {{ t.task_gas_fee.denom }}</span
+                <router-link
+                  class="link"
+                  :to="`/tasks/${t.task_id}`"
                 >
+                  {{
+                    t.task_id
+                  }}
+                </router-link>
+              </td>
+              <td class="font-mono break-all">
+                {{ t.creator }}
+              </td>
+              <td class="font-mono">
+                {{ t.scheduled_timestamp }}
+              </td>
+              <td class="font-mono">
+                {{ t.expiry_timestamp }}
+              </td>
+              <td class="font-mono">
+                {{ t.task_gas_limit }}
+              </td>
+              <td class="font-mono">
+                <span v-if="t.task_gas_fee">{{ t.task_gas_fee.amount }} {{ t.task_gas_fee.denom }}</span>
               </td>
             </tr>
             <tr
               v-if="
                 !scheduled.loading &&
-                !scheduled.error &&
-                scheduled.items.length === 0
+                  !scheduled.error &&
+                  scheduled.items.length === 0
               "
             >
-              <td colspan="6" class="text-center opacity-70">No tasks</td>
+              <td
+                colspan="6"
+                class="text-center opacity-70"
+              >
+                No tasks
+              </td>
             </tr>
           </tbody>
         </table>
@@ -104,7 +136,9 @@
     <!-- Section 2: Pending (by gas) -->
     <div class="bg-base-200 p-4 rounded mb-6">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold">Pending (by gas price)</h3>
+        <h3 class="font-semibold">
+          Pending (by gas price)
+        </h3>
         <div class="flex gap-2 items-end">
           <label class="form-control w-28">
             <span class="label-text">limit</span>
@@ -114,7 +148,7 @@
               max="200"
               type="number"
               class="input input-bordered input-sm"
-            />
+            >
           </label>
           <label class="form-control w-28">
             <span class="label-text">offset</span>
@@ -123,9 +157,14 @@
               min="0"
               type="number"
               class="input input-bordered input-sm"
-            />
+            >
           </label>
-          <button class="btn btn-sm" @click="loadPending">Reload</button>
+          <button
+            class="btn btn-sm"
+            @click="loadPending"
+          >
+            Reload
+          </button>
           <button
             class="btn btn-ghost btn-sm"
             :disabled="pending.offset <= 0"
@@ -148,12 +187,16 @@
         </div>
       </div>
       <div class="text-sm mb-2">
-        <span v-if="pending.error" class="text-error">{{ pending.error }}</span>
+        <span
+          v-if="pending.error"
+          class="text-error"
+        >{{ pending.error }}</span>
         <span v-else-if="pending.loading">Loading…</span>
-        <span v-else class="opacity-70"
-          >{{ pending.items.length }} task(s) — total
-          {{ pending.total || "?" }}</span
-        >
+        <span
+          v-else
+          class="opacity-70"
+        >{{ pending.items.length }} task(s) — total
+          {{ pending.total || "?" }}</span>
       </div>
       <div class="overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
@@ -167,28 +210,45 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(t, i) in pending.items" :key="t.task_id">
-              <td class="font-mono">{{ pending.offset + i + 1 }}</td>
+            <tr
+              v-for="(t, i) in pending.items"
+              :key="t.task_id"
+            >
               <td class="font-mono">
-                <router-link class="link" :to="`/tasks/${t.task_id}`">{{
-                  t.task_id
-                }}</router-link>
+                {{ pending.offset + i + 1 }}
               </td>
-              <td class="font-mono break-all">{{ t.creator }}</td>
               <td class="font-mono">
-                <span v-if="t.task_gas_price"
-                  >{{ t.task_gas_price.amount }}
-                  {{ t.task_gas_price.denom }}</span
+                <router-link
+                  class="link"
+                  :to="`/tasks/${t.task_id}`"
                 >
+                  {{
+                    t.task_id
+                  }}
+                </router-link>
               </td>
-              <td class="font-mono">{{ pending.offset + i }}</td>
+              <td class="font-mono break-all">
+                {{ t.creator }}
+              </td>
+              <td class="font-mono">
+                <span v-if="t.task_gas_price">{{ t.task_gas_price.amount }}
+                  {{ t.task_gas_price.denom }}</span>
+              </td>
+              <td class="font-mono">
+                {{ pending.offset + i }}
+              </td>
             </tr>
             <tr
               v-if="
                 !pending.loading && !pending.error && pending.items.length === 0
               "
             >
-              <td colspan="5" class="text-center opacity-70">No tasks</td>
+              <td
+                colspan="5"
+                class="text-center opacity-70"
+              >
+                No tasks
+              </td>
             </tr>
           </tbody>
         </table>
@@ -198,7 +258,9 @@
     <!-- Section 3: Finished (DONE/FAILED/EXPIRED by timestamp) -->
     <div class="bg-base-200 p-4 rounded">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold">Finished (by timestamp)</h3>
+        <h3 class="font-semibold">
+          Finished (by timestamp)
+        </h3>
         <div class="flex gap-2 items-end">
           <label class="form-control">
             <span class="label-text">status</span>
@@ -219,7 +281,7 @@
               max="200"
               type="number"
               class="input input-bordered input-sm"
-            />
+            >
           </label>
           <label class="form-control min-w-64">
             <span class="label-text">pagination.key</span>
@@ -228,9 +290,14 @@
               type="text"
               class="input input-bordered input-sm"
               placeholder="base64 page key"
-            />
+            >
           </label>
-          <button class="btn btn-sm" @click="loadFinished">Reload</button>
+          <button
+            class="btn btn-sm"
+            @click="loadFinished"
+          >
+            Reload
+          </button>
           <button
             class="btn btn-ghost btn-sm"
             :disabled="!finished.nextKey"
@@ -254,13 +321,17 @@
         </div>
       </div>
       <div class="text-sm mb-2">
-        <span v-if="finished.error" class="text-error">{{
+        <span
+          v-if="finished.error"
+          class="text-error"
+        >{{
           finished.error
         }}</span>
         <span v-else-if="finished.loading">Loading…</span>
-        <span v-else class="opacity-70"
-          >{{ finished.items.length }} task(s)</span
-        >
+        <span
+          v-else
+          class="opacity-70"
+        >{{ finished.items.length }} task(s)</span>
       </div>
       <div class="overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
@@ -275,26 +346,47 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="t in finished.items" :key="t.task_id">
+            <tr
+              v-for="t in finished.items"
+              :key="t.task_id"
+            >
               <td class="font-mono">
-                <router-link class="link" :to="`/tasks/${t.task_id}`">{{
-                  t.task_id
-                }}</router-link>
+                <router-link
+                  class="link"
+                  :to="`/tasks/${t.task_id}`"
+                >
+                  {{
+                    t.task_id
+                  }}
+                </router-link>
               </td>
               <td>{{ t.status }}</td>
-              <td class="font-mono">{{ t.creation_time }}</td>
-              <td class="font-mono">{{ t.execution_timestamp }}</td>
-              <td class="font-mono">{{ t.task_gas_consumed }}</td>
-              <td class="font-mono break-all">{{ t.error_log }}</td>
+              <td class="font-mono">
+                {{ t.creation_time }}
+              </td>
+              <td class="font-mono">
+                {{ t.execution_timestamp }}
+              </td>
+              <td class="font-mono">
+                {{ t.task_gas_consumed }}
+              </td>
+              <td class="font-mono break-all">
+                {{ t.error_log }}
+              </td>
             </tr>
             <tr
               v-if="
                 !finished.loading &&
-                !finished.error &&
-                finished.items.length === 0
+                  !finished.error &&
+                  finished.items.length === 0
               "
             >
-              <td colspan="6" class="text-center opacity-70">No tasks</td>
+              <td
+                colspan="6"
+                class="text-center opacity-70"
+              >
+                No tasks
+              </td>
             </tr>
           </tbody>
         </table>

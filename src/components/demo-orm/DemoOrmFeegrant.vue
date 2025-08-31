@@ -1,19 +1,52 @@
 <template>
-  <h2 class="text-xl font-semibold" id="feegrant">Feegrant</h2>
+  <h2
+    id="feegrant"
+    class="text-xl font-semibold"
+  >
+    Feegrant
+  </h2>
   <section class="grid gap-6 md:grid-cols-2">
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Feegrant</h3>
+      <h3 class="font-semibold">
+        Feegrant
+      </h3>
       <div class="grid gap-2 md:grid-cols-2">
-        <input v-model="fgGranter" class="input w-full" placeholder="granter" />
-        <input v-model="fgGrantee" class="input w-full" placeholder="grantee" />
+        <input
+          v-model="fgGranter"
+          class="input w-full"
+          placeholder="granter"
+        >
+        <input
+          v-model="fgGrantee"
+          class="input w-full"
+          placeholder="grantee"
+        >
       </div>
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="loadFeeAllowance">Allowance</button>
-        <button class="btn btn-primary" @click="loadFeeAllowancesForGrantee">By Grantee</button>
-        <button class="btn btn-primary" @click="loadFeeAllowancesByGranter">By Granter</button>
+        <button
+          class="btn btn-primary"
+          @click="loadFeeAllowance"
+        >
+          Allowance
+        </button>
+        <button
+          class="btn btn-primary"
+          @click="loadFeeAllowancesForGrantee"
+        >
+          By Grantee
+        </button>
+        <button
+          class="btn btn-primary"
+          @click="loadFeeAllowancesByGranter"
+        >
+          By Granter
+        </button>
       </div>
       <ul class="list-disc pl-6 text-sm max-h-40 overflow-auto">
-        <li v-for="g in feegrants" :key="g.granter + ':' + g.grantee">
+        <li
+          v-for="g in feegrants"
+          :key="g.granter + ':' + g.grantee"
+        >
           <span class="font-mono">{{ g.granter }}</span> →
           <span class="font-mono">{{ g.grantee }}</span>
           <div class="opacity-70">
@@ -21,7 +54,10 @@
           </div>
         </li>
       </ul>
-      <form class="space-y-2" @submit.prevent="submitFeeGrant">
+      <form
+        class="space-y-2"
+        @submit.prevent="submitFeeGrant"
+      >
         <fieldset class="space-y-2">
           <legend class="text-sm font-semibold opacity-70">
             /cosmos.feegrant.v1beta1.MsgGrantAllowance
@@ -30,24 +66,58 @@
             v-model="fgAllowanceJson"
             class="input w-full h-24"
             placeholder="allowance JSON (BasicAllowance, PeriodicAllowance, AllowedMsgAllowance)"
-          ></textarea>
+          />
           <div class="flex flex-wrap gap-2">
-            <button class="btn btn-primary" type="button" @click="prefillFeegrantBasic">
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click="prefillFeegrantBasic"
+            >
               Prefill BasicAllowance
             </button>
-            <button class="btn btn-primary" type="button" @click="prefillFeegrantPeriodic">
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click="prefillFeegrantPeriodic"
+            >
               Prefill PeriodicAllowance
             </button>
-            <button class="btn btn-primary" type="button" @click="prefillFeegrantAllowedMsgs">
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click="prefillFeegrantAllowedMsgs"
+            >
               Prefill AllowedMsgAllowance
             </button>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-primary" type="submit">Grant</button>
-            <button class="btn btn-primary" type="button" @click="submitFeeRevoke">Revoke</button>
-            <button class="btn btn-primary" type="button" @click="submitFeePrune">Prune</button>
+            <button
+              class="btn btn-primary"
+              type="submit"
+            >
+              Grant
+            </button>
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click="submitFeeRevoke"
+            >
+              Revoke
+            </button>
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click="submitFeePrune"
+            >
+              Prune
+            </button>
           </div>
-          <div v-if="fgError" class="text-sm text-red-600">{{ fgError }}</div>
+          <div
+            v-if="fgError"
+            class="text-sm text-red-600"
+          >
+            {{ fgError }}
+          </div>
         </fieldset>
       </form>
     </div>

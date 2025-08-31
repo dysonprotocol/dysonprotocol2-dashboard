@@ -2,15 +2,7 @@ import { Model } from 'pinia-orm'
 import type { Request } from '@pinia-orm/axios'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import NftItem from '../nft/NftItem'
-
-type WalletLike = {
-  sendMsg: (args: {
-    msg: unknown
-    gasLimit?: number | 'auto'
-    memo?: string
-    executorAddress?: string
-  }) => Promise<{ success: boolean; rawLog?: string }>
-}
+import type { WalletLike } from '@/orm/types/WalletLike'
 
 export class NameserviceRegistration extends Model {
   static entity = 'nameservice_registration'

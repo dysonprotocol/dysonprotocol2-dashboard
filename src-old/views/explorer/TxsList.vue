@@ -2,7 +2,9 @@
   <div class="space-y-6 p-6">
     <!-- Header -->
     <div>
-      <h1 class="text-2xl font-bold text-base-content">Transaction Explorer</h1>
+      <h1 class="text-2xl font-bold text-base-content">
+        Transaction Explorer
+      </h1>
       <p class="text-base-content/60">
         Search and explore blockchain transactions
       </p>
@@ -11,11 +13,16 @@
     <!-- Search Form -->
     <div class="card bg-base-100 shadow-xl">
       <div class="card-body">
-        <h2 class="card-title">Search Transactions</h2>
+        <h2 class="card-title">
+          Search Transactions
+        </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Column 1: Query + Options -->
-          <form @submit.prevent="handleSearch" class="space-y-4">
+          <form
+            class="space-y-4"
+            @submit.prevent="handleSearch"
+          >
             <!-- Query Input -->
             <div class="form-control">
               <label class="label">
@@ -26,7 +33,7 @@
                 type="text"
                 placeholder="e.g. tx.height=123"
                 class="input input-bordered w-full"
-              />
+              >
             </div>
 
             <!-- Advanced Options (always visible) -->
@@ -41,8 +48,12 @@
                     v-model="searchForm.orderBy"
                     class="select select-bordered"
                   >
-                    <option value="ORDER_BY_DESC">Newest First</option>
-                    <option value="ORDER_BY_ASC">Oldest First</option>
+                    <option value="ORDER_BY_DESC">
+                      Newest First
+                    </option>
+                    <option value="ORDER_BY_ASC">
+                      Oldest First
+                    </option>
                   </select>
                 </div>
 
@@ -55,10 +66,18 @@
                     v-model="searchForm.limit"
                     class="select select-bordered"
                   >
-                    <option :value="10">10</option>
-                    <option :value="25">25</option>
-                    <option :value="50">50</option>
-                    <option :value="100">100</option>
+                    <option :value="10">
+                      10
+                    </option>
+                    <option :value="25">
+                      25
+                    </option>
+                    <option :value="50">
+                      50
+                    </option>
+                    <option :value="100">
+                      100
+                    </option>
                   </select>
                 </div>
 
@@ -72,7 +91,7 @@
                     type="number"
                     min="1"
                     class="input input-bordered"
-                  />
+                  >
                 </div>
               </div>
             </div>
@@ -85,14 +104,17 @@
                 :class="{ loading: isLoading }"
                 :disabled="isLoading"
               >
-                <MagnifyingGlassIcon v-if="!isLoading" class="w-4 h-4 mr-2" />
+                <MagnifyingGlassIcon
+                  v-if="!isLoading"
+                  class="w-4 h-4 mr-2"
+                />
                 Search Transactions
               </button>
               <button
                 v-if="hasResults"
                 type="button"
-                @click="clearResults"
                 class="btn btn-ghost"
+                @click="clearResults"
               >
                 Clear Results
               </button>
@@ -101,14 +123,19 @@
 
           <!-- Column 2: Quick Links -->
           <div>
-            <div class="font-semibold mb-3">Quick Links</div>
+            <div class="font-semibold mb-3">
+              Quick Links
+            </div>
             <div
               v-if="wallets.length === 0"
               class="text-sm text-base-content/60"
             >
               Connect or unlock a wallet to see quick links.
             </div>
-            <div v-else class="space-y-4">
+            <div
+              v-else
+              class="space-y-4"
+            >
               <div
                 v-for="(w, idx) in wallets"
                 :key="w.address || idx"
@@ -179,25 +206,38 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="text-center py-12">
-      <span class="loading loading-spinner loading-lg"></span>
-      <p class="mt-4 text-base-content/60">Searching transactions...</p>
+    <div
+      v-if="isLoading"
+      class="text-center py-12"
+    >
+      <span class="loading loading-spinner loading-lg" />
+      <p class="mt-4 text-base-content/60">
+        Searching transactions...
+      </p>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="alert alert-error">
+    <div
+      v-else-if="error"
+      class="alert alert-error"
+    >
       <span>Error: {{ error }}</span>
     </div>
 
     <!-- Results -->
-    <div v-else-if="searchResults" class="space-y-4">
+    <div
+      v-else-if="searchResults"
+      class="space-y-4"
+    >
       <!-- Pruned history warning -->
-      <div v-if="limitedFromHeight" class="alert alert-warning">
+      <div
+        v-if="limitedFromHeight"
+        class="alert alert-warning"
+      >
         <span>
           This node serves cometbft transactions starting from height
           {{ limitedFromHeight }}. Your search was adjusted to include
-          <code class="px-1">tx.height&gt;={{ limitedFromHeight }}</code
-          >. Note, this is managed by the node's
+          <code class="px-1">tx.height&gt;={{ limitedFromHeight }}</code>. Note, this is managed by the node's
           <code>min-retain-blocks</code> setting and is different from the
           <code>pruning</code> settings.
         </span>
@@ -208,23 +248,32 @@
           Search Results ({{ searchResults.tx_responses?.length || 0 }}
           transactions)
         </h2>
-        <div v-if="searchResults.total" class="text-sm text-base-content/60">
+        <div
+          v-if="searchResults.total"
+          class="text-sm text-base-content/60"
+        >
           Total: {{ searchResults.total }}
         </div>
       </div>
 
       <!-- Transaction List -->
-      <div v-if="searchResults.tx_responses?.length > 0" class="space-y-4">
+      <div
+        v-if="searchResults.tx_responses?.length > 0"
+        class="space-y-4"
+      >
         <div
           v-for="(tx, index) in searchResults.tx_responses"
           :key="tx.txhash || index"
         >
-          <DisplayTx :txData="toTxData(tx)" />
+          <DisplayTx :tx-data="toTxData(tx)" />
         </div>
       </div>
 
       <!-- No Results -->
-      <div v-else class="text-center py-12">
+      <div
+        v-else
+        class="text-center py-12"
+      >
         <p class="text-base-content/60">
           No transactions found matching your search criteria.
         </p>

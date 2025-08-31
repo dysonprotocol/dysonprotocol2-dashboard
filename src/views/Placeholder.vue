@@ -7,5 +7,7 @@ const title = computed(() => (route.meta?.title as string) || 'Placeholder')
 </script>
 
 <template>
-  <div class="p-4 text-sm text-gray-500">{{ title }}</div>
+  <div class="p-4 text-sm text-gray-500">
+    {{ title }}
+  </div>
 </template>

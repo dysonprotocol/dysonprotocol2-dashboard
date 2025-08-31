@@ -1,12 +1,12 @@
 <template>
   <Tooltip :text="tooltipText">
     <span
-      @click="copy"
       :title="address"
       class="font-mono cursor-pointer hover:text-primary text-xs break-all"
+      @click="copy"
     >
       {{
-        truncate && truncate < address.length
+        truncate && truncate < address.length / 2
           ? `${address.slice(0, truncate + 5)}...${address.slice(-truncate)}`
           : address
       }}

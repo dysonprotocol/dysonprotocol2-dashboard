@@ -1,10 +1,15 @@
 <template>
   <div>
     <!-- Create Class (when browsing via /names/:name/nfts) -->
-    <div v-if="nameParam && showClassForm" class="card bg-base-200 mb-4">
+    <div
+      v-if="nameParam && showClassForm"
+      class="card bg-base-200 mb-4"
+    >
       <div class="card-body gap-3">
         <div class="flex items-center justify-between">
-          <div class="text-lg font-medium">Create NFT Class</div>
+          <div class="text-lg font-medium">
+            Create NFT Class
+          </div>
           <button
             class="btn btn-sm btn-primary"
             :disabled="!canSaveClass || isLoading"
@@ -19,48 +24,65 @@
             class="input input-bordered w-full"
             :placeholder="`class id (e.g. ${nameParam}/foo)`"
             :disabled="false"
-          />
+          >
           <input
             v-model.trim="classForm.name"
             class="input input-bordered w-full"
             placeholder="name (optional)"
             :disabled="false"
-          />
+          >
           <input
             v-model.trim="classForm.symbol"
             class="input input-bordered w-full"
             placeholder="symbol (optional)"
             :disabled="false"
-          />
+          >
           <input
             v-model.trim="classForm.uri"
             class="input input-bordered w-full"
             placeholder="uri (optional)"
             :disabled="false"
-          />
+          >
         </div>
         <textarea
           v-model.trim="classForm.description"
           class="textarea textarea-bordered w-full"
           placeholder="description (optional)"
           :disabled="false"
-        ></textarea>
+        />
         <div class="text-xs opacity-70">
           Owner: <span class="font-mono">{{ destAddress }}</span>
-          <span v-if="isDestImported && !isDestUnlocked" class="text-warning"
-            >(unlock this wallet to enable)</span
-          >
+          <span
+            v-if="isDestImported && !isDestUnlocked"
+            class="text-warning"
+          >(unlock this wallet to enable)</span>
         </div>
       </div>
     </div>
 
-    <div v-if="isLoading" class="text-base-content/70">Loading…</div>
-    <div v-else-if="error" class="text-error">{{ error }}</div>
+    <div
+      v-if="isLoading"
+      class="text-base-content/70"
+    >
+      Loading…
+    </div>
+    <div
+      v-else-if="error"
+      class="text-error"
+    >
+      {{ error }}
+    </div>
     <div v-else>
-      <div v-if="classesView.length === 0" class="text-base-content/70">
+      <div
+        v-if="classesView.length === 0"
+        class="text-base-content/70"
+      >
         No classes found.
       </div>
-      <div v-else class="overflow-x-auto">
+      <div
+        v-else
+        class="overflow-x-auto"
+      >
         <table class="table">
           <thead>
             <tr>
@@ -72,22 +94,28 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="c in classesView" :key="c.id">
+            <tr
+              v-for="c in classesView"
+              :key="c.id"
+            >
               <td class="font-mono">
                 <router-link
                   :to="`/names/${encodeURIComponent(
                     nameParam || ''
                   )}/nfts/${encodeURIComponent(c.id)}`"
                   class="link"
-                  >{{ c.id }}</router-link
                 >
+                  {{ c.id }}
+                </router-link>
               </td>
               <td>{{ c.name || "—" }}</td>
               <td>{{ c.symbol || "—" }}</td>
               <td class="whitespace-pre-wrap break-words">
                 {{ c.description || "—" }}
               </td>
-              <td class="font-mono">{{ supplyMap[c.id] || "—" }}</td>
+              <td class="font-mono">
+                {{ supplyMap[c.id] || "—" }}
+              </td>
             </tr>
           </tbody>
         </table>

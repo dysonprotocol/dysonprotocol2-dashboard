@@ -6,15 +6,12 @@ export default defineConfig({
   plugins: [vue()],
   test: {
     environment: 'jsdom',
+    include: ['src/**/*.{test,spec}.{js,ts,vue}'],
+    setupFiles: ['./src/test-setup.ts'],
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      'monaco-editor': path.resolve(__dirname, 'tests/mocks/monaco.ts'),
-      '/workspaces/dysonprotocol2-dashboard/src/utils/monacoSetup.js': path.resolve(
-        __dirname,
-        'tests/mocks/empty.ts'
-      ),
     },
   },
 })

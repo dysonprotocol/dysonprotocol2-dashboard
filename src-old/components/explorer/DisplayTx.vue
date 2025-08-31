@@ -3,61 +3,100 @@
     <!-- Transaction Header -->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
-        <h3 class="text-lg font-semibold">Transaction</h3>
+        <h3 class="text-lg font-semibold">
+          Transaction
+        </h3>
         <div
           class="badge"
           :class="
             txStatus === 'success'
               ? 'badge-success'
               : txStatus === 'failed'
-              ? 'badge-error'
-              : 'badge-warning'
+                ? 'badge-error'
+                : 'badge-warning'
           "
         >
           {{ txStatus.toUpperCase() }}
         </div>
       </div>
-      <div v-if="txData.hash" class="text-sm">
-        <router-link :to="`/txs/${txData.hash}`" class="link link-primary">
-          <TxHashDisplay :hash="txData.hash" :truncate="8" />
+      <div
+        v-if="txData.hash"
+        class="text-sm"
+      >
+        <router-link
+          :to="`/txs/${txData.hash}`"
+          class="link link-primary"
+        >
+          <TxHashDisplay
+            :hash="txData.hash"
+            :truncate="8"
+          />
         </router-link>
       </div>
     </div>
 
     <!-- Transaction Metadata as YAML -->
     <div class="mb-6">
-      <h4 class="text-md font-medium mb-2">Metadata</h4>
+      <h4 class="text-md font-medium mb-2">
+        Metadata
+      </h4>
       <div class="bg-base-200 text-base-content overflow-x-auto">
         <pre><code>{{ yamlMetadata }}</code></pre>
       </div>
     </div>
 
     <!-- Gas and Fee Information -->
-    <div v-if="hasGasInfo" class="mb-6">
-      <h4 class="text-md font-medium mb-2">Gas & Fees</h4>
+    <div
+      v-if="hasGasInfo"
+      class="mb-6"
+    >
+      <h4 class="text-md font-medium mb-2">
+        Gas & Fees
+      </h4>
       <div class="stats stats-horizontal shadow bg-base-200 w-full">
         <div class="stat">
-          <div class="stat-title">Gas Used</div>
-          <div class="stat-value text-sm">{{ formatNumber(gasUsed) }}</div>
+          <div class="stat-title">
+            Gas Used
+          </div>
+          <div class="stat-value text-sm">
+            {{ formatNumber(gasUsed) }}
+          </div>
         </div>
         <div class="stat">
-          <div class="stat-title">Gas Wanted</div>
-          <div class="stat-value text-sm">{{ formatNumber(gasWanted) }}</div>
+          <div class="stat-title">
+            Gas Wanted
+          </div>
+          <div class="stat-value text-sm">
+            {{ formatNumber(gasWanted) }}
+          </div>
         </div>
         <div class="stat">
-          <div class="stat-title">Gas Efficiency</div>
-          <div class="stat-value text-sm">{{ gasEfficiency }}%</div>
+          <div class="stat-title">
+            Gas Efficiency
+          </div>
+          <div class="stat-value text-sm">
+            {{ gasEfficiency }}%
+          </div>
         </div>
-        <div v-if="feeAmount" class="stat">
-          <div class="stat-title">Fee</div>
-          <div class="stat-value text-sm">{{ feeAmount }}</div>
+        <div
+          v-if="feeAmount"
+          class="stat"
+        >
+          <div class="stat-title">
+            Fee
+          </div>
+          <div class="stat-value text-sm">
+            {{ feeAmount }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Messages -->
     <div v-if="hasMessages">
-      <h4 class="text-md font-medium mb-3">Messages ({{ messages.length }})</h4>
+      <h4 class="text-md font-medium mb-3">
+        Messages ({{ messages.length }})
+      </h4>
       <div class="flex flex-col gap-4">
         <div
           v-for="(message, index) in messages"
@@ -67,19 +106,25 @@
           <div class="text-xs text-base-content/60 mb-2">
             Message {{ index + 1 }}
           </div>
-          <DisplayMsg :msgData="message" />
+          <DisplayMsg :msg-data="message" />
         </div>
       </div>
     </div>
 
     <!-- No Messages State -->
-    <div v-else class="text-base-content/60 italic text-center py-4">
+    <div
+      v-else
+      class="text-base-content/60 italic text-center py-4"
+    >
       No messages in this transaction.
     </div>
 
     <!-- Events -->
-    <div v-if="hasEvents" class="mt-6 collapse collapse-arrow bg-base-200">
-      <input type="checkbox" />
+    <div
+      v-if="hasEvents"
+      class="mt-6 collapse collapse-arrow bg-base-200"
+    >
+      <input type="checkbox">
       <div class="collapse-title text-md font-medium">
         Events ({{ events.length }})
       </div>
@@ -92,11 +137,18 @@
           >
             <div class="card-body p-4">
               <div class="flex items-center justify-between mb-3">
-                <h5 class="font-semibold text-sm">{{ event.type }}</h5>
-                <div class="badge badge-outline">Event {{ index + 1 }}</div>
+                <h5 class="font-semibold text-sm">
+                  {{ event.type }}
+                </h5>
+                <div class="badge badge-outline">
+                  Event {{ index + 1 }}
+                </div>
               </div>
 
-              <div v-if="event.attributes?.length > 0" class="space-y-2">
+              <div
+                v-if="event.attributes?.length > 0"
+                class="space-y-2"
+              >
                 <div class="text-xs font-medium text-base-content/70 mb-2">
                   Attributes:
                 </div>
@@ -114,7 +166,9 @@
                         v-for="(attr, attrIndex) in event.attributes"
                         :key="attrIndex"
                       >
-                        <td class="font-mono text-xs">{{ attr.key }}</td>
+                        <td class="font-mono text-xs">
+                          {{ attr.key }}
+                        </td>
                         <td class="font-mono text-xs break-all max-w-xs">
                           <pre
                             class="text-xs overflow-x-auto bg-base-300 p-2 rounded"
@@ -136,7 +190,10 @@
                 </div>
               </div>
 
-              <div v-else class="text-xs text-base-content/60 italic">
+              <div
+                v-else
+                class="text-xs text-base-content/60 italic"
+              >
                 No attributes
               </div>
             </div>

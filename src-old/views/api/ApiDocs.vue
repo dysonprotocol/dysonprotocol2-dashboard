@@ -6,19 +6,34 @@
         type="text"
         placeholder="Search schemas..."
         class="input input-bordered w-full"
-      />
-      <select v-model="activeGroup" class="select select-bordered">
-        <option value="all">All</option>
-        <option value="query">query</option>
-        <option value="tx">tx</option>
+      >
+      <select
+        v-model="activeGroup"
+        class="select select-bordered"
+      >
+        <option value="all">
+          All
+        </option>
+        <option value="query">
+          query
+        </option>
+        <option value="tx">
+          tx
+        </option>
       </select>
     </div>
 
-    <div v-if="loading" class="flex justify-center py-10">
-      <span class="loading loading-spinner"></span>
+    <div
+      v-if="loading"
+      class="flex justify-center py-10"
+    >
+      <span class="loading loading-spinner" />
     </div>
 
-    <div v-else class="space-y-2">
+    <div
+      v-else
+      class="space-y-2"
+    >
       <SchemaCollapseItem
         v-for="item in filtered"
         :key="item.key"

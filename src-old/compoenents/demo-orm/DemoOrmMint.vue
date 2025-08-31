@@ -1,9 +1,21 @@
 <template>
-  <h2 class="text-xl font-semibold" id="mint">Mint</h2>
+  <h2
+    id="mint"
+    class="text-xl font-semibold"
+  >
+    Mint
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Mint Params</h3>
-      <button class="btn btn-primary" @click="loadMintParams">Load Params</button>
+      <h3 class="font-semibold">
+        Mint Params
+      </h3>
+      <button
+        class="btn btn-primary"
+        @click="loadMintParams"
+      >
+        Load Params
+      </button>
       <div class="text-sm">
         <div>
           mint_denom: <code>{{ mintParams?.mint_denom }}</code>
@@ -24,25 +36,54 @@
           blocks_per_year: <code>{{ mintParams?.blocks_per_year }}</code>
         </div>
       </div>
-      <div v-if="mintParamsError" class="text-sm text-red-600">{{ mintParamsError }}</div>
+      <div
+        v-if="mintParamsError"
+        class="text-sm text-red-600"
+      >
+        {{ mintParamsError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Mint Inflation</h3>
-      <button class="btn btn-primary" @click="loadMintInflation">Load Inflation</button>
+      <h3 class="font-semibold">
+        Mint Inflation
+      </h3>
+      <button
+        class="btn btn-primary"
+        @click="loadMintInflation"
+      >
+        Load Inflation
+      </button>
       <div class="text-sm">
         inflation: <code>{{ mintInflation?.inflation }}</code>
       </div>
-      <div v-if="mintInflationError" class="text-sm text-red-600">{{ mintInflationError }}</div>
+      <div
+        v-if="mintInflationError"
+        class="text-sm text-red-600"
+      >
+        {{ mintInflationError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Mint Annual Provisions</h3>
-      <button class="btn btn-primary" @click="loadMintAnnualProvisions">Load Annual</button>
+      <h3 class="font-semibold">
+        Mint Annual Provisions
+      </h3>
+      <button
+        class="btn btn-primary"
+        @click="loadMintAnnualProvisions"
+      >
+        Load Annual
+      </button>
       <div class="text-sm">
         annual_provisions: <code>{{ mintAnnualProvisions?.annual_provisions }}</code>
       </div>
-      <div v-if="mintAnnualError" class="text-sm text-red-600">{{ mintAnnualError }}</div>
+      <div
+        v-if="mintAnnualError"
+        class="text-sm text-red-600"
+      >
+        {{ mintAnnualError }}
+      </div>
     </div>
   </section>
 </template>

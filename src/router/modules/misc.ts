@@ -3,13 +3,12 @@ import type { RouteRecordRaw } from 'vue-router'
 const Placeholder = () => import('@/views/Placeholder.vue')
 
 export const miscRoutes: RouteRecordRaw[] = [
-  { path: '/tasks', name: 'TaskManager', component: Placeholder, meta: { title: 'Task Manager' } },
+  { path: '/tasks', name: 'TaskManager', component: () => import('@/views/chain/TaskManager.vue') },
   {
     path: '/tasks/:taskId',
     name: 'TaskDetails',
-    component: Placeholder,
+    component: () => import('@/views/chain/TaskDetail.vue'),
     props: true,
-    meta: { title: 'Task Details' },
   },
 
   { path: '/docs', name: 'ApiDocs', component: Placeholder, meta: { title: 'API Docs' } },

@@ -1,24 +1,80 @@
 <template>
-  <h2 class="text-xl font-semibold">
-    Storage Get — <code>{{ address }}</code>
-  </h2>
-  <div class="grid gap-2 md:grid-cols-3">
-    <input v-model="indexModel" class="input w-full" placeholder="index" />
-    <input v-model="extractModel" class="input w-full" placeholder="extract (optional)" />
-    <button class="btn btn-primary" @click="fetchOne">Fetch</button>
-  </div>
-  <div class="text-xs opacity-70 grid grid-cols-2 gap-x-2">
-    <div>
-      hash=<code>{{ hash }}</code>
+  <div class="space-y-4">
+    <h2 class="text-xl font-semibold">
+      Storage Get — <code>{{ address }}</code>
+    </h2>
+    <div class="grid gap-2 md:grid-cols-3">
+      <input
+        v-model="indexModel"
+        class="input w-full"
+        placeholder="index"
+      >
+      <input
+        v-model="extractModel"
+        class="input w-full"
+        placeholder="extract (optional)"
+      >
+      <button
+        class="btn btn-primary"
+        @click="fetchOne"
+      >
+        Fetch
+      </button>
     </div>
+
+    <div class="text-xs opacity-70 grid grid-cols-2 gap-x-2">
+      <div>
+        hash=<code>{{ hash }}</code>
+      </div>
+      <div>
+        height=<code>{{ height }}</code>
+      </div>
+    </div>
+    <div class="text-xs opacity-70">
+      data=<code class="break-words">{{ data }}</code>
+    </div>
+
+    <form
+      class="grid md:grid-cols-3 gap-2 items-end"
+      @submit.prevent="submitSet"
+    >
+      <div>
+        <label class="text-xs">Set data</label>
+        <input
+          v-model="setData"
+          class="input w-full"
+          placeholder="string data"
+        >
+      </div>
+      <div class="text-xs opacity-70">
+        Owner: <code>{{ address }}</code>
+      </div>
+      <button
+        class="btn btn-primary"
+        type="submit"
+        :disabled="!canSet"
+      >
+        Set
+      </button>
+    </form>
+
     <div>
-      height=<code>{{ height }}</code>
+      <button
+        class="btn btn-warning btn-sm"
+        :disabled="!canDelete"
+        @click="submitDelete"
+      >
+        Delete
+      </button>
+    </div>
+
+    <div
+      v-if="error"
+      class="text-sm text-red-600"
+    >
+      {{ error }}
     </div>
   </div>
-  <div class="text-xs opacity-70">
-    data=<code class="break-words">{{ data }}</code>
-  </div>
-  <div v-if="error" class="text-sm text-red-600">{{ error }}</div>
 </template>
 
 <script setup lang="ts">
@@ -26,6 +82,7 @@ import { ref, computed, watchEffect } from 'vue'
 import { useRepo } from 'pinia-orm'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import Storage from '@/orm/models/storage/Storage'
+import { useWallet } from '@/composables/useWallet'
 
 const props = defineProps<{ address: string; pathMatch?: string }>()
 
@@ -63,4 +120,40 @@ watchEffect(() => {
   extractModel.value = ext || ''
   if (indexModel.value) void fetchOne()
 })
+
+// Set/Delete actions
+const wallet = useWallet()
+const setData = ref('')
+const canSet = computed(() => Boolean(props.address && indexModel.value && setData.value))
+const canDelete = computed(() => Boolean(props.address && indexModel.value))
+
+async function submitSet() {
+  error.value = ''
+  if (!canSet.value) return
+  await useAxiosRepo(Storage)
+    .api()
+    .storageSet({
+      owner: props.address,
+      index: indexModel.value,
+      data: setData.value,
+      wallet: { sendMsg: wallet.sendMsg },
+      gasLimit: 'auto',
+    })
+  setData.value = ''
+  await fetchOne()
+}
+
+async function submitDelete() {
+  error.value = ''
+  if (!canDelete.value) return
+  await useAxiosRepo(Storage)
+    .api()
+    .storageDelete({
+      owner: props.address,
+      indexes: [indexModel.value],
+      wallet: { sendMsg: wallet.sendMsg },
+      gasLimit: 'auto',
+    })
+  await fetchOne()
+}
 </script>

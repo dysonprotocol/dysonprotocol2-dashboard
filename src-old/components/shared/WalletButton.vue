@@ -3,9 +3,9 @@
     <!-- Connected State: Show wallet address with arrow -->
     <button
       v-if="unlockedWallets.length > 0"
-      @click="openDrawer"
       class="btn btn-sm"
       data-testid="wallet-button"
+      @click="openDrawer"
     >
       <WalletIcon class="w-4 h-4" />
       {{ displayAddress }}
@@ -13,11 +13,14 @@
     </button>
 
     <!-- Disconnected State: Show connect options -->
-    <div v-else class="flex gap-2">
+    <div
+      v-else
+      class="flex gap-2"
+    >
       <button
-        @click="openDrawer"
         class="btn btn-sm btn-primary"
         data-testid="connect-wallet-button"
+        @click="openDrawer"
       >
         <WalletIcon class="w-4 h-4" />
         Connect Wallet
@@ -25,7 +28,10 @@
     </div>
 
     <!-- Wallet Drawer -->
-    <WalletDrawer :open="drawerOpen" @close="closeDrawer" />
+    <WalletDrawer
+      :open="drawerOpen"
+      @close="closeDrawer"
+    />
   </div>
 </template>
 

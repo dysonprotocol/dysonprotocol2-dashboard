@@ -1,7 +1,10 @@
 <template>
   <div :class="containerClasses">
-    <div :class="spinnerClasses"></div>
-    <span v-if="message" :class="messageClasses">{{ message }}</span>
+    <div :class="spinnerClasses" />
+    <span
+      v-if="message"
+      :class="messageClasses"
+    >{{ message }}</span>
   </div>
 </template>
 

@@ -12,9 +12,14 @@
         <div class="mt-4 px-2.5 pb-4 space-y-2">
           <KeplrCard />
           <CosmjsWallets />
-          <div class="divider"></div>
-          <nav>
-            <router-link to="/names" class="btn btn-ghost w-full justify-start">Names</router-link>
+          <div class="divider" />
+          <nav class="space-y-2 flex flex-col">
+            <router-link to="/names" class="w-full justify-start"> Names </router-link>
+            <router-link to="/blocks" class="w-full justify-start"> Blocks </router-link>
+            <router-link to="/txs" class="w-full justify-start"> Transactions </router-link>
+            <router-link to="/validators" class="w-full justify-start"> Validators </router-link>
+            <router-link to="/gov" class="w-full justify-start"> Governance </router-link>
+            <router-link to="/tasks" class="w-full justify-start"> Tasks </router-link>
           </nav>
         </div>
       </div>
@@ -23,6 +28,7 @@
 </template>
 
 <script setup>
+defineOptions({ name: 'AppSidebar' })
 import KeplrCard from '@/components/wallet/KeplrCard.vue'
 import CosmjsWallets from '@/components/wallet/CosmjsWallets.vue'
 </script>

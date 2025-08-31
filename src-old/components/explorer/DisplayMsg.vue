@@ -7,8 +7,8 @@
       </div>
       <button
         v-if="isLargeMessage"
-        @click="isCollapsed = !isCollapsed"
         class="btn btn-xs btn-ghost"
+        @click="isCollapsed = !isCollapsed"
       >
         {{ isCollapsed ? "Expand" : "Collapse" }}
       </button>
@@ -24,7 +24,10 @@
     </div>
 
     <!-- Collapsed State -->
-    <div v-else class="bg-base-200 text-base-content overflow-hidden">
+    <div
+      v-else
+      class="bg-base-200 text-base-content overflow-hidden"
+    >
       <pre><code>{{ truncatedYaml }}</code></pre>
       <div class="text-center py-2 text-base-content/60 text-sm">
         ... {{ messageLines - 3 }} more lines

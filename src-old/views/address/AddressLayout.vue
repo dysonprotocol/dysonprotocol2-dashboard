@@ -10,11 +10,17 @@
         >
           {{ name }}
         </router-link>
-        <AddressDisplay :address="address" :truncate="0" />
+        <AddressDisplay
+          :address="address"
+          :truncate="0"
+        />
       </div>
       <!-- Menu links -->
 
-      <div role="tablist" class="tabs tabs-lift">
+      <div
+        role="tablist"
+        class="tabs tabs-lift"
+      >
         <router-link
           v-for="tab in addressTabsInjected"
           :key="tab.path"

@@ -1,9 +1,9 @@
 <template>
   <span
-    @click="copy"
     :title="hash"
     :data-tip="tooltipText"
     class="tooltip font-mono cursor-pointer hover:text-primary text-xs"
+    @click="copy"
   >
     {{
       truncate && truncate < hash.length

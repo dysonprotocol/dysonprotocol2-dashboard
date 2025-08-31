@@ -1,30 +1,75 @@
 <template>
   <div class="max-w-5xl">
     <div class="m-2">
-      <h2 class="text-lg font-medium">Names resolving to this address</h2>
-      <div v-if="isLoadingDest" class="text-base-content/70">Loading…</div>
-      <div v-else-if="destError" class="text-error">{{ destError }}</div>
+      <h2 class="text-lg font-medium">
+        Names resolving to this address
+      </h2>
+      <div
+        v-if="isLoadingDest"
+        class="text-base-content/70"
+      >
+        Loading…
+      </div>
+      <div
+        v-else-if="destError"
+        class="text-error"
+      >
+        {{ destError }}
+      </div>
       <div v-else>
-        <div v-if="destNames.length === 0" class="text-base-content/70">
+        <div
+          v-if="destNames.length === 0"
+          class="text-base-content/70"
+        >
           No names resolve to this address.
         </div>
-        <ul v-else class="flex flex-wrap gap-2">
-          <li v-for="n in destNames" :key="n" class="badge badge-ghost">
-            <router-link :to="`/names/${n}`" class="link">{{ n }}</router-link>
+        <ul
+          v-else
+          class="flex flex-wrap gap-2"
+        >
+          <li
+            v-for="n in destNames"
+            :key="n"
+            class="badge badge-ghost"
+          >
+            <router-link
+              :to="`/names/${n}`"
+              class="link"
+            >
+              {{ n }}
+            </router-link>
           </li>
         </ul>
       </div>
     </div>
 
     <div class="m-2">
-      <h2 class="text-lg font-medium">Owned by address</h2>
-      <div v-if="isLoadingOwned" class="text-base-content/70">Loading…</div>
-      <div v-else-if="ownedError" class="text-error">{{ ownedError }}</div>
+      <h2 class="text-lg font-medium">
+        Owned by address
+      </h2>
+      <div
+        v-if="isLoadingOwned"
+        class="text-base-content/70"
+      >
+        Loading…
+      </div>
+      <div
+        v-else-if="ownedError"
+        class="text-error"
+      >
+        {{ ownedError }}
+      </div>
       <div v-else>
-        <div v-if="ownedView.length === 0" class="text-base-content/70">
+        <div
+          v-if="ownedView.length === 0"
+          class="text-base-content/70"
+        >
           No names owned by this address.
         </div>
-        <div v-else class="overflow-x-auto">
+        <div
+          v-else
+          class="overflow-x-auto"
+        >
           <table class="table">
             <thead>
               <tr>
@@ -33,11 +78,19 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="nft in ownedView" :key="nft.id">
+              <tr
+                v-for="nft in ownedView"
+                :key="nft.id"
+              >
                 <td class="font-mono">
-                  <router-link :to="`/names/${nft.id}`" class="link">{{
-                    nft.id
-                  }}</router-link>
+                  <router-link
+                    :to="`/names/${nft.id}`"
+                    class="link"
+                  >
+                    {{
+                      nft.id
+                    }}
+                  </router-link>
                 </td>
                 <td>
                   <span v-if="formatValuation(nft).label">

@@ -1,37 +1,66 @@
 <template>
   <div class="mx-auto p-4 space-y-4 h-full min-h-0 overflow-y-scroll">
-    <h1 class="text-2xl font-semibold">Name: {{ routeName }}</h1>
+    <h1 class="text-2xl font-semibold">
+      Name: {{ routeName }}
+    </h1>
 
-    <div v-if="isLoading" class="text-base-content/70">Loading…</div>
-    <div v-else-if="error" class="text-error">{{ error }}</div>
+    <div
+      v-if="isLoading"
+      class="text-base-content/70"
+    >
+      Loading…
+    </div>
+    <div
+      v-else-if="error"
+      class="text-error"
+    >
+      {{ error }}
+    </div>
 
     <div v-else>
-      <div v-if="!nft" class="space-y-3">
+      <div
+        v-if="!nft"
+        class="space-y-3"
+      >
         <div class="alert alert-info alert-soft">
-          <h2 class="card-title">This name is available</h2>
+          <h2 class="card-title">
+            This name is available
+          </h2>
         </div>
         <div class="card bg-base-200 shadow">
           <div class="card-body gap-3">
-            <RegisterName :initialName="routeName" @registered="onRegistered" />
+            <RegisterName
+              :initial-name="routeName"
+              @registered="onRegistered"
+            />
           </div>
         </div>
       </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div
+        v-else
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
+      >
         <div class="card bg-base-200 shadow">
           <div class="card-body">
             <div class="flex items-center justify-between">
-              <h2 class="card-title">Name Detail</h2>
+              <h2 class="card-title">
+                Name Detail
+              </h2>
             </div>
             <table class="table">
               <tbody>
                 <tr>
-                  <th class="w-48">Owner</th>
+                  <th class="w-48">
+                    Owner
+                  </th>
                   <td class="font-mono break-all">
                     <AddressDisplay :address="ownerAddress" />
                   </td>
                 </tr>
                 <tr>
-                  <th class="w-48">Class ID</th>
+                  <th class="w-48">
+                    Class ID
+                  </th>
                   <td class="font-mono">
                     <router-link
                       :to="`/names/${encodeURIComponent(
@@ -71,10 +100,8 @@
                   <td>
                     <span v-if="valuationDisplay.label">
                       {{ valuationDisplay.amount }} {{ valuationDisplay.label }}
-                      <span class="opacity-70"
-                        >(base: {{ nft.data?.valuation?.amount }}
-                        {{ nft.data?.valuation?.denom }})</span
-                      >
+                      <span class="opacity-70">(base: {{ nft.data?.valuation?.amount }}
+                        {{ nft.data?.valuation?.denom }})</span>
                     </span>
                     <span v-else>—</span>
                   </td>
@@ -94,10 +121,8 @@
                   <td>
                     <span v-if="bidDisplay.label">
                       {{ bidDisplay.amount }} {{ bidDisplay.label }}
-                      <span class="opacity-70"
-                        >(base: {{ nft.data?.current_bid?.amount }}
-                        {{ nft.data?.current_bid?.denom }})</span
-                      >
+                      <span class="opacity-70">(base: {{ nft.data?.current_bid?.amount }}
+                        {{ nft.data?.current_bid?.denom }})</span>
                     </span>
                     <span v-else>—</span>
                   </td>
@@ -120,7 +145,9 @@
         <div class="card bg-base-200 shadow">
           <div class="card-body gap-3">
             <div class="flex items-center justify-between">
-              <h2 class="card-title">Set Destination</h2>
+              <h2 class="card-title">
+                Set Destination
+              </h2>
             </div>
             <div class="text-xs opacity-70 mb-1">
               Destination can be a bech32 address or another .dys name.
@@ -130,8 +157,11 @@
               class="input input-bordered w-full font-mono"
               placeholder="new destination (address or name)"
               :disabled="isSettingDest"
-            />
-            <div v-if="setDestError" class="text-error text-sm">
+            >
+            <div
+              v-if="setDestError"
+              class="text-error text-sm"
+            >
               {{ setDestError }}
             </div>
             <button
@@ -142,7 +172,9 @@
               Set Destination
             </button>
             <div class="flex items-center justify-between mt-2">
-              <h2 class="card-title">Set Metadata</h2>
+              <h2 class="card-title">
+                Set Metadata
+              </h2>
             </div>
             <div class="text-xs opacity-70 mb-1">
               Only the owner can set metadata. This is an arbitrary string.
@@ -153,8 +185,11 @@
               placeholder="metadata"
               :disabled="isSettingMetadata"
               rows="3"
-            ></textarea>
-            <div v-if="setMetadataError" class="text-error text-sm">
+            />
+            <div
+              v-if="setMetadataError"
+              class="text-error text-sm"
+            >
               {{ setMetadataError }}
             </div>
             <button
@@ -170,34 +205,41 @@
         <div class="card bg-base-200 shadow">
           <div class="card-body gap-3">
             <div class="flex items-center justify-between">
-              <h2 class="card-title">Denoms</h2>
+              <h2 class="card-title">
+                Denoms
+              </h2>
             </div>
 
             <div class="border rounded p-3 bg-base-100">
-              <div class="font-medium mb-2">Mint coin(s)</div>
+              <div class="font-medium mb-2">
+                Mint coin(s)
+              </div>
               <div class="text-xs opacity-70 mb-2">
                 Destination:
                 <AddressDisplay :address="resolvedAddress" />
               </div>
-              <form class="grid grid-cols-1" @submit.prevent="mintCoins">
+              <form
+                class="grid grid-cols-1"
+                @submit.prevent="mintCoins"
+              >
                 <div class="space-y-2">
                   <label class="input w-full">
                     <span class="label">Display Amount </span>
                     <input
                       :value="mintAmountDisplay"
-                      @focus="isEditingDisplay = true"
-                      @blur="
-                        isEditingDisplay = false;
-                        mintAmountDisplay = normalizeDisplay(mintAmountDisplay);
-                      "
-                      @input="onDisplayInput"
                       class=""
                       placeholder="amount (display)"
                       label="amount (display)"
                       type="number"
                       step="0.000001"
                       :disabled="denomBusy === 'mint'"
-                    />
+                      @focus="isEditingDisplay = true"
+                      @blur="
+                        isEditingDisplay = false;
+                        mintAmountDisplay = normalizeDisplay(mintAmountDisplay);
+                      "
+                      @input="onDisplayInput"
+                    >
                   </label>
                   <label class="input w-full">
                     <span class="label">Display Denom</span>
@@ -205,7 +247,7 @@
                       class="input-ghost"
                       :value="mintDisplayLabel"
                       readonly
-                    />
+                    >
                   </label>
 
                   <ul class="list-disc list-inside">
@@ -221,10 +263,14 @@
                     </li>
                     <li class="text-xs opacity-70 mb-2">
                       Decimal places:
-                      <span v-if="mintDenom === routeName" class="font-mono"
-                        >6</span
-                      >
-                      <span v-else class="font-mono">0</span>
+                      <span
+                        v-if="mintDenom === routeName"
+                        class="font-mono"
+                      >6</span>
+                      <span
+                        v-else
+                        class="font-mono"
+                      >0</span>
                     </li>
                     <li class="text-xs opacity-70 mb-2">
                       Base Denom:
@@ -265,11 +311,11 @@
                       for="confirmMintChecked"
                     >
                       <input
-                        v-model="confirmMintChecked"
                         id="confirmMintChecked"
+                        v-model="confirmMintChecked"
                         type="checkbox"
                         class="checkbox mr-2"
-                      />
+                      >
 
                       I understand that minting
                       <span class="font-mono">{{ mintAmountDisplay }}</span>
@@ -299,25 +345,41 @@
             </div>
 
             <div>
-              <div v-if="isLoadingDenoms" class="text-base-content/70">
+              <div
+                v-if="isLoadingDenoms"
+                class="text-base-content/70"
+              >
                 Loading…
               </div>
-              <div v-else-if="denomsError" class="text-error">
+              <div
+                v-else-if="denomsError"
+                class="text-error"
+              >
                 {{ denomsError }}
               </div>
               <div v-else>
-                <div v-if="denoms.length === 0" class="text-base-content/70">
+                <div
+                  v-if="denoms.length === 0"
+                  class="text-base-content/70"
+                >
                   No denoms.
                 </div>
-                <ul v-else class="menu bg-base-100 rounded">
-                  <li v-for="d in denoms" :key="d">
+                <ul
+                  v-else
+                  class="menu bg-base-100 rounded"
+                >
+                  <li
+                    v-for="d in denoms"
+                    :key="d"
+                  >
                     <router-link
                       :to="`/names/${encodeURIComponent(
                         routeName
                       )}/denoms/${encodeURIComponent(d)}`"
                       class="font-mono"
-                      >{{ d }}</router-link
                     >
+                      {{ d }}
+                    </router-link>
                   </li>
                 </ul>
               </div>
@@ -328,11 +390,15 @@
         <div class="card bg-base-200 shadow">
           <div class="card-body gap-3">
             <div class="flex items-center justify-between">
-              <h2 class="card-title">NFT Classes</h2>
+              <h2 class="card-title">
+                NFT Classes
+              </h2>
             </div>
 
             <div class="border rounded p-3 bg-base-100">
-              <div class="font-medium mb-2">Create NFT Class</div>
+              <div class="font-medium mb-2">
+                Create NFT Class
+              </div>
               <div class="text-xs opacity-70 mb-2">
                 {{ routeName }} is managed by destination:
                 <span class="font-mono">{{ resolvedAddress }}</span>
@@ -344,33 +410,36 @@
                   class="input input-bordered w-full"
                   :placeholder="`class id (e.g. ${routeName}/foo)`"
                   :disabled="isSavingClass"
-                />
+                >
                 <input
                   v-model.trim="classForm.name"
                   class="input input-bordered w-full"
                   placeholder="name (optional)"
                   :disabled="isSavingClass"
-                />
+                >
                 <input
                   v-model.trim="classForm.symbol"
                   class="input input-bordered w-full"
                   placeholder="symbol (optional)"
                   :disabled="isSavingClass"
-                />
+                >
                 <input
                   v-model.trim="classForm.uri"
                   class="input input-bordered w-full"
                   placeholder="uri (optional)"
                   :disabled="isSavingClass"
-                />
+                >
               </div>
               <textarea
                 v-model.trim="classForm.description"
                 class="textarea textarea-bordered w-full mt-2"
                 placeholder="description (optional)"
                 :disabled="isSavingClass"
-              ></textarea>
-              <div v-if="classSaveError" class="text-error text-sm mt-1">
+              />
+              <div
+                v-if="classSaveError"
+                class="text-error text-sm mt-1"
+              >
                 {{ classSaveError }}
               </div>
               <button
@@ -381,17 +450,29 @@
                 Create
               </button>
             </div>
-            <div v-if="isLoadingClasses" class="text-base-content/70">
+            <div
+              v-if="isLoadingClasses"
+              class="text-base-content/70"
+            >
               Loading…
             </div>
-            <div v-else-if="classesError" class="text-error">
+            <div
+              v-else-if="classesError"
+              class="text-error"
+            >
               {{ classesError }}
             </div>
             <div v-else>
-              <div v-if="classIds.length === 0" class="text-base-content/70">
+              <div
+                v-if="classIds.length === 0"
+                class="text-base-content/70"
+              >
                 No classes.
               </div>
-              <div v-else class="overflow-x-auto">
+              <div
+                v-else
+                class="overflow-x-auto"
+              >
                 <table class="table">
                   <thead>
                     <tr>
@@ -399,15 +480,19 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="cid in classIds" :key="cid">
+                    <tr
+                      v-for="cid in classIds"
+                      :key="cid"
+                    >
                       <td class="font-mono">
                         <router-link
                           :to="`/names/${encodeURIComponent(
                             routeName
                           )}/nfts/${encodeURIComponent(cid)}`"
                           class="link"
-                          >{{ cid }}</router-link
                         >
+                          {{ cid }}
+                        </router-link>
                       </td>
                     </tr>
                   </tbody>

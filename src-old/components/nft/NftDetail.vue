@@ -1,22 +1,40 @@
 <template>
   <div class="wrap-anywhere">
     <div class="flex items-center gap-2">
-      <h2 class="text-xl font-medium">NFT</h2>
+      <h2 class="text-xl font-medium">
+        NFT
+      </h2>
       <router-link
         :to="`/names/${encodeURIComponent(
           (classId || '').split('/')[0] || ''
         )}/nfts/${encodeURIComponent(classId)}`"
         class="btn btn-xs"
-        >Back to class</router-link
       >
+        Back to class
+      </router-link>
     </div>
-    <div v-if="isLoading" class="text-base-content/70 mt-2">Loading…</div>
-    <div v-else-if="error" class="alert alert-error mt-2">{{ error }}</div>
-    <div v-else class="mt-2">
+    <div
+      v-if="isLoading"
+      class="text-base-content/70 mt-2"
+    >
+      Loading…
+    </div>
+    <div
+      v-else-if="error"
+      class="alert alert-error mt-2"
+    >
+      {{ error }}
+    </div>
+    <div
+      v-else
+      class="mt-2"
+    >
       <table class="table">
         <tbody>
           <tr>
-            <th class="w-48">Class ID</th>
+            <th class="w-48">
+              Class ID
+            </th>
             <td class="font-mono">
               <router-link
                 :to="`/names/${encodeURIComponent(
@@ -30,17 +48,24 @@
           </tr>
           <tr>
             <th>ID</th>
-            <td class="font-mono">{{ nft?.id }}</td>
+            <td class="font-mono">
+              {{ nft?.id }}
+            </td>
           </tr>
           <tr>
             <th>Owner</th>
             <td class="break-all">
-              <AddressDisplay :address="ownerAddress" :truncate="0" />
+              <AddressDisplay
+                :address="ownerAddress"
+                :truncate="0"
+              />
             </td>
           </tr>
           <tr>
             <th>URI</th>
-            <td class="font-mono break-all">{{ nft?.uri || "" }}</td>
+            <td class="font-mono break-all">
+              {{ nft?.uri || "" }}
+            </td>
           </tr>
           <tr>
             <th>Listed</th>
@@ -57,10 +82,8 @@
           <tr>
             <th>Valuation</th>
             <td>
-              <span v-if="valuationDisplay.label"
-                >{{ valuationDisplay.amount }}
-                {{ valuationDisplay.label }}</span
-              >
+              <span v-if="valuationDisplay.label">{{ valuationDisplay.amount }}
+                {{ valuationDisplay.label }}</span>
               <span v-else>—</span>
             </td>
           </tr>
@@ -78,10 +101,8 @@
           <tr>
             <th>Current bid</th>
             <td>
-              <span v-if="currentBidDisplay.label"
-                >{{ currentBidDisplay.amount }}
-                {{ currentBidDisplay.label }}</span
-              >
+              <span v-if="currentBidDisplay.label">{{ currentBidDisplay.amount }}
+                {{ currentBidDisplay.label }}</span>
               <span v-else>—</span>
             </td>
           </tr>

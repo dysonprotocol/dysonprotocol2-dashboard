@@ -1,39 +1,76 @@
 <template>
   <div class="max-w-3xl mx-auto p-4 space-y-4">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold">Denom: {{ denom }}</h1>
+      <h1 class="text-xl font-semibold">
+        Denom: {{ denom }}
+      </h1>
       <div class="flex items-center gap-2">
         <router-link
           :to="`/names/${encodeURIComponent(
             routeName
           )}/denoms/${encodeURIComponent(denom)}/owners`"
           class="btn btn-xs"
-          >Owners</router-link
         >
-        <button class="btn btn-sm" @click="reload">Refresh</button>
+          Owners
+        </router-link>
+        <button
+          class="btn btn-sm"
+          @click="reload"
+        >
+          Refresh
+        </button>
       </div>
     </div>
 
     <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-      <legend class="fieldset-legend">Denom details</legend>
-      <div class="text-sm opacity-70 mb-2">Root name</div>
-      <div class="font-mono">{{ routeName }}</div>
-      <div class="text-sm opacity-70 mt-2">Destination</div>
-      <AddressDisplay :address="resolvedAddress" :truncate="0" />
-      <div class="divider my-3"></div>
-      <div class="text-sm opacity-70 mb-2">Metadata</div>
-      <div v-if="isLoadingMeta" class="text-base-content/70">Loading…</div>
-      <div v-else-if="metaError" class="text-error">{{ metaError }}</div>
+      <legend class="fieldset-legend">
+        Denom details
+      </legend>
+      <div class="text-sm opacity-70 mb-2">
+        Root name
+      </div>
+      <div class="font-mono">
+        {{ routeName }}
+      </div>
+      <div class="text-sm opacity-70 mt-2">
+        Destination
+      </div>
+      <AddressDisplay
+        :address="resolvedAddress"
+        :truncate="0"
+      />
+      <div class="divider my-3" />
+      <div class="text-sm opacity-70 mb-2">
+        Metadata
+      </div>
+      <div
+        v-if="isLoadingMeta"
+        class="text-base-content/70"
+      >
+        Loading…
+      </div>
+      <div
+        v-else-if="metaError"
+        class="text-error"
+      >
+        {{ metaError }}
+      </div>
       <div v-else-if="denomMeta && Object.keys(denomMeta).length">
         <table class="table">
           <tbody>
             <tr v-if="denomMeta && denomMeta.base">
-              <th class="w-48">Base</th>
-              <td class="font-mono break-all">{{ denomMeta.base }}</td>
+              <th class="w-48">
+                Base
+              </th>
+              <td class="font-mono break-all">
+                {{ denomMeta.base }}
+              </td>
             </tr>
             <tr v-if="denomMeta && denomMeta.display">
               <th>Display</th>
-              <td class="font-mono break-all">{{ denomMeta.display }}</td>
+              <td class="font-mono break-all">
+                {{ denomMeta.display }}
+              </td>
             </tr>
             <tr v-if="denomMeta && denomMeta.name">
               <th>Name</th>
@@ -52,14 +89,17 @@
             <tr
               v-if="
                 denomMeta &&
-                Array.isArray(denomMeta.denom_units) &&
-                denomMeta.denom_units.length
+                  Array.isArray(denomMeta.denom_units) &&
+                  denomMeta.denom_units.length
               "
             >
               <th>Denom Units</th>
               <td>
                 <ul class="list-disc list-inside space-y-1">
-                  <li v-for="(u, i) in denomMeta.denom_units" :key="i">
+                  <li
+                    v-for="(u, i) in denomMeta.denom_units"
+                    :key="i"
+                  >
                     <span class="font-mono">{{ u.denom }}</span> — exponent
                     {{ u.exponent }}
                     <span v-if="u.aliases && u.aliases.length">
@@ -71,20 +111,31 @@
             </tr>
             <tr v-if="denomMeta && denomMeta.uri">
               <th>URI</th>
-              <td class="font-mono break-all">{{ denomMeta.uri }}</td>
+              <td class="font-mono break-all">
+                {{ denomMeta.uri }}
+              </td>
             </tr>
             <tr v-if="denomMeta && denomMeta.uri_hash">
               <th>URI Hash</th>
-              <td class="font-mono break-all">{{ denomMeta.uri_hash }}</td>
+              <td class="font-mono break-all">
+                {{ denomMeta.uri_hash }}
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div v-else class="text-base-content/70">No metadata.</div>
+      <div
+        v-else
+        class="text-base-content/70"
+      >
+        No metadata.
+      </div>
     </fieldset>
 
     <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-      <legend class="fieldset-legend">Set Denom URI</legend>
+      <legend class="fieldset-legend">
+        Set Denom URI
+      </legend>
       <div class="text-xs opacity-70 mb-2">
         Only <span class="font-mono">{{ routeName }}</span> name destination
         <span class="font-mono">{{ resolvedAddress }}</span> can set the denom
@@ -97,13 +148,13 @@
             class="input input-bordered w-full"
             placeholder="uri (optional)"
             :disabled="busy === 'setUri'"
-          />
+          >
           <input
             v-model.trim="denomURIHash"
             class="input input-bordered w-full"
             placeholder="uri hash (optional)"
             :disabled="busy === 'setUri'"
-          />
+          >
         </div>
         <button
           class="btn btn-primary btn-sm mt-2"
@@ -111,14 +162,19 @@
         >
           save
         </button>
-        <div v-if="errURI" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="errURI"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ errURI }}
         </div>
       </form>
     </fieldset>
 
     <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-      <legend class="fieldset-legend">Set Description</legend>
+      <legend class="fieldset-legend">
+        Set Description
+      </legend>
       <div class="text-xs opacity-70 mb-2">
         Only <span class="font-mono">{{ routeName }}</span> name destination
         <span class="font-mono">{{ resolvedAddress }}</span> can set the denom
@@ -131,7 +187,7 @@
             class="input join-item w-full"
             placeholder="description"
             :disabled="busy === 'setDesc'"
-          />
+          >
           <button
             class="btn join-item btn-primary"
             :disabled="busy === 'setDesc' || !denomDescription"
@@ -139,17 +195,24 @@
             save
           </button>
         </div>
-        <div v-if="errDescription" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="errDescription"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ errDescription }}
         </div>
       </form>
     </fieldset>
 
     <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-      <legend class="fieldset-legend">Mint</legend>
+      <legend class="fieldset-legend">
+        Mint
+      </legend>
       <form @submit.prevent="mint">
         <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-          <legend class="fieldset-legend">Mint {{ denom }}</legend>
+          <legend class="fieldset-legend">
+            Mint {{ denom }}
+          </legend>
           <div class="text-xs opacity-70 mb-2">
             Only <span class="font-mono">{{ routeName }}</span> name destination
             <span class="font-mono">{{ resolvedAddress }}</span> can mint coins
@@ -161,7 +224,7 @@
               class="input join-item w-full"
               placeholder="amount (base)"
               :disabled="busy === 'mint'"
-            />
+            >
             <button
               class="btn join-item btn-primary"
               :disabled="busy === 'mint' || !mintAmount"
@@ -169,7 +232,10 @@
               mint
             </button>
           </div>
-          <div v-if="errMint" class="alert alert-error alert-soft mt-2">
+          <div
+            v-if="errMint"
+            class="alert alert-error alert-soft mt-2"
+          >
             {{ errMint }}
           </div>
         </fieldset>
@@ -177,10 +243,14 @@
     </fieldset>
 
     <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-      <legend class="fieldset-legend">Burn</legend>
+      <legend class="fieldset-legend">
+        Burn
+      </legend>
       <form @submit.prevent="burn">
         <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-          <legend class="fieldset-legend">Burn {{ denom }}</legend>
+          <legend class="fieldset-legend">
+            Burn {{ denom }}
+          </legend>
           <div class="text-xs opacity-70 mb-2">
             Only <span class="font-mono">{{ routeName }}</span> name destination
             <span class="font-mono">{{ resolvedAddress }}</span> can burn coins
@@ -192,7 +262,7 @@
               class="input join-item w-full"
               placeholder="amount (base)"
               :disabled="busy === 'burn'"
-            />
+            >
             <button
               class="btn join-item btn-primary"
               :disabled="busy === 'burn' || !burnAmount"
@@ -200,7 +270,10 @@
               burn
             </button>
           </div>
-          <div v-if="errBurn" class="alert alert-error alert-soft mt-2">
+          <div
+            v-if="errBurn"
+            class="alert alert-error alert-soft mt-2"
+          >
             {{ errBurn }}
           </div>
         </fieldset>
@@ -208,10 +281,14 @@
     </fieldset>
 
     <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-      <legend class="fieldset-legend">Move coins</legend>
+      <legend class="fieldset-legend">
+        Move coins
+      </legend>
       <form @submit.prevent="moveCoins">
         <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-          <legend class="fieldset-legend">Force move {{ denom }}</legend>
+          <legend class="fieldset-legend">
+            Force move {{ denom }}
+          </legend>
           <div class="text-xs opacity-70 mb-2">
             Only <span class="font-mono">{{ routeName }}</span> name destination
             <span class="font-mono">{{ resolvedAddress }}</span> can force-move
@@ -223,13 +300,13 @@
               class="input join-item w-full"
               placeholder="from address"
               :disabled="busy === 'move'"
-            />
+            >
             <input
               v-model.trim="fromAmount"
               class="input join-item w-40"
               placeholder="amount (base)"
               :disabled="busy === 'move'"
-            />
+            >
           </div>
           <div class="join w-full mb-2">
             <input
@@ -237,7 +314,7 @@
               class="input join-item w-full"
               placeholder="to address"
               :disabled="busy === 'move'"
-            />
+            >
           </div>
           <button
             class="btn btn-primary btn-sm"
@@ -245,7 +322,10 @@
           >
             move
           </button>
-          <div v-if="errMove" class="alert alert-error alert-soft mt-2">
+          <div
+            v-if="errMove"
+            class="alert alert-error alert-soft mt-2"
+          >
             {{ errMove }}
           </div>
         </fieldset>

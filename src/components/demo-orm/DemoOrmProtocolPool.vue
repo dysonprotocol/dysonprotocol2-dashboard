@@ -1,64 +1,171 @@
 <template>
-  <h2 class="text-xl font-semibold" id="protocol-pool">Protocol Pool</h2>
+  <h2
+    id="protocol-pool"
+    class="text-xl font-semibold"
+  >
+    Protocol Pool
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">ProtocolPool: Community Pool</h3>
-      <button class="btn btn-primary" @click="ppLoadPool">Load Pool</button>
+      <h3 class="font-semibold">
+        ProtocolPool: Community Pool
+      </h3>
+      <button
+        class="btn btn-primary"
+        @click="ppLoadPool"
+      >
+        Load Pool
+      </button>
       <ul class="list-disc pl-6 text-sm">
-        <li v-for="c in ppPool" :key="c.denom">
+        <li
+          v-for="c in ppPool"
+          :key="c.denom"
+        >
           <code>{{ c.amount }}</code> <span class="opacity-70">{{ c.denom }}</span>
         </li>
       </ul>
       <div class="flex gap-2 mt-2">
-        <input v-model="ppFundFrom" class="input w-full" placeholder="from address" />
-        <input v-model="ppFundAmount" class="input w-40" placeholder="amount" />
-        <input v-model="ppFundDenom" class="input w-28" placeholder="denom" />
-        <button class="btn btn-primary" @click="ppFund">Fund</button>
+        <input
+          v-model="ppFundFrom"
+          class="input w-full"
+          placeholder="from address"
+        >
+        <input
+          v-model="ppFundAmount"
+          class="input w-40"
+          placeholder="amount"
+        >
+        <input
+          v-model="ppFundDenom"
+          class="input w-28"
+          placeholder="denom"
+        >
+        <button
+          class="btn btn-primary"
+          @click="ppFund"
+        >
+          Fund
+        </button>
       </div>
     </div>
     <div class="space-y-2 p-4 border rounded">
       <div class="grid gap-2">
-        <input v-model="ppSpendAuthority" class="input w-full" placeholder="authority" />
-        <input v-model="ppSpendRecipient" class="input w-full" placeholder="recipient" />
+        <input
+          v-model="ppSpendAuthority"
+          class="input w-full"
+          placeholder="authority"
+        >
+        <input
+          v-model="ppSpendRecipient"
+          class="input w-full"
+          placeholder="recipient"
+        >
         <input
           v-model="ppSpendCoins"
           class="input w-full"
-          placeholder='coins JSON e.g. [{"denom":"udys","amount":"1"}]'
-        />
+          placeholder="coins JSON e.g. [{&quot;denom&quot;:&quot;udys&quot;,&quot;amount&quot;:&quot;1&quot;}]"
+        >
       </div>
-      <button class="btn btn-primary" @click="ppSpend">Spend</button>
-      <div v-if="ppPoolError" class="text-sm text-red-600">{{ ppPoolError }}</div>
+      <button
+        class="btn btn-primary"
+        @click="ppSpend"
+      >
+        Spend
+      </button>
+      <div
+        v-if="ppPoolError"
+        class="text-sm text-red-600"
+      >
+        {{ ppPoolError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">ProtocolPool: Continuous Funds</h3>
+      <h3 class="font-semibold">
+        ProtocolPool: Continuous Funds
+      </h3>
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="cfLoadAll">Load All</button>
-        <input v-model="cfRecipient" class="input w-full" placeholder="recipient" />
-        <button class="btn btn-primary" @click="cfLoadOne">Load One</button>
+        <button
+          class="btn btn-primary"
+          @click="cfLoadAll"
+        >
+          Load All
+        </button>
+        <input
+          v-model="cfRecipient"
+          class="input w-full"
+          placeholder="recipient"
+        >
+        <button
+          class="btn btn-primary"
+          @click="cfLoadOne"
+        >
+          Load One
+        </button>
       </div>
       <ul class="list-disc pl-6 text-sm max-h-56 overflow-auto">
-        <li v-for="cf in cfList" :key="cf.recipient">
+        <li
+          v-for="cf in cfList"
+          :key="cf.recipient"
+        >
           <span class="font-mono">{{ cf.recipient }}</span> — pct: <code>{{ cf.percentage }}</code>
           <span class="opacity-70"> expiry: {{ cf.expiry || '—' }}</span>
         </li>
       </ul>
       <div class="grid gap-2 md:grid-cols-4">
-        <input v-model="cfAuthority" class="input w-full" placeholder="authority" />
-        <input v-model="cfRecipient" class="input w-full" placeholder="recipient" />
-        <input v-model="cfPercentage" class="input w-full" placeholder="percentage (Dec)" />
-        <input v-model="cfExpiry" class="input w-full" placeholder="expiry RFC3339 (optional)" />
+        <input
+          v-model="cfAuthority"
+          class="input w-full"
+          placeholder="authority"
+        >
+        <input
+          v-model="cfRecipient"
+          class="input w-full"
+          placeholder="recipient"
+        >
+        <input
+          v-model="cfPercentage"
+          class="input w-full"
+          placeholder="percentage (Dec)"
+        >
+        <input
+          v-model="cfExpiry"
+          class="input w-full"
+          placeholder="expiry RFC3339 (optional)"
+        >
       </div>
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="cfCreate">Create</button>
-        <button class="btn btn-primary" @click="cfCancel">Cancel</button>
+        <button
+          class="btn btn-primary"
+          @click="cfCreate"
+        >
+          Create
+        </button>
+        <button
+          class="btn btn-primary"
+          @click="cfCancel"
+        >
+          Cancel
+        </button>
       </div>
-      <div v-if="cfError" class="text-sm text-red-600">{{ cfError }}</div>
+      <div
+        v-if="cfError"
+        class="text-sm text-red-600"
+      >
+        {{ cfError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">ProtocolPool: Params</h3>
-      <button class="btn btn-primary" @click="ppLoadParams">Load Params</button>
+      <h3 class="font-semibold">
+        ProtocolPool: Params
+      </h3>
+      <button
+        class="btn btn-primary"
+        @click="ppLoadParams"
+      >
+        Load Params
+      </button>
       <div class="text-sm">
         <div>
           enabled_distribution_denoms:
@@ -69,12 +176,34 @@
         </div>
       </div>
       <div class="grid gap-2 md:grid-cols-3">
-        <input v-model="ppParamsAuthority" class="input w-full" placeholder="authority" />
-        <input v-model="ppParamsDenomsCsv" class="input w-full" placeholder="denoms (csv)" />
-        <input v-model="ppParamsFrequency" class="input w-full" placeholder="frequency (uint64)" />
+        <input
+          v-model="ppParamsAuthority"
+          class="input w-full"
+          placeholder="authority"
+        >
+        <input
+          v-model="ppParamsDenomsCsv"
+          class="input w-full"
+          placeholder="denoms (csv)"
+        >
+        <input
+          v-model="ppParamsFrequency"
+          class="input w-full"
+          placeholder="frequency (uint64)"
+        >
       </div>
-      <button class="btn btn-primary" @click="ppUpdateParams">Update Params</button>
-      <div v-if="ppParamsError" class="text-sm text-red-600">{{ ppParamsError }}</div>
+      <button
+        class="btn btn-primary"
+        @click="ppUpdateParams"
+      >
+        Update Params
+      </button>
+      <div
+        v-if="ppParamsError"
+        class="text-sm text-red-600"
+      >
+        {{ ppParamsError }}
+      </div>
     </div>
   </section>
 </template>

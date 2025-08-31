@@ -1,7 +1,11 @@
 <template>
   <div class="p-4">
-    <h2 class="text-xl font-bold mb-2">Crontasks</h2>
-    <p class="text-sm text-gray-600 mb-4">Address: {{ address }}</p>
+    <h2 class="text-xl font-bold mb-2">
+      Crontasks
+    </h2>
+    <p class="text-sm text-gray-600 mb-4">
+      Address: {{ address }}
+    </p>
 
     <!-- List tasks by creator -->
     <div class="bg-base-200 p-4 rounded mb-6">
@@ -14,7 +18,7 @@
             min="1"
             max="200"
             class="input input-bordered input-sm"
-          />
+          >
         </label>
         <label class="form-control flex-1 min-w-56">
           <span class="label-text">pagination.key</span>
@@ -23,9 +27,14 @@
             type="text"
             class="input input-bordered input-sm"
             placeholder="base64 page key"
-          />
+          >
         </label>
-        <button class="btn btn-sm" @click="applyListParams">Apply</button>
+        <button
+          class="btn btn-sm"
+          @click="applyListParams"
+        >
+          Apply
+        </button>
         <button
           class="btn btn-ghost btn-sm"
           :disabled="!listForm.key"
@@ -33,51 +42,94 @@
         >
           Reset
         </button>
-        <span class="flex-1"></span>
-        <button class="btn btn-sm" :disabled="!nextKey" @click="nextListPage">
+        <span class="flex-1" />
+        <button
+          class="btn btn-sm"
+          :disabled="!nextKey"
+          @click="nextListPage"
+        >
           Next page
         </button>
       </div>
 
       <div class="text-sm mb-2">
-        <span v-if="listError" class="text-error">{{ listError }}</span>
+        <span
+          v-if="listError"
+          class="text-error"
+        >{{ listError }}</span>
         <span v-else-if="isLoadingList">Loading…</span>
-        <span v-else class="opacity-70">{{ tasks.length }} task(s)</span>
+        <span
+          v-else
+          class="opacity-70"
+        >{{ tasks.length }} task(s)</span>
       </div>
 
       <div class="overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
           <thead>
             <tr>
-              <th class="w-[10%]">id</th>
-              <th class="w-[12%]">status</th>
-              <th class="w-[18%]">scheduled</th>
-              <th class="w-[18%]">expiry</th>
-              <th class="w-[12%]">gas_limit</th>
-              <th class="w-[15%]">gas_fee</th>
-              <th class="w-[15%]">created</th>
+              <th class="w-[10%]">
+                id
+              </th>
+              <th class="w-[12%]">
+                status
+              </th>
+              <th class="w-[18%]">
+                scheduled
+              </th>
+              <th class="w-[18%]">
+                expiry
+              </th>
+              <th class="w-[12%]">
+                gas_limit
+              </th>
+              <th class="w-[15%]">
+                gas_fee
+              </th>
+              <th class="w-[15%]">
+                created
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="t in tasks" :key="t.task_id">
+            <tr
+              v-for="t in tasks"
+              :key="t.task_id"
+            >
               <td class="font-mono">
-                <router-link class="link" :to="`/tasks/${t.task_id}`">{{
-                  t.task_id
-                }}</router-link>
+                <router-link
+                  class="link"
+                  :to="`/tasks/${t.task_id}`"
+                >
+                  {{
+                    t.task_id
+                  }}
+                </router-link>
               </td>
               <td>{{ t.status }}</td>
-              <td class="font-mono">{{ t.scheduled_timestamp }}</td>
-              <td class="font-mono">{{ t.expiry_timestamp }}</td>
-              <td class="font-mono">{{ t.task_gas_limit }}</td>
               <td class="font-mono">
-                <span v-if="t.task_gas_fee"
-                  >{{ t.task_gas_fee.amount }} {{ t.task_gas_fee.denom }}</span
-                >
+                {{ t.scheduled_timestamp }}
               </td>
-              <td class="font-mono">{{ t.creation_time }}</td>
+              <td class="font-mono">
+                {{ t.expiry_timestamp }}
+              </td>
+              <td class="font-mono">
+                {{ t.task_gas_limit }}
+              </td>
+              <td class="font-mono">
+                <span v-if="t.task_gas_fee">{{ t.task_gas_fee.amount }} {{ t.task_gas_fee.denom }}</span>
+              </td>
+              <td class="font-mono">
+                {{ t.creation_time }}
+              </td>
             </tr>
             <tr v-if="!isLoadingList && !listError && tasks.length === 0">
-              <td colspan="7" class="text-center opacity-70">No tasks</td>
+              <td
+                colspan="7"
+                class="text-center opacity-70"
+              >
+                No tasks
+              </td>
             </tr>
           </tbody>
         </table>
@@ -86,8 +138,13 @@
 
     <!-- Create/schedule a task -->
     <div class="bg-base-200 p-4 rounded">
-      <h3 class="font-semibold mb-3">Create task</h3>
-      <form class="grid gap-3" @submit.prevent="createTask">
+      <h3 class="font-semibold mb-3">
+        Create task
+      </h3>
+      <form
+        class="grid gap-3"
+        @submit.prevent="createTask"
+      >
         <div class="grid md:grid-cols-3 gap-3">
           <label class="form-control">
             <span class="label-text">scheduled_timestamp</span>
@@ -96,7 +153,7 @@
               type="text"
               class="input input-bordered input-sm"
               placeholder="e.g. +1h30m or 1736467200"
-            />
+            >
           </label>
           <label class="form-control">
             <span class="label-text">expiry_timestamp</span>
@@ -105,7 +162,7 @@
               type="text"
               class="input input-bordered input-sm"
               placeholder="optional, e.g. +2h"
-            />
+            >
           </label>
           <label class="form-control">
             <span class="label-text">task_gas_limit</span>
@@ -114,7 +171,7 @@
               type="text"
               class="input input-bordered input-sm"
               placeholder="e.g. 500000"
-            />
+            >
           </label>
         </div>
         <div class="grid md:grid-cols-3 gap-3">
@@ -125,7 +182,7 @@
               type="text"
               class="input input-bordered input-sm"
               placeholder="e.g. 100000"
-            />
+            >
           </label>
           <label class="form-control">
             <span class="label-text">task_gas_fee.denom</span>
@@ -134,7 +191,7 @@
               type="text"
               class="input input-bordered input-sm"
               placeholder="udys"
-            />
+            >
           </label>
           <label class="form-control">
             <span class="label-text">tx memo (optional)</span>
@@ -143,7 +200,7 @@
               type="text"
               class="input input-bordered input-sm"
               placeholder=""
-            />
+            >
           </label>
         </div>
 
@@ -153,8 +210,8 @@
             v-model="createForm.rawMsg"
             class="textarea textarea-bordered textarea-sm w-full font-mono"
             rows="6"
-            placeholder='{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"...","to_address":"...","amount":[{"denom":"udys","amount":"1"}]}'
-          ></textarea>
+            placeholder="{&quot;@type&quot;:&quot;/cosmos.bank.v1beta1.MsgSend&quot;,&quot;from_address&quot;:&quot;...&quot;,&quot;to_address&quot;:&quot;...&quot;,&quot;amount&quot;:[{&quot;denom&quot;:&quot;udys&quot;,&quot;amount&quot;:&quot;1&quot;}]}"
+          />
           <span class="text-xs opacity-70">
             Provide the full message JSON as sent to encode_json, including
             "@type". Example: { "@type": "/cosmos.bank.v1beta1.MsgSend",
@@ -171,10 +228,16 @@
           >
             {{ isCreating ? "Creating…" : "Create Task" }}
           </button>
-          <span class="text-error text-sm" v-if="createError">{{
+          <span
+            v-if="createError"
+            class="text-error text-sm"
+          >{{
             createError
           }}</span>
-          <span class="text-success text-sm" v-if="createOk">Created</span>
+          <span
+            v-if="createOk"
+            class="text-success text-sm"
+          >Created</span>
         </div>
       </form>
     </div>

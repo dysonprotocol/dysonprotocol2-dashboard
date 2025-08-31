@@ -1,22 +1,32 @@
 <template>
   <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-    <legend class="fieldset-legend">NFT owner actions</legend>
+    <legend class="fieldset-legend">
+      NFT owner actions
+    </legend>
 
     <div class="text-xs opacity-70 mb-2">
-      Owner: <AddressDisplay :address="ownerAddress" :truncate="0" />
+      Owner: <AddressDisplay
+        :address="ownerAddress"
+        :truncate="0"
+      />
     </div>
 
     <!-- Send NFT -->
-    <form class="mb-3" @submit.prevent="sendNft">
+    <form
+      class="mb-3"
+      @submit.prevent="sendNft"
+    >
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-        <legend class="fieldset-legend">Send NFT</legend>
+        <legend class="fieldset-legend">
+          Send NFT
+        </legend>
         <div class="join w-full">
           <input
             v-model.trim="sendTo"
             class="input join-item w-full"
             placeholder="send to (owner)"
             :disabled="busy === 'send'"
-          />
+          >
           <button
             class="btn join-item btn-primary"
             :disabled="busy === 'send' || !sendTo"
@@ -24,16 +34,24 @@
             send
           </button>
         </div>
-        <div v-if="err.send" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="err.send"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ err.send }}
         </div>
       </fieldset>
     </form>
 
     <!-- Set Listed -->
-    <form class="mb-3" @submit.prevent="setListed">
+    <form
+      class="mb-3"
+      @submit.prevent="setListed"
+    >
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-        <legend class="fieldset-legend">Set Listed</legend>
+        <legend class="fieldset-legend">
+          Set Listed
+        </legend>
         <div class="flex items-center gap-2">
           <label class="text-sm">
             <input
@@ -41,7 +59,7 @@
               type="checkbox"
               class="checkbox mr-2"
               :disabled="busy === 'listed'"
-            />List NFT for sale
+            >List NFT for sale
           </label>
         </div>
         <div
@@ -58,29 +76,42 @@
           save
         </button>
 
-        <div v-if="err.listed" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="err.listed"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ err.listed }}
         </div>
       </fieldset>
     </form>
 
     <!-- Set valuation -->
-    <form class="mb-3" @submit.prevent="setValuation">
+    <form
+      class="mb-3"
+      @submit.prevent="setValuation"
+    >
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-        <legend class="fieldset-legend">Set valuation</legend>
+        <legend class="fieldset-legend">
+          Set valuation
+        </legend>
         <div class="join w-full">
           <input
             v-model.trim="valuationDisplayAmount"
             class="input join-item w-full"
             placeholder="amount"
             :disabled="busy === 'valuation'"
-          />
+          >
           <select
             v-model="selectedDisplayDenom"
             class="select join-item"
             :disabled="busy === 'valuation'"
           >
-            <option disabled value="">Denom</option>
+            <option
+              disabled
+              value=""
+            >
+              Denom
+            </option>
             <option
               v-for="opt in allowedDisplayOptions"
               :key="opt.base"
@@ -107,10 +138,18 @@
     </form>
 
     <!-- Accept bid -->
-    <form class="mb-3" @submit.prevent="acceptBid">
+    <form
+      class="mb-3"
+      @submit.prevent="acceptBid"
+    >
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-        <legend class="fieldset-legend">Accept bid</legend>
-        <div v-if="!hasCurrentBid" class="alert alert-warning alert-soft mb-2">
+        <legend class="fieldset-legend">
+          Accept bid
+        </legend>
+        <div
+          v-if="!hasCurrentBid"
+          class="alert alert-warning alert-soft mb-2"
+        >
           No current bid to accept.
         </div>
         <button
@@ -119,26 +158,40 @@
         >
           accept
         </button>
-        <div v-if="err.accept" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="err.accept"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ err.accept }}
         </div>
       </fieldset>
     </form>
 
     <!-- Reject bid -->
-    <form class="mb-3" @submit.prevent="rejectBid">
+    <form
+      class="mb-3"
+      @submit.prevent="rejectBid"
+    >
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-        <legend class="fieldset-legend">Reject bid</legend>
-        <div v-if="!hasCurrentBid" class="alert alert-warning alert-soft mb-2">
+        <legend class="fieldset-legend">
+          Reject bid
+        </legend>
+        <div
+          v-if="!hasCurrentBid"
+          class="alert alert-warning alert-soft mb-2"
+        >
           No current bid to reject.
         </div>
-        <div v-else class="join w-full mb-2">
+        <div
+          v-else
+          class="join w-full mb-2"
+        >
           <input
             v-model.trim="rejectDisplayAmount"
             class="input join-item w-full"
             placeholder="new valuation amount"
             :disabled="busy === 'reject'"
-          />
+          >
           <select
             v-model="rejectSelectedDisplayDenom"
             class="select join-item"
@@ -159,23 +212,31 @@
         >
           reject
         </button>
-        <div v-if="err.reject" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="err.reject"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ err.reject }}
         </div>
       </fieldset>
     </form>
 
     <!-- Renew -->
-    <form class="mb-3" @submit.prevent="renew">
+    <form
+      class="mb-3"
+      @submit.prevent="renew"
+    >
       <fieldset class="fieldset bg-base-200 border-base-300 border p-3">
-        <legend class="fieldset-legend">Renew</legend>
+        <legend class="fieldset-legend">
+          Renew
+        </legend>
         <div class="join w-full">
           <input
             v-model.trim="payer"
             class="input join-item w-full"
             placeholder="payer address"
             :disabled="busy === 'renew'"
-          />
+          >
           <button
             class="btn join-item btn-primary"
             :disabled="busy === 'renew' || !payer"
@@ -183,7 +244,10 @@
             renew
           </button>
         </div>
-        <div v-if="err.renew" class="alert alert-error alert-soft mt-2">
+        <div
+          v-if="err.renew"
+          class="alert alert-error alert-soft mt-2"
+        >
           {{ err.renew }}
         </div>
       </fieldset>

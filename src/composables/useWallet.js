@@ -1,5 +1,6 @@
 import { computed, reactive } from 'vue'
 import api from '@/orm/http'
+import { useAxiosRepo } from '@pinia-orm/axios'
 import {
   DirectSecp256k1HdWallet,
   makeSignDoc,
@@ -8,7 +9,7 @@ import {
 } from '@cosmjs/proto-signing'
 import { useStorage } from '@vueuse/core'
 import { getChainInfo, sendMsgs } from '../utils/dysonTxUtils'
-import { useDenom } from './useDenom'
+import { DenomMetadata } from '@/orm/models/bank/DenomMetadata'
 import { TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx.js'
 import { toBase64, fromBase64 } from '@cosmjs/encoding'
 
@@ -206,6 +207,8 @@ export function useWallet() {
       .trim()
       .replace(/^tcp:\/\//, 'http://')
     if (normalizedRpc) rpcUrl.value = normalizedRpc
+
+    // Chain/REST context may have changed; callers should refetch denom metadata if needed
   }
 
   const suggestChainIfNeeded = async (provider) => {
@@ -407,6 +410,7 @@ export function useWallet() {
 
   const sendMsg = async ({
     msg,
+    msgs,
     gasLimit,
     memo = '',
     executorAddress = undefined,
@@ -416,9 +420,11 @@ export function useWallet() {
     const signerAddress = grantee || executorAddress
     const { walletInstance, address, type } = await getWallet(signerAddress)
 
-    const finalMsg = grantee
-      ? { '@type': '/cosmos.authz.v1beta1.MsgExec', grantee, msgs: [msg] }
-      : msg
+    const baseMsgs = Array.isArray(msgs) && msgs.length > 0 ? msgs : msg ? [msg] : []
+    if (baseMsgs.length === 0) throw new Error('sendMsg requires msg or msgs[]')
+    const msgsForSend = grantee
+      ? [{ '@type': '/cosmos.authz.v1beta1.MsgExec', grantee, msgs: baseMsgs }]
+      : baseMsgs
 
     let finalGasLimit = gasLimit
 
@@ -432,7 +438,7 @@ export function useWallet() {
         wallet: walletInstance,
         walletType: type,
         address,
-        msgs: [finalMsg],
+        msgs: msgsForSend,
         memo,
         fee: buildFee(200000),
         simulate: true,
@@ -453,7 +459,7 @@ export function useWallet() {
         wallet: walletInstance,
         walletType: type,
         address,
-        msgs: [finalMsg],
+        msgs: msgsForSend,
         memo,
         fee: buildFee(100000000),
         simulate: true,
@@ -476,7 +482,7 @@ export function useWallet() {
       wallet: walletInstance,
       walletType: type,
       address,
-      msgs: [finalMsg],
+      msgs: msgsForSend,
       memo,
       fee,
       simulate: false,
@@ -488,10 +494,13 @@ export function useWallet() {
       addTransaction({
         txHash,
         timestamp: Date.now(),
-        type: finalMsg?.['@type'] || 'unknown',
+        type: (msgsForSend?.[0] && msgsForSend[0]['@type']) || 'unknown',
         fromAddress: address,
-        toAddress: msg?.address || msg?.to_address || msg?.recipient || '',
-        amount: msg?.amount,
+        toAddress:
+          (baseMsgs?.[0] &&
+            (baseMsgs[0].address || baseMsgs[0].to_address || baseMsgs[0].recipient)) ||
+          '',
+        amount: baseMsgs?.[0]?.amount,
         status: result?.success ? 'success' : 'failed',
       })
     }
@@ -713,16 +722,15 @@ export function useWallet() {
     return transaction
   }
 
-  // DENOMINATION METADATA METHODS
+  // DENOMINATION METADATA METHODS (wrappers around DenomMetadata)
   const loadDenomMetadata = async () => {
-    await denom.ensureDenomsLoaded()
+    await useAxiosRepo(DenomMetadata).api().fetchAll()
   }
-
-  // Denom helpers
-  const denom = useDenom()
-  const getDisplayOptions = ({ allowedBases }) => denom.getDisplayOptions({ allowedBases })
-  const normalizeFromDisplay = (args) => denom.normalizeFromDisplay(args)
-  const normalizeCoin = (args) => denom.normalizeCoin(args)
+  const getDisplayOptions = ({ allowedBases }) => DenomMetadata.getOptions({ allowedBases })
+  const normalizeFromDisplay = (args) =>
+    DenomMetadata.normalize({ amount: args.amount, denom: args.displayDenom })
+  const normalizeCoin = (args) =>
+    DenomMetadata.normalize({ amount: args.amount, denom: args.denom })
 
   // TRANSACTION HISTORY METHODS
   const addTransaction = (txMetadata) => {

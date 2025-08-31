@@ -1,3 +1,5 @@
 <template>
-  <div class="p-4">Name Denom Owners</div>
+  <div class="p-4">
+    Name Denom Owners
+  </div>
 </template>

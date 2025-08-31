@@ -1,6 +1,8 @@
 <template>
   <div class="mx-auto p-4 space-y-6">
-    <h1 class="text-2xl font-bold">Pinia ORM Demo</h1>
+    <h1 class="text-2xl font-bold">
+      Pinia ORM Demo
+    </h1>
 
     <DemoOrmAccount />
 

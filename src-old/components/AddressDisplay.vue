@@ -1,9 +1,9 @@
 <template>
   <Tooltip :text="tooltipText">
     <span
-      @click="copy"
       :title="address"
       class="font-mono cursor-pointer hover:text-primary text-xs"
+      @click="copy"
     >
       {{
         truncate && truncate < address.length

@@ -4,16 +4,16 @@
       <input
         ref="inputEl"
         :value="localText"
-        @input="onInput"
-        @focus="isFocused = true"
-        @blur="isFocused = false"
         type="text"
         placeholder="dys2... or name"
         class="input join-item w-full"
         :class="{ 'input-error': !!err }"
         :disabled="disabled"
         spellcheck="false"
-      />
+        @input="onInput"
+        @focus="isFocused = true"
+        @blur="isFocused = false"
+      >
       <div
         v-if="!!localText && !isBech32(localText)"
         class="join-item input bg-base-300"
@@ -23,11 +23,22 @@
       </div>
     </div>
     <div class="mt-1 flex items-center gap-2 min-h-[1.25rem]">
-      <span v-if="isResolving" class="opacity-70">Resolving…</span>
-      <span v-else-if="err" class="text-error">{{ err }}</span>
-      <span v-else-if="resolvedAddress && chosenName" class="text-success"
-        >{{ nameMain }} resolves to:
-        <AddressDisplay :address="resolvedAddress" :truncate="0" />
+      <span
+        v-if="isResolving"
+        class="opacity-70"
+      >Resolving…</span>
+      <span
+        v-else-if="err"
+        class="text-error"
+      >{{ err }}</span>
+      <span
+        v-else-if="resolvedAddress && chosenName"
+        class="text-success"
+      >{{ nameMain }} resolves to:
+        <AddressDisplay
+          :address="resolvedAddress"
+          :truncate="0"
+        />
       </span>
     </div>
   </div>

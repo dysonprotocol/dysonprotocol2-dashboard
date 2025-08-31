@@ -1,6 +1,12 @@
 <template>
-  <TransitionRoot as="template" :show="open">
-    <Dialog class="relative z-50" @close="$emit('close')">
+  <TransitionRoot
+    as="template"
+    :show="open"
+  >
+    <Dialog
+      class="relative z-50"
+      @close="$emit('close')"
+    >
       <TransitionChild
         as="template"
         enter="ease-in-out duration-500"
@@ -37,9 +43,9 @@
                       Review Transaction
                     </h2>
                     <button
-                      @click="$emit('close')"
                       class="btn btn-ghost btn-sm btn-circle"
                       data-testid="close-tx-drawer"
+                      @click="$emit('close')"
                     >
                       <XMarkIcon class="h-5 w-5" />
                     </button>
@@ -67,9 +73,7 @@
 
                     <div class="form-control">
                       <label class="label">
-                        <span class="label-text font-medium"
-                          >Signer Wallet</span
-                        >
+                        <span class="label-text font-medium">Signer Wallet</span>
                       </label>
                       <div class="bg-base-200 p-3">
                         <div
@@ -85,9 +89,7 @@
                     <!-- Signer Address -->
                     <div class="form-control">
                       <label class="label">
-                        <span class="label-text font-medium"
-                          >Signer Address</span
-                        >
+                        <span class="label-text font-medium">Signer Address</span>
                       </label>
                       <div class="bg-base-200 p-3 space-y-2">
                         <div
@@ -102,11 +104,10 @@
                     <!-- Messages -->
                     <div class="form-control">
                       <label class="label">
-                        <span class="label-text font-medium"
-                          >Messages (JSON)</span
-                        >
+                        <span class="label-text font-medium">Messages (JSON)</span>
                       </label>
                       <textarea
+                        ref="messagesTextarea"
                         v-model="messagesJson"
                         class="textarea textarea-bordered w-full text-sm font-mono min-h-32 resize-y"
                         data-testid="messages-input"
@@ -114,9 +115,11 @@
                         placeholder="JSON messages array..."
                         :style="{ height: 'auto', minHeight: '8rem' }"
                         @input="autoResize"
-                        ref="messagesTextarea"
-                      ></textarea>
-                      <div v-if="messagesError" class="label">
+                      />
+                      <div
+                        v-if="messagesError"
+                        class="label"
+                      >
                         <span class="label-text-alt text-error">{{
                           messagesError
                         }}</span>
@@ -139,7 +142,7 @@
                             min="0"
                             class="input input-bordered input-sm w-full"
                             data-testid="fee-amount-input"
-                          />
+                          >
                         </div>
                         <div>
                           <label class="label py-1">
@@ -151,7 +154,7 @@
                             min="0"
                             class="input input-bordered input-sm w-full"
                             data-testid="fee-gas-limit-input"
-                          />
+                          >
                         </div>
                       </div>
                     </div>
@@ -159,9 +162,7 @@
                     <!-- Memo -->
                     <div class="form-control">
                       <label class="label">
-                        <span class="label-text font-medium"
-                          >Memo (Optional)</span
-                        >
+                        <span class="label-text font-medium">Memo (Optional)</span>
                       </label>
                       <input
                         v-model="editableTransaction.memo"
@@ -169,7 +170,7 @@
                         class="input input-bordered w-full text-sm"
                         data-testid="memo-input"
                         placeholder="Enter transaction memo..."
-                      />
+                      >
                     </div>
 
                     <!-- Error Display -->
@@ -185,23 +186,23 @@
                   <!-- Footer Actions -->
                   <div class="flex gap-3 p-4 border-t border-base-300">
                     <button
-                      @click="$emit('close')"
                       class="btn btn-outline flex-1"
                       data-testid="cancel-transaction"
                       :disabled="loading"
+                      @click="$emit('close')"
                     >
                       Cancel
                     </button>
                     <button
-                      @click="signTransaction"
                       class="btn btn-primary flex-1"
                       data-testid="sign-transaction"
                       :disabled="loading || !!messagesError"
+                      @click="signTransaction"
                     >
                       <span
                         v-if="loading"
                         class="loading loading-spinner loading-sm"
-                      ></span>
+                      />
                       <span v-else>Sign Transaction</span>
                     </button>
                   </div>

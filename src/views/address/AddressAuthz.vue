@@ -4,32 +4,62 @@
       Authz — <code>{{ address }}</code>
     </h2>
     <div class="flex gap-2">
-      <button class="btn btn-primary" @click="refreshAsGranter">As Granter</button>
-      <button class="btn btn-primary" @click="refreshAsGrantee">As Grantee</button>
+      <button
+        class="btn btn-primary"
+        @click="refreshAsGranter"
+      >
+        As Granter
+      </button>
+      <button
+        class="btn btn-primary"
+        @click="refreshAsGrantee"
+      >
+        As Grantee
+      </button>
     </div>
     <div class="grid md:grid-cols-2 gap-6">
       <div>
-        <h3 class="font-semibold">Grants given</h3>
+        <h3 class="font-semibold">
+          Grants given
+        </h3>
         <ul class="list-disc pl-6 text-sm">
-          <li v-for="g in asGranter" :key="g.grantee + ':' + g.type_url + ':' + g.msg_type_url">
+          <li
+            v-for="g in asGranter"
+            :key="g.grantee + ':' + g.type_url + ':' + g.msg_type_url"
+          >
             → <span class="font-mono">{{ g.grantee }}</span>
             <div class="opacity-70">
               auth=<code>{{ g.type_url }}</code> msg=<code>{{ g.msg_type_url }}</code>
             </div>
           </li>
-          <li v-if="asGranter.length === 0" class="opacity-70">None</li>
+          <li
+            v-if="asGranter.length === 0"
+            class="opacity-70"
+          >
+            None
+          </li>
         </ul>
       </div>
       <div>
-        <h3 class="font-semibold">Grants received</h3>
+        <h3 class="font-semibold">
+          Grants received
+        </h3>
         <ul class="list-disc pl-6 text-sm">
-          <li v-for="g in asGrantee" :key="g.granter + ':' + g.type_url + ':' + g.msg_type_url">
+          <li
+            v-for="g in asGrantee"
+            :key="g.granter + ':' + g.type_url + ':' + g.msg_type_url"
+          >
             ← <span class="font-mono">{{ g.granter }}</span>
             <div class="opacity-70">
               auth=<code>{{ g.type_url }}</code> msg=<code>{{ g.msg_type_url }}</code>
             </div>
           </li>
-          <li v-if="asGrantee.length === 0" class="opacity-70">None</li>
+          <li
+            v-if="asGrantee.length === 0"
+            class="opacity-70"
+          >
+            None
+          </li>
         </ul>
       </div>
     </div>

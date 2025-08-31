@@ -1,84 +1,190 @@
 <template>
-  <h2 class="text-xl font-semibold" id="gov">Gov</h2>
+  <h2
+    id="gov"
+    class="text-xl font-semibold"
+  >
+    Gov
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Gov</h3>
+      <h3 class="font-semibold">
+        Gov
+      </h3>
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="loadProposals">Load Proposals</button>
+        <button
+          class="btn btn-primary"
+          @click="loadProposals"
+        >
+          Load Proposals
+        </button>
       </div>
       <ul class="list-disc pl-6 text-sm max-h-40 overflow-auto">
-        <li v-for="p in proposals" :key="p.id">
+        <li
+          v-for="p in proposals"
+          :key="p.id"
+        >
           <span class="font-mono">#{{ p.id }}</span> —
           <span class="opacity-70">{{ p.status }}</span>
-          <div class="opacity-70">{{ p.title || p.summary }}</div>
+          <div class="opacity-70">
+            {{ p.title || p.summary }}
+          </div>
         </li>
       </ul>
-      <form class="space-y-2" @submit.prevent="submitGovVote">
+      <form
+        class="space-y-2"
+        @submit.prevent="submitGovVote"
+      >
         <fieldset class="space-y-2">
-          <legend class="text-sm font-semibold opacity-70">/cosmos.gov.v1.MsgVote</legend>
-          <input v-model="govProposalId" class="input w-full" placeholder="proposal_id" />
-          <input v-model="govProposer" class="input w-full" placeholder="voter" />
+          <legend class="text-sm font-semibold opacity-70">
+            /cosmos.gov.v1.MsgVote
+          </legend>
+          <input
+            v-model="govProposalId"
+            class="input w-full"
+            placeholder="proposal_id"
+          >
+          <input
+            v-model="govProposer"
+            class="input w-full"
+            placeholder="voter"
+          >
           <input
             v-model="govVoteOption"
             class="input w-full"
             placeholder="option (1=yes,2=abstain,3=no,4=no_with_veto)"
-          />
-          <button class="btn btn-primary" type="submit">Vote</button>
-          <div v-if="govError" class="text-sm text-red-600">{{ govError }}</div>
+          >
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            Vote
+          </button>
+          <div
+            v-if="govError"
+            class="text-sm text-red-600"
+          >
+            {{ govError }}
+          </div>
         </fieldset>
       </form>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <form class="space-y-2" @submit.prevent="submitGovProposal">
+      <form
+        class="space-y-2"
+        @submit.prevent="submitGovProposal"
+      >
         <fieldset class="space-y-2">
-          <legend class="text-sm font-semibold opacity-70">/cosmos.gov.v1.MsgSubmitProposal</legend>
-          <input v-model="govProposer" class="input w-full" placeholder="proposer" />
+          <legend class="text-sm font-semibold opacity-70">
+            /cosmos.gov.v1.MsgSubmitProposal
+          </legend>
+          <input
+            v-model="govProposer"
+            class="input w-full"
+            placeholder="proposer"
+          >
           <textarea
             v-model="govMessages"
             class="input w-full h-24"
             placeholder="messages JSON (Anys)"
-          ></textarea>
+          />
           <textarea
             v-model="govInitialDeposit"
             class="input w-full h-20"
             placeholder="initial_deposit JSON (coins)"
-          ></textarea>
-          <input v-model="govTitle" class="input w-full" placeholder="title (optional)" />
-          <input v-model="govSummary" class="input w-full" placeholder="summary (optional)" />
-          <input v-model="govMetadata" class="input w-full" placeholder="metadata (optional)" />
+          />
+          <input
+            v-model="govTitle"
+            class="input w-full"
+            placeholder="title (optional)"
+          >
+          <input
+            v-model="govSummary"
+            class="input w-full"
+            placeholder="summary (optional)"
+          >
+          <input
+            v-model="govMetadata"
+            class="input w-full"
+            placeholder="metadata (optional)"
+          >
           <div class="flex flex-wrap gap-2">
-            <button class="btn btn-primary" type="button" @click="prefillGovMsgSend">
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click="prefillGovMsgSend"
+            >
               Prefill MsgSend
             </button>
-            <button class="btn btn-primary" type="button" @click="prefillGovDeposit">
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click="prefillGovDeposit"
+            >
               Prefill Deposit
             </button>
           </div>
-          <button class="btn btn-primary" type="submit">Submit Proposal</button>
-          <div v-if="govError" class="text-sm text-red-600">{{ govError }}</div>
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            Submit Proposal
+          </button>
+          <div
+            v-if="govError"
+            class="text-sm text-red-600"
+          >
+            {{ govError }}
+          </div>
         </fieldset>
       </form>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <form class="space-y-2" @submit.prevent="submitGovDeposit">
+      <form
+        class="space-y-2"
+        @submit.prevent="submitGovDeposit"
+      >
         <fieldset class="space-y-2">
-          <legend class="text-sm font-semibold opacity-70">/cosmos.gov.v1.MsgDeposit</legend>
-          <input v-model="govProposalId" class="input w-full" placeholder="proposal_id" />
-          <input v-model="govProposer" class="input w-full" placeholder="depositor" />
+          <legend class="text-sm font-semibold opacity-70">
+            /cosmos.gov.v1.MsgDeposit
+          </legend>
+          <input
+            v-model="govProposalId"
+            class="input w-full"
+            placeholder="proposal_id"
+          >
+          <input
+            v-model="govProposer"
+            class="input w-full"
+            placeholder="depositor"
+          >
           <textarea
             v-model="govDepositAmount"
             class="input w-full h-20"
             placeholder="amount JSON (coins)"
-          ></textarea>
+          />
           <div class="flex flex-wrap gap-2">
-            <button class="btn btn-primary" type="button" @click="prefillGovDepositAmount">
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click="prefillGovDepositAmount"
+            >
               Prefill Amount
             </button>
           </div>
-          <button class="btn btn-primary" type="submit">Deposit</button>
-          <div v-if="govError" class="text-sm text-red-600">{{ govError }}</div>
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            Deposit
+          </button>
+          <div
+            v-if="govError"
+            class="text-sm text-red-600"
+          >
+            {{ govError }}
+          </div>
         </fieldset>
       </form>
     </div>
@@ -86,28 +192,61 @@
 
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Gov Votes</h3>
+      <h3 class="font-semibold">
+        Gov Votes
+      </h3>
       <div class="grid gap-2 md:grid-cols-2">
-        <input v-model="govProposalId" class="input w-full" placeholder="proposal_id" />
-        <button class="btn btn-primary" @click="loadGovVotes">Load Votes</button>
+        <input
+          v-model="govProposalId"
+          class="input w-full"
+          placeholder="proposal_id"
+        >
+        <button
+          class="btn btn-primary"
+          @click="loadGovVotes"
+        >
+          Load Votes
+        </button>
       </div>
       <ul class="list-disc pl-6 text-sm max-h-56 overflow-auto">
-        <li v-for="v in govVotes" :key="v.proposal_id + ':' + v.voter">
+        <li
+          v-for="v in govVotes"
+          :key="v.proposal_id + ':' + v.voter"
+        >
           <span class="font-mono">{{ v.voter }}</span> — on #{{ v.proposal_id }}
           <span class="opacity-70"> meta={{ v.metadata || '—' }}</span>
         </li>
       </ul>
-      <div v-if="govVotesError" class="text-sm text-red-600">{{ govVotesError }}</div>
+      <div
+        v-if="govVotesError"
+        class="text-sm text-red-600"
+      >
+        {{ govVotesError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Gov Deposits</h3>
+      <h3 class="font-semibold">
+        Gov Deposits
+      </h3>
       <div class="grid gap-2 md:grid-cols-2">
-        <input v-model="govProposalId" class="input w/full" placeholder="proposal_id" />
-        <button class="btn btn-primary" @click="loadGovDeposits">Load Deposits</button>
+        <input
+          v-model="govProposalId"
+          class="input w/full"
+          placeholder="proposal_id"
+        >
+        <button
+          class="btn btn-primary"
+          @click="loadGovDeposits"
+        >
+          Load Deposits
+        </button>
       </div>
       <ul class="list-disc pl-6 text-sm max-h-56 overflow-auto">
-        <li v-for="d in govDeposits" :key="d.proposal_id + ':' + d.depositor">
+        <li
+          v-for="d in govDeposits"
+          :key="d.proposal_id + ':' + d.depositor"
+        >
           <span class="font-mono">{{ d.depositor }}</span> — #{{ d.proposal_id }}
           <span class="opacity-70">
             amount={{
@@ -116,14 +255,30 @@
           </span>
         </li>
       </ul>
-      <div v-if="govDepositsError" class="text-sm text-red-600">{{ govDepositsError }}</div>
+      <div
+        v-if="govDepositsError"
+        class="text-sm text-red-600"
+      >
+        {{ govDepositsError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Gov Tally</h3>
+      <h3 class="font-semibold">
+        Gov Tally
+      </h3>
       <div class="grid gap-2 md:grid-cols-2">
-        <input v-model="govProposalId" class="input w-full" placeholder="proposal_id" />
-        <button class="btn btn-primary" @click="loadGovTally">Load Tally</button>
+        <input
+          v-model="govProposalId"
+          class="input w-full"
+          placeholder="proposal_id"
+        >
+        <button
+          class="btn btn-primary"
+          @click="loadGovTally"
+        >
+          Load Tally
+        </button>
       </div>
       <div class="text-sm">
         <div>
@@ -139,15 +294,37 @@
           no_with_veto: <code>{{ govTally?.no_with_veto_count || '0' }}</code>
         </div>
       </div>
-      <div v-if="govTallyError" class="text-sm text-red-600">{{ govTallyError }}</div>
+      <div
+        v-if="govTallyError"
+        class="text-sm text-red-600"
+      >
+        {{ govTallyError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Gov Params</h3>
+      <h3 class="font-semibold">
+        Gov Params
+      </h3>
       <div class="flex flex-wrap gap-2">
-        <button class="btn btn-primary" @click="loadGovParamsVoting">Voting</button>
-        <button class="btn btn-primary" @click="loadGovParamsTallying">Tallying</button>
-        <button class="btn btn-primary" @click="loadGovParamsDeposit">Deposit</button>
+        <button
+          class="btn btn-primary"
+          @click="loadGovParamsVoting"
+        >
+          Voting
+        </button>
+        <button
+          class="btn btn-primary"
+          @click="loadGovParamsTallying"
+        >
+          Tallying
+        </button>
+        <button
+          class="btn btn-primary"
+          @click="loadGovParamsDeposit"
+        >
+          Deposit
+        </button>
       </div>
       <div class="text-sm">
         <div>
@@ -208,7 +385,12 @@
           min_deposit_ratio: <code>{{ govParams?.min_deposit_ratio }}</code>
         </div>
       </div>
-      <div v-if="govParamsError" class="text-sm text-red-600">{{ govParamsError }}</div>
+      <div
+        v-if="govParamsError"
+        class="text-sm text-red-600"
+      >
+        {{ govParamsError }}
+      </div>
     </div>
   </section>
 </template>

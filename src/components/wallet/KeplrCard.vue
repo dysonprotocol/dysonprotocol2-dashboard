@@ -1,47 +1,76 @@
 <template>
-  <div class="collapse collapse-arrow">
-    <input type="checkbox" />
-    <div class="collapse-title" :class="{ 'font-bold': isCurrentAddress }">
-      <div class="text-base">{{ titleText }}</div>
+  <div class="collapse collapse-arrow border border-primary/20">
+    <input type="checkbox">
+    <div
+      class="collapse-title"
+      :class="{ 'font-bold': isCurrentAddress }"
+    >
+      <div class="text-base">
+        {{ titleText }}
+      </div>
     </div>
     <div class="collapse-content text-sm">
-      <div v-if="isKeplrConnected" class="mb-2">
-        <p class="text-xs text-base-content/80">Connected</p>
-        <AddressDisplay :address="address" :truncate="10" />
+      <div
+        v-if="isKeplrConnected"
+        class="mb-2"
+      >
+        <p class="text-xs text-base-content/80">
+          Connected
+        </p>
+        <AddressDisplay
+          :address="address"
+          :truncate="10"
+        />
       </div>
-      <div v-else-if="!isKeplrAvailable" class="text-xs text-base-content/80 mb-2">
+      <div
+        v-else-if="!isKeplrAvailable"
+        class="text-xs text-base-content/80 mb-2"
+      >
         Keplr not available
       </div>
-      <div v-else class="text-xs text-base-content/80 mb-2">Not connected</div>
+      <div
+        v-else
+        class="text-xs text-base-content/80 mb-2"
+      >
+        Not connected
+      </div>
       <div class="flex items-center gap-2">
         <button
           class="btn btn-outline btn-xs"
-          @click="connectKeplr"
           :disabled="isBusy || isKeplrConnected || !isKeplrAvailable"
+          @click="connectKeplr"
         >
           Connect
         </button>
         <button
           class="btn btn-outline btn-xs"
-          @click="disconnect"
           :disabled="isBusy || !isKeplrConnected"
+          @click="disconnect"
         >
           Disconnect
         </button>
-        <div v-if="errorMessage" class="text-error text-xs">{{ errorMessage }}</div>
+        <div
+          v-if="errorMessage"
+          class="text-error text-xs"
+        >
+          {{ errorMessage }}
+        </div>
       </div>
-      <div v-if="isKeplrConnected && links.length" class="mt-2 text-xs grid grid-cols-3 gap-2">
+      <div
+        v-if="isKeplrConnected && links.length"
+        class="mt-2 text-xs grid grid-cols-3 gap-2"
+      >
         <RouterLink
           v-for="item in links"
           :key="item.text"
-          :to="item.to"
           v-slot="{ href, navigate, isExactActive }"
+          :to="item.to"
         >
           <a
             :href="href"
-            @click="navigate"
             class="link link-hover"
             :class="{ 'font-bold': isExactActive }"
+            @click="navigate"
           >
             {{ item.text }}
           </a>

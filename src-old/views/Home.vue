@@ -1,10 +1,18 @@
 <template>
   <div class="p-4">
     <div class="text-center mb-6">
-      <h1 class="text-4xl font-bold mb-2">Dys2</h1>
-      <p class="text-lg text-gray-600">Make Dwapps, get Paid.</p>
+      <h1 class="text-4xl font-bold mb-2">
+        Dys2
+      </h1>
+      <p class="text-lg text-gray-600">
+        Make Dwapps, get Paid.
+      </p>
     </div>
-    <NuanceTaggedPostList tag="dys" rating="hot" :limit="20" />
+    <NuanceTaggedPostList
+      tag="dys"
+      rating="hot"
+      :limit="20"
+    />
   </div>
 </template>
 

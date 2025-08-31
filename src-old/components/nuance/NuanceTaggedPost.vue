@@ -1,6 +1,10 @@
 <template>
   <div>
-    <NuancePost :post="post" :post-id="id" :tag="tag" />
+    <NuancePost
+      :post="post"
+      :post-id="id"
+      :tag="tag"
+    />
   </div>
 </template>
 

@@ -1,5 +1,8 @@
 import { Model } from 'pinia-orm'
 import type { Request } from '@pinia-orm/axios'
+import { useAxiosRepo } from '@pinia-orm/axios'
+import Validator from '@/orm/models/staking/Validator'
+import DelegatorUnbonding from '@/orm/models/staking/Unbonding'
 
 type DelegationsResp = {
   delegation_responses?: Array<{
@@ -81,7 +84,119 @@ export class Delegation extends Model {
           })
           ensureOk(result, 'Delegate failed')
           await refreshDelegations.call(this, delegatorAddress)
+          // Also refresh validators list to keep UI in sync with any state changes
+          try {
+            await useAxiosRepo(Validator).api().fetchByOperator(validatorAddress)
+          } catch (e) {
+            // Non-fatal: UI can still function with stale validator
+            console.warn('[Delegation.delegate] Failed to refresh validator:', e)
+          }
 
+          return result
+        },
+        async undelegate(
+          this: Request,
+          params: {
+            delegatorAddress: string
+            validatorAddress: string
+            amount: string
+            denom: string
+            wallet: {
+              sendMsg: (args: {
+                msg: unknown
+                gasLimit?: number | 'auto'
+                memo?: string
+                executorAddress?: string
+              }) => Promise<{ success: boolean; rawLog?: string }>
+            }
+            gasLimit?: number | 'auto'
+            memo?: string
+          }
+        ) {
+          const { delegatorAddress, validatorAddress, amount, denom, wallet, gasLimit, memo } =
+            params
+          const msg = {
+            '@type': '/cosmos.staking.v1beta1.MsgUndelegate',
+            delegator_address: delegatorAddress,
+            validator_address: validatorAddress,
+            amount: { denom, amount },
+          }
+          const result = await wallet.sendMsg({
+            msg,
+            gasLimit,
+            memo,
+            executorAddress: delegatorAddress,
+          })
+          ensureOk(result, 'Undelegate failed')
+          await refreshDelegations.call(this, delegatorAddress)
+          try {
+            await useAxiosRepo(Validator).api().fetchByOperator(validatorAddress)
+          } catch (e) {
+            console.warn('[Delegation.undelegate] Failed to refresh validator:', e)
+          }
+          try {
+            await useAxiosRepo(DelegatorUnbonding).api().fetchAll(delegatorAddress)
+          } catch (e) {
+            console.warn('[Delegation.undelegate] Failed to refresh unbondings:', e)
+          }
+          return result
+        },
+        async cancelUnbondingDelegation(
+          this: Request,
+          params: {
+            delegatorAddress: string
+            validatorAddress: string
+            amount: string
+            denom: string
+            creationHeight: string | number
+            wallet: {
+              sendMsg: (args: {
+                msg: unknown
+                gasLimit?: number | 'auto'
+                memo?: string
+                executorAddress?: string
+              }) => Promise<{ success: boolean; rawLog?: string }>
+            }
+            gasLimit?: number | 'auto'
+            memo?: string
+          }
+        ) {
+          const {
+            delegatorAddress,
+            validatorAddress,
+            amount,
+            denom,
+            creationHeight,
+            wallet,
+            gasLimit,
+            memo,
+          } = params
+          const msg = {
+            '@type': '/cosmos.staking.v1beta1.MsgCancelUnbondingDelegation',
+            delegator_address: delegatorAddress,
+            validator_address: validatorAddress,
+            amount: { denom, amount },
+            creation_height:
+              typeof creationHeight === 'number' ? creationHeight : Number(creationHeight),
+          }
+          const result = await wallet.sendMsg({
+            msg,
+            gasLimit,
+            memo,
+            executorAddress: delegatorAddress,
+          })
+          ensureOk(result, 'Cancel unbonding delegation failed')
+          try {
+            await useAxiosRepo(DelegatorUnbonding).api().fetchAll(delegatorAddress)
+          } catch (e) {
+            console.warn('[Delegation.cancelUnbondingDelegation] Failed to refresh unbondings:', e)
+          }
+          await refreshDelegations.call(this, delegatorAddress)
+          try {
+            await useAxiosRepo(Validator).api().fetchByOperator(validatorAddress)
+          } catch (e) {
+            console.warn('[Delegation.cancelUnbondingDelegation] Failed to refresh validator:', e)
+          }
           return result
         },
       },

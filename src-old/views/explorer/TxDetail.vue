@@ -4,19 +4,26 @@
     <div class="breadcrumbs text-sm">
       <ul>
         <li>
-          <router-link to="/blocks" class="link link-hover"
-            >Explorer</router-link
+          <router-link
+            to="/blocks"
+            class="link link-hover"
           >
+            Explorer
+          </router-link>
         </li>
         <li>Transaction</li>
-        <li class="text-base-content/60">{{ truncatedHash }}</li>
+        <li class="text-base-content/60">
+          {{ truncatedHash }}
+        </li>
       </ul>
     </div>
 
     <!-- Transaction Header -->
     <div class="flex items-center justify-between flex-wrap gap-4">
       <div>
-        <h1 class="text-2xl font-bold">Transaction Details</h1>
+        <h1 class="text-2xl font-bold">
+          Transaction Details
+        </h1>
         <div class="text-sm text-base-content/60 mt-1 font-mono break-all">
           <TxHashDisplay
             :hash="hash"
@@ -26,7 +33,10 @@
           />
         </div>
       </div>
-      <div v-if="txData?.height" class="flex gap-2">
+      <div
+        v-if="txData?.height"
+        class="flex gap-2"
+      >
         <router-link
           :to="`/block/${txData.height}`"
           class="btn btn-sm btn-outline"
@@ -37,20 +47,32 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="flex justify-center items-center py-12">
-      <span class="loading loading-spinner loading-lg"></span>
+    <div
+      v-if="isLoading"
+      class="flex justify-center items-center py-12"
+    >
+      <span class="loading loading-spinner loading-lg" />
     </div>
 
     <!-- Error State -->
-    <div v-else-if="hasError" class="alert alert-error">
+    <div
+      v-else-if="hasError"
+      class="alert alert-error"
+    >
       <span>{{ errorMessage }}</span>
     </div>
 
     <!-- Transaction Data -->
-    <DisplayTx v-else-if="txData" :txData="txData" />
+    <DisplayTx
+      v-else-if="txData"
+      :tx-data="txData"
+    />
 
     <!-- Not Found State -->
-    <div v-else class="alert alert-warning">
+    <div
+      v-else
+      class="alert alert-warning"
+    >
       <span>Transaction {{ hash }} not found.</span>
     </div>
   </section>

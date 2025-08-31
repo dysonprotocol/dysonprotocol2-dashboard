@@ -1,7 +1,14 @@
 import { Model } from 'pinia-orm'
 import type { Request } from '@pinia-orm/axios'
+import type { AxiosInstance } from 'axios'
 
 type Coin = { denom: string; amount: string }
+interface RewardRow {
+  delegator_address: string
+  validator_address: string
+  denom: string
+  amount: string
+}
 
 export class DelegatorReward extends Model {
   static entity = 'delegator_rewards'
@@ -27,7 +34,7 @@ export class DelegatorReward extends Model {
               data: { rewards?: Array<{ validator_address?: string; reward?: Coin[] }> }
             }) => {
               const rewards = Array.isArray(data?.rewards) ? data.rewards : []
-              const rows: any[] = []
+              const rows: RewardRow[] = []
               for (const r of rewards) {
                 const va = r?.validator_address || ''
                 const coins = Array.isArray(r?.reward) ? r!.reward! : []
@@ -48,14 +55,23 @@ export class DelegatorReward extends Model {
             `/cosmos/distribution/v1beta1/delegators/${delegator}/rewards/${validator}`,
             {
               dataTransformer: ({ data }: { data: { rewards?: Coin[] } }) =>
-                (Array.isArray(data?.rewards) ? data.rewards : []).map((c) => ({
-                  delegator_address: delegator,
-                  validator_address: validator,
-                  denom: c.denom,
-                  amount: c.amount,
-                })),
+                (Array.isArray(data?.rewards) ? data.rewards : []).map(
+                  (c): RewardRow => ({
+                    delegator_address: delegator,
+                    validator_address: validator,
+                    denom: c.denom,
+                    amount: c.amount,
+                  })
+                ),
             }
           )
+        },
+        async fetchWithdrawAddress(this: Request, delegator: string) {
+          const client = (this as Request & { axios: AxiosInstance }).axios
+          const resp = await client.get(
+            `/cosmos/distribution/v1beta1/delegators/${delegator}/withdraw_address`
+          )
+          return String((resp?.data as { withdraw_address?: string })?.withdraw_address || '')
         },
         async withdrawRewards(
           this: Request,
@@ -119,6 +135,42 @@ export class DelegatorReward extends Model {
             executorAddress: delegatorAddress,
           })
           if (!res?.success) throw new Error(res?.rawLog || 'Set withdraw address failed')
+          return res
+        },
+        async withdrawAllRewards(
+          this: Request,
+          params: {
+            delegatorAddress: string
+            validatorAddresses: string[]
+            wallet: {
+              sendMsg: (args: {
+                msg?: unknown
+                msgs?: unknown[]
+                gasLimit?: number | 'auto'
+                memo?: string
+                executorAddress?: string
+              }) => Promise<{ success: boolean; rawLog?: string }>
+            }
+            gasLimit?: number | 'auto'
+            memo?: string
+          }
+        ) {
+          const { delegatorAddress, validatorAddresses, wallet, gasLimit, memo } = params
+          const msgs = (Array.isArray(validatorAddresses) ? validatorAddresses : []).map(
+            (validatorAddress) => ({
+              '@type': '/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward',
+              delegator_address: delegatorAddress,
+              validator_address: validatorAddress,
+            })
+          )
+          if (msgs.length === 0) throw new Error('No validators provided to withdraw from')
+          const res = await wallet.sendMsg({
+            msgs,
+            gasLimit,
+            memo,
+            executorAddress: delegatorAddress,
+          })
+          if (!res?.success) throw new Error(res?.rawLog || 'Withdraw all rewards failed')
           return res
         },
       },

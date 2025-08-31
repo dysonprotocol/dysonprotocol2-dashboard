@@ -3,20 +3,26 @@
     <div class="flex h-screen overflow-hidden">
       <!-- Hidden toggles replicate Nexus structure -->
       <input
-        type="checkbox"
         id="layout-sidebar-toggle-trigger"
+        type="checkbox"
         class="hidden"
         aria-label="Toggle layout sidebar"
-      />
+      >
 
       <Sidebar />
       <div class="flex min-w-0 grow flex-col min-h-0 overflow-auto">
         <Topbar />
-        <div id="layout-content">
+        <div
+          id="layout-content"
+          class="pl-2"
+        >
           <router-view />
         </div>
       </div>
-      <label for="layout-sidebar-toggle-trigger" id="layout-sidebar-backdrop"></label>
+      <label
+        id="layout-sidebar-backdrop"
+        for="layout-sidebar-toggle-trigger"
+      />
     </div>
   </div>
 </template>

@@ -1,9 +1,9 @@
 <template>
   <div
+    id="layout-topbar"
     role="navigation"
     aria-label="Navbar"
     class="flex items-center justify-between px-3 bg-base-100/95"
-    id="layout-topbar"
   >
     <div class="inline-flex items-center gap-3">
       <label
@@ -11,12 +11,19 @@
         class="btn btn-square btn-ghost btn-sm"
         aria-label="Menu"
       >
-        <span class="iconify lucide--menu size-5"></span>
+        <span class="iconify lucide--panel-left size-5" />
       </label>
     </div>
     <div class="inline-flex items-center gap-1">
-      <button aria-label="Toggle Theme" class="btn btn-sm btn-circle btn-ghost" @click="cycleTheme">
-        <span class="iconify size-4.5" :class="icon"></span>
+      <button
+        aria-label="Toggle Theme"
+        class="btn btn-sm btn-circle btn-ghost"
+        @click="cycleTheme"
+      >
+        <span
+          class="iconify size-4.5"
+          :class="icon"
+        />
       </button>
     </div>
   </div>

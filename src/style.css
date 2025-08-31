@@ -19,7 +19,7 @@ body,
 
 /* Sidebar toggle (Nexus-style) */
 :root {
-  --layout-sidebar-width: 16rem;
+  --layout-sidebar-width: 18rem;
 }
 
 #layout-sidebar {

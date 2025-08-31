@@ -1,7 +1,12 @@
 <template>
   <div class="p-4 space-y-4">
-    <h1 class="text-xl font-semibold">Vue Query Demo</h1>
-    <form class="grid gap-3 max-w-2xl" @submit.prevent>
+    <h1 class="text-xl font-semibold">
+      Vue Query Demo
+    </h1>
+    <form
+      class="grid gap-3 max-w-2xl"
+      @submit.prevent
+    >
       <label class="grid gap-1">
         <span class="text-sm opacity-70">Endpoint path template</span>
         <input
@@ -9,7 +14,7 @@
           type="text"
           class="input input-bordered"
           placeholder="/cosmos/bank/v1beta1/balances/{address}/by_denom"
-        />
+        >
       </label>
 
       <div class="grid gap-2">
@@ -18,18 +23,32 @@
           <textarea
             v-model="rawParams"
             class="textarea textarea-bordered w-full h-40"
-            placeholder='{"owner":"dys2...","limit":50}'
-          ></textarea>
+            placeholder="{&quot;owner&quot;:&quot;dys2...&quot;,&quot;limit&quot;:50}"
+          />
         </label>
       </div>
     </form>
 
-    <div class="text-sm opacity-70">REST Base: {{ apiBase }}</div>
+    <div class="text-sm opacity-70">
+      REST Base: {{ apiBase }}
+    </div>
 
     <div class="flex items-center gap-2">
-      <button class="btn btn-primary" @click="refetch" :disabled="isLoading">Query</button>
-      <span v-if="isLoading" class="loading loading-spinner loading-sm"></span>
-      <span v-if="isError" class="text-error">Error: {{ errorMessage }}</span>
+      <button
+        class="btn btn-primary"
+        :disabled="isLoading"
+        @click="refetch"
+      >
+        Query
+      </button>
+      <span
+        v-if="isLoading"
+        class="loading loading-spinner loading-sm"
+      />
+      <span
+        v-if="isError"
+        class="text-error"
+      >Error: {{ errorMessage }}</span>
     </div>
 
     <pre

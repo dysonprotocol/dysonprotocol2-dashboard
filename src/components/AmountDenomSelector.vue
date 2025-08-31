@@ -1,21 +1,25 @@
 <template>
-  <div class="join">
+  <div class="join w-full">
     <input
       :value="amountDisplay"
-      @input="onAmountInput"
       type="number"
       min="0"
       step="0.000001"
       placeholder="Amount"
       class="input input-md join-item"
       :disabled="disabled"
-    />
+      @input="onAmountInput"
+    >
     <select
       v-model="selectedBaseDenom"
       class="select select-md join-item"
       :disabled="disabled || options.length === 0"
     >
-      <option v-for="opt in options" :key="opt.base" :value="opt.base">
+      <option
+        v-for="opt in options"
+        :key="opt.base"
+        :value="opt.base"
+      >
         {{ opt.display }}
       </option>
     </select>
@@ -30,6 +34,8 @@ const props = defineProps({
   baseDenoms: { type: Array, default: () => [] },
   defaultBaseDenom: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
+  // Enables v-model:base from parent: { amount: string; denom: string }
+  base: { type: Object, default: () => ({ amount: '', denom: '' }) },
 })
 
 const emit = defineEmits(['update:base', 'update:display'])
@@ -57,10 +63,8 @@ function computeAndEmit() {
   // Always emit current display state
   emit('update:display', { amount: amountStr, denom: displayDenom })
 
-  if (!displayDenom || amountStr === '') {
-    emit('update:base', { amount: '', denom: selectedBaseDenom.value || '' })
-    return
-  }
+  // Do not emit base-clearing updates; preserve user input on denom changes
+  if (!displayDenom || amountStr === '') return
 
   // Convert display -> base using exponent from options (no metadata lookup ambiguity)
   const exponent = Number(opt?.exponent || 0)
@@ -95,6 +99,29 @@ onMounted(async () => {
   initializeSelection()
   computeAndEmit()
 })
+
+// React to parent-provided base value (idiomatic v-model:base)
+watch(
+  () => [props.base?.denom, props.base?.amount],
+  () => {
+    const baseDenom = String(props.base?.denom || '')
+    const hasValidDenom = baseDenom && options.value.some((o) => o.base === baseDenom)
+    if (hasValidDenom) selectedBaseDenom.value = baseDenom
+    const exp = Number(options.value.find((o) => o.base === baseDenom)?.exponent || 0)
+    const baseAmount = props.base?.amount
+    if (baseAmount == null || baseAmount === '') return
+    const s = String(baseAmount)
+    if (exp <= 0) amountDisplay.value = s
+    else if (s.length <= exp) {
+      const pad = '0'.repeat(exp - s.length)
+      amountDisplay.value = `0.${pad}${s}`.replace(/\.0+$/, '')
+    } else {
+      const i = s.length - exp
+      amountDisplay.value = `${s.slice(0, i)}.${s.slice(i)}`.replace(/\.0+$/, '')
+    }
+    computeAndEmit()
+  }
+)
 </script>
 
 <style scoped></style>

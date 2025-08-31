@@ -1,102 +1,234 @@
 <template>
-  <h2 class="text-xl font-semibold" id="crontask">Crontask</h2>
+  <h2
+    id="crontask"
+    class="text-xl font-semibold"
+  >
+    Crontask
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-4 p-4 border rounded">
-      <h3 class="font-semibold">Queries</h3>
+      <h3 class="font-semibold">
+        Queries
+      </h3>
       <div class="space-y-2">
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Fetch Params</h4>
-          <button class="btn btn-primary" @click="fetchParams">Fetch</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Fetch Params
+          </h4>
+          <button
+            class="btn btn-primary"
+            @click="fetchParams"
+          >
+            Fetch
+          </button>
           <div class="text-sm">
             block_gas_limit=<code>{{ params?.block_gas_limit }}</code>
           </div>
-          <div v-if="paramsError" class="text-sm text-red-600">{{ paramsError }}</div>
+          <div
+            v-if="paramsError"
+            class="text-sm text-red-600"
+          >
+            {{ paramsError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Tasks by Creator</h4>
-          <input v-model="creator" class="input w-full" placeholder="creator address" />
-          <button class="btn btn-primary" @click="fetchByCreator">Fetch</button>
-          <div v-if="byCreatorError" class="text-sm text-red-600">{{ byCreatorError }}</div>
+          <h4 class="text-sm font-semibold opacity-70">
+            Tasks by Creator
+          </h4>
+          <input
+            v-model="creator"
+            class="input w-full"
+            placeholder="creator address"
+          >
+          <button
+            class="btn btn-primary"
+            @click="fetchByCreator"
+          >
+            Fetch
+          </button>
+          <div
+            v-if="byCreatorError"
+            class="text-sm text-red-600"
+          >
+            {{ byCreatorError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Tasks by Status</h4>
+          <h4 class="text-sm font-semibold opacity-70">
+            Tasks by Status
+          </h4>
           <input
             v-model="statusTs"
             class="input w-full"
             placeholder="status (Scheduled|Pending|Done|Failed|Expired)"
-          />
+          >
           <div class="flex gap-2">
-            <button class="btn btn-primary" @click="fetchByStatusTs">By Timestamp</button>
-            <button class="btn btn-primary" @click="fetchByStatusGas">By Gas Price</button>
+            <button
+              class="btn btn-primary"
+              @click="fetchByStatusTs"
+            >
+              By Timestamp
+            </button>
+            <button
+              class="btn btn-primary"
+              @click="fetchByStatusGas"
+            >
+              By Gas Price
+            </button>
           </div>
           <div class="text-sm opacity-70">
             matches=<code>{{ countStatusTs || countStatusGas }}</code>
           </div>
-          <div v-if="statusTsError" class="text-sm text-red-600">{{ statusTsError }}</div>
-          <div v-if="statusGasError" class="text-sm text-red-600">{{ statusGasError }}</div>
+          <div
+            v-if="statusTsError"
+            class="text-sm text-red-600"
+          >
+            {{ statusTsError }}
+          </div>
+          <div
+            v-if="statusGasError"
+            class="text-sm text-red-600"
+          >
+            {{ statusGasError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Task by ID</h4>
+          <h4 class="text-sm font-semibold opacity-70">
+            Task by ID
+          </h4>
           <div class="flex gap-2">
-            <input v-model="taskIdById" class="input w-full" placeholder="task id" />
-            <button class="btn btn-primary" @click="fetchById">Fetch</button>
+            <input
+              v-model="taskIdById"
+              class="input w-full"
+              placeholder="task id"
+            >
+            <button
+              class="btn btn-primary"
+              @click="fetchById"
+            >
+              Fetch
+            </button>
           </div>
           <div class="text-sm">
             status=<code>{{ taskById?.status }}</code>
           </div>
-          <div v-if="byIdError" class="text-sm text-red-600">{{ byIdError }}</div>
+          <div
+            v-if="byIdError"
+            class="text-sm text-red-600"
+          >
+            {{ byIdError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Tasks All</h4>
-          <button class="btn btn-primary" @click="fetchAll">Init</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Tasks All
+          </h4>
+          <button
+            class="btn btn-primary"
+            @click="fetchAll"
+          >
+            Init
+          </button>
           <div class="text-sm">
             count=<code>{{ allCount }}</code>
           </div>
-          <div v-if="allError" class="text-sm text-red-600">{{ allError }}</div>
+          <div
+            v-if="allError"
+            class="text-sm text-red-600"
+          >
+            {{ allError }}
+          </div>
         </div>
       </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Create / Delete Tasks</h3>
-      <input v-model="creator" class="input w-full" placeholder="creator address" />
-      <input v-model="scheduled" class="input w-full" placeholder="scheduled (+1h30m or ts)" />
-      <input v-model="expiry" class="input w-full" placeholder="expiry (+2h or ts)" />
-      <input v-model="gasLimit" class="input w-full" placeholder="task gas limit (number)" />
-      <input v-model="feeDenom" class="input w-full" placeholder="fee denom (e.g., udys)" />
-      <input v-model="feeAmount" class="input w-full" placeholder="fee amount (string)" />
+      <h3 class="font-semibold">
+        Create / Delete Tasks
+      </h3>
+      <input
+        v-model="creator"
+        class="input w-full"
+        placeholder="creator address"
+      >
+      <input
+        v-model="scheduled"
+        class="input w-full"
+        placeholder="scheduled (+1h30m or ts)"
+      >
+      <input
+        v-model="expiry"
+        class="input w-full"
+        placeholder="expiry (+2h or ts)"
+      >
+      <input
+        v-model="gasLimit"
+        class="input w-full"
+        placeholder="task gas limit (number)"
+      >
+      <input
+        v-model="feeDenom"
+        class="input w-full"
+        placeholder="fee denom (e.g., udys)"
+      >
+      <input
+        v-model="feeAmount"
+        class="input w-full"
+        placeholder="fee amount (string)"
+      >
       <textarea
         v-model="msgsJson"
         class="textarea w-full"
         rows="3"
-        placeholder='msgs JSON array (e.g., [{"@type":"/cosmos.bank.v1beta1.MsgSend",...}])'
-      ></textarea>
+        placeholder="msgs JSON array (e.g., [{&quot;@type&quot;:&quot;/cosmos.bank.v1beta1.MsgSend&quot;,...}])"
+      />
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="createTask">Create</button>
-        <input v-model="taskId" class="input" placeholder="task id" />
-        <button class="btn btn-danger" @click="deleteTask">Delete</button>
+        <button
+          class="btn btn-primary"
+          @click="createTask"
+        >
+          Create
+        </button>
+        <input
+          v-model="taskId"
+          class="input"
+          placeholder="task id"
+        >
+        <button
+          class="btn btn-danger"
+          @click="deleteTask"
+        >
+          Delete
+        </button>
       </div>
-      <div v-if="taskError" class="text-sm text-red-600">{{ taskError }}</div>
+      <div
+        v-if="taskError"
+        class="text-sm text-red-600"
+      >
+        {{ taskError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">All Tasks (in memory)</h3>
+      <h3 class="font-semibold">
+        All Tasks (in memory)
+      </h3>
       <div class="text-sm opacity-70">
         count=<code>{{ allCount }}</code>
       </div>
       <ul class="list-disc pl-6 text-sm max-h-80 overflow-auto">
-        <li v-for="r in tasksList" :key="r.id" class="space-x-2">
+        <li
+          v-for="r in tasksList"
+          :key="r.id"
+          class="space-x-2"
+        >
           <span class="font-mono">#{{ r.id }}</span>
-          <span
-            >status=<code>{{ r.status }}</code></span
-          >
-          <span
-            >creator=<code>{{ r.creator }}</code></span
-          >
+          <span>status=<code>{{ r.status }}</code></span>
+          <span>creator=<code>{{ r.creator }}</code></span>
           <span>[{{ r.msgTypes.join(', ') }}]</span>
         </li>
       </ul>

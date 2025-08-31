@@ -1,6 +1,12 @@
 <template>
-  <TransitionRoot as="template" :show="open">
-    <Dialog class="relative z-50" @close="$emit('close')">
+  <TransitionRoot
+    as="template"
+    :show="open"
+  >
+    <Dialog
+      class="relative z-50"
+      @close="$emit('close')"
+    >
       <TransitionChild
         as="template"
         enter="ease-in-out duration-500"
@@ -30,8 +36,13 @@
                   <!-- Header -->
                   <div class="flex items-center justify-between p-4 border-b border-base-300">
                     <div class="flex items-center gap-2">
-                      <h2 class="text-lg font-semibold text-base-content">Wallet Manager</h2>
-                      <div v-if="authzInfo?.enabled" class="badge badge-info gap-1">
+                      <h2 class="text-lg font-semibold text-base-content">
+                        Wallet Manager
+                      </h2>
+                      <div
+                        v-if="authzInfo?.enabled"
+                        class="badge badge-info gap-1"
+                      >
                         <span>Authz:</span>
                         <span>
                           signing as {{ (authzInfo.grantee || '').slice(0, 8) }}… for
@@ -40,9 +51,9 @@
                       </div>
                     </div>
                     <button
-                      @click="$emit('close')"
                       class="btn btn-ghost btn-sm btn-circle"
                       data-testid="close-drawer"
+                      @click="$emit('close')"
                     >
                       <XMarkIcon class="h-5 w-5" />
                     </button>
@@ -66,16 +77,20 @@
                           <!-- Wallet Name and Actions -->
                           <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
-                              <img :src="keplrLogo" alt="Keplr" class="w-5 h-5" />
+                              <img
+                                :src="keplrLogo"
+                                alt="Keplr"
+                                class="w-5 h-5"
+                              >
                               <div class="font-medium text-base text-base-content">
                                 {{ keplrWallet?.name }} (Keplr)
                               </div>
                             </div>
                             <div class="flex items-center gap-1">
                               <button
-                                @click.stop="router.push(`/address/${keplrWallet?.address}`)"
                                 class="btn btn-ghost btn-xs"
                                 data-testid="view-keplr-address"
+                                @click.stop="router.push(`/address/${keplrWallet?.address}`)"
                               >
                                 Go to address
                               </button>
@@ -84,28 +99,31 @@
 
                           <!-- Address Header -->
                           <div class="text-xs text-base-content/80 mb-2">
-                            <AddressDisplay :address="keplrWallet?.address" :truncate="false" />
+                            <AddressDisplay
+                              :address="keplrWallet?.address"
+                              :truncate="false"
+                            />
                           </div>
 
                           <!-- Actions Row -->
                           <div class="flex items-center gap-2 mt-3">
                             <button
-                              @click="selectKeplrWallet"
                               class="btn btn-primary btn-xs"
                               :class="{
                                 'btn-disabled': isKeplrSelected,
                               }"
                               :disabled="isKeplrSelected"
                               data-testid="select-keplr-wallet"
+                              @click="selectKeplrWallet"
                             >
                               {{ isKeplrSelected ? 'Selected' : 'Select' }}
                             </button>
 
                             <button
-                              @click.stop="handleKeplr"
                               class="btn btn-outline btn-xs"
                               :disabled="loading"
                               data-testid="disconnect-keplr"
+                              @click.stop="handleKeplr"
                             >
                               Disconnect
                             </button>
@@ -113,15 +131,22 @@
                         </div>
                       </div>
 
-                      <div v-else class="space-y-2">
+                      <div
+                        v-else
+                        class="space-y-2"
+                      >
                         <button
-                          @click="handleKeplr"
                           class="btn btn-lg flex items-center justify-between p-3 border-base-300 w-full text-left hover:bg-base-50 transition-colors"
                           :disabled="loading"
                           data-testid="connect-keplr"
+                          @click="handleKeplr"
                         >
                           <div class="flex items-center gap-3">
-                            <img :src="keplrLogo" alt="Keplr" class="w-6 h-6" />
+                            <img
+                              :src="keplrLogo"
+                              alt="Keplr"
+                              class="w-6 h-6"
+                            >
                             <span class="font-medium text-base-content">Keplr Wallet</span>
                           </div>
                           <span class="text-primary text-sm font-medium"> Connect </span>
@@ -162,9 +187,9 @@
                             </div>
                             <div class="flex items-center gap-1">
                               <button
-                                @click.stop="router.push(`/address/${wallet.address}`)"
                                 class="btn btn-ghost btn-xs"
                                 :data-testid="`view-address-${wallet.name}`"
+                                @click.stop="router.push(`/address/${wallet.address}`)"
                               >
                                 Go to address
                               </button>
@@ -176,7 +201,10 @@
                             class="text-xs text-base-content/80 mb-2"
                             :data-testid="`wallet-address-${wallet.name}`"
                           >
-                            <AddressDisplay :address="wallet.address" :truncate="false" />
+                            <AddressDisplay
+                              :address="wallet.address"
+                              :truncate="false"
+                            />
                           </div>
 
                           <!-- Actions Row -->
@@ -187,14 +215,17 @@
                             <!-- Lock/Unlock button - always visible, switches based on state -->
                             <button
                               v-if="isWalletUnlocked(wallet)"
-                              @click.stop="lockWallet(wallet.name)"
                               class="btn btn-outline btn-xs"
                               :data-testid="`lock-wallet-${wallet.name}`"
+                              @click.stop="lockWallet(wallet.name)"
                             >
                               Lock
                             </button>
 
-                            <div v-else class="flex flex-col gap-1">
+                            <div
+                              v-else
+                              class="flex flex-col gap-1"
+                            >
                               <div class="flex items-center gap-1">
                                 <input
                                   type="password"
@@ -213,17 +244,17 @@
                                       !unlockLoading[wallet.name] &&
                                       handleInlineUnlock(wallet, e.target.value)
                                   "
-                                />
+                                >
                                 <button
-                                  @click.stop="() => handleUnlockClick(wallet)"
                                   class="btn btn-primary btn-xs"
                                   :disabled="unlockLoading[wallet.name]"
                                   :data-testid="`unlock-wallet-${wallet.name}`"
+                                  @click.stop="() => handleUnlockClick(wallet)"
                                 >
                                   <span
                                     v-if="unlockLoading[wallet.name]"
                                     class="loading loading-spinner loading-xs mr-1"
-                                  ></span>
+                                  />
                                   {{ unlockLoading[wallet.name] ? 'Unlocking...' : 'Unlock' }}
                                 </button>
                               </div>
@@ -238,9 +269,9 @@
                             </div>
 
                             <button
-                              @click.stop="handleRemoveWallet(wallet.name)"
                               class="btn btn-ghost btn-xs text-error ml-auto"
                               :data-testid="`wallet-remove-${wallet.name}`"
+                              @click.stop="handleRemoveWallet(wallet.name)"
                             >
                               Remove
                             </button>
@@ -261,7 +292,10 @@
                       <div class="text-sm font-medium mb-2 text-base-content">
                         Import New Wallet
                       </div>
-                      <form @submit.prevent="handleImport" data-testid="import-wallet-form">
+                      <form
+                        data-testid="import-wallet-form"
+                        @submit.prevent="handleImport"
+                      >
                         <div class="space-y-3">
                           <!-- Wallet Name -->
                           <input
@@ -270,7 +304,7 @@
                             class="input input-sm w-full text-xs"
                             data-testid="wallet-name-input"
                             required
-                          />
+                          >
 
                           <!-- Recovery Phrase -->
                           <div class="space-y-2">
@@ -281,23 +315,23 @@
                               rows="2"
                               data-testid="mnemonic-input"
                               required
-                            ></textarea>
+                            />
                             <div class="flex gap-1">
                               <button
                                 type="button"
-                                @click="generateSeed(12)"
                                 class="btn btn-xs btn-outline"
                                 data-testid="generate-12-words"
                                 :disabled="loading"
+                                @click="generateSeed(12)"
                               >
                                 12W
                               </button>
                               <button
                                 type="button"
-                                @click="generateSeed(24)"
                                 class="btn btn-xs btn-outline"
                                 data-testid="generate-24-words"
                                 :disabled="loading"
+                                @click="generateSeed(24)"
                               >
                                 24W
                               </button>
@@ -312,10 +346,8 @@
                               class="checkbox checkbox-xs mt-0.5"
                               data-testid="security-confirmation"
                               required
-                            />
-                            <span class="text-base-content/80"
-                              >I've backed up my recovery phrase</span
                             >
+                            <span class="text-base-content/80">I've backed up my recovery phrase</span>
                           </label>
 
                           <!-- Password -->
@@ -327,7 +359,7 @@
                             data-testid="wallet-password-input"
                             :disabled="!seedBackedUp"
                             required
-                          />
+                          >
                         </div>
 
                         <!-- Error Message -->
@@ -346,7 +378,10 @@
                           :disabled="!canImport || loading"
                           data-testid="import-wallet-submit"
                         >
-                          <span v-if="loading" class="loading loading-spinner loading-sm"></span>
+                          <span
+                            v-if="loading"
+                            class="loading loading-spinner loading-sm"
+                          />
                           <span v-else>Import Wallet</span>
                         </button>
                       </form>
@@ -354,20 +389,20 @@
 
                     <!-- Disconnect All -->
                     <button
-                      @click="handleDisconnectAll"
                       class="btn btn-error btn-outline w-full"
                       data-testid="disconnect-all"
                       :disabled="unlockedWallets.length === 0"
+                      @click="handleDisconnectAll"
                     >
                       Disconnect All
                     </button>
 
                     <!-- Remove All -->
                     <button
-                      @click="handleRemoveAll"
                       class="btn btn-error w-full"
                       data-testid="remove-all"
                       :disabled="localCosmJsWallets.length === 0"
+                      @click="handleRemoveAll"
                     >
                       Remove All Wallets
                     </button>

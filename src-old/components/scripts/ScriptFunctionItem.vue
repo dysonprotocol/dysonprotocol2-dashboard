@@ -1,62 +1,104 @@
 <template>
   <div class="collapse collapse-arrow">
-    <input type="checkbox" :checked="isOpen" @change="toggle" />
-    <div class="collapse-title font-semibold">{{ func.function_name }}</div>
+    <input
+      type="checkbox"
+      :checked="isOpen"
+      @change="toggle"
+    >
+    <div class="collapse-title font-semibold">
+      {{ func.function_name }}
+    </div>
     <div class="collapse-content">
-      <div v-if="func.docstring" class="mb-4 p-3">
-        <div class="text-sm whitespace-pre-wrap">{{ func.docstring }}</div>
+      <div
+        v-if="func.docstring"
+        class="mb-4 p-3"
+      >
+        <div class="text-sm whitespace-pre-wrap">
+          {{ func.docstring }}
+        </div>
       </div>
 
       <div v-if="hasParameters">
         <label class="block text-sm font-medium mb-2">Parameters:</label>
         <textarea
-          v-model="kwargsInput"
           ref="textareaRef"
+          v-model="kwargsInput"
           class="textarea textarea-bordered w-full text-sm font-mono resize-none"
           :placeholder="placeholder"
           @input="autoResize($event)"
         />
-        <div v-if="jsonError" class="text-error text-xs mt-1">
+        <div
+          v-if="jsonError"
+          class="text-error text-xs mt-1"
+        >
           {{ jsonError }}
         </div>
       </div>
-      <div v-else class="text-center py-4 text-base-content/60 text-sm">
+      <div
+        v-else
+        class="text-center py-4 text-base-content/60 text-sm"
+      >
         {{ noParamsMessage }}
       </div>
 
       <!-- Optional: attach a coin transfer to this call -->
       <div class="mt-3">
         <label class="label cursor-pointer justify-start gap-2 text-sm">
-          <input type="checkbox" class="checkbox checkbox-sm" v-model="attachSend" />
+          <input
+            v-model="attachSend"
+            type="checkbox"
+            class="checkbox checkbox-sm"
+          >
           <span>Attach coin transfer (bank MsgSend)</span>
         </label>
-        <div class="mt-2" v-if="attachSend">
+        <div
+          v-if="attachSend"
+          class="mt-2"
+        >
           <AmountDenomSelector
             :disabled="isSimulating || isExecuting"
             @update:base="onSendBaseUpdate"
           />
           <div class="text-xs opacity-70 mt-1">
-            From <AddressDisplay :address="selectedExecutor" :truncate="5" /> to
-            <AddressDisplay :address="address" :truncate="5" />
+            From <AddressDisplay
+              :address="selectedExecutor"
+              :truncate="5"
+            /> to
+            <AddressDisplay
+              :address="address"
+              :truncate="5"
+            />
           </div>
         </div>
       </div>
 
       <!-- Error Display -->
-      <div v-if="errorText" class="mt-4 break-all">
+      <div
+        v-if="errorText"
+        class="mt-4 break-all"
+      >
         <div class="alert alert-error text-base-content alert-outline">
           <div class="text-sm">
-            <div class="font-medium">{{ errorHeader }}</div>
+            <div class="font-medium">
+              {{ errorHeader }}
+            </div>
           </div>
         </div>
         <div class="mt-2">
-          <div class="font-medium text-xs opacity-80">Error:</div>
+          <div class="font-medium text-xs opacity-80">
+            Error:
+          </div>
           <pre
             class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-words"
-            >{{ errorText }}</pre
+          >{{ errorText }}</pre>
+          <div
+            v-if="exception"
+            class="mt-2 text-xs"
           >
-          <div v-if="exception" class="mt-2 text-xs">
-            <button class="link link-error" @click="goToException">
+            <button
+              class="link link-error"
+              @click="goToException"
+            >
               Go to line {{ exception.lineno }}:{{ exception.col_offset }}
             </button>
           </div>
@@ -64,7 +106,10 @@
       </div>
 
       <!-- Success Display -->
-      <div v-if="result" class="mt-4 break-all">
+      <div
+        v-if="result"
+        class="mt-4 break-all"
+      >
         <div class="alert alert-success text-base-content alert-outline">
           <div class="text-sm">
             <div class="font-medium">
@@ -73,14 +118,24 @@
           </div>
         </div>
         <div>
-          <div v-if="result.result !== null" class="mt-2">
-            <div class="font-medium text-xs opacity-80">Result:</div>
+          <div
+            v-if="result.result !== null"
+            class="mt-2"
+          >
+            <div class="font-medium text-xs opacity-80">
+              Result:
+            </div>
             <pre class="text-xs bg-base-200 p-2 mt-1 max-h-64 overflow-x-auto wrap-anywhere">{{
               formatResult(result.result)
             }}</pre>
           </div>
-          <div v-if="result.stdout" class="mt-2">
-            <div class="font-medium text-xs opacity-80">Output:</div>
+          <div
+            v-if="result.stdout"
+            class="mt-2"
+          >
+            <div class="font-medium text-xs opacity-80">
+              Output:
+            </div>
             <pre class="text-xs bg-base-200 p-2 mt-1 max-h-32 overflow-x-auto">{{
               result.stdout
             }}</pre>
@@ -89,14 +144,24 @@
             <span>Gas: {{ formatNumber(result.gasConsumed) }}</span>
             <span>Nodes: {{ formatNumber(result.nodesExecuted) }}</span>
           </div>
-          <div v-if="!result.simulate && result.txHash" class="mt-2">
-            <div class="font-medium text-xs opacity-80">Transaction:</div>
+          <div
+            v-if="!result.simulate && result.txHash"
+            class="mt-2"
+          >
+            <div class="font-medium text-xs opacity-80">
+              Transaction:
+            </div>
             <div class="text-xs bg-base-200 p-2 mt-1">
               <div>
                 Hash:
-                <TxHashDisplay :hash="result.txHash" :truncate="8" />
+                <TxHashDisplay
+                  :hash="result.txHash"
+                  :truncate="8"
+                />
               </div>
-              <div v-if="result.blockHeight">Block: {{ result.blockHeight }}</div>
+              <div v-if="result.blockHeight">
+                Block: {{ result.blockHeight }}
+              </div>
             </div>
           </div>
         </div>
@@ -119,16 +184,16 @@
             @update:selected-grant="onSelectedGrant"
           />
           <button
-            @click="simulate"
             class="btn btn-sm join-item"
             :disabled="isSimulating || !!jsonError || hasUnsavedChanges"
+            @click="simulate"
           >
             {{ isSimulating ? 'Simulating...' : 'Simulate' }}
           </button>
           <button
-            @click="execute"
             class="btn btn-sm btn-primary join-item"
             :disabled="isExecuting || !!jsonError || hasUnsavedChanges"
+            @click="execute"
           >
             {{ isExecuting ? 'Sending...' : 'Tx' }}
           </button>

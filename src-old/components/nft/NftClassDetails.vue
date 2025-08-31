@@ -7,13 +7,28 @@
         </h2>
       </div>
     </div>
-    <div v-if="isLoading" class="text-base-content/70 mt-2">Loading…</div>
-    <div v-else-if="error" class="text-error mt-2">{{ error }}</div>
-    <div v-else class="mt-2">
+    <div
+      v-if="isLoading"
+      class="text-base-content/70 mt-2"
+    >
+      Loading…
+    </div>
+    <div
+      v-else-if="error"
+      class="text-error mt-2"
+    >
+      {{ error }}
+    </div>
+    <div
+      v-else
+      class="mt-2"
+    >
       <table class="table">
         <tbody>
           <tr>
-            <th class="w-48">Class</th>
+            <th class="w-48">
+              Class
+            </th>
             <td class="font-mono break-all">
               {{ classMeta?.id || classId }}
             </td>
@@ -34,11 +49,15 @@
           </tr>
           <tr>
             <th>URI</th>
-            <td class="font-mono break-all">{{ classMeta?.uri || "" }}</td>
+            <td class="font-mono break-all">
+              {{ classMeta?.uri || "" }}
+            </td>
           </tr>
           <tr>
             <th>Supply</th>
-            <td class="font-mono">{{ classSupply }}</td>
+            <td class="font-mono">
+              {{ classSupply }}
+            </td>
           </tr>
           <tr>
             <th>Always listed</th>
@@ -92,7 +111,9 @@
       </table>
       <div class="mt-4 grid grid-cols-1 gap-3">
         <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-          <legend class="fieldset-legend">Class settings</legend>
+          <legend class="fieldset-legend">
+            Class settings
+          </legend>
           <div class="text-sm opacity-70 mb-2">
             Destination: <span class="font-mono">{{ nameDestination }}</span>
           </div>
@@ -102,18 +123,23 @@
               <fieldset
                 class="fieldset bg-base-200 border-base-300 border p-3 h-full"
               >
-                <legend class="fieldset-legend">Always listed</legend>
+                <legend class="fieldset-legend">
+                  Always listed
+                </legend>
                 <div class="flex items-center justify-between gap-2">
                   <label class="flex items-center gap-2">
                     <input
+                      v-model="alwaysListed"
                       type="checkbox"
                       class="toggle"
-                      v-model="alwaysListed"
                       :disabled="isBusy"
-                    />
+                    >
                     <span>Always listed</span>
                   </label>
-                  <button class="btn btn-primary btn-xs" :disabled="isBusy">
+                  <button
+                    class="btn btn-primary btn-xs"
+                    :disabled="isBusy"
+                  >
                     save
                   </button>
                 </div>
@@ -131,15 +157,20 @@
               <fieldset
                 class="fieldset bg-base-200 border-base-300 border p-3 h-full"
               >
-                <legend class="fieldset-legend">Allowed denoms</legend>
+                <legend class="fieldset-legend">
+                  Allowed denoms
+                </legend>
                 <div class="flex items-center gap-2">
                   <input
                     v-model.trim="allowedDenomsInput"
                     class="input input-bordered w-full"
                     placeholder="comma-separated base denoms (e.g. udys,uatom)"
                     :disabled="isBusy"
-                  />
-                  <button class="btn btn-primary btn-xs" :disabled="isBusy">
+                  >
+                  <button
+                    class="btn btn-primary btn-xs"
+                    :disabled="isBusy"
+                  >
                     save
                   </button>
                 </div>
@@ -157,15 +188,20 @@
               <fieldset
                 class="fieldset bg-base-200 border-base-300 border p-3 h-full"
               >
-                <legend class="fieldset-legend">Valuation fee pct</legend>
+                <legend class="fieldset-legend">
+                  Valuation fee pct
+                </legend>
                 <div class="flex items-center gap-2">
                   <input
                     v-model.trim="valuationFeePct"
                     class="input input-bordered w-full"
                     placeholder="e.g. 0.025"
                     :disabled="isBusy"
-                  />
-                  <button class="btn btn-primary btn-xs" :disabled="isBusy">
+                  >
+                  <button
+                    class="btn btn-primary btn-xs"
+                    :disabled="isBusy"
+                  >
                     save
                   </button>
                 </div>
@@ -183,15 +219,20 @@
               <fieldset
                 class="fieldset bg-base-200 border-base-300 border p-3 h-full"
               >
-                <legend class="fieldset-legend">Valuation period</legend>
+                <legend class="fieldset-legend">
+                  Valuation period
+                </legend>
                 <div class="flex items-center gap-2">
                   <input
                     v-model.trim="valuationPeriod"
                     class="input input-bordered w-full"
                     placeholder="e.g. 24h"
                     :disabled="isBusy"
-                  />
-                  <button class="btn btn-primary btn-xs" :disabled="isBusy">
+                  >
+                  <button
+                    class="btn btn-primary btn-xs"
+                    :disabled="isBusy"
+                  >
                     save
                   </button>
                 </div>
@@ -251,15 +292,20 @@
               <fieldset
                 class="fieldset bg-base-200 border-base-300 border p-3 h-full"
               >
-                <legend class="fieldset-legend">Bid timeout</legend>
+                <legend class="fieldset-legend">
+                  Bid timeout
+                </legend>
                 <div class="flex items-center gap-2">
                   <input
                     v-model.trim="bidTimeout"
                     class="input input-bordered w-full"
                     placeholder="e.g. 600s"
                     :disabled="isBusy"
-                  />
-                  <button class="btn btn-primary btn-xs" :disabled="isBusy">
+                  >
+                  <button
+                    class="btn btn-primary btn-xs"
+                    :disabled="isBusy"
+                  >
                     save
                   </button>
                 </div>
@@ -277,15 +323,20 @@
               <fieldset
                 class="fieldset bg-base-200 border-base-300 border p-3 h-full"
               >
-                <legend class="fieldset-legend">Min bid % increase</legend>
+                <legend class="fieldset-legend">
+                  Min bid % increase
+                </legend>
                 <div class="flex items-center gap-2">
                   <input
                     v-model.trim="minBidPctInc"
                     class="input input-bordered w-full"
                     placeholder="e.g. 0.05"
                     :disabled="isBusy"
-                  />
-                  <button class="btn btn-primary btn-xs" :disabled="isBusy">
+                  >
+                  <button
+                    class="btn btn-primary btn-xs"
+                    :disabled="isBusy"
+                  >
                     save
                   </button>
                 </div>
@@ -312,8 +363,11 @@
                     class="input input-bordered w-full"
                     placeholder="e.g. 0.01"
                     :disabled="isBusy"
-                  />
-                  <button class="btn btn-primary btn-xs" :disabled="isBusy">
+                  >
+                  <button
+                    class="btn btn-primary btn-xs"
+                    :disabled="isBusy"
+                  >
                     save
                   </button>
                 </div>
@@ -331,14 +385,16 @@
               <fieldset
                 class="fieldset bg-base-200 border-base-300 border p-3 h-full"
               >
-                <legend class="fieldset-legend">Extra data</legend>
+                <legend class="fieldset-legend">
+                  Extra data
+                </legend>
                 <div class="flex items-center gap-2">
                   <input
                     v-model.trim="extraData"
                     class="input input-bordered w-full"
                     placeholder="extra data (json/text)"
                     :disabled="isBusy"
-                  />
+                  >
                   <button
                     class="btn btn-primary btn-xs"
                     :disabled="isBusy || !extraData"
@@ -360,11 +416,12 @@
               <fieldset
                 class="fieldset bg-base-200 border-base-300 border p-3 h-full"
               >
-                <legend class="fieldset-legend">Delete class</legend>
+                <legend class="fieldset-legend">
+                  Delete class
+                </legend>
                 <div class="text-sm opacity-70 mb-2">
                   Class must exist and have zero NFTs (current supply:
-                  <span class="font-mono">{{ classSupply }}</span
-                  >)
+                  <span class="font-mono">{{ classSupply }}</span>)
                 </div>
                 <button
                   class="btn btn-error btn-xs"
@@ -391,26 +448,28 @@
             <fieldset
               class="fieldset bg-base-200 border-base-300 border p-4 h-full"
             >
-              <legend class="fieldset-legend">Mint NFT</legend>
+              <legend class="fieldset-legend">
+                Mint NFT
+              </legend>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <input
                   v-model.trim="mintForm.nftId"
                   class="input input-bordered w-full"
                   placeholder="nft id"
                   :disabled="isBusy"
-                />
+                >
                 <input
                   v-model.trim="mintForm.uri"
                   class="input input-bordered w-full"
                   placeholder="uri (optional)"
                   :disabled="isBusy"
-                />
+                >
                 <input
                   v-model.trim="mintForm.uriHash"
                   class="input input-bordered w-full"
                   placeholder="uri hash (optional)"
                   :disabled="isBusy"
-                />
+                >
               </div>
               <button
                 class="btn btn-primary btn-sm mt-3"
@@ -423,18 +482,26 @@
 
           <!-- NFTs list -->
           <fieldset class="fieldset bg-base-200 border-base-300 border p-4">
-            <legend class="fieldset-legend">NFTs</legend>
+            <legend class="fieldset-legend">
+              NFTs
+            </legend>
             <div class="flex items-center gap-2 mb-3">
               <input
                 v-model.trim="search"
                 class="input input-bordered w-full"
                 placeholder="search NFTs (id contains)"
-              />
+              >
             </div>
-            <div v-if="nftLoading" class="text-base-content/70">
+            <div
+              v-if="nftLoading"
+              class="text-base-content/70"
+            >
               Loading NFTs…
             </div>
-            <div v-else class="overflow-x-auto">
+            <div
+              v-else
+              class="overflow-x-auto"
+            >
               <table class="table">
                 <thead>
                   <tr>
@@ -445,7 +512,10 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="n in filteredNFTs" :key="n.id">
+                  <tr
+                    v-for="n in filteredNFTs"
+                    :key="n.id"
+                  >
                     <td class="font-mono">
                       <router-link
                         :to="`/names/${encodeURIComponent(
@@ -454,20 +524,22 @@
                           classId
                         )}/${encodeURIComponent(n.id)}`"
                         class="link"
-                        >{{ n.id }}</router-link
                       >
+                        {{ n.id }}
+                      </router-link>
                     </td>
                     <td>
-                      <div v-if="n.data?.listed" class="badge badge-success">
+                      <div
+                        v-if="n.data?.listed"
+                        class="badge badge-success"
+                      >
                         listed
                       </div>
                       <span v-else>—</span>
                     </td>
                     <td>
-                      <span v-if="formatValuation(n).label"
-                        >{{ formatValuation(n).amount }}
-                        {{ formatValuation(n).label }}</span
-                      ><span v-else>—</span>
+                      <span v-if="formatValuation(n).label">{{ formatValuation(n).amount }}
+                        {{ formatValuation(n).label }}</span><span v-else>—</span>
                     </td>
                     <td class="break-all">
                       <a

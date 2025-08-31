@@ -1,10 +1,22 @@
 <template>
   <div class="grid md:grid-cols-2 gap-4">
-    <div ref="listEl" class="overflow-y-auto min-h-0" :style="{ height: listHeightPx + 'px' }">
-      <FunctionsList :functions="functions" :address="address" @focus-code="focusCode" />
+    <div
+      ref="listEl"
+      class="overflow-y-auto min-h-0 p-4 space-y-4"
+      :style="{ height: listHeightPx + 'px' }"
+    >
+      <FunctionsList
+        :functions="functions"
+        :address="address"
+        @focus-code="focusCode"
+      />
     </div>
     <div>
-      <ScriptEditor :address="address" :script="script" ref="editorRef" />
+      <ScriptEditor
+        ref="editorRef"
+        :address="address"
+        :script="script"
+      />
     </div>
   </div>
 </template>

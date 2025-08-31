@@ -10,9 +10,16 @@
       />
 
       <!-- No Functions Message -->
-      <div v-if="functions.length === 0" class="text-center py-8 text-gray-500">
-        <div class="text-sm">No functions found</div>
-        <div class="text-xs mt-1">Add function definitions to your script</div>
+      <div
+        v-if="functions.length === 0"
+        class="text-center py-8 text-gray-500"
+      >
+        <div class="text-sm">
+          No functions found
+        </div>
+        <div class="text-xs mt-1">
+          Add function definitions to your script
+        </div>
       </div>
 
       <!-- Functions -->

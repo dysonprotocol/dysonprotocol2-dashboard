@@ -9,17 +9,26 @@
     </div>
 
     <!-- Error State -->
-    <div v-else-if="loadError" class="flex justify-center items-center flex-1">
+    <div
+      v-else-if="loadError"
+      class="flex justify-center items-center flex-1"
+    >
       <div class="alert alert-error">
         <span>Failed to load script: {{ loadError }}</span>
-        <button @click="loadScript" class="btn btn-sm btn-outline btn-error">
+        <button
+          class="btn btn-sm btn-outline btn-error"
+          @click="loadScript"
+        >
           Retry
         </button>
       </div>
     </div>
 
     <!-- Main Content -->
-    <div v-else class="flex flex-1 overflow-hidden flex-col">
+    <div
+      v-else
+      class="flex flex-1 overflow-hidden flex-col"
+    >
       <!-- Unsaved changes banner -->
       <div
         v-if="hasUnsavedChanges"
@@ -48,11 +57,11 @@
               :script="script"
               :current-script-content="currentScriptContent"
               :has-unsaved-changes="hasUnsavedChanges"
-              @function-executed="onFunctionExecuted"
-              @focus-code="focusCodeTab"
               :execution-errors="executionErrors"
               :execution-results="executionResults"
               :execution-error-context="executionErrorContext"
+              @function-executed="onFunctionExecuted"
+              @focus-code="focusCodeTab"
             />
           </aside>
 
@@ -61,16 +70,16 @@
             class="w-2 bg-base-300 hover:bg-primary cursor-col-resize transition-colors"
             @mousedown="startDrag"
             @touchstart="startDrag"
-          ></div>
+          />
 
           <!-- Code Panel: Main area -->
           <main class="flex flex-col flex-1 overflow-hidden">
             <ScriptEditor
+              ref="desktopEditorRef"
               :address="address"
               :script="script"
               @script-updated="onScriptUpdated"
               @content-changed="onContentChanged"
-              ref="desktopEditorRef"
             />
           </main>
         </div>
@@ -105,20 +114,23 @@
                 :script="script"
                 :current-script-content="currentScriptContent"
                 :has-unsaved-changes="hasUnsavedChanges"
-                @function-executed="onFunctionExecuted"
-                @focus-code="focusCodeTab"
                 :execution-errors="executionErrors"
                 :execution-results="executionResults"
                 :execution-error-context="executionErrorContext"
+                @function-executed="onFunctionExecuted"
+                @focus-code="focusCodeTab"
               />
             </div>
-            <div v-show="activeTab === 'code'" class="h-full overflow-hidden">
+            <div
+              v-show="activeTab === 'code'"
+              class="h-full overflow-hidden"
+            >
               <ScriptEditor
+                ref="mobileEditorRef"
                 :address="address"
                 :script="script"
                 @script-updated="onScriptUpdated"
                 @content-changed="onContentChanged"
-                ref="mobileEditorRef"
               />
             </div>
           </div>

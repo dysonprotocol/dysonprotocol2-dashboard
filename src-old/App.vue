@@ -1,7 +1,13 @@
 <template>
   <div>
-    <TransitionRoot as="template" :show="sidebarOpen">
-      <Dialog class="relative z-50 lg:hidden" @close="sidebarOpen = false">
+    <TransitionRoot
+      as="template"
+      :show="sidebarOpen"
+    >
+      <Dialog
+        class="relative z-50 lg:hidden"
+        @close="sidebarOpen = false"
+      >
         <TransitionChild
           as="template"
           enter="transition-opacity ease-linear duration-300"
@@ -35,9 +41,16 @@
                 leave-to="opacity-0"
               >
                 <div class="absolute top-0 left-full flex w-16 justify-center pt-5">
-                  <button type="button" class="-m-2.5 p-2.5" @click="sidebarOpen = false">
+                  <button
+                    type="button"
+                    class="-m-2.5 p-2.5"
+                    @click="sidebarOpen = false"
+                  >
                     <span class="sr-only">Close sidebar</span>
-                    <XMarkIcon class="size-6 text-white" aria-hidden="true" />
+                    <XMarkIcon
+                      class="size-6 text-white"
+                      aria-hidden="true"
+                    />
                   </button>
                 </div>
               </TransitionChild>
@@ -64,24 +77,40 @@
           @click="sidebarOpen = true"
         >
           <span class="sr-only">Open sidebar</span>
-          <Bars3Icon class="size-6" aria-hidden="true" />
+          <Bars3Icon
+            class="size-6"
+            aria-hidden="true"
+          />
         </button>
 
         <!-- Separator -->
-        <div class="h-6 w-px bg-base-300 lg:hidden" aria-hidden="true" />
+        <div
+          class="h-6 w-px bg-base-300 lg:hidden"
+          aria-hidden="true"
+        />
         <router-link
           to="/"
           aria-label="Dyson Protocol"
           class="text-base-content lg:hidden flex items-center gap-2"
         >
-          <img :src="logoSrc" alt="Dyson Protocol" class="h-6 w-auto" />
+          <img
+            :src="logoSrc"
+            alt="Dyson Protocol"
+            class="h-6 w-auto"
+          >
           <span>DysonProtocol</span>
         </router-link>
         <!-- Separator -->
-        <div class="h-6 w-px bg-base-300 lg:hidden" aria-hidden="true" />
+        <div
+          class="h-6 w-px bg-base-300 lg:hidden"
+          aria-hidden="true"
+        />
 
         <div class="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-          <form class="grid flex-1 grid-cols-1" @submit.prevent>
+          <form
+            class="grid flex-1 grid-cols-1"
+            @submit.prevent
+          >
             <input
               type="search"
               name="search"
@@ -91,7 +120,7 @@
               readonly
               @focus="openCommandPalette"
               @click="openCommandPalette"
-            />
+            >
             <MagnifyingGlassIcon
               class="col-start-1 row-start-1 size-5 self-center text-base-content/60 cursor-pointer"
               aria-hidden="true"
@@ -110,8 +139,14 @@
     </div>
 
     <!-- Command Palette Modal -->
-    <TransitionRoot as="template" :show="isCmdOpen">
-      <Dialog class="relative z-[60]" @close="isCmdOpen = false">
+    <TransitionRoot
+      as="template"
+      :show="isCmdOpen"
+    >
+      <Dialog
+        class="relative z-[60]"
+        @close="isCmdOpen = false"
+      >
         <TransitionChild
           as="template"
           enter="transition-opacity ease-linear duration-150"
@@ -141,130 +176,137 @@
                 <input
                   autofocus
                   :value="commandQuery"
-                  @input="commandQuery = $event.target.value"
                   placeholder="Search addresses or tx hashes…"
                   class="w-full rounded-t-xl bg-transparent px-4 py-3 text-base focus:outline-none"
-                />
+                  @input="commandQuery = $event.target.value"
+                >
 
                 <el-command-list>
                   <!-- Transaction hash exact match -->
                   <template v-if="isTxHash(commandQuery)">
                     <a
                       :href="`/txs/${commandQuery}`"
-                      @click="isCmdOpen = false"
                       class="block px-4 py-2"
+                      @click="isCmdOpen = false"
                     >
                       Go to transaction
-                      <TxHashDisplay :hash="commandQuery" :truncate="8" />
+                      <TxHashDisplay
+                        :hash="commandQuery"
+                        :truncate="8"
+                      />
                     </a>
                   </template>
 
                   <!-- Address deep links -->
                   <template v-else-if="isDysAddress(commandQuery)">
                     <el-command-group aria-labelledby="address-links">
-                      <div id="address-links" class="px-4 pt-2 pb-1 text-xs uppercase opacity-70">
+                      <div
+                        id="address-links"
+                        class="px-4 pt-2 pb-1 text-xs uppercase opacity-70"
+                      >
                         Address
                       </div>
                       <a
                         :href="`/address/${commandQuery}/script`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >Script</a
-                      >
+                        @click="isCmdOpen = false"
+                      >Script</a>
                       <a
                         :href="`/address/${commandQuery}/names`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >Names</a
-                      >
+                        @click="isCmdOpen = false"
+                      >Names</a>
                       <a
                         :href="`/address/${commandQuery}/coins`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >Coins</a
-                      >
+                        @click="isCmdOpen = false"
+                      >Coins</a>
                       <a
                         :href="`/address/${commandQuery}/nfts`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >NFTs</a
-                      >
+                        @click="isCmdOpen = false"
+                      >NFTs</a>
                       <a
                         :href="`/address/${commandQuery}/storage`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >Storage</a
-                      >
+                        @click="isCmdOpen = false"
+                      >Storage</a>
                       <a
                         :href="`/address/${commandQuery}/tasks`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >Tasks</a
-                      >
+                        @click="isCmdOpen = false"
+                      >Tasks</a>
                       <a
                         :href="`/address/${commandQuery}/staking`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >Staking</a
-                      >
+                        @click="isCmdOpen = false"
+                      >Staking</a>
                     </el-command-group>
 
                     <el-command-group aria-labelledby="tx-links">
-                      <div id="tx-links" class="px-4 pt-3 pb-1 text-xs uppercase opacity-70">
+                      <div
+                        id="tx-links"
+                        class="px-4 pt-3 pb-1 text-xs uppercase opacity-70"
+                      >
                         Transaction queries
                       </div>
                       <a
                         :href="`/txs?query=${encodeURIComponent(
                           `message.sender='${commandQuery}'`
                         )}&page=1`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >All Transactions</a
-                      >
+                        @click="isCmdOpen = false"
+                      >All Transactions</a>
                       <a
                         :href="`/txs?query=${encodeURIComponent(
                           `message.action='/cosmos.bank.v1beta1.MsgSend' AND coin_received.spender='${commandQuery}'`
                         )}&page=1`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >Coins sent</a
-                      >
+                        @click="isCmdOpen = false"
+                      >Coins sent</a>
                       <a
                         :href="`/txs?query=${encodeURIComponent(
                           `message.action='/cosmos.bank.v1beta1.MsgSend' AND coin_received.receiver='${commandQuery}'`
                         )}&page=1`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >Coins recieved</a
-                      >
+                        @click="isCmdOpen = false"
+                      >Coins recieved</a>
                       <a
                         :href="`/txs?query=${encodeURIComponent(
                           `message.action='/dysonprotocol.script.v1.MsgExec' AND message.sender='${commandQuery}'`
                         )}&page=1`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
-                        >Function calls to other scripts (MsgExec)</a
-                      >
+                        @click="isCmdOpen = false"
+                      >Function calls to other scripts (MsgExec)</a>
                     </el-command-group>
                   </template>
 
                   <!-- Name / Class / Denom / NFT quick links -->
                   <template v-else-if="isNameLike(commandQuery)">
-                    <el-command-group v-if="nameFound" aria-labelledby="name-links">
-                      <div id="name-links" class="px-4 pt-2 pb-1 text-xs uppercase opacity-70">
+                    <el-command-group
+                      v-if="nameFound"
+                      aria-labelledby="name-links"
+                    >
+                      <div
+                        id="name-links"
+                        class="px-4 pt-2 pb-1 text-xs uppercase opacity-70"
+                      >
                         Name
                       </div>
                       <a
                         :href="`/names/${encodeURIComponent(parsedName.root)}`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
+                        @click="isCmdOpen = false"
                       >
                         Go to name: {{ parsedName.root }}
                       </a>
                     </el-command-group>
 
                     <el-command-group aria-labelledby="class-links">
-                      <div id="class-links" class="px-4 pt-3 pb-1 text-xs uppercase opacity-70">
+                      <div
+                        id="class-links"
+                        class="px-4 pt-3 pb-1 text-xs uppercase opacity-70"
+                      >
                         NFT Classes
                       </div>
 
@@ -273,30 +315,42 @@
                         :href="`/names/${encodeURIComponent(
                           parsedName.root
                         )}/nfts/${encodeURIComponent(parsedName.main)}`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
+                        @click="isCmdOpen = false"
                       >
                         Go to NFTClass: {{ parsedName.main }}
                       </a>
                     </el-command-group>
 
-                    <el-command-group v-if="denomFound" aria-labelledby="denom-links">
-                      <div id="denom-links" class="px-4 pt-3 pb-1 text-xs uppercase opacity-70">
+                    <el-command-group
+                      v-if="denomFound"
+                      aria-labelledby="denom-links"
+                    >
+                      <div
+                        id="denom-links"
+                        class="px-4 pt-3 pb-1 text-xs uppercase opacity-70"
+                      >
                         Denoms
                       </div>
                       <a
                         :href="`/names/${encodeURIComponent(
                           parsedName.root
                         )}/denoms/${encodeURIComponent(parsedName.main)}`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
+                        @click="isCmdOpen = false"
                       >
                         Go to denom: {{ parsedName.main }}
                       </a>
                     </el-command-group>
 
-                    <el-command-group v-if="nftFound" aria-labelledby="nft-links">
-                      <div id="nft-links" class="px-4 pt-3 pb-1 text-xs uppercase opacity-70">
+                    <el-command-group
+                      v-if="nftFound"
+                      aria-labelledby="nft-links"
+                    >
+                      <div
+                        id="nft-links"
+                        class="px-4 pt-3 pb-1 text-xs uppercase opacity-70"
+                      >
                         NFTs
                       </div>
                       <a
@@ -305,8 +359,8 @@
                         )}/nfts/${encodeURIComponent(nftFound.classId)}/${encodeURIComponent(
                           nftFound.id
                         )}`"
-                        @click="isCmdOpen = false"
                         class="block px-4 py-2"
+                        @click="isCmdOpen = false"
                       >
                         Go to NFTClass: {{ nftFound.classId }} NFT:
                         {{ nftFound.id }}
@@ -325,7 +379,9 @@
                 <el-no-results
                   v-if="commandQuery && isNameLike(commandQuery) && !hasAnyNameResults"
                 >
-                  <div class="px-4 py-3 text-sm">No matching name, classes, denoms, or NFTs.</div>
+                  <div class="px-4 py-3 text-sm">
+                    No matching name, classes, denoms, or NFTs.
+                  </div>
                 </el-no-results>
               </el-command-palette>
             </DialogPanel>
@@ -338,7 +394,10 @@
     <GlobalTransactionModal />
 
     <!-- Global Transaction Toasts -->
-    <TxToasts :history="txHistory" @dismiss="removeTransaction" />
+    <TxToasts
+      :history="txHistory"
+      @dismiss="removeTransaction"
+    />
   </div>
 </template>
 

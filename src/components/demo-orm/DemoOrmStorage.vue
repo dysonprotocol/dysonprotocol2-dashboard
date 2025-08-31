@@ -1,15 +1,41 @@
 <template>
-  <h2 class="text-xl font-semibold" id="storage">Storage</h2>
+  <h2
+    id="storage"
+    class="text-xl font-semibold"
+  >
+    Storage
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-4 p-4 border rounded">
-      <h3 class="font-semibold">Queries</h3>
+      <h3 class="font-semibold">
+        Queries
+      </h3>
       <div class="space-y-2">
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Get</h4>
-          <input v-model="getOwner" class="input w-full" placeholder="owner (name or address)" />
-          <input v-model="getIndex" class="input w-full" placeholder="index" />
-          <input v-model="getExtract" class="input w-full" placeholder="extract (optional)" />
-          <button class="btn btn-primary" @click="storageGet">Fetch</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Get
+          </h4>
+          <input
+            v-model="getOwner"
+            class="input w-full"
+            placeholder="owner (name or address)"
+          >
+          <input
+            v-model="getIndex"
+            class="input w-full"
+            placeholder="index"
+          >
+          <input
+            v-model="getExtract"
+            class="input w-full"
+            placeholder="extract (optional)"
+          >
+          <button
+            class="btn btn-primary"
+            @click="storageGet"
+          >
+            Fetch
+          </button>
           <div class="text-xs opacity-70 grid grid-cols-2 gap-x-2">
             <div>
               hash=<code>{{ lastHash }}</code>
@@ -18,34 +44,85 @@
               height=<code>{{ lastHeight }}</code>
             </div>
           </div>
-          <div v-if="getError" class="text-sm text-red-600">{{ getError }}</div>
-          <div v-if="getErrorData" class="text-xs opacity-70">
+          <div
+            v-if="getError"
+            class="text-sm text-red-600"
+          >
+            {{ getError }}
+          </div>
+          <div
+            v-if="getErrorData"
+            class="text-xs opacity-70"
+          >
             <code class="break-words">{{ getErrorData }}</code>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">List</h4>
-          <input v-model="listOwner" class="input w-full" placeholder="owner (name or address)" />
-          <input v-model="listPrefix" class="input w-full" placeholder="index_prefix" />
-          <input v-model="listFilter" class="input w-full" placeholder="filter (optional)" />
-          <input v-model="listExtract" class="input w-full" placeholder="extract (optional)" />
+          <h4 class="text-sm font-semibold opacity-70">
+            List
+          </h4>
+          <input
+            v-model="listOwner"
+            class="input w-full"
+            placeholder="owner (name or address)"
+          >
+          <input
+            v-model="listPrefix"
+            class="input w-full"
+            placeholder="index_prefix"
+          >
+          <input
+            v-model="listFilter"
+            class="input w-full"
+            placeholder="filter (optional)"
+          >
+          <input
+            v-model="listExtract"
+            class="input w-full"
+            placeholder="extract (optional)"
+          >
           <div class="flex gap-2">
-            <button class="btn btn-primary" @click="storageListInit">Init</button>
-            <button class="btn" @click="storageListMore">Load More</button>
+            <button
+              class="btn btn-primary"
+              @click="storageListInit"
+            >
+              Init
+            </button>
+            <button
+              class="btn"
+              @click="storageListMore"
+            >
+              Load More
+            </button>
           </div>
           <div class="text-sm">
             count=<code>{{ entriesCount }}</code>
           </div>
-          <div v-if="listError" class="text-sm text-red-600">{{ listError }}</div>
-          <div v-if="listErrorData" class="text-xs opacity-70">
+          <div
+            v-if="listError"
+            class="text-sm text-red-600"
+          >
+            {{ listError }}
+          </div>
+          <div
+            v-if="listErrorData"
+            class="text-xs opacity-70"
+          >
             <code class="break-words">{{ listErrorData }}</code>
           </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Params</h4>
-          <button class="btn btn-primary" @click="fetchParams">Fetch</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Params
+          </h4>
+          <button
+            class="btn btn-primary"
+            @click="fetchParams"
+          >
+            Fetch
+          </button>
           <div class="text-xs opacity-70 grid grid-cols-2 gap-x-2">
             <div>
               max_size=<code>{{ params.max_storage_size }}</code>
@@ -54,17 +131,29 @@
               stake_mult=<code>{{ params.storage_stake_multiple }}</code>
             </div>
           </div>
-          <div v-if="paramsError" class="text-sm text-red-600">{{ paramsError }}</div>
+          <div
+            v-if="paramsError"
+            class="text-sm text-red-600"
+          >
+            {{ paramsError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Metrics</h4>
+          <h4 class="text-sm font-semibold opacity-70">
+            Metrics
+          </h4>
           <input
             v-model="metricsOwner"
             class="input w-full"
             placeholder="owner (name or address)"
-          />
-          <button class="btn btn-primary" @click="fetchMetrics">Fetch</button>
+          >
+          <button
+            class="btn btn-primary"
+            @click="fetchMetrics"
+          >
+            Fetch
+          </button>
           <div class="text-xs opacity-70 grid grid-cols-2 gap-x-2">
             <div>
               total_bytes=<code>{{ metrics.total_bytes }}</code>
@@ -73,41 +162,109 @@
               min_stake=<code>{{ metrics.min_stake_amount }}</code>
             </div>
           </div>
-          <div v-if="metricsError" class="text-sm text-red-600">{{ metricsError }}</div>
+          <div
+            v-if="metricsError"
+            class="text-sm text-red-600"
+          >
+            {{ metricsError }}
+          </div>
         </div>
       </div>
     </div>
 
     <div class="space-y-4 p-4 border rounded">
-      <h3 class="font-semibold">Actions</h3>
+      <h3 class="font-semibold">
+        Actions
+      </h3>
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Set</h4>
-        <input v-model="setOwner" class="input w-full" placeholder="owner" />
-        <input v-model="setIndex" class="input w-full" placeholder="index" />
-        <textarea v-model="setData" class="textarea w-full" rows="6" placeholder="data" />
-        <input v-model="setMemo" class="input w-full" placeholder="memo (optional)" />
-        <button class="btn btn-primary" @click="storageSet">Set</button>
-        <div v-if="setError" class="text-sm text-red-600">{{ setError }}</div>
-        <div v-if="setErrorData" class="text-xs opacity-70">
+        <h4 class="text-sm font-semibold opacity-70">
+          Set
+        </h4>
+        <input
+          v-model="setOwner"
+          class="input w-full"
+          placeholder="owner"
+        >
+        <input
+          v-model="setIndex"
+          class="input w-full"
+          placeholder="index"
+        >
+        <textarea
+          v-model="setData"
+          class="textarea w-full"
+          rows="6"
+          placeholder="data"
+        />
+        <input
+          v-model="setMemo"
+          class="input w-full"
+          placeholder="memo (optional)"
+        >
+        <button
+          class="btn btn-primary"
+          @click="storageSet"
+        >
+          Set
+        </button>
+        <div
+          v-if="setError"
+          class="text-sm text-red-600"
+        >
+          {{ setError }}
+        </div>
+        <div
+          v-if="setErrorData"
+          class="text-xs opacity-70"
+        >
           <code class="break-words">{{ setErrorData }}</code>
         </div>
       </div>
 
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Delete</h4>
-        <input v-model="delOwner" class="input w-full" placeholder="owner" />
-        <input v-model="delIndexes" class="input w-full" placeholder="indexes (comma separated)" />
-        <input v-model="delMemo" class="input w-full" placeholder="memo (optional)" />
-        <button class="btn btn-primary" @click="storageDelete">Delete</button>
-        <div v-if="delError" class="text-sm text-red-600">{{ delError }}</div>
-        <div v-if="delErrorData" class="text-xs opacity-70">
+        <h4 class="text-sm font-semibold opacity-70">
+          Delete
+        </h4>
+        <input
+          v-model="delOwner"
+          class="input w-full"
+          placeholder="owner"
+        >
+        <input
+          v-model="delIndexes"
+          class="input w-full"
+          placeholder="indexes (comma separated)"
+        >
+        <input
+          v-model="delMemo"
+          class="input w-full"
+          placeholder="memo (optional)"
+        >
+        <button
+          class="btn btn-primary"
+          @click="storageDelete"
+        >
+          Delete
+        </button>
+        <div
+          v-if="delError"
+          class="text-sm text-red-600"
+        >
+          {{ delError }}
+        </div>
+        <div
+          v-if="delErrorData"
+          class="text-xs opacity-70"
+        >
           <code class="break-words">{{ delErrorData }}</code>
         </div>
       </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded col-span-3">
-      <h3 class="font-semibold">In-memory</h3>
+      <h3 class="font-semibold">
+        In-memory
+      </h3>
       <div class="text-sm opacity-70">
         count: <code>{{ entriesCount }}</code>
       </div>
@@ -123,13 +280,22 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="e in entriesList" :key="e.owner + ':' + e.index + ':' + e.extract">
-              <td class="font-mono">{{ e.owner }}</td>
-              <td class="font-mono">{{ e.index }}</td>
+            <tr
+              v-for="e in entriesList"
+              :key="e.owner + ':' + e.index + ':' + e.extract"
+            >
+              <td class="font-mono">
+                {{ e.owner }}
+              </td>
+              <td class="font-mono">
+                {{ e.index }}
+              </td>
               <td class="max-w-[24rem] truncate">
                 <code>{{ e.hash }}</code>
               </td>
-              <td class="font-mono">{{ e.extract }}</td>
+              <td class="font-mono">
+                {{ e.extract }}
+              </td>
               <td class="max-w-[24rem] truncate">
                 <code>{{ e.data }}</code>
               </td>

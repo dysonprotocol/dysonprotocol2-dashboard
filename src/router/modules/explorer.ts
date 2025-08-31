@@ -1,46 +1,48 @@
 import type { RouteRecordRaw } from 'vue-router'
 
-const Placeholder = () => import('../../views/Placeholder.vue')
-
 export const explorerRoutes: RouteRecordRaw[] = [
-  { path: '/blocks', name: 'BlocksList', component: Placeholder, meta: { title: 'Blocks List' } },
   {
-    path: '/block/:height(\\d+)',
+    path: '/blocks',
+    name: 'BlocksList',
+    component: () => import('@/views/explorer/BlocksList.vue'),
+  },
+  {
+    path: '/block/:height',
     name: 'BlockDetail',
-    component: Placeholder,
+    component: () => import('@/views/explorer/BlockDetail.vue'),
     props: true,
-    meta: { title: 'Block Detail' },
   },
 
-  { path: '/txs', name: 'TxsList', component: Placeholder, meta: { title: 'Transactions List' } },
+  { path: '/txs', name: 'TxsList', component: () => import('@/views/explorer/TxsList.vue') },
   {
     path: '/txs/:hash',
     name: 'TransactionDetails',
-    component: Placeholder,
+    component: () => import('@/views/explorer/TxDetail.vue'),
     props: true,
-    meta: { title: 'Transaction Details' },
   },
 
   {
     path: '/validators',
     name: 'ValidatorsList',
-    component: Placeholder,
-    meta: { title: 'Validators List' },
+    component: () => import('@/views/chain/ValidatorsList.vue'),
   },
   {
     path: '/validators/:valAddress',
     name: 'ValidatorDetails',
-    component: Placeholder,
+    component: () => import('@/views/chain/ValidatorDetails.vue'),
     props: true,
-    meta: { title: 'Validator Details' },
   },
 
   {
+    path: '/gov',
+    name: 'GovernanceProposals',
+    component: () => import('@/views/chain/GovernanceProposals.vue'),
+  },
+  {
     path: '/gov/:proposalId(\\d+)',
     name: 'GovernanceProposal',
-    component: Placeholder,
+    component: () => import('@/views/chain/GovernanceProposal.vue'),
     props: true,
-    meta: { title: 'Governance Proposal' },
   },
 ]
 

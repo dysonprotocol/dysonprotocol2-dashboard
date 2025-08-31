@@ -1,8 +1,12 @@
 <template>
   <div class="p-4">
     <div class="mb-2">
-      <h2 class="text-xl font-bold">Storage</h2>
-      <p class="text-sm text-gray-600">Owner: {{ address }}</p>
+      <h2 class="text-xl font-bold">
+        Storage
+      </h2>
+      <p class="text-sm text-gray-600">
+        Owner: {{ address }}
+      </p>
     </div>
 
     <!-- Upload: set new storage entry -->
@@ -13,16 +17,23 @@
         <fieldset
           class="fieldset bg-base-200 border-base-300 rounded-box border p-4 lg:w-1/3 md:w-full"
         >
-          <legend class="fieldset-legend">Metrics</legend>
+          <legend class="fieldset-legend">
+            Metrics
+          </legend>
           <div class="text-sm">
-            <div v-if="metricsError" class="text-error">
+            <div
+              v-if="metricsError"
+              class="text-error"
+            >
               {{ metricsError }}
             </div>
             <div v-else>
               <table class="table table-compact table-sm w-full">
                 <tbody>
                   <tr>
-                    <td class="opacity-70 w-1/3 align-top">owner</td>
+                    <td class="opacity-70 w-1/3 align-top">
+                      owner
+                    </td>
                     <td class="align-top">
                       <AddressDisplay
                         :address="metrics.owner || address"
@@ -31,7 +42,9 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="opacity-70 align-top">total_bytes</td>
+                    <td class="opacity-70 align-top">
+                      total_bytes
+                    </td>
                     <td class="align-top">
                       <span class="font-mono">{{
                         metrics.total_bytes || "0"
@@ -39,7 +52,9 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="opacity-70 align-top">min_stake_amount</td>
+                    <td class="opacity-70 align-top">
+                      min_stake_amount
+                    </td>
                     <td class="align-top">
                       <span class="font-mono">{{
                         minStakeDisplay.amount
@@ -50,10 +65,11 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="opacity-70 align-top">current_stake_amount</td>
+                    <td class="opacity-70 align-top">
+                      current_stake_amount
+                    </td>
                     <td class="align-top">
-                      <span class="font-mono"
-                        >{{ currentStakeDisplay.amount }}
+                      <span class="font-mono">{{ currentStakeDisplay.amount }}
                       </span>
                       <span class="text-xs opacity-70">{{
                         currentStakeDisplay.denom
@@ -66,41 +82,50 @@
           </div>
         </fieldset>
 
-        <form class="lg:w-1/3 md:w-full" @submit.prevent>
+        <form
+          class="lg:w-1/3 md:w-full"
+          @submit.prevent
+        >
           <div class="">
             <!-- Column 1: index_prefix, filter, extract -->
             <fieldset
               class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
             >
-              <legend class="fieldset-legend">Filters</legend>
+              <legend class="fieldset-legend">
+                Filters
+              </legend>
               <input
                 v-model.trim="form.index_prefix"
                 type="text"
                 class="input w-full"
                 placeholder="Index prefix (e.g. user/)"
-              />
+              >
               <input
                 v-model.trim="form.filter"
                 type="text"
                 class="input w-full"
-                placeholder='Filter (e.g. status == "active")'
-              />
+                placeholder="Filter (e.g. status == &quot;active&quot;)"
+              >
               <input
                 v-model.trim="form.extract"
                 type="text"
                 class="input w-full"
                 placeholder="Extract (e.g. user.name)"
-              />
+              >
             </fieldset>
           </div>
         </form>
       </div>
       <div class="mb-2 text-sm">
-        <span v-if="error" class="text-error">{{ error }}</span>
+        <span
+          v-if="error"
+          class="text-error"
+        >{{ error }}</span>
         <span v-else-if="isLoading">Loading…</span>
-        <span v-else class="opacity-70"
-          >{{ entries.length }} entries per page</span
-        >
+        <span
+          v-else
+          class="opacity-70"
+        >{{ entries.length }} entries per page</span>
       </div>
 
       <!-- Page numbers -->
@@ -146,12 +171,18 @@
           >
             »
           </button>
-          <button class="join-item btn btn-xs btn-ghost" disabled>
+          <button
+            class="join-item btn btn-xs btn-ghost"
+            disabled
+          >
             {{ currentPage }}/{{ totalPages }} • {{ entries.length }} per page
           </button>
         </div>
         <!-- Inline pagination controls -->
-        <form class="flex items-center gap-2" @submit.prevent>
+        <form
+          class="flex items-center gap-2"
+          @submit.prevent
+        >
           <label class="text-xs opacity-70">limit</label>
           <input
             v-model.number="form.limit"
@@ -160,7 +191,7 @@
             type="number"
             class="input input-xs w-20"
             placeholder="100"
-          />
+          >
           <label class="text-xs opacity-70">offset</label>
           <input
             v-model.trim="form.offset"
@@ -168,14 +199,14 @@
             min="0"
             class="input input-xs w-24"
             placeholder="0"
-          />
+          >
           <label class="cursor-pointer flex items-center gap-1 text-xs">
             <span>reverse</span>
             <input
               v-model="form.reverse"
               type="checkbox"
               class="checkbox checkbox-xs"
-            />
+            >
           </label>
         </form>
       </div>
@@ -187,10 +218,18 @@
           <table class="table table-zebra table-sm w-full">
             <thead>
               <tr>
-                <th class="w-[48%]">index</th>
-                <th class="w-[18%]">height</th>
-                <th class="w-[18%]">timestamp</th>
-                <th class="w-[16%] text-right">actions</th>
+                <th class="w-[48%]">
+                  index
+                </th>
+                <th class="w-[18%]">
+                  height
+                </th>
+                <th class="w-[18%]">
+                  timestamp
+                </th>
+                <th class="w-[16%] text-right">
+                  actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -201,9 +240,15 @@
                 :class="{ 'bg-base-200': isSelected(e) }"
                 @click="selectEntry(e)"
               >
-                <td class="font-mono align-top break-all">{{ e.index }}</td>
-                <td class="align-top">{{ e.updated_height }}</td>
-                <td class="align-top">{{ e.updated_timestamp }}</td>
+                <td class="font-mono align-top break-all">
+                  {{ e.index }}
+                </td>
+                <td class="align-top">
+                  {{ e.updated_height }}
+                </td>
+                <td class="align-top">
+                  {{ e.updated_timestamp }}
+                </td>
                 <td class="align-top text-right">
                   <button
                     class="btn btn-xs btn-error"
@@ -214,13 +259,18 @@
                     <span
                       v-if="isDeleting(e.index)"
                       class="loading loading-spinner loading-xs"
-                    ></span>
+                    />
                     <span v-else>Delete</span>
                   </button>
                 </td>
               </tr>
               <tr v-if="!isLoading && !error && !entries.length">
-                <td colspan="4" class="text-center opacity-70">No results</td>
+                <td
+                  colspan="4"
+                  class="text-center opacity-70"
+                >
+                  No results
+                </td>
               </tr>
             </tbody>
           </table>
@@ -231,7 +281,9 @@
           <fieldset
             class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4"
           >
-            <legend class="fieldset-legend">Entry</legend>
+            <legend class="fieldset-legend">
+              Entry
+            </legend>
             <div class="text-sm mb-2">
               <div>
                 <span class="opacity-70">index:</span>
@@ -239,7 +291,7 @@
                   v-model.trim="selectedIndex"
                   class="input input-sm w-full font-mono"
                   placeholder="index (e.g. user/123)"
-                />
+                >
               </div>
             </div>
             <textarea
@@ -253,7 +305,7 @@
                 type="file"
                 class="hidden"
                 @change="onFileChangeForEditor"
-              />
+              >
               <button
                 type="button"
                 class="btn btn-sm"
@@ -268,7 +320,10 @@
               >
                 Save
               </button>
-              <span v-if="editorError" class="text-error text-sm">{{
+              <span
+                v-if="editorError"
+                class="text-error text-sm"
+              >{{
                 editorError
               }}</span>
             </div>

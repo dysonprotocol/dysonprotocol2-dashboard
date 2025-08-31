@@ -1,6 +1,12 @@
 <template>
-  <button @click="cycleTheme" class="btn btn-square btn-ghost">
-    <component :is="currentIcon" class="w-5 h-5" />
+  <button
+    class="btn btn-square btn-ghost"
+    @click="cycleTheme"
+  >
+    <component
+      :is="currentIcon"
+      class="w-5 h-5"
+    />
   </button>
 </template>
 

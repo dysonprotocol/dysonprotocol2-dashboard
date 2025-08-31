@@ -10,28 +10,28 @@
         <a
           :href="`${restBase}/redirect-to-dwapp/nuance.dys/${postId}`"
           class="link"
-          >#{{ postId }}</a
-        >
+        >#{{ postId }}</a>
         by
         <a
           :href="`${restBase}/redirect-to-dwapp/nuance.dys/authors/${enc(
             safeAuthor
           )}`"
           class="link"
-          >{{ safeAuthor }}</a
-        >
+        >{{ safeAuthor }}</a>
         on {{ formattedTime }} has earned {{ earnedDys }} DYS | Topic:
         <a
           :href="`${restBase}/redirect-to-dwapp/nuance.dys/topics/${enc(
             topicTag
           )}`"
           class="link"
-          >#{{ topicTag }}</a
-        >
+        >#{{ topicTag }}</a>
       </span>
     </header>
 
-    <div class="nuance markdown prose" v-html="safeHtml"></div>
+    <div
+      class="nuance markdown prose"
+      v-html="safeHtml"
+    />
   </article>
 </template>
 

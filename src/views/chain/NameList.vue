@@ -6,14 +6,43 @@
 
     <div>
       <div class="flex items-center justify-between">
-        <h2 class="text-lg font-medium">All names</h2>
-        <button class="btn btn-sm" @click="loadAllNames" :disabled="isLoadingAll">Refresh</button>
+        <h2 class="text-lg font-medium">
+          All names
+        </h2>
+        <button
+          class="btn btn-sm"
+          :disabled="isLoadingAll"
+          @click="loadAllNames"
+        >
+          Refresh
+        </button>
       </div>
-      <div v-if="isLoadingAll" class="opacity-70 mt-2">Loading…</div>
-      <div v-else-if="allError" class="text-error mt-2">{{ allError }}</div>
-      <div v-else class="mt-2">
-        <div v-if="nftsView.length === 0" class="opacity-70">No names found.</div>
-        <div v-else class="overflow-x-auto">
+      <div
+        v-if="isLoadingAll"
+        class="opacity-70 mt-2"
+      >
+        Loading…
+      </div>
+      <div
+        v-else-if="allError"
+        class="text-error mt-2"
+      >
+        {{ allError }}
+      </div>
+      <div
+        v-else
+        class="mt-2"
+      >
+        <div
+          v-if="nftsView.length === 0"
+          class="opacity-70"
+        >
+          No names found.
+        </div>
+        <div
+          v-else
+          class="overflow-x-auto"
+        >
           <table class="table">
             <thead>
               <tr>
@@ -24,16 +53,24 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="nft in nftsView" :key="nft.id">
-                <td class="font-mono">{{ nft.id }}</td>
+              <tr
+                v-for="nft in nftsView"
+                :key="nft.id"
+              >
+                <td class="font-mono">
+                  {{ nft.id }}
+                </td>
                 <td>
-                  <span v-if="formatValuation(nft).label"
-                    >{{ formatValuation(nft).amount }} {{ formatValuation(nft).label }}</span
-                  >
+                  <span v-if="formatValuation(nft).label">{{ formatValuation(nft).amount }} {{ formatValuation(nft).label }}</span>
                   <span v-else>—</span>
                 </td>
                 <td>
-                  <router-link :to="`/names/${nft.id}`" class="link">View details</router-link>
+                  <router-link
+                    :to="`/names/${nft.id}`"
+                    class="link"
+                  >
+                    View details
+                  </router-link>
                 </td>
                 <td>
                   <a

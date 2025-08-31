@@ -1,20 +1,39 @@
 <template>
   <div class="">
-    <h2 class="text-xl font-semibold">
-      Script Function — <code>{{ address }}</code>
-    </h2>
     <div class="grid gap-2 md:grid-cols-3">
-      <input v-model="functionNameModel" class="input w-full" placeholder="function name" />
-      <input v-model="argsModel" class="input w-full" placeholder="args JSON []" />
-      <input v-model="kwargsModel" class="input w-full" placeholder="kwargs JSON {}" />
+      <input
+        v-model="functionNameModel"
+        class="input w-full"
+        placeholder="function name"
+      >
+      <input
+        v-model="argsModel"
+        class="input w-full"
+        placeholder="args JSON []"
+      >
+      <input
+        v-model="kwargsModel"
+        class="input w-full"
+        placeholder="kwargs JSON {}"
+      >
     </div>
     <div class="flex gap-2">
-      <button class="btn btn-primary" @click="callFunction">Call</button>
+      <button
+        class="btn btn-primary"
+        @click="callFunction"
+      >
+        Call
+      </button>
     </div>
     <div class="text-xs opacity-70">
       result=<code class="break-words">{{ result }}</code>
     </div>
-    <div v-if="error" class="text-sm text-red-600">{{ error }}</div>
+    <div
+      v-if="error"
+      class="text-sm text-red-600"
+    >
+      {{ error }}
+    </div>
   </div>
 </template>
 

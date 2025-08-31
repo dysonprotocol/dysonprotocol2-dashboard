@@ -1,98 +1,222 @@
 <template>
-  <h2 class="text-xl font-semibold" id="nameservice">Nameservice</h2>
+  <h2
+    id="nameservice"
+    class="text-xl font-semibold"
+  >
+    Nameservice
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-4 p-4 border rounded">
-      <h3 class="font-semibold">Queries</h3>
+      <h3 class="font-semibold">
+        Queries
+      </h3>
       <div class="space-y-2">
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Resolve Name</h4>
-          <input v-model="resolveInput" class="input w-full" placeholder="name or address" />
-          <button class="btn btn-primary" @click="resolveName">Resolve</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Resolve Name
+          </h4>
+          <input
+            v-model="resolveInput"
+            class="input w-full"
+            placeholder="name or address"
+          >
+          <button
+            class="btn btn-primary"
+            @click="resolveName"
+          >
+            Resolve
+          </button>
           <div class="text-sm">
             address=<code>{{ resolvedAddress }}</code>
           </div>
-          <div v-if="resolveError" class="text-sm text-red-600">{{ resolveError }}</div>
+          <div
+            v-if="resolveError"
+            class="text-sm text-red-600"
+          >
+            {{ resolveError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Compute Hash</h4>
-          <input v-model="regCommitter" class="input w-full" placeholder="committer" />
-          <input v-model="regName" class="input w-full" placeholder="name" />
-          <input v-model="regSalt" class="input w-full" placeholder="salt" />
+          <h4 class="text-sm font-semibold opacity-70">
+            Compute Hash
+          </h4>
+          <input
+            v-model="regCommitter"
+            class="input w-full"
+            placeholder="committer"
+          >
+          <input
+            v-model="regName"
+            class="input w-full"
+            placeholder="name"
+          >
+          <input
+            v-model="regSalt"
+            class="input w-full"
+            placeholder="salt"
+          >
           <div class="flex gap-2 items-center">
-            <button class="btn btn-primary" @click="computeHash">ComputeHash</button>
+            <button
+              class="btn btn-primary"
+              @click="computeHash"
+            >
+              ComputeHash
+            </button>
             <span class="text-xs font-mono truncate">{{ regHexhash }}</span>
           </div>
-          <div v-if="regError" class="text-sm text-red-600">{{ regError }}</div>
+          <div
+            v-if="regError"
+            class="text-sm text-red-600"
+          >
+            {{ regError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Names by Destination</h4>
-          <input v-model="destInput" class="input w-full" placeholder="destination address" />
+          <h4 class="text-sm font-semibold opacity-70">
+            Names by Destination
+          </h4>
+          <input
+            v-model="destInput"
+            class="input w-full"
+            placeholder="destination address"
+          >
           <div class="flex gap-2">
-            <button class="btn btn-primary" @click="resolveAllNamesForDestination">Init</button>
+            <button
+              class="btn btn-primary"
+              @click="resolveAllNamesForDestination"
+            >
+              Init
+            </button>
           </div>
           <div class="text-sm">
             count=<code>{{ namesByDestCount }}</code>
           </div>
-          <div v-if="namesError" class="text-sm text-red-600">{{ namesError }}</div>
+          <div
+            v-if="namesError"
+            class="text-sm text-red-600"
+          >
+            {{ namesError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Names by Owner</h4>
-          <input v-model="namesOwner" class="input w-full" placeholder="owner address" />
+          <h4 class="text-sm font-semibold opacity-70">
+            Names by Owner
+          </h4>
+          <input
+            v-model="namesOwner"
+            class="input w-full"
+            placeholder="owner address"
+          >
           <div class="flex gap-2">
-            <button class="btn btn-primary" @click="fetchNamesByOwner">Init</button>
+            <button
+              class="btn btn-primary"
+              @click="fetchNamesByOwner"
+            >
+              Init
+            </button>
           </div>
           <div class="text-sm">
             count=<code>{{ namesForOwnerCount }}</code>
           </div>
-          <div v-if="namesByOwnerError" class="text-sm text-red-600">{{ namesByOwnerError }}</div>
+          <div
+            v-if="namesByOwnerError"
+            class="text-sm text-red-600"
+          >
+            {{ namesByOwnerError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Classes by Name</h4>
+          <h4 class="text-sm font-semibold opacity-70">
+            Classes by Name
+          </h4>
           <input
             v-model="classesName"
             class="input w-full"
             placeholder="root name (e.g. nameservice.dys)"
-          />
+          >
           <input
             v-model="classesPrefix"
             class="input w-full"
             placeholder="subclass_prefix (optional)"
-          />
+          >
           <div class="flex gap-2">
-            <button class="btn btn-primary" @click="fetchClassesInit">Init</button>
-            <button class="btn" @click="fetchClassesLoadMore">Load More</button>
+            <button
+              class="btn btn-primary"
+              @click="fetchClassesInit"
+            >
+              Init
+            </button>
+            <button
+              class="btn"
+              @click="fetchClassesLoadMore"
+            >
+              Load More
+            </button>
           </div>
           <div class="text-sm">
             count=<code>{{ classesCount }}</code>
           </div>
-          <div v-if="classesError" class="text-sm text-red-600">{{ classesError }}</div>
+          <div
+            v-if="classesError"
+            class="text-sm text-red-600"
+          >
+            {{ classesError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Denoms by Name</h4>
-          <input v-model="denomsName" class="input w-full" placeholder="root name" />
+          <h4 class="text-sm font-semibold opacity-70">
+            Denoms by Name
+          </h4>
+          <input
+            v-model="denomsName"
+            class="input w-full"
+            placeholder="root name"
+          >
           <input
             v-model="denomsPrefix"
             class="input w-full"
             placeholder="subdenom_prefix (optional)"
-          />
+          >
           <div class="flex gap-2">
-            <button class="btn btn-primary" @click="fetchDenomsInit">Init</button>
-            <button class="btn" @click="fetchDenomsLoadMore">Load More</button>
+            <button
+              class="btn btn-primary"
+              @click="fetchDenomsInit"
+            >
+              Init
+            </button>
+            <button
+              class="btn"
+              @click="fetchDenomsLoadMore"
+            >
+              Load More
+            </button>
           </div>
           <div class="text-sm">
             count=<code>{{ denomsCount }}</code>
           </div>
-          <div v-if="denomsError" class="text-sm text-red-600">{{ denomsError }}</div>
+          <div
+            v-if="denomsError"
+            class="text-sm text-red-600"
+          >
+            {{ denomsError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Params</h4>
-          <button class="btn btn-primary" @click="fetchParams">Fetch</button>
+          <h4 class="text-sm font-semibold opacity-70">
+            Params
+          </h4>
+          <button
+            class="btn btn-primary"
+            @click="fetchParams"
+          >
+            Fetch
+          </button>
           <div class="text-xs opacity-70 grid grid-cols-2 gap-x-2">
             <div>
               min_fee_pct=<code>{{ params.min_valuation_fee_pct }}</code>
@@ -107,132 +231,397 @@
               max_period=<code>{{ params.max_valuation_period }}</code>
             </div>
           </div>
-          <div v-if="paramsError" class="text-sm text-red-600">{{ paramsError }}</div>
+          <div
+            v-if="paramsError"
+            class="text-sm text-red-600"
+          >
+            {{ paramsError }}
+          </div>
         </div>
 
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold opacity-70">Name (NFT) by ID</h4>
-          <input v-model="nameInput" class="input w-full" placeholder="name id" />
+          <h4 class="text-sm font-semibold opacity-70">
+            Name (NFT) by ID
+          </h4>
+          <input
+            v-model="nameInput"
+            class="input w-full"
+            placeholder="name id"
+          >
           <div class="flex gap-2">
-            <button class="btn btn-primary" @click="fetchName">Fetch</button>
+            <button
+              class="btn btn-primary"
+              @click="fetchName"
+            >
+              Fetch
+            </button>
           </div>
           <div class="text-sm">
             owner=<code>{{ nameOwner }}</code>
           </div>
-          <div v-if="nameError" class="text-sm text-red-600">{{ nameError }}</div>
+          <div
+            v-if="nameError"
+            class="text-sm text-red-600"
+          >
+            {{ nameError }}
+          </div>
         </div>
       </div>
     </div>
 
     <div class="space-y-4 p-4 border rounded">
-      <h3 class="font-semibold">Actions</h3>
+      <h3 class="font-semibold">
+        Actions
+      </h3>
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Set Destination</h4>
-        <input v-model="actOwner" class="input w-full" placeholder="owner" />
-        <input v-model="actName" class="input w-full" placeholder="name" />
-        <input v-model="actDestination" class="input w-full" placeholder="destination address" />
-        <input v-model="actMemo" class="input w-full" placeholder="memo (optional)" />
-        <button class="btn btn-primary" @click="setDestination">Send</button>
-        <div v-if="actError" class="text-sm text-red-600">{{ actError }}</div>
+        <h4 class="text-sm font-semibold opacity-70">
+          Set Destination
+        </h4>
+        <input
+          v-model="actOwner"
+          class="input w-full"
+          placeholder="owner"
+        >
+        <input
+          v-model="actName"
+          class="input w-full"
+          placeholder="name"
+        >
+        <input
+          v-model="actDestination"
+          class="input w-full"
+          placeholder="destination address"
+        >
+        <input
+          v-model="actMemo"
+          class="input w-full"
+          placeholder="memo (optional)"
+        >
+        <button
+          class="btn btn-primary"
+          @click="setDestination"
+        >
+          Send
+        </button>
+        <div
+          v-if="actError"
+          class="text-sm text-red-600"
+        >
+          {{ actError }}
+        </div>
       </div>
 
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Set Name Metadata</h4>
-        <input v-model="metaOwner" class="input w-full" placeholder="owner" />
-        <input v-model="metaName" class="input w-full" placeholder="name" />
-        <input v-model="metaValue" class="input w-full" placeholder="metadata" />
-        <button class="btn btn-primary" @click="setNameMetadata">Send</button>
-        <div v-if="metaError" class="text-sm text-red-600">{{ metaError }}</div>
+        <h4 class="text-sm font-semibold opacity-70">
+          Set Name Metadata
+        </h4>
+        <input
+          v-model="metaOwner"
+          class="input w-full"
+          placeholder="owner"
+        >
+        <input
+          v-model="metaName"
+          class="input w-full"
+          placeholder="name"
+        >
+        <input
+          v-model="metaValue"
+          class="input w-full"
+          placeholder="metadata"
+        >
+        <button
+          class="btn btn-primary"
+          @click="setNameMetadata"
+        >
+          Send
+        </button>
+        <div
+          v-if="metaError"
+          class="text-sm text-red-600"
+        >
+          {{ metaError }}
+        </div>
       </div>
 
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Set Valuation</h4>
-        <input v-model="valOwner" class="input w-full" placeholder="owner" />
-        <input v-model="valName" class="input w-full" placeholder="name" />
+        <h4 class="text-sm font-semibold opacity-70">
+          Set Valuation
+        </h4>
+        <input
+          v-model="valOwner"
+          class="input w-full"
+          placeholder="owner"
+        >
+        <input
+          v-model="valName"
+          class="input w-full"
+          placeholder="name"
+        >
         <div class="flex gap-2">
-          <input v-model="valAmount" class="input w-full" placeholder="amount" />
-          <input v-model="valDenom" class="input w-full" placeholder="denom" />
+          <input
+            v-model="valAmount"
+            class="input w-full"
+            placeholder="amount"
+          >
+          <input
+            v-model="valDenom"
+            class="input w-full"
+            placeholder="denom"
+          >
         </div>
         <input
           v-model="valMaxFeePct"
           class="input w-full"
           placeholder="max_valuation_fee_pct (optional)"
-        />
-        <button class="btn btn-primary" @click="setValuation">Send</button>
-        <div v-if="valError" class="text-sm text-red-600">{{ valError }}</div>
+        >
+        <button
+          class="btn btn-primary"
+          @click="setValuation"
+        >
+          Send
+        </button>
+        <div
+          v-if="valError"
+          class="text-sm text-red-600"
+        >
+          {{ valError }}
+        </div>
       </div>
 
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Renew</h4>
-        <input v-model="renewPayer" class="input w-full" placeholder="payer" />
-        <input v-model="renewName" class="input w-full" placeholder="name" />
-        <button class="btn btn-primary" @click="renew">Send</button>
-        <div v-if="renewError" class="text-sm text-red-600">{{ renewError }}</div>
+        <h4 class="text-sm font-semibold opacity-70">
+          Renew
+        </h4>
+        <input
+          v-model="renewPayer"
+          class="input w-full"
+          placeholder="payer"
+        >
+        <input
+          v-model="renewName"
+          class="input w-full"
+          placeholder="name"
+        >
+        <button
+          class="btn btn-primary"
+          @click="renew"
+        >
+          Send
+        </button>
+        <div
+          v-if="renewError"
+          class="text-sm text-red-600"
+        >
+          {{ renewError }}
+        </div>
       </div>
 
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Bids</h4>
+        <h4 class="text-sm font-semibold opacity-70">
+          Bids
+        </h4>
         <div class="space-y-2">
-          <input v-model="bidBidder" class="input w-full" placeholder="bidder" />
-          <input v-model="bidName" class="input w-full" placeholder="name" />
+          <input
+            v-model="bidBidder"
+            class="input w-full"
+            placeholder="bidder"
+          >
+          <input
+            v-model="bidName"
+            class="input w-full"
+            placeholder="name"
+          >
           <div class="flex gap-2">
-            <input v-model="bidAmount" class="input w-full" placeholder="amount" />
-            <input v-model="bidDenom" class="input w-full" placeholder="denom" />
+            <input
+              v-model="bidAmount"
+              class="input w-full"
+              placeholder="amount"
+            >
+            <input
+              v-model="bidDenom"
+              class="input w-full"
+              placeholder="denom"
+            >
           </div>
-          <button class="btn btn-primary" @click="placeBid">Place</button>
-          <div v-if="bidError" class="text-sm text-red-600">{{ bidError }}</div>
+          <button
+            class="btn btn-primary"
+            @click="placeBid"
+          >
+            Place
+          </button>
+          <div
+            v-if="bidError"
+            class="text-sm text-red-600"
+          >
+            {{ bidError }}
+          </div>
         </div>
         <div class="space-y-2">
-          <input v-model="accOwner" class="input w-full" placeholder="owner" />
-          <input v-model="accName" class="input w-full" placeholder="name" />
-          <button class="btn btn-primary" @click="acceptBid">Accept</button>
-          <div v-if="accError" class="text-sm text-red-600">{{ accError }}</div>
+          <input
+            v-model="accOwner"
+            class="input w-full"
+            placeholder="owner"
+          >
+          <input
+            v-model="accName"
+            class="input w-full"
+            placeholder="name"
+          >
+          <button
+            class="btn btn-primary"
+            @click="acceptBid"
+          >
+            Accept
+          </button>
+          <div
+            v-if="accError"
+            class="text-sm text-red-600"
+          >
+            {{ accError }}
+          </div>
         </div>
         <div class="space-y-2">
-          <input v-model="rejOwner" class="input w-full" placeholder="owner" />
-          <input v-model="rejName" class="input w-full" placeholder="name" />
+          <input
+            v-model="rejOwner"
+            class="input w-full"
+            placeholder="owner"
+          >
+          <input
+            v-model="rejName"
+            class="input w-full"
+            placeholder="name"
+          >
           <div class="flex gap-2">
-            <input v-model="rejAmount" class="input w-full" placeholder="new valuation amount" />
-            <input v-model="rejDenom" class="input w-full" placeholder="denom" />
+            <input
+              v-model="rejAmount"
+              class="input w-full"
+              placeholder="new valuation amount"
+            >
+            <input
+              v-model="rejDenom"
+              class="input w-full"
+              placeholder="denom"
+            >
           </div>
-          <button class="btn btn-primary" @click="rejectBid">Reject</button>
-          <div v-if="rejError" class="text-sm text-red-600">{{ rejError }}</div>
+          <button
+            class="btn btn-primary"
+            @click="rejectBid"
+          >
+            Reject
+          </button>
+          <div
+            v-if="rejError"
+            class="text-sm text-red-600"
+          >
+            {{ rejError }}
+          </div>
         </div>
         <div class="space-y-2">
-          <input v-model="claimBidder" class="input w-full" placeholder="bidder" />
-          <input v-model="claimName" class="input w-full" placeholder="name" />
-          <button class="btn btn-primary" @click="claimBid">Claim</button>
-          <div v-if="claimError" class="text-sm text-red-600">{{ claimError }}</div>
+          <input
+            v-model="claimBidder"
+            class="input w-full"
+            placeholder="bidder"
+          >
+          <input
+            v-model="claimName"
+            class="input w-full"
+            placeholder="name"
+          >
+          <button
+            class="btn btn-primary"
+            @click="claimBid"
+          >
+            Claim
+          </button>
+          <div
+            v-if="claimError"
+            class="text-sm text-red-600"
+          >
+            {{ claimError }}
+          </div>
         </div>
       </div>
 
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Registration Commit</h4>
-        <input v-model="regCommitter" class="input w-full" placeholder="committer" />
+        <h4 class="text-sm font-semibold opacity-70">
+          Registration Commit
+        </h4>
+        <input
+          v-model="regCommitter"
+          class="input w-full"
+          placeholder="committer"
+        >
         <div class="text-xs opacity-70">
           hexhash: <span class="font-mono">{{ regHexhash }}</span>
         </div>
         <div class="flex gap-2">
-          <input v-model="regAmount" class="input w-full" placeholder="valuation amount" />
-          <input v-model="regDenom" class="input w-full" placeholder="denom" />
+          <input
+            v-model="regAmount"
+            class="input w-full"
+            placeholder="valuation amount"
+          >
+          <input
+            v-model="regDenom"
+            class="input w-full"
+            placeholder="denom"
+          >
         </div>
-        <button class="btn btn-primary" @click="commit">Commit</button>
-        <div v-if="regError" class="text-sm text-red-600">{{ regError }}</div>
+        <button
+          class="btn btn-primary"
+          @click="commit"
+        >
+          Commit
+        </button>
+        <div
+          v-if="regError"
+          class="text-sm text-red-600"
+        >
+          {{ regError }}
+        </div>
       </div>
 
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold opacity-70">Registration Reveal</h4>
-        <input v-model="regCommitter" class="input w-full" placeholder="committer" />
-        <input v-model="regName" class="input w-full" placeholder="name" />
-        <input v-model="regSalt" class="input w-full" placeholder="salt" />
-        <button class="btn btn-primary" @click="reveal">Reveal</button>
-        <div v-if="regError" class="text-sm text-red-600">{{ regError }}</div>
+        <h4 class="text-sm font-semibold opacity-70">
+          Registration Reveal
+        </h4>
+        <input
+          v-model="regCommitter"
+          class="input w-full"
+          placeholder="committer"
+        >
+        <input
+          v-model="regName"
+          class="input w-full"
+          placeholder="name"
+        >
+        <input
+          v-model="regSalt"
+          class="input w-full"
+          placeholder="salt"
+        >
+        <button
+          class="btn btn-primary"
+          @click="reveal"
+        >
+          Reveal
+        </button>
+        <div
+          v-if="regError"
+          class="text-sm text-red-600"
+        >
+          {{ regError }}
+        </div>
       </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">In-memory</h3>
-      <h4 class="text-sm font-semibold opacity-70">Names (nameservice.dys)</h4>
+      <h3 class="font-semibold">
+        In-memory
+      </h3>
+      <h4 class="text-sm font-semibold opacity-70">
+        Names (nameservice.dys)
+      </h4>
       <div class="text-sm opacity-70">
         count: <code>{{ namesInMemory.length }}</code>
       </div>
@@ -246,8 +635,13 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="n in namesInMemory" :key="n.name">
-              <td class="font-mono">{{ n.name }}</td>
+            <tr
+              v-for="n in namesInMemory"
+              :key="n.name"
+            >
+              <td class="font-mono">
+                {{ n.name }}
+              </td>
               <td>
                 <code>{{ n.owner }}</code>
               </td>
@@ -260,7 +654,9 @@
       </div>
 
       <div class="h-px bg-gray-200" />
-      <h4 class="text-sm font-semibold opacity-70">Names by Destination</h4>
+      <h4 class="text-sm font-semibold opacity-70">
+        Names by Destination
+      </h4>
       <div class="text-sm opacity-70">
         count: <code>{{ namesByDestCount }}</code>
       </div>
@@ -273,8 +669,13 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="r in namesByDestList" :key="r.destination + ':' + r.name">
-              <td class="font-mono">{{ r.destination }}</td>
+            <tr
+              v-for="r in namesByDestList"
+              :key="r.destination + ':' + r.name"
+            >
+              <td class="font-mono">
+                {{ r.destination }}
+              </td>
               <td>
                 <code>{{ r.name }}</code>
               </td>
@@ -286,7 +687,9 @@
       <div class="h-px bg-gray-200" />
 
       <div class="h-px bg-gray-200" />
-      <h4 class="text-sm font-semibold opacity-70">Params snapshot</h4>
+      <h4 class="text-sm font-semibold opacity-70">
+        Params snapshot
+      </h4>
       <div class="text-xs opacity-70 grid grid-cols-2 gap-x-2">
         <div>
           min_fee_pct=<code>{{ params.min_valuation_fee_pct }}</code>

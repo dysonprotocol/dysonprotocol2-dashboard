@@ -1,6 +1,8 @@
 <template>
   <div class="p-4">
-    <h2 class="text-xl font-bold mb-2">Staking</h2>
+    <h2 class="text-xl font-bold mb-2">
+      Staking
+    </h2>
     <p class="text-sm opacity-70 mb-4">
       Delegator: <AddressDisplay :address="address" />
     </p>
@@ -8,8 +10,13 @@
     <!-- Delegate / Undelegate Forms -->
     <div class="card bg-base-200 mb-6">
       <div class="card-body grid md:grid-cols-2 gap-4">
-        <form class="grid gap-2" @submit.prevent="submitDelegate">
-          <h3 class="font-semibold">Delegate</h3>
+        <form
+          class="grid gap-2"
+          @submit.prevent="submitDelegate"
+        >
+          <h3 class="font-semibold">
+            Delegate
+          </h3>
           <div class="grid gap-2 sm:grid-cols-2 items-end">
             <div>
               <label class="label">
@@ -19,7 +26,9 @@
                 v-model="delegateForm.validator"
                 class="select select-bordered w-full"
               >
-                <option value="">Select validator…</option>
+                <option value="">
+                  Select validator…
+                </option>
                 <option
                   v-for="v in validators"
                   :key="v.operator_address"
@@ -27,9 +36,9 @@
                 >
                   {{
                     (v.description?.moniker || v.operator_address) +
-                    " (" +
-                    v.status +
-                    ")"
+                      " (" +
+                      v.status +
+                      ")"
                   }}
                 </option>
               </select>
@@ -50,13 +59,21 @@
           >
             {{ isDelegating ? "Delegating…" : "Delegate" }}
           </button>
-          <span class="text-error text-xs" v-if="delegateError">{{
+          <span
+            v-if="delegateError"
+            class="text-error text-xs"
+          >{{
             delegateError
           }}</span>
         </form>
 
-        <form class="grid gap-2" @submit.prevent="submitUndelegate">
-          <h3 class="font-semibold">Undelegate</h3>
+        <form
+          class="grid gap-2"
+          @submit.prevent="submitUndelegate"
+        >
+          <h3 class="font-semibold">
+            Undelegate
+          </h3>
           <div class="grid gap-2 sm:grid-cols-2 items-end">
             <div>
               <label class="label">
@@ -66,7 +83,9 @@
                 v-model="undelegateForm.validator"
                 class="select select-bordered w-full"
               >
-                <option value="">Select validator…</option>
+                <option value="">
+                  Select validator…
+                </option>
                 <option
                   v-for="v in validators"
                   :key="v.operator_address"
@@ -74,9 +93,9 @@
                 >
                   {{
                     (v.description?.moniker || v.operator_address) +
-                    " (" +
-                    v.status +
-                    ")"
+                      " (" +
+                      v.status +
+                      ")"
                   }}
                 </option>
               </select>
@@ -97,7 +116,10 @@
           >
             {{ isUndelegating ? "Undelegating…" : "Undelegate" }}
           </button>
-          <span class="text-error text-xs" v-if="undelegateError">{{
+          <span
+            v-if="undelegateError"
+            class="text-error text-xs"
+          >{{
             undelegateError
           }}</span>
         </form>
@@ -107,20 +129,31 @@
     <div class="card bg-base-200 mb-6">
       <div class="card-body">
         <div class="flex items-center justify-between">
-          <h3 class="card-title">Current Delegations</h3>
+          <h3 class="card-title">
+            Current Delegations
+          </h3>
           <div class="card-actions">
-            <button class="btn btn-xs" @click="loadDelegations">Reload</button>
+            <button
+              class="btn btn-xs"
+              @click="loadDelegations"
+            >
+              Reload
+            </button>
           </div>
         </div>
       </div>
       <div class="card-body pt-0 text-sm">
-        <span v-if="delegationsError" class="text-error">{{
+        <span
+          v-if="delegationsError"
+          class="text-error"
+        >{{
           delegationsError
         }}</span>
         <span v-else-if="isLoadingDelegations">Loading…</span>
-        <span v-else class="opacity-70"
-          >{{ delegations.length }} delegation(s)</span
-        >
+        <span
+          v-else
+          class="opacity-70"
+        >{{ delegations.length }} delegation(s)</span>
       </div>
       <div class="card-body pt-0 overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
@@ -132,7 +165,10 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="d in delegations" :key="d.delegation?.validator_address">
+            <tr
+              v-for="d in delegations"
+              :key="d.delegation?.validator_address"
+            >
               <td class="font-mono break-all">
                 <AddressDisplay
                   :address="d.delegation?.validator_address || ''"
@@ -149,16 +185,23 @@
                   {{ getDisplayInfoForBase(d.balance.denom).display }}
                 </span>
               </td>
-              <td class="font-mono">{{ d.delegation?.shares }}</td>
+              <td class="font-mono">
+                {{ d.delegation?.shares }}
+              </td>
             </tr>
             <tr
               v-if="
                 !isLoadingDelegations &&
-                !delegationsError &&
-                delegations.length === 0
+                  !delegationsError &&
+                  delegations.length === 0
               "
             >
-              <td colspan="3" class="text-center opacity-70">No delegations</td>
+              <td
+                colspan="3"
+                class="text-center opacity-70"
+              >
+                No delegations
+              </td>
             </tr>
           </tbody>
         </table>
@@ -169,16 +212,29 @@
     <div class="card bg-base-200 mb-6">
       <div class="card-body">
         <div class="flex items-center justify-between">
-          <h3 class="card-title">Rewards</h3>
+          <h3 class="card-title">
+            Rewards
+          </h3>
           <div class="card-actions">
-            <button class="btn btn-xs" @click="loadRewards">Reload</button>
+            <button
+              class="btn btn-xs"
+              @click="loadRewards"
+            >
+              Reload
+            </button>
           </div>
         </div>
       </div>
       <div class="card-body pt-0 text-sm">
-        <span v-if="rewardsError" class="text-error">{{ rewardsError }}</span>
+        <span
+          v-if="rewardsError"
+          class="text-error"
+        >{{ rewardsError }}</span>
         <span v-else-if="isLoadingRewards">Loading…</span>
-        <span v-else class="opacity-70">{{ rewards.length }} validator(s)</span>
+        <span
+          v-else
+          class="opacity-70"
+        >{{ rewards.length }} validator(s)</span>
       </div>
       <div class="card-body pt-0 overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
@@ -186,11 +242,14 @@
             <tr>
               <th>validator</th>
               <th>rewards</th>
-              <th></th>
+              <th />
             </tr>
           </thead>
           <tbody>
-            <tr v-for="r in rewards" :key="r.validator_address">
+            <tr
+              v-for="r in rewards"
+              :key="r.validator_address"
+            >
               <td class="font-mono break-all">
                 <AddressDisplay :address="r.validator_address || ''" />
               </td>
@@ -211,8 +270,8 @@
               <td class="text-right">
                 <button
                   class="btn btn-xs"
-                  @click="withdrawReward(r.validator_address)"
                   :disabled="isWithdrawing"
+                  @click="withdrawReward(r.validator_address)"
                 >
                   Withdraw
                 </button>
@@ -221,7 +280,12 @@
             <tr
               v-if="!isLoadingRewards && !rewardsError && rewards.length === 0"
             >
-              <td colspan="3" class="text-center opacity-70">No rewards</td>
+              <td
+                colspan="3"
+                class="text-center opacity-70"
+              >
+                No rewards
+              </td>
             </tr>
           </tbody>
         </table>
@@ -232,18 +296,31 @@
     <div class="card bg-base-200 mb-6">
       <div class="card-body">
         <div class="flex items-center justify-between">
-          <h3 class="card-title">Unbonding Delegations</h3>
+          <h3 class="card-title">
+            Unbonding Delegations
+          </h3>
           <div class="card-actions">
-            <button class="btn btn-xs" @click="loadUnbondings">Reload</button>
+            <button
+              class="btn btn-xs"
+              @click="loadUnbondings"
+            >
+              Reload
+            </button>
           </div>
         </div>
       </div>
       <div class="card-body pt-0 text-sm">
-        <span v-if="unbondingsError" class="text-error">{{
+        <span
+          v-if="unbondingsError"
+          class="text-error"
+        >{{
           unbondingsError
         }}</span>
         <span v-else-if="isLoadingUnbondings">Loading…</span>
-        <span v-else class="opacity-70">{{ unbondingCount }} entry(ies)</span>
+        <span
+          v-else
+          class="opacity-70"
+        >{{ unbondingCount }} entry(ies)</span>
       </div>
       <div class="card-body pt-0 overflow-x-auto">
         <table class="table table-zebra table-sm w-full">
@@ -257,7 +334,10 @@
             </tr>
           </thead>
           <tbody>
-            <template v-for="u in unbondings" :key="u.validator_address">
+            <template
+              v-for="u in unbondings"
+              :key="u.validator_address"
+            >
               <tr
                 v-for="e in u.entries || []"
                 :key="`${u.validator_address}-${e.creation_height}-${e.completion_time}`"
@@ -265,8 +345,12 @@
                 <td class="font-mono break-all">
                   <AddressDisplay :address="u.validator_address || ''" />
                 </td>
-                <td class="font-mono">{{ e.creation_height }}</td>
-                <td class="font-mono">{{ e.completion_time }}</td>
+                <td class="font-mono">
+                  {{ e.creation_height }}
+                </td>
+                <td class="font-mono">
+                  {{ e.completion_time }}
+                </td>
                 <td class="font-mono">
                   <span v-if="bondDenom">
                     {{
@@ -290,7 +374,10 @@
                 !isLoadingUnbondings && !unbondingsError && unbondingCount === 0
               "
             >
-              <td colspan="5" class="text-center opacity-70">
+              <td
+                colspan="5"
+                class="text-center opacity-70"
+              >
                 No unbonding entries
               </td>
             </tr>

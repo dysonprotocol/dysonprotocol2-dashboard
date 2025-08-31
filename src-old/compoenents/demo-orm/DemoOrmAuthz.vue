@@ -1,91 +1,209 @@
 <template>
-  <h2 class="text-xl font-semibold" id="authz">Authz</h2>
+  <h2
+    id="authz"
+    class="text-xl font-semibold"
+  >
+    Authz
+  </h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Authz: Grants</h3>
+      <h3 class="font-semibold">
+        Authz: Grants
+      </h3>
       <div class="grid gap-2 md:grid-cols-2">
-        <input v-model="listGranter" class="input w-full" placeholder="granter address" />
-        <input v-model="listGrantee" class="input w-full" placeholder="grantee address" />
+        <input
+          v-model="listGranter"
+          class="input w-full"
+          placeholder="granter address"
+        >
+        <input
+          v-model="listGrantee"
+          class="input w-full"
+          placeholder="grantee address"
+        >
       </div>
-      <input v-model="listMsgType" class="input w-full" placeholder="msg_type_url (optional)" />
+      <input
+        v-model="listMsgType"
+        class="input w-full"
+        placeholder="msg_type_url (optional)"
+      >
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="loadAuthzGrants">List Grants</button>
-        <button class="btn btn-primary" @click="loadAuthzByGranter">By Granter</button>
-        <button class="btn btn-primary" @click="loadAuthzByGrantee">By Grantee</button>
+        <button
+          class="btn btn-primary"
+          @click="loadAuthzGrants"
+        >
+          List Grants
+        </button>
+        <button
+          class="btn btn-primary"
+          @click="loadAuthzByGranter"
+        >
+          By Granter
+        </button>
+        <button
+          class="btn btn-primary"
+          @click="loadAuthzByGrantee"
+        >
+          By Grantee
+        </button>
       </div>
       <ul class="list-disc pl-6 text-sm max-h-56 overflow-auto">
-        <li v-for="g in grantsByAddress" :key="g.granter + ':' + g.grantee + ':' + g.msg_type_url">
+        <li
+          v-for="g in grantsByAddress"
+          :key="g.granter + ':' + g.grantee + ':' + g.msg_type_url"
+        >
           <span class="font-mono">{{ g.granter }}</span> →
           <span class="font-mono">{{ g.grantee }}</span>
           <div class="opacity-70">
             auth: <code>{{ g.type_url }}</code> msg: <code>{{ g.msg_type_url }}</code>
           </div>
-          <div class="opacity-70">exp: {{ g.expiration }}</div>
+          <div class="opacity-70">
+            exp: {{ g.expiration }}
+          </div>
         </li>
       </ul>
-      <div v-if="listError" class="text-sm text-red-600">{{ listError }}</div>
+      <div
+        v-if="listError"
+        class="text-sm text-red-600"
+      >
+        {{ listError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Authz: Grant</h3>
+      <h3 class="font-semibold">
+        Authz: Grant
+      </h3>
       <div class="grid gap-2 md:grid-cols-2">
-        <input v-model="grantGranter" class="input w-full" placeholder="granter address" />
-        <input v-model="grantGrantee" class="input w-full" placeholder="grantee address" />
+        <input
+          v-model="grantGranter"
+          class="input w-full"
+          placeholder="granter address"
+        >
+        <input
+          v-model="grantGrantee"
+          class="input w-full"
+          placeholder="grantee address"
+        >
       </div>
-      <input v-model="grantExpiration" class="input w-full" placeholder="expiration RFC3339" />
+      <input
+        v-model="grantExpiration"
+        class="input w-full"
+        placeholder="expiration RFC3339"
+      >
       <input
         v-model="grantAuthzMsgType"
         class="input w-full"
         placeholder="msg_type_url (for Generic)"
-      />
+      >
       <textarea
         v-model="authorizationJson"
         class="input w-full h-24"
         placeholder="authorization JSON (optional; if set, used instead of Generic)"
-      ></textarea>
+      />
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="prefillGenericGrant">
+        <button
+          class="btn btn-primary"
+          @click="prefillGenericGrant"
+        >
           Prefill Generic (MsgSend)
         </button>
-        <button class="btn btn-primary" @click="prefillBankSendAuthz">
+        <button
+          class="btn btn-primary"
+          @click="prefillBankSendAuthz"
+        >
           Prefill Bank SendAuthorization
         </button>
       </div>
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="submitGrant">Grant</button>
+        <button
+          class="btn btn-primary"
+          @click="submitGrant"
+        >
+          Grant
+        </button>
       </div>
-      <div v-if="grantError" class="text-sm text-red-600">{{ grantError }}</div>
+      <div
+        v-if="grantError"
+        class="text-sm text-red-600"
+      >
+        {{ grantError }}
+      </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Authz: Revoke</h3>
+      <h3 class="font-semibold">
+        Authz: Revoke
+      </h3>
       <div class="grid gap-2 md:grid-cols-2">
-        <input v-model="revokeGranter" class="input w-full" placeholder="granter address" />
-        <input v-model="revokeGrantee" class="input w-full" placeholder="grantee address" />
+        <input
+          v-model="revokeGranter"
+          class="input w-full"
+          placeholder="granter address"
+        >
+        <input
+          v-model="revokeGrantee"
+          class="input w-full"
+          placeholder="grantee address"
+        >
       </div>
-      <input v-model="revokeMsgTypeUrl" class="input w-full" placeholder="msg_type_url" />
+      <input
+        v-model="revokeMsgTypeUrl"
+        class="input w-full"
+        placeholder="msg_type_url"
+      >
       <div class="flex gap-2">
-        <button class="btn btn-primary" @click="submitRevoke">Revoke</button>
+        <button
+          class="btn btn-primary"
+          @click="submitRevoke"
+        >
+          Revoke
+        </button>
       </div>
-      <div v-if="revokeError" class="text-sm text-red-600">{{ revokeError }}</div>
+      <div
+        v-if="revokeError"
+        class="text-sm text-red-600"
+      >
+        {{ revokeError }}
+      </div>
     </div>
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">Authz: Exec</h3>
+      <h3 class="font-semibold">
+        Authz: Exec
+      </h3>
 
       <textarea
         v-model="execMsgsJson"
         class="input w-full h-24"
         placeholder="exec msgs JSON array"
-      ></textarea>
-      <input v-model="execGrantee" class="input w-full" placeholder="grantee address" />
-      <input v-model="execMemo" class="input w-full" placeholder="exec memo (optional)" />
+      />
+      <input
+        v-model="execGrantee"
+        class="input w-full"
+        placeholder="grantee address"
+      >
+      <input
+        v-model="execMemo"
+        class="input w-full"
+        placeholder="exec memo (optional)"
+      >
       <input
         v-model="execGranterForRefresh"
         class="input w-full"
         placeholder="granter for refresh (optional)"
-      />
-      <button class="btn btn-primary" @click="submitExec">Exec</button>
-      <div v-if="execError" class="text-sm text-red-600">{{ execError }}</div>
+      >
+      <button
+        class="btn btn-primary"
+        @click="submitExec"
+      >
+        Exec
+      </button>
+      <div
+        v-if="execError"
+        class="text-sm text-red-600"
+      >
+        {{ execError }}
+      </div>
     </div>
   </section>
 </template>

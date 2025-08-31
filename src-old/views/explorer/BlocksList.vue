@@ -1,7 +1,9 @@
 <template>
   <section class="w-full max-w-3xl mx-auto p-4 flex flex-col gap-6">
     <div class="flex items-center justify-between mb-2">
-      <h1 class="text-2xl font-bold">Recent Blocks</h1>
+      <h1 class="text-2xl font-bold">
+        Recent Blocks
+      </h1>
       <!-- Pagination controls -->
       <div class="join">
         <button
@@ -27,11 +29,14 @@
             <th>Height</th>
             <th>Timestamp</th>
             <th>Txs</th>
-            <th></th>
+            <th />
           </tr>
         </thead>
         <tbody>
-          <tr v-for="block in blocks" :key="block.height">
+          <tr
+            v-for="block in blocks"
+            :key="block.height"
+          >
             <td>
               <router-link
                 :to="`/block/${block.height}`"
@@ -46,16 +51,23 @@
               <router-link
                 :to="`/block/${block.height}`"
                 class="btn btn-xs btn-outline"
-                >View</router-link
               >
+                View
+              </router-link>
             </td>
           </tr>
         </tbody>
       </table>
-      <div v-if="isLoading" class="flex justify-center items-center py-8">
-        <span class="loading loading-spinner loading-lg"></span>
+      <div
+        v-if="isLoading"
+        class="flex justify-center items-center py-8"
+      >
+        <span class="loading loading-spinner loading-lg" />
       </div>
-      <div v-if="hasError" class="alert alert-error mt-4">
+      <div
+        v-if="hasError"
+        class="alert alert-error mt-4"
+      >
         {{ errorMessage }}
       </div>
       <div

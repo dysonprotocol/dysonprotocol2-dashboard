@@ -1,20 +1,31 @@
 <template>
   <div class="space-y-4 w-1/2 mx-auto">
-    <div class="text-xl font-semibold">Register Name</div>
+    <div class="text-xl font-semibold">
+      Register Name
+    </div>
 
     <!-- Step 1: Select name -->
-    <div :class="cardClass(1)" class="card card-border bg-base-100">
+    <div
+      :class="cardClass(1)"
+      class="card card-border bg-base-100"
+    >
       <div class="card-body">
         <div class="flex items-center justify-between">
-          <h2 class="card-title">1. Select a name</h2>
+          <h2 class="card-title">
+            1. Select a name
+          </h2>
           <span
             v-if="step > 1 && isValidName && nameAvailable"
             class="badge badge-success badge-outline"
-            >Valid</span
-          >
+          >Valid</span>
         </div>
-        <p class="text-sm">Enter your name; .dys is automatically appended.</p>
-        <div :class="enabledClass(1)" class="space-y-2">
+        <p class="text-sm">
+          Enter your name; .dys is automatically appended.
+        </p>
+        <div
+          :class="enabledClass(1)"
+          class="space-y-2"
+        >
           <div>
             <div class="join w-full">
               <input
@@ -23,7 +34,7 @@
                 class="join-item input w-full"
                 placeholder="alice"
                 aria-describedby="name-suffix"
-              />
+              >
               <div
                 id="name-suffix"
                 class="input join-item text-base-content/70 w-16"
@@ -33,26 +44,28 @@
             </div>
           </div>
           <div class="">
-            <span v-if="nameMain && !isValidName" class="text-error">{{
+            <span
+              v-if="nameMain && !isValidName"
+              class="text-error"
+            >{{
               nameValidationMessage
             }}</span>
-            <span v-else-if="isCheckingName" class="opacity-70"
-              >Checking availability…</span
-            >
+            <span
+              v-else-if="isCheckingName"
+              class="opacity-70"
+            >Checking availability…</span>
             <span
               v-else-if="nameMain && isValidName && nameAvailable"
               class="text-success"
-              >The name
+            >The name
               <span class="text-base-content">{{ chosenName }}</span>
-              is available</span
-            >
+              is available</span>
             <span
               v-else-if="nameMain && isValidName && !nameAvailable"
               class="text-error"
-              >The name
+            >The name
               <span class="text-base-content">{{ chosenName }}</span> is already
-              registered</span
-            >
+              registered</span>
           </div>
         </div>
       </div>
@@ -63,20 +76,27 @@
       class="transition-all duration-300 ease-in-out overflow-hidden space-y-4"
     >
       <!-- Step 2: Estimate value -->
-      <div :class="cardClass(2)" class="card card-border bg-base-100">
+      <div
+        :class="cardClass(2)"
+        class="card card-border bg-base-100"
+      >
         <div class="card-body">
           <div class="flex items-center justify-between">
-            <h2 class="card-title">2. Estimate a value</h2>
+            <h2 class="card-title">
+              2. Estimate a value
+            </h2>
             <span
               v-if="step > 2 && canProceedValue"
               class="badge badge-success badge-outline"
-              >Ready</span
-            >
+            >Ready</span>
           </div>
           <p class="text-sm">
             Set the valuation and denom. Annual fee is charged at reveal.
           </p>
-          <div :class="enabledClass(2)" class="space-y-2">
+          <div
+            :class="enabledClass(2)"
+            class="space-y-2"
+          >
             <div class="join w-full">
               <input
                 v-model.trim="valuationAmount"
@@ -85,9 +105,17 @@
                 pattern="[0-9]*"
                 class="input join-item"
                 placeholder="amount"
-              />
-              <select v-model="selectedDisplayDenom" class="select join-item">
-                <option disabled value="">Denom</option>
+              >
+              <select
+                v-model="selectedDisplayDenom"
+                class="select join-item"
+              >
+                <option
+                  disabled
+                  value=""
+                >
+                  Denom
+                </option>
                 <option
                   v-for="opt in allowedDisplayOptions"
                   :key="opt.base"
@@ -104,17 +132,20 @@
               class="text-sm text-base-content/80"
             >
               Annual fee:
-              <span class="font-bold"
-                >{{ annualFeeDisplay }} {{ currentDisplayOpt?.display }}</span
-              >
+              <span class="font-bold">{{ annualFeeDisplay }} {{ currentDisplayOpt?.display }}</span>
             </div>
-            <div class="text-error text-xs" v-if="validationMessage">
+            <div
+              v-if="validationMessage"
+              class="text-error text-xs"
+            >
               {{ validationMessage }}
             </div>
-            <div v-if="canProceedValue" class="text-success text-sm">
+            <div
+              v-if="canProceedValue"
+              class="text-success text-sm"
+            >
               Your name is valued at
-              <span class="font-bold text-base-content"
-                >{{ valuationAmount }} {{ currentDisplayOpt?.display }}
+              <span class="font-bold text-base-content">{{ valuationAmount }} {{ currentDisplayOpt?.display }}
               </span>
               and you will pay a fee of
               <span class="font-bold text-base-content">
@@ -127,30 +158,43 @@
       </div>
 
       <!-- Step 3: Select wallet -->
-      <div :class="cardClass(3)" class="card card-border bg-base-100">
+      <div
+        :class="cardClass(3)"
+        class="card card-border bg-base-100"
+      >
         <div class="card-body">
           <div class="flex items-center justify-between">
-            <h2 class="card-title">3. Select a wallet</h2>
+            <h2 class="card-title">
+              3. Select a wallet
+            </h2>
             <span
               v-if="step > 3 && selectedExecutor"
               class="badge badge-success badge-outline"
-              >Selected</span
-            >
+            >Selected</span>
           </div>
           <p class="text-sm">
             Choose the wallet that will sign the two commit and reveal
             transactions.
           </p>
-          <div :class="enabledClass(3)" class="space-y-2">
+          <div
+            :class="enabledClass(3)"
+            class="space-y-2"
+          >
             <WalletSelector
               v-model="selectedExecutor"
               :show-locked="false"
               button-class="btn-outline btn-primary"
             />
-            <div v-if="hasExecutor" class="text-success text-sm">
+            <div
+              v-if="hasExecutor"
+              class="text-success text-sm"
+            >
               Wallet selected, next generate the commitment hash.
             </div>
-            <div class="text-error text-xs" v-if="walletFundsError">
+            <div
+              v-if="walletFundsError"
+              class="text-error text-xs"
+            >
               {{ walletFundsError }}
             </div>
           </div>
@@ -158,32 +202,51 @@
       </div>
 
       <!-- Step 4: Submit commitment -->
-      <div :class="cardClass(4)" class="card card-border bg-base-100">
+      <div
+        :class="cardClass(4)"
+        class="card card-border bg-base-100"
+      >
         <div class="card-body">
           <div class="flex items-center justify-between">
-            <h2 class="card-title">4. Submit commitment</h2>
-            <span v-if="commitTxHash" class="badge badge-success badge-outline"
-              >Submitted</span
-            >
+            <h2 class="card-title">
+              4. Submit commitment
+            </h2>
+            <span
+              v-if="commitTxHash"
+              class="badge badge-success badge-outline"
+            >Submitted</span>
           </div>
           <p class="text-sm">
             Submit a commitment to prevent frontrunning. A random salt will be
             used automatically.
           </p>
-          <div :class="enabledClass(4)" class="space-y-2">
+          <div
+            :class="enabledClass(4)"
+            class="space-y-2"
+          >
             <div class="overflow-x-auto">
               <table class="table table-zebra">
                 <tbody>
                   <tr>
-                    <td class="font-semibold">Name</td>
-                    <td class="font-mono">{{ chosenName || "—" }}</td>
+                    <td class="font-semibold">
+                      Name
+                    </td>
+                    <td class="font-mono">
+                      {{ chosenName || "—" }}
+                    </td>
                   </tr>
                   <tr>
-                    <td class="font-semibold">Salt</td>
-                    <td class="font-mono">{{ salt || "—" }}</td>
+                    <td class="font-semibold">
+                      Salt
+                    </td>
+                    <td class="font-mono">
+                      {{ salt || "—" }}
+                    </td>
                   </tr>
                   <tr>
-                    <td class="font-semibold">Valuation</td>
+                    <td class="font-semibold">
+                      Valuation
+                    </td>
                     <td>
                       {{ valuationAmount || "0" }}
                       {{ currentDisplayOpt?.display }}
@@ -199,8 +262,12 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="font-semibold">Commit hash</td>
-                    <td class="font-mono">{{ hexHash || "—" }}</td>
+                    <td class="font-semibold">
+                      Commit hash
+                    </td>
+                    <td class="font-mono">
+                      {{ hexHash || "—" }}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -214,7 +281,10 @@
                 Sign commit tx...
               </button>
             </div>
-            <div class="text-error text-xs" v-if="commitError">
+            <div
+              v-if="commitError"
+              class="text-error text-xs"
+            >
               {{ commitError }}
             </div>
           </div>
@@ -222,40 +292,61 @@
       </div>
 
       <!-- Step 5: Reveal -->
-      <div :class="cardClass(5)" class="card card-border bg-base-100">
+      <div
+        :class="cardClass(5)"
+        class="card card-border bg-base-100"
+      >
         <div class="card-body">
           <div class="flex items-center justify-between">
-            <h2 class="card-title">5. Reveal</h2>
-            <span v-if="revealTxHash" class="badge badge-success badge-outline"
-              >Submitted</span
-            >
+            <h2 class="card-title">
+              5. Reveal
+            </h2>
+            <span
+              v-if="revealTxHash"
+              class="badge badge-success badge-outline"
+            >Submitted</span>
           </div>
           <p class="text-sm">
             Reveal the original data. The annual fee of
             <span class="font-medium">{{ annualFeeDisplay }}</span>
             {{ currentDisplayOpt?.display }} will be charged.
           </p>
-          <div :class="enabledClass(5)" class="space-y-2">
+          <div
+            :class="enabledClass(5)"
+            class="space-y-2"
+          >
             <div class="overflow-x-auto">
               <table class="table table-zebra">
                 <tbody>
                   <tr>
-                    <td class="font-semibold">Name</td>
-                    <td class="font-mono">{{ chosenName || "—" }}</td>
+                    <td class="font-semibold">
+                      Name
+                    </td>
+                    <td class="font-mono">
+                      {{ chosenName || "—" }}
+                    </td>
                   </tr>
                   <tr>
-                    <td class="font-semibold">Salt</td>
-                    <td class="font-mono">{{ salt || "—" }}</td>
+                    <td class="font-semibold">
+                      Salt
+                    </td>
+                    <td class="font-mono">
+                      {{ salt || "—" }}
+                    </td>
                   </tr>
                   <tr>
-                    <td class="font-semibold">Valuation</td>
+                    <td class="font-semibold">
+                      Valuation
+                    </td>
                     <td>
                       {{ valuationAmount || "0" }}
                       {{ currentDisplayOpt?.display }}
                     </td>
                   </tr>
                   <tr>
-                    <td class="font-semibold">Annual fee (amount paid now)</td>
+                    <td class="font-semibold">
+                      Annual fee (amount paid now)
+                    </td>
                     <td>
                       {{ annualFeeDisplay }}
                       {{ currentDisplayOpt?.display }}
@@ -273,7 +364,10 @@
                 Sign reveal tx and pay annual fee
               </button>
             </div>
-            <div class="text-error text-xs" v-if="revealError">
+            <div
+              v-if="revealError"
+              class="text-error text-xs"
+            >
               {{ revealError }}
             </div>
             <div
@@ -281,30 +375,51 @@
               class="alert alert-success shadow-sm text-sm alert-soft"
             >
               Reveal Tx:
-              <router-link :to="`/txs/${revealTxHash}`" class="link">{{
-                shortHash(revealTxHash)
-              }}</router-link>
+              <router-link
+                :to="`/txs/${revealTxHash}`"
+                class="link"
+              >
+                {{
+                  shortHash(revealTxHash)
+                }}
+              </router-link>
             </div>
           </div>
         </div>
       </div>
       <!-- Step 6: Go to name -->
-      <div :class="cardClass(6)" class="card card-border bg-base-100">
+      <div
+        :class="cardClass(6)"
+        class="card card-border bg-base-100"
+      >
         <div class="card-body">
-          <h2 class="card-title">6. Congratulations!</h2>
+          <h2 class="card-title">
+            6. Congratulations!
+          </h2>
           <p class="text-sm">
             Your name is now registered and you can view it details and manage
             it.
           </p>
-          <div :class="enabledClass(6)" class="card-actions justify-end">
+          <div
+            :class="enabledClass(6)"
+            class="card-actions justify-end"
+          >
             <router-link
-              :to="`/names/${chosenName}`"
               v-if="step >= 6 && chosenName"
+              :to="`/names/${chosenName}`"
               class="link"
             >
-              <button class="btn btn-primary">Go to {{ chosenName }}</button>
+              <button class="btn btn-primary">
+                Go to {{ chosenName }}
+              </button>
             </router-link>
-            <button class="btn" v-else disabled>Waiting for reveal…</button>
+            <button
+              v-else
+              class="btn"
+              disabled
+            >
+              Waiting for reveal…
+            </button>
           </div>
         </div>
       </div>

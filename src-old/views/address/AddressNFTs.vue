@@ -1,14 +1,32 @@
 <template>
   <div class="max-w-5xl mx-auto p-4 space-y-4">
     <div class="space-y-2">
-      <h3 class="text-lg font-medium">Owned by address</h3>
-      <div v-if="isLoadingOwned" class="text-base-content/70">Loading…</div>
-      <div v-else-if="ownedError" class="text-error">{{ ownedError }}</div>
+      <h3 class="text-lg font-medium">
+        Owned by address
+      </h3>
+      <div
+        v-if="isLoadingOwned"
+        class="text-base-content/70"
+      >
+        Loading…
+      </div>
+      <div
+        v-else-if="ownedError"
+        class="text-error"
+      >
+        {{ ownedError }}
+      </div>
       <div v-else>
-        <div v-if="ownedView.length === 0" class="text-base-content/70">
+        <div
+          v-if="ownedView.length === 0"
+          class="text-base-content/70"
+        >
           No NFTs owned by this address.
         </div>
-        <div v-else class="overflow-x-auto">
+        <div
+          v-else
+          class="overflow-x-auto"
+        >
           <table class="table">
             <thead>
               <tr>
@@ -19,7 +37,10 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="nft in ownedView" :key="`${nft.class_id}:${nft.id}`">
+              <tr
+                v-for="nft in ownedView"
+                :key="`${nft.class_id}:${nft.id}`"
+              >
                 <td class="font-mono">
                   <router-link
                     :to="`/names/${encodeURIComponent(
@@ -58,7 +79,10 @@
                   <span v-else>—</span>
                 </td>
                 <td>
-                  <div v-if="nft.data?.listed" class="badge badge-success">
+                  <div
+                    v-if="nft.data?.listed"
+                    class="badge badge-success"
+                  >
                     listed
                   </div>
                   <span v-else>—</span>

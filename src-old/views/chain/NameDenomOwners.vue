@@ -1,19 +1,42 @@
 <template>
   <div class="max-w-3xl mx-auto p-4 space-y-4">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold">Owners: {{ denom }}</h1>
-      <button class="btn btn-sm" @click="reload">Refresh</button>
+      <h1 class="text-xl font-semibold">
+        Owners: {{ denom }}
+      </h1>
+      <button
+        class="btn btn-sm"
+        @click="reload"
+      >
+        Refresh
+      </button>
     </div>
 
     <div class="card bg-base-200 shadow">
       <div class="card-body">
-        <div v-if="isLoading" class="text-base-content/70">Loading…</div>
-        <div v-else-if="error" class="text-error">{{ error }}</div>
+        <div
+          v-if="isLoading"
+          class="text-base-content/70"
+        >
+          Loading…
+        </div>
+        <div
+          v-else-if="error"
+          class="text-error"
+        >
+          {{ error }}
+        </div>
         <div v-else>
-          <div v-if="owners.length === 0" class="text-base-content/70">
+          <div
+            v-if="owners.length === 0"
+            class="text-base-content/70"
+          >
             No owners.
           </div>
-          <table v-else class="table">
+          <table
+            v-else
+            class="table"
+          >
             <thead>
               <tr>
                 <th>Address</th>
@@ -21,9 +44,16 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="o in owners" :key="o.address">
-                <td class="font-mono break-all">{{ o.address }}</td>
-                <td class="font-mono">{{ o.amount }}</td>
+              <tr
+                v-for="o in owners"
+                :key="o.address"
+              >
+                <td class="font-mono break-all">
+                  {{ o.address }}
+                </td>
+                <td class="font-mono">
+                  {{ o.amount }}
+                </td>
               </tr>
             </tbody>
           </table>
