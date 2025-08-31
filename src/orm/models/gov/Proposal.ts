@@ -1,5 +1,8 @@
 import { Model } from 'pinia-orm'
+import { useAxiosRepo } from '@pinia-orm/axios'
 import type { Request } from '@pinia-orm/axios'
+import GovTally from '@/orm/models/gov/Tally'
+import GovVote from '@/orm/models/gov/Vote'
 
 function ensureOk(res: { success: boolean; rawLog?: string }, msg: string) {
   if (!res?.success) throw new Error(res?.rawLog || msg)
@@ -133,7 +136,34 @@ export class GovProposal extends Model {
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: proposer })
           ensureOk(res, 'Gov submit proposal failed')
           // We can't know proposal_id from simplified wallet result; refresh proposals list
-          await this.get(`/cosmos/gov/v1/proposals`)
+          await this.get(`/cosmos/gov/v1/proposals`, {
+            dataTransformer: ({
+              data,
+            }: {
+              data: {
+                proposals?: Array<{
+                  id?: string | number
+                  title?: string
+                  summary?: string
+                  status?: string
+                  proposer?: string
+                  metadata?: string
+                }>
+              }
+            }) => {
+              const list = Array.isArray(data?.proposals) ? data.proposals : []
+              return list
+                .filter((p) => p?.id != null)
+                .map((p) => ({
+                  id: String(p.id),
+                  title: String(p.title || ''),
+                  summary: String(p.summary || ''),
+                  status: String(p.status || ''),
+                  proposer: String(p.proposer || ''),
+                  metadata: String(p.metadata || ''),
+                }))
+            },
+          })
           return res
         },
         async vote(
@@ -165,7 +195,38 @@ export class GovProposal extends Model {
           }
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: voter })
           ensureOk(res, 'Gov vote failed')
-          await this.get(`/cosmos/gov/v1/proposals/${proposalId}`)
+          const refreshProposal = this.get(`/cosmos/gov/v1/proposals/${proposalId}`, {
+            dataTransformer: ({
+              data,
+            }: {
+              data: {
+                proposal?: {
+                  id?: string | number
+                  title?: string
+                  summary?: string
+                  status?: string
+                  proposer?: string
+                  metadata?: string
+                }
+              }
+            }) => {
+              const p = data?.proposal
+              if (!p?.id) return []
+              return [
+                {
+                  id: String(p.id),
+                  title: String(p.title || ''),
+                  summary: String(p.summary || ''),
+                  status: String(p.status || ''),
+                  proposer: String(p.proposer || ''),
+                  metadata: String(p.metadata || ''),
+                },
+              ]
+            },
+          })
+          const refreshVote = useAxiosRepo(GovVote).api().fetchOne(proposalId, voter)
+          const refreshTally = useAxiosRepo(GovTally).api().fetch(proposalId)
+          await Promise.allSettled([refreshProposal, refreshVote, refreshTally])
           return res
         },
         async deposit(
@@ -195,7 +256,35 @@ export class GovProposal extends Model {
           }
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: depositor })
           ensureOk(res, 'Gov deposit failed')
-          await this.get(`/cosmos/gov/v1/proposals/${proposalId}`)
+          await this.get(`/cosmos/gov/v1/proposals/${proposalId}`, {
+            dataTransformer: ({
+              data,
+            }: {
+              data: {
+                proposal?: {
+                  id?: string | number
+                  title?: string
+                  summary?: string
+                  status?: string
+                  proposer?: string
+                  metadata?: string
+                }
+              }
+            }) => {
+              const p = data?.proposal
+              if (!p?.id) return []
+              return [
+                {
+                  id: String(p.id),
+                  title: String(p.title || ''),
+                  summary: String(p.summary || ''),
+                  status: String(p.status || ''),
+                  proposer: String(p.proposer || ''),
+                  metadata: String(p.metadata || ''),
+                },
+              ]
+            },
+          })
           return res
         },
       },

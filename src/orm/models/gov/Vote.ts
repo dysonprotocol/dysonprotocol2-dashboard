@@ -11,7 +11,7 @@ export class GovVote extends Model {
       voter: this.string(''),
       // store raw metadata or summarized option; for weighted votes, client can query separately if needed
       metadata: this.string(''),
-      options: this.attr([] as Array<{ option: number; weight: string }>),
+      options: this.attr([] as Array<{ option: string | number; weight: string }>),
     }
   }
 
@@ -33,19 +33,35 @@ export class GovVote extends Model {
               }
             }) => {
               const list = Array.isArray(data?.votes) ? data.votes : []
-              return list
-                .filter((v) => v?.voter)
-                .map((v) => ({
-                  proposal_id: String(v.proposal_id ?? proposalId),
-                  voter: String(v.voter || ''),
-                  metadata: String(v.metadata || ''),
-                  options: Array.isArray(v.options)
-                    ? v.options.map((o) => ({
-                        option: Number(o?.option ?? 0),
+              type ApiVote = {
+                proposal_id?: string | number
+                voter?: string
+                metadata?: string
+                options?: Array<{ option?: number; weight?: string }>
+              }
+              const rows: Array<{
+                proposal_id: string
+                voter: string
+                metadata: string
+                options: Array<{ option: string | number; weight: string }>
+              }> = []
+              for (const v of list as ApiVote[]) {
+                const pid = String(v?.proposal_id ?? proposalId)
+                const voterAddr = String(v?.voter || '')
+                if (!pid || !voterAddr) continue
+                rows.push({
+                  proposal_id: pid,
+                  voter: voterAddr,
+                  metadata: String(v?.metadata || ''),
+                  options: Array.isArray(v?.options)
+                    ? (v.options || []).map((o: { option?: number | string; weight?: string }) => ({
+                        option: o?.option as unknown as string | number,
                         weight: String(o?.weight || '0'),
                       }))
                     : [],
-                }))
+                })
+              }
+              return rows
             },
           })
         },
@@ -63,16 +79,24 @@ export class GovVote extends Model {
                 }
               }
             }) => {
-              const v = data?.vote
-              if (!v?.voter) return []
+              type ApiVoteOne = {
+                proposal_id?: string | number
+                voter?: string
+                metadata?: string
+                options?: Array<{ option?: number; weight?: string }>
+              }
+              const v = (data?.vote || {}) as ApiVoteOne
+              const pid = String(v?.proposal_id ?? proposalId)
+              const voterAddr = String(v?.voter || voter || '')
+              if (!pid || !voterAddr) return []
               return [
                 {
-                  proposal_id: String(v.proposal_id ?? proposalId),
-                  voter: String(v.voter || ''),
-                  metadata: String(v.metadata || ''),
-                  options: Array.isArray(v.options)
-                    ? v.options.map((o) => ({
-                        option: Number(o?.option ?? 0),
+                  proposal_id: pid,
+                  voter: voterAddr,
+                  metadata: String(v?.metadata || ''),
+                  options: Array.isArray(v?.options)
+                    ? (v.options || []).map((o: { option?: number | string; weight?: string }) => ({
+                        option: o?.option as unknown as string | number,
                         weight: String(o?.weight || '0'),
                       }))
                     : [],
