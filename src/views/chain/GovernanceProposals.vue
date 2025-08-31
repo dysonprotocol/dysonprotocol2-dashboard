@@ -19,6 +19,11 @@ const votesRepo = useRepo(GovVote)
 const denomMetadataApi = useAxiosRepo(DenomMetadata).api()
 const wallet = useWallet()
 
+const VOTE_OPTION_YES = 'VOTE_OPTION_YES'
+const VOTE_OPTION_ABSTAIN = 'VOTE_OPTION_ABSTAIN'
+const VOTE_OPTION_NO = 'VOTE_OPTION_NO'
+const VOTE_OPTION_NO_WITH_VETO = 'VOTE_OPTION_NO_WITH_VETO'
+
 const proposals = computed(
   () => repo.all() as Array<{ id: string; title: string; summary?: string; status: string }>
 )
@@ -27,7 +32,10 @@ const error = ref('')
 const isLoadingParams = ref(false)
 const denomMetaVersion = ref(0)
 const votesByProposalAndAddress = ref<
-  Record<string, Record<string, 'loading' | 'yes' | 'no' | 'missing' | 'error'>>
+  Record<
+    string,
+    Record<string, 'loading' | 'yes' | 'no' | 'abstain' | 'veto' | 'missing' | 'error'>
+  >
 >({})
 const unlockedWallets = computed(() =>
   Array.isArray(wallet.unlockedWallets?.value) ? wallet.unlockedWallets.value : []
@@ -193,17 +201,21 @@ async function refreshDenomMetadata() {
 }
 
 function classifyVote(
-  options: Array<{ option: number; weight: string }>
-): 'yes' | 'no' | 'missing' {
+  options: Array<{ option: string | number; weight: string }>
+): 'yes' | 'abstain' | 'no' | 'veto' | 'missing' {
   if (!Array.isArray(options) || options.length === 0) return 'missing'
-  const hasPositiveWeight = (opt: number) => {
-    const entry = options.find((o) => Number(o?.option) === opt)
+  function hasPositiveWeightForOptions(accepted: string[]): boolean {
+    const entry = options.find((o) => accepted.includes(String((o as any)?.option ?? ''))) as
+      | { weight?: string }
+      | undefined
     if (!entry) return false
     const w = Number(entry.weight)
     return Number.isFinite(w) && w > 0
   }
-  if (hasPositiveWeight(1)) return 'yes'
-  if (hasPositiveWeight(3) || hasPositiveWeight(4)) return 'no'
+  if (hasPositiveWeightForOptions([VOTE_OPTION_YES, '1'])) return 'yes'
+  if (hasPositiveWeightForOptions([VOTE_OPTION_ABSTAIN, '2'])) return 'abstain'
+  if (hasPositiveWeightForOptions([VOTE_OPTION_NO_WITH_VETO, '4'])) return 'veto'
+  if (hasPositiveWeightForOptions([VOTE_OPTION_NO, '3'])) return 'no'
   return 'missing'
 }
 
@@ -212,7 +224,10 @@ async function refreshVotes() {
   const wallets = Array.isArray(wallet.unlockedWallets?.value) ? wallet.unlockedWallets.value : []
   if (list.length === 0 || wallets.length === 0) return
 
-  const localMap: Record<string, Record<string, 'loading' | 'yes' | 'no' | 'missing' | 'error'>> = {
+  const localMap: Record<
+    string,
+    Record<string, 'loading' | 'yes' | 'no' | 'abstain' | 'veto' | 'missing' | 'error'>
+  > = {
     ...votesByProposalAndAddress.value,
   }
 
@@ -233,7 +248,7 @@ async function refreshVotes() {
               .where('proposal_id', pid)
               .where('voter', addr)
               .first() as unknown as
-              | { options?: Array<{ option: number; weight: string }> }
+              | { options?: Array<{ option: string | number; weight: string }> }
               | undefined
             const status = classifyVote(rec?.options || [])
             localMap[pid][addr] = status
@@ -256,11 +271,13 @@ async function refreshVotes() {
 function voteBadgeClass(proposalId: string | number, address: string) {
   const pid = String(proposalId)
   const status = votesByProposalAndAddress.value?.[pid]?.[address]
-  if (status === 'yes') return 'badge-success'
-  if (status === 'no') return 'badge-error'
+  if (status === 'yes') return 'badge-success badge-soft'
+  if (status === 'no') return 'badge-error badge-soft'
+  if (status === 'abstain') return 'badge-info badge-soft'
+  if (status === 'veto') return 'badge-error'
   if (status === 'loading') return 'badge-ghost'
   // black badge for missing/neutral
-  return 'badge-ghost'
+  return ''
 }
 
 function walletNameForAddress(address: string) {
@@ -274,7 +291,9 @@ function voteBadgeLabel(proposalId: string | number, address: string) {
   const name = walletNameForAddress(address)
   if (status === 'yes') return `${name}: Yes`
   if (status === 'no') return `${name}: No`
-  if (status === 'loading') return `${name}: Loading`
+  if (status === 'abstain') return `${name}: Abstain`
+  if (status === 'veto') return `${name}: Veto`
+  if (status === 'loading') return `${name}: ...`
   if (status === 'error') return `${name}: Error`
   return `${name}: -`
 }
@@ -510,7 +529,7 @@ onMounted(async () => {
             <span
               v-for="w in unlockedWallets"
               :key="w.address"
-              class="badge text-xs badge-outline"
+              class="badge text-xs"
               :class="voteBadgeClass(p.id, w.address)"
               :title="w.address"
             >

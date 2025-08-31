@@ -1,49 +1,27 @@
 <template>
-  <div class="relative min-w-0 max-w-full overflow-hidden">
+  <div class="relative min-w-0 overflow-hidden">
     <button
       type="button"
-      :class="['btn', 'min-w-0', 'max-w-full', 'overflow-hidden', buttonClass]"
+      :class="['btn', 'min-w-0', 'overflow-hidden', buttonClass]"
       data-testid="wallet-selector-open"
       @click="openModal"
     >
       <span class="ml-1 flex-1 min-w-0 truncate">{{ selectedLabel }}</span>
-      <ChevronUpIcon
-        v-if="isOpen"
-        class="size-4 opacity-70"
-      />
-      <ChevronDownIcon
-        v-else
-        class="size-4 opacity-70"
-      />
+      <ChevronUpIcon v-if="isOpen" class="size-4 opacity-70" />
+      <ChevronDownIcon v-else class="size-4 opacity-70" />
     </button>
 
-    <dialog
-      ref="dialogRef"
-      class="modal"
-      data-testid="wallet-selector-modal"
-    >
+    <dialog ref="dialogRef" class="modal" data-testid="wallet-selector-modal">
       <div class="modal-box">
-        <h3 class="text-lg font-bold">
-          Select wallet
-        </h3>
-        <div
-          v-if="selectedAuthz && selectedAuthz.notes"
-          class="mt-2 text-xs opacity-80 break-all"
-        >
+        <h3 class="text-lg font-bold">Select wallet</h3>
+        <div v-if="selectedAuthz && selectedAuthz.notes" class="mt-2 text-xs opacity-80 break-all">
           Note: {{ selectedAuthz.notes }}
         </div>
         <ul class="mt-4">
-          <li
-            v-if="groupedOptions.length === 0"
-            class="px-4 py-2 text-sm opacity-70"
-          >
+          <li v-if="groupedOptions.length === 0" class="px-4 py-2 text-sm opacity-70">
             No wallets available. Enable Keplr or add and unlock a JS wallet in the sidebar.
           </li>
-          <li
-            v-for="group in groupedOptions"
-            :key="group.wallet.address"
-            class="my-1"
-          >
+          <li v-for="group in groupedOptions" :key="group.wallet.address" class="my-1">
             <div
               class="w-full text-left p-4 text-sm rounded-md border border-primary/10"
               :class="{
@@ -67,10 +45,7 @@
                   {{ group.wallet.name }}
                   <span class="text-xs text-base-content/60">({{ group.wallet.type }})</span>
                 </p>
-                <span
-                  v-if="isDirectSelected(group.wallet.address)"
-                  class="text-primary"
-                >
+                <span v-if="isDirectSelected(group.wallet.address)" class="text-primary">
                   <CheckIcon class="size-5" />
                 </span>
               </div>
@@ -78,13 +53,8 @@
                 {{ group.wallet.address }}
               </div>
 
-              <div
-                v-if="group.wallet.isUnlocked && group.authzOptions.length > 0"
-                class="mt-3"
-              >
-                <div class="text-xs text-base-content/60 mb-1">
-                  Via Authz
-                </div>
+              <div v-if="group.wallet.isUnlocked && group.authzOptions.length > 0" class="mt-3">
+                <div class="text-xs text-base-content/60 mb-1">Via Authz</div>
                 <div class="space-y-1">
                   <button
                     v-for="(auth, idx) in group.authzOptions"
@@ -103,19 +73,15 @@
                         <span class="opacity-70"> via Authz</span>
                         <span class="opacity-70"> (signed by {{ group.wallet.name }})</span>
                       </div>
-                      <span
-                        v-if="isAuthzSelected(group.wallet.address, auth)"
-                        class="text-primary"
-                      >
+                      <span v-if="isAuthzSelected(group.wallet.address, auth)" class="text-primary">
                         <CheckIcon class="size-5" />
                       </span>
                     </div>
                     <div class="text-xs opacity-70 mt-1 flex items-center gap-2">
                       <span>{{ auth.notes }}</span>
-                      <span
-                        v-if="auth.expiration"
-                        :title="auth.expiration"
-                      >exp: {{ shortTs(auth.expiration) }}</span>
+                      <span v-if="auth.expiration" :title="auth.expiration"
+                        >exp: {{ shortTs(auth.expiration) }}</span
+                      >
                     </div>
                   </button>
                 </div>
@@ -124,10 +90,7 @@
           </li>
         </ul>
       </div>
-      <form
-        method="dialog"
-        class="modal-backdrop"
-      >
+      <form method="dialog" class="modal-backdrop">
         <button>close</button>
       </form>
     </dialog>

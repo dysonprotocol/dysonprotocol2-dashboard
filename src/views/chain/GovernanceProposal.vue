@@ -11,6 +11,8 @@ import DenomMetadata from '@/orm/models/bank/DenomMetadata'
 import Delegation from '@/orm/models/staking/Delegation'
 import { useWallet } from '@/composables/useWallet'
 import { ref } from 'vue'
+import WalletSelector from '@/components/shared/WalletSelector.vue'
+import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
 
 const route = useRoute()
 const id = computed(() => String(route.params.proposalId || ''))
@@ -37,6 +39,9 @@ const wallet = useWallet()
 const isSubmitting = ref(false)
 const voteError = ref('')
 const stakingPower = ref<Record<string, string>>({})
+const selectedDepositor = ref('')
+const depositCoinBase = ref<{ amount: string; denom: string }>({ amount: '', denom: 'udys' })
+const depositError = ref('')
 
 async function submitVoteFor(address: string, option: number) {
   if (!id.value) return
@@ -59,6 +64,42 @@ async function submitVoteFor(address: string, option: number) {
   } catch (e: any) {
     console.error(e)
     voteError.value = e?.message || String(e)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+async function submitDeposit() {
+  if (!id.value) return
+  if (!selectedDepositor.value) {
+    depositError.value = 'Select a wallet first'
+    return
+  }
+  const denom = String(depositCoinBase.value?.denom || '')
+  const amt = String(depositCoinBase.value?.amount || '')
+  if (!denom || !amt) {
+    depositError.value = 'Enter an amount and denom'
+    return
+  }
+  if (!/^[0-9]+$/.test(amt) || Number(amt) <= 0) {
+    depositError.value = 'Amount must be a positive integer'
+    return
+  }
+  depositError.value = ''
+  isSubmitting.value = true
+  try {
+    await pApi.deposit({
+      proposalId: id.value,
+      depositor: selectedDepositor.value,
+      amount: [{ denom, amount: amt }],
+      wallet: { sendMsg: wallet.sendMsg },
+      gasLimit: 'auto',
+      memo: undefined,
+    })
+    await dApi.fetchByProposal(id.value)
+  } catch (e: any) {
+    console.error(e)
+    depositError.value = e?.message || String(e)
   } finally {
     isSubmitting.value = false
   }
@@ -145,11 +186,11 @@ function classifyVote(
 
 function voteBadgeClass(options?: Array<{ option: string | number; weight: string }>) {
   const cls = classifyVote(options)
-  if (cls === 'yes') return 'badge-success'
-  if (cls === 'abstain') return ''
-  if (cls === 'no') return 'badge-error'
-  if (cls === 'veto') return 'badge-error badge-soft'
-  return 'badge-ghost'
+  if (cls === 'yes') return 'badge-success badge-soft'
+  if (cls === 'abstain') return 'badge-info badge-soft'
+  if (cls === 'no') return 'badge-error badge-soft'
+  if (cls === 'veto') return 'badge-error'
+  return ''
 }
 
 const unlockedWallets = computed(() =>
@@ -224,6 +265,26 @@ function walletVoteValue(address: string) {
         <div>{{ p?.summary || '—' }}</div>
       </div>
 
+      <div class="font-medium" v-if="p?.status === 'PROPOSAL_STATUS_DEPOSIT_PERIOD'">Deposit</div>
+      <div class="grid grid-cols-2 gap-2" v-if="p?.status === 'PROPOSAL_STATUS_DEPOSIT_PERIOD'">
+        <AmountDenomSelector
+          v-model:base="depositCoinBase"
+          :baseDenoms="['udys']"
+          :defaultBaseDenom="'udys'"
+        />
+        <div class="flex gap-2">
+          <WalletSelector v-model="selectedDepositor" :buttonClass="'btn btn-outline'" />
+          <button
+            class="btn btn-primary"
+            @click="submitDeposit"
+            :disabled="!selectedDepositor || isSubmitting"
+          >
+            Deposit
+          </button>
+          <div v-if="depositError" class="text-red-600">{{ depositError }}</div>
+        </div>
+      </div>
+
       <div class="font-medium">Tally</div>
       <div class="stats shadow w-full">
         <div class="stat">
@@ -253,11 +314,11 @@ function walletVoteValue(address: string) {
       <div class="font-medium">Your Wallets</div>
       <div v-if="unlockedWallets.length">
         <div class="overflow-x-auto">
-          <table class="table table-zebra w-full">
+          <table class="table w-full">
             <thead>
               <tr>
                 <th>Wallet</th>
-                <th>Voting Power</th>
+                <th>Staked Voting Power</th>
                 <th>Current Vote</th>
                 <th class="w-0"></th>
                 <th class="w-0"></th>
@@ -267,10 +328,14 @@ function walletVoteValue(address: string) {
             </thead>
             <tbody>
               <tr v-for="w in unlockedWallets" :key="w.address">
-                <td class="font-mono" :title="w.address">{{ walletNameForAddress(w.address) }}</td>
+                <td class="font-mono" :title="w.address">
+                  <RouterLink :to="{ name: 'AddressSummary', params: { address: w.address } }">
+                    {{ walletNameForAddress(w.address) }}
+                  </RouterLink>
+                </td>
                 <td class="font-mono">{{ stakingPower[w.address] || '—' }}</td>
                 <td>
-                  <span class="badge badge-outline" :class="walletVoteClass(w.address)">{{
+                  <span class="badge" :class="walletVoteClass(w.address)">{{
                     walletVoteValue(w.address)
                   }}</span>
                 </td>
@@ -323,7 +388,12 @@ function walletVoteValue(address: string) {
       <div class="font-medium">Votes</div>
       <div class="space-y-1">
         <div v-for="v in votes" :key="v.voter" class="flex items-center justify-between gap-2">
-          <span class="font-mono truncate max-w-[60%]">{{ v.voter }}</span>
+          <RouterLink
+            class="font-mono truncate max-w-[60%]"
+            :to="{ name: 'AddressSummary', params: { address: v.voter } }"
+          >
+            {{ v.voter }}
+          </RouterLink>
           <span class="badge badge-outline" :class="voteBadgeClass(v.options)">{{
             classifyVote(v.options)
           }}</span>
@@ -337,7 +407,12 @@ function walletVoteValue(address: string) {
           :key="d.depositor"
           class="flex items-center justify-between gap-2"
         >
-          <span class="font-mono truncate max-w-[60%]">{{ d.depositor }}</span>
+          <RouterLink
+            class="font-mono truncate max-w-[60%]"
+            :to="{ name: 'AddressSummary', params: { address: d.depositor } }"
+          >
+            {{ d.depositor }}
+          </RouterLink>
           <span class="truncate max-w-[35%]">{{ formatCoins(d.amount as any) }}</span>
         </div>
       </div>
