@@ -11,6 +11,7 @@ export class GovVote extends Model {
       voter: this.string(''),
       // store raw metadata or summarized option; for weighted votes, client can query separately if needed
       metadata: this.string(''),
+      options: this.attr([] as Array<{ option: number; weight: string }>),
     }
   }
 
@@ -23,7 +24,12 @@ export class GovVote extends Model {
               data,
             }: {
               data: {
-                votes?: Array<{ proposal_id?: string | number; voter?: string; metadata?: string }>
+                votes?: Array<{
+                  proposal_id?: string | number
+                  voter?: string
+                  metadata?: string
+                  options?: Array<{ option?: number; weight?: string }>
+                }>
               }
             }) => {
               const list = Array.isArray(data?.votes) ? data.votes : []
@@ -33,6 +39,12 @@ export class GovVote extends Model {
                   proposal_id: String(v.proposal_id ?? proposalId),
                   voter: String(v.voter || ''),
                   metadata: String(v.metadata || ''),
+                  options: Array.isArray(v.options)
+                    ? v.options.map((o) => ({
+                        option: Number(o?.option ?? 0),
+                        weight: String(o?.weight || '0'),
+                      }))
+                    : [],
                 }))
             },
           })
@@ -42,7 +54,14 @@ export class GovVote extends Model {
             dataTransformer: ({
               data,
             }: {
-              data: { vote?: { proposal_id?: string | number; voter?: string; metadata?: string } }
+              data: {
+                vote?: {
+                  proposal_id?: string | number
+                  voter?: string
+                  metadata?: string
+                  options?: Array<{ option?: number; weight?: string }>
+                }
+              }
             }) => {
               const v = data?.vote
               if (!v?.voter) return []
@@ -51,6 +70,12 @@ export class GovVote extends Model {
                   proposal_id: String(v.proposal_id ?? proposalId),
                   voter: String(v.voter || ''),
                   metadata: String(v.metadata || ''),
+                  options: Array.isArray(v.options)
+                    ? v.options.map((o) => ({
+                        option: Number(o?.option ?? 0),
+                        weight: String(o?.weight || '0'),
+                      }))
+                    : [],
                 },
               ]
             },

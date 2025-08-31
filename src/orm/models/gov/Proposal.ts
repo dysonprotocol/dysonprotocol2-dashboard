@@ -95,6 +95,7 @@ export class GovProposal extends Model {
             metadata?: string
             title?: string
             summary?: string
+            expedited?: boolean
             wallet: {
               sendMsg: (args: {
                 msg: unknown
@@ -114,6 +115,7 @@ export class GovProposal extends Model {
             metadata,
             title,
             summary,
+            expedited,
             wallet,
             gasLimit,
             memo,
@@ -126,6 +128,7 @@ export class GovProposal extends Model {
             ...(metadata ? { metadata } : {}),
             ...(title ? { title } : {}),
             ...(summary ? { summary } : {}),
+            ...(typeof expedited === 'boolean' ? { expedited } : {}),
           }
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: proposer })
           ensureOk(res, 'Gov submit proposal failed')
