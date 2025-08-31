@@ -77,7 +77,7 @@ export class TxRecord extends Model {
         },
         async searchInit(
           this: Request,
-          params: { query: string; limit?: string }
+          params: { query: string; limit?: string; order_by?: string }
         ): Promise<{
           next_key?: string
           total?: string
@@ -85,9 +85,10 @@ export class TxRecord extends Model {
           page?: number
           limit?: string
         }> {
-          const { query, limit } = params
+          const { query, limit, order_by } = params
           const qs = new URLSearchParams({ query })
           if (limit) qs.set('pagination.limit', limit)
+          if (order_by) qs.set('order_by', order_by)
           let nextKey: string | undefined
           let total: string | undefined
           let returned = 0
@@ -134,7 +135,13 @@ export class TxRecord extends Model {
         },
         async searchLoadMore(
           this: Request,
-          params: { query: string; limit?: string; next_key?: string; page?: number }
+          params: {
+            query: string
+            limit?: string
+            next_key?: string
+            page?: number
+            order_by?: string
+          }
         ): Promise<{
           next_key?: string
           total?: string
@@ -148,6 +155,7 @@ export class TxRecord extends Model {
           if (params.next_key) qs.set('pagination.key', params.next_key)
           else if (page) qs.set('page', String(page))
           if (limit) qs.set(params.next_key ? 'pagination.limit' : 'limit', limit)
+          if (params.order_by) qs.set('order_by', params.order_by)
           let nextKey: string | undefined
           let total: string | undefined
           let returned = 0
