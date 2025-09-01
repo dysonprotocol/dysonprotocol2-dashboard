@@ -16,11 +16,11 @@
           {{ wallet.name }}
         </div>
       </div>
-      <div class="collapse-content text-sm">
-        <div class="text-xs mb-2 break-all">
+      <div class="collapse-content">
+        <div class="mb-2 break-all">
           <AddressDisplay :address="wallet.address" :truncate="10" />
         </div>
-        <div class="mt-1 text-xs grid grid-cols-3 gap-2">
+        <div class="mt-1 grid grid-cols-3 gap-2 text-xs">
           <RouterLink v-for="item in linkItems(wallet.address)" :key="item.text" :to="item.to">
             <span class="iconify size-3 mr-1" :class="item.iconClass" />
             {{ item.text }}
@@ -41,7 +41,7 @@
                 v-model="unlockPassword[wallet.name]"
                 type="password"
                 placeholder="Password"
-                class="input input-xs w-24 text-xs"
+                class="input input-xs w-24"
                 :class="{ 'input-error': unlockErrors[wallet.name] }"
               />
               <button class="btn btn-primary btn-xs" @click="doUnlock(wallet.name)">Unlock</button>
@@ -55,7 +55,7 @@
             X
           </button>
         </div>
-        <div v-if="unlockErrors[wallet.name]" class="text-xs text-error mt-1">
+        <div v-if="unlockErrors[wallet.name]" class="text-error mt-1">
           {{ unlockErrors[wallet.name] }}
         </div>
       </div>
@@ -82,14 +82,14 @@
         <button type="button" class="btn btn-outline btn-xs" @click="generateSeed(24)">
           Generate Seed
         </button>
-        <label class="flex items-start gap-2 text-xs">
+        <label class="flex items-start gap-2">
           <Checkbox
             v-model:checked="seedBackedUp"
             class="mt-0.5"
             data-testid="cosmjs-seed-confirm"
             aria-label="Confirm seed backup"
           />
-          <span class="opacity-80 text-xs">
+          <span class="opacity-80">
             I have backed up my seed phrase and understand the risks. I take full responsibility for
             my actions.
           </span>
@@ -103,7 +103,7 @@
           :disabled="!seedBackedUp"
           data-testid="cosmjs-password-input"
         />
-        <div v-if="importError" class="text-error text-xs">
+        <div v-if="importError" class="text-error">
           {{ importError }}
         </div>
         <button

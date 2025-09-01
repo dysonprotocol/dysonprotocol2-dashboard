@@ -6,13 +6,13 @@
         {{ titleText }}
       </div>
     </div>
-    <div class="collapse-content text-sm">
+    <div class="collapse-content">
       <div v-if="isKeplrConnected" class="mb-2">
-        <p class="text-xs">Connected</p>
+        <p class="">Connected</p>
         <AddressDisplay :address="address" :truncate="10" />
       </div>
-      <div v-else-if="!isKeplrAvailable" class="text-xs mb-2">Keplr not available</div>
-      <div v-else class="text-xs mb-2">Not connected</div>
+      <div v-else-if="!isKeplrAvailable" class="mb-2">Keplr not available</div>
+      <div v-else class="mb-2">Not connected</div>
       <div class="flex items-center gap-2">
         <button
           class="btn btn-outline btn-xs"
@@ -28,11 +28,11 @@
         >
           Disconnect
         </button>
-        <div v-if="errorMessage" class="text-error text-xs">
+        <div v-if="errorMessage" class="text-error">
           {{ errorMessage }}
         </div>
       </div>
-      <div v-if="isKeplrConnected && links.length" class="mt-2 text-xs grid grid-cols-3 gap-2">
+      <div v-if="isKeplrConnected && links.length" class="mt-2 grid grid-cols-3 gap-2 text-xs">
         <RouterLink
           v-for="item in links"
           :key="item.text"
@@ -45,6 +45,7 @@
             :class="{ 'font-bold': isExactActive }"
             @click="navigate"
           >
+            <span class="iconify size-3 mr-1" :class="item.iconClass" />
             {{ item.text }}
           </a>
         </RouterLink>
@@ -79,15 +80,51 @@ const links = computed(() => {
   const addr = address.value
   if (!addr) return []
   return [
-    { text: 'Summary', to: { name: 'AddressSummary', params: { address: addr } } },
-    { text: 'Coins', to: { name: 'AddressCoins', params: { address: addr } } },
-    { text: 'NFTs', to: { name: 'AddressNFTs', params: { address: addr } } },
-    { text: 'Staking', to: { name: 'AddressStaking', params: { address: addr } } },
-    { text: 'Names', to: { name: 'AddressNames', params: { address: addr } } },
-    { text: 'Script', to: { name: 'AddressScript', params: { address: addr } } },
-    { text: 'Storage', to: { name: 'AddressStorage', params: { address: addr } } },
-    { text: 'Tasks', to: { name: 'AddressTasks', params: { address: addr } } },
-    { text: 'Authz', to: { name: 'AddressAuthz', params: { address: addr } } },
+    {
+      text: 'Summary',
+      iconClass: 'lucide--scroll-text',
+      to: { name: 'AddressSummary', params: { address: addr } },
+    },
+    {
+      text: 'Coins',
+      iconClass: 'lucide--coins',
+      to: { name: 'AddressCoins', params: { address: addr } },
+    },
+    {
+      text: 'NFTs',
+      iconClass: 'lucide--file-badge-2',
+      to: { name: 'AddressNFTs', params: { address: addr } },
+    },
+    {
+      text: 'Staking',
+      iconClass: 'lucide--landmark',
+      to: { name: 'AddressStaking', params: { address: addr } },
+    },
+    {
+      text: 'Names',
+      iconClass: 'lucide--shield-check',
+      to: { name: 'AddressNames', params: { address: addr } },
+    },
+    {
+      text: 'Script',
+      iconClass: 'lucide--file-json',
+      to: { name: 'AddressScript', params: { address: addr } },
+    },
+    {
+      text: 'Storage',
+      iconClass: 'lucide--table',
+      to: { name: 'AddressStorage', params: { address: addr } },
+    },
+    {
+      text: 'Tasks',
+      iconClass: 'lucide--clock',
+      to: { name: 'AddressTasks', params: { address: addr } },
+    },
+    {
+      text: 'Authz',
+      iconClass: 'lucide--key-round',
+      to: { name: 'AddressAuthz', params: { address: addr } },
+    },
   ]
 })
 
