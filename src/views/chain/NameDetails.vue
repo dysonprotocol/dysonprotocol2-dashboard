@@ -427,7 +427,7 @@ const selectedExecutor = ref('')
 const selectedExecutorAddress = ref('')
 const selectedGranteeAddress = ref('')
 const isAuthz = ref(false)
-const allowedAddresses = computed(() => (ownerAddress.value ? [ownerAddress.value] : []))
+const allowedAddresses = computed(() => (resolvedAddress.value ? [resolvedAddress.value] : []))
 
 function msgTypeFilter(grant: any) {
   const auth = grant?.authorization

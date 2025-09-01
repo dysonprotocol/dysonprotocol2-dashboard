@@ -3,63 +3,8 @@
     <h2 class="text-xl font-bold mb-2">Crontasks</h2>
     <p class="text-sm text-gray-600 mb-4">Address: {{ address }}</p>
 
-    <!-- List tasks by creator -->
-    <div class="bg-base-200 p-4 rounded mb-6">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex gap-2 items-end">
-          <button class="btn btn-sm" :disabled="isLoading" @click="refreshAll">Reload</button>
-        </div>
-        <div class="text-sm opacity-70">{{ tasks.length }} task(s)</div>
-      </div>
-
-      <div class="text-sm mb-2">
-        <span v-if="error" class="text-error">{{ error }}</span>
-        <span v-else-if="isLoading">Loading…</span>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
-          <thead>
-            <tr>
-              <th class="">id</th>
-              <th class="">status</th>
-              <th class="">scheduled</th>
-              <th class="">expiry</th>
-              <th class="">gas_limit</th>
-              <th class="">gas_fee</th>
-              <th class="">gas_price</th>
-              <th class="">created</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="t in tasks" :key="t.task_id">
-              <td class="font-mono">
-                <RouterLink
-                  class="link"
-                  :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
-                  >{{ t.task_id }}</RouterLink
-                >
-              </td>
-              <td>{{ t.status }}</td>
-              <td class="font-mono">{{ formatTimestamp(t.scheduled_timestamp) }}</td>
-              <td class="font-mono">{{ formatTimestamp(t.expiry_timestamp) }}</td>
-              <td class="font-mono">{{ t.task_gas_limit }}</td>
-              <td class="font-mono">
-                <span v-if="t.task_gas_fee">{{ formatCoin(t.task_gas_fee) }}</span>
-              </td>
-              <td class="font-mono">{{ formatGasPrice(t) }}</td>
-              <td class="font-mono">{{ formatTimestamp(t.creation_time) }}</td>
-            </tr>
-            <tr v-if="!isLoading && !error && tasks.length === 0">
-              <td colspan="8" class="text-center opacity-70">No tasks</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
     <!-- Create/schedule a task -->
-    <div class="bg-base-200 p-4 rounded">
+    <div class="bg-base-200 p-4 rounded mb-4">
       <h3 class="font-semibold mb-3">Create task</h3>
       <form class="grid gap-3" @submit.prevent="onCreate">
         <div class="flex flex-col-2 gap-4">
@@ -133,6 +78,61 @@
           </div>
         </div>
       </form>
+    </div>
+
+    <!-- List tasks by creator -->
+    <div class="bg-base-200 p-4 rounded">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex gap-2 items-end">
+          <button class="btn btn-sm" :disabled="isLoading" @click="refreshAll">Reload</button>
+        </div>
+        <div class="text-sm opacity-70">{{ tasks.length }} task(s)</div>
+      </div>
+
+      <div class="text-sm mb-2">
+        <span v-if="error" class="text-error">{{ error }}</span>
+        <span v-else-if="isLoading">Loading…</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table table-zebra table-sm w-full">
+          <thead>
+            <tr>
+              <th class="">id</th>
+              <th class="">status</th>
+              <th class="">scheduled</th>
+              <th class="">expiry</th>
+              <th class="">gas_limit</th>
+              <th class="">gas_fee</th>
+              <th class="">gas_price</th>
+              <th class="">created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="t in tasks" :key="t.task_id">
+              <td class="font-mono">
+                <RouterLink
+                  class="link"
+                  :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
+                  >{{ t.task_id }}</RouterLink
+                >
+              </td>
+              <td>{{ t.status }}</td>
+              <td class="font-mono">{{ formatTimestamp(t.scheduled_timestamp) }}</td>
+              <td class="font-mono">{{ formatTimestamp(t.expiry_timestamp) }}</td>
+              <td class="font-mono">{{ t.task_gas_limit }}</td>
+              <td class="font-mono">
+                <span v-if="t.task_gas_fee">{{ formatCoin(t.task_gas_fee) }}</span>
+              </td>
+              <td class="font-mono">{{ formatGasPrice(t) }}</td>
+              <td class="font-mono">{{ formatTimestamp(t.creation_time) }}</td>
+            </tr>
+            <tr v-if="!isLoading && !error && tasks.length === 0">
+              <td colspan="8" class="text-center opacity-70">No tasks</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>

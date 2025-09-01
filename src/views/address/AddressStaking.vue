@@ -1,28 +1,63 @@
 <template>
   <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
     <div class="">
+      <!-- top-level delegate -->
+      <fieldset class="space-y-1 flex flex-col gap-2 border rounded border-base-content/10 p-2">
+        <legend>Delegate</legend>
+        <form class="flex flex-col gap-2" @submit.prevent="submitDelegateTop">
+          <div class="form-control w-full">
+            <label class="">Validator</label>
+            <select v-model="topDelValoper" class="select select-bordered w-full">
+              <option value="">Select validator</option>
+              <option
+                v-for="(opt, idx) in validatorOptions('')"
+                :key="opt.operator_address || idx"
+                :value="opt.operator_address"
+              >
+                {{ opt.description?.moniker || opt.moniker || opt.operator_address }} —
+                {{ opt.status || 'unknown' }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-control w-full">
+            <label class="">Amount</label>
+            <div class="text-[11px] opacity-70 mb-1">
+              Available:
+              {{ spendableDisplayFor('udys').amount }} {{ spendableDisplayFor('udys').denom }}
+            </div>
+            <div class="join w-full">
+              <input
+                v-model="topDelAmount"
+                class="input input-bordered w-full join-item"
+                placeholder="amount"
+              />
+              <div class="join-item input bg-base-300" style="width: 3.5rem">dys</div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary w-full" type="submit" :disabled="!canDelegateTop">
+            Delegate
+          </button>
+          <div v-if="topDelegateError" class="alert alert-error">
+            <span>{{ topDelegateError }}</span>
+          </div>
+        </form>
+      </fieldset>
+
       <!-- total all rewards -->
       <div class="space-y-4">
         <fieldset class="space-y-1 flex flex-col gap-2 border rounded border-base-content/10 p-2">
           <legend>Withdraw All</legend>
           <div class="flex items-center justify-between">
-            <h3 class="font-semibold">
-              Total reward:
-            </h3>
+            <h3 class="font-semibold">Total reward:</h3>
             <code class="font-mono">{{ totalRewardsDisplay }}</code>
           </div>
 
-          <button
-            class="btn btn-success w-full"
-            :disabled="!canWithdrawAll"
-            @click="withdrawAll"
-          >
+          <button class="btn btn-success w-full" :disabled="!canWithdrawAll" @click="withdrawAll">
             Withdraw All
           </button>
-          <div
-            v-if="withdrawAllError"
-            class="alert alert-error"
-          >
+          <div v-if="withdrawAllError" class="alert alert-error">
             <span>{{ withdrawAllError }}</span>
           </div>
         </fieldset>
@@ -34,16 +69,10 @@
         <div class="flex items-center gap-2 justify-between">
           <span class="font-semibold">Current: </span>
 
-          <AddressDisplay
-            :address="currentWithdrawAddr"
-            :truncate="100"
-          />
+          <AddressDisplay :address="currentWithdrawAddr" :truncate="100" />
         </div>
 
-        <form
-          class="flex flex-col gap-2"
-          @submit.prevent="submitSetWithdrawAddress"
-        >
+        <form class="flex flex-col gap-2" @submit.prevent="submitSetWithdrawAddress">
           <div class="form-control w-full">
             <label class="">New address</label>
             <ResolveNameOrAddresInput
@@ -52,17 +81,10 @@
               class="w-full"
             />
           </div>
-          <button
-            class="btn btn-primary w-full"
-            type="submit"
-            :disabled="!canSetWithdraw"
-          >
+          <button class="btn btn-primary w-full" type="submit" :disabled="!canSetWithdraw">
             Set
           </button>
-          <div
-            v-if="setWithdrawError"
-            class="w-full"
-          >
+          <div v-if="setWithdrawError" class="w-full">
             <div class="alert alert-error text-sm">
               <span>{{ setWithdrawError }}</span>
             </div>
@@ -88,20 +110,15 @@
         <div class="font-mono break-all">
           {{ d.validator_address }}
         </div>
-        <div
-          v-if="validatorByOp(d.validator_address)?.description?.website"
-          class="opacity-80"
-        >
+        <div v-if="validatorByOp(d.validator_address)?.description?.website" class="opacity-80">
           <a
             :href="validatorByOp(d.validator_address)?.description?.website"
             target="_blank"
             class="link link-hover"
-          >{{ validatorByOp(d.validator_address)?.description?.website }}</a>
+            >{{ validatorByOp(d.validator_address)?.description?.website }}</a
+          >
         </div>
-        <div
-          v-if="validatorByOp(d.validator_address)?.description?.details"
-          class="opacity-70"
-        >
+        <div v-if="validatorByOp(d.validator_address)?.description?.details" class="opacity-70">
           {{ validatorByOp(d.validator_address)?.description?.details }}
         </div>
       </div>
@@ -114,18 +131,12 @@
           Rewards:
           <code>{{ rewardDisplayByVal(d.validator_address).amount }}</code>
           <span class="opacity-70">{{ rewardDisplayByVal(d.validator_address).denom }}</span>
-          <button
-            class="btn btn-xlg btn-success ml-2"
-            @click="withdraw(d.validator_address)"
-          >
+          <button class="btn btn-xlg btn-success ml-2" @click="withdraw(d.validator_address)">
             Withdraw
           </button>
         </div>
 
-        <form
-          class=""
-          @submit.prevent="submitDelegatePer(d.validator_address)"
-        >
+        <form class="" @submit.prevent="submitDelegatePer(d.validator_address)">
           <fieldset
             class="space-y-1 grid grid-cols-3 gap-2 items-end border rounded border-base-content/10 p-2"
           >
@@ -141,13 +152,8 @@
                   v-model="delAmount[d.validator_address]"
                   class="input input-bordered w-full join-item"
                   placeholder="amount"
-                >
-                <div
-                  class="join-item input bg-base-300"
-                  style="width: 3.5rem"
-                >
-                  dys
-                </div>
+                />
+                <div class="join-item input bg-base-300" style="width: 3.5rem">dys</div>
               </div>
             </div>
             <button
@@ -157,32 +163,21 @@
             >
               Delegate
             </button>
-            <div
-              v-if="delegateErrorByVal[d.validator_address]"
-              class="text-red-600 col-span-3"
-            >
+            <div v-if="delegateErrorByVal[d.validator_address]" class="text-red-600 col-span-3">
               {{ delegateErrorByVal[d.validator_address] }}
             </div>
           </fieldset>
         </form>
 
-        <form
-          class=""
-          @submit.prevent="submitRedelegatePer(d.validator_address)"
-        >
+        <form class="" @submit.prevent="submitRedelegatePer(d.validator_address)">
           <fieldset
             class="space-y-1 grid grid-cols-3 gap-2 items-end border rounded border-base-content/10 p-2"
           >
             <legend>Redelegate</legend>
             <div class="col-span-2">
               <label class="">Redelegate To</label>
-              <select
-                v-model="redDst[d.validator_address]"
-                class="select select-bordered w-full"
-              >
-                <option value="">
-                  Select destination
-                </option>
+              <select v-model="redDst[d.validator_address]" class="select select-bordered w-full">
+                <option value="">Select destination</option>
                 <option
                   v-for="(opt, idx) in validatorOptions(d.validator_address)"
                   :key="opt.operator_address || idx"
@@ -199,13 +194,8 @@
                   v-model="redAmountMap[d.validator_address]"
                   class="input input-bordered w-full join-item"
                   placeholder="amount"
-                >
-                <div
-                  class="join-item input bg-base-300"
-                  style="width: 3.5rem"
-                >
-                  dys
-                </div>
+                />
+                <div class="join-item input bg-base-300" style="width: 3.5rem">dys</div>
               </div>
             </div>
             <button
@@ -215,19 +205,13 @@
             >
               Redelegate
             </button>
-            <div
-              v-if="redelegateErrorByVal[d.validator_address]"
-              class="text-red-600 col-span-4"
-            >
+            <div v-if="redelegateErrorByVal[d.validator_address]" class="text-red-600 col-span-4">
               {{ redelegateErrorByVal[d.validator_address] }}
             </div>
           </fieldset>
         </form>
 
-        <form
-          class=""
-          @submit.prevent="submitUndelegatePer(d.validator_address)"
-        >
+        <form class="" @submit.prevent="submitUndelegatePer(d.validator_address)">
           <fieldset
             class="space-y-1 border rounded border-base-content/10 p-2 grid grid-cols-3 gap-2 items-end"
           >
@@ -239,13 +223,8 @@
                   v-model="undelegateAmount[d.validator_address]"
                   class="input input-bordered w-full join-item"
                   placeholder="amount"
-                >
-                <div
-                  class="join-item input bg-base-300"
-                  style="width: 3.5rem"
-                >
-                  dys
-                </div>
+                />
+                <div class="join-item input bg-base-300" style="width: 3.5rem">dys</div>
               </div>
             </div>
             <button
@@ -255,61 +234,32 @@
             >
               Undelegate
             </button>
-            <div
-              v-if="undelegateErrorByVal[d.validator_address]"
-              class="text-red-600 col-span-3"
-            >
+            <div v-if="undelegateErrorByVal[d.validator_address]" class="text-red-600 col-span-3">
               {{ undelegateErrorByVal[d.validator_address] }}
             </div>
           </fieldset>
         </form>
       </div>
     </div>
-    <div
-      v-if="delegations.length === 0"
-      class="opacity-70"
-    >
-      No delegations
-    </div>
+    <div v-if="delegations.length === 0" class="opacity-70">No delegations</div>
   </div>
 
   <div class="space-y-3">
     <div>
-      <h3 class="font-semibold">
-        Unbondings
-      </h3>
-      <div
-        v-if="unbondings.length === 0"
-        class="text-sm opacity-70"
-      >
-        None
-      </div>
-      <div
-        v-else
-        class="overflow-x-auto"
-      >
+      <h3 class="font-semibold">Unbondings</h3>
+      <div v-if="unbondings.length === 0" class="text-sm opacity-70">None</div>
+      <div v-else class="overflow-x-auto">
         <table class="table table-xs w-full">
           <thead>
             <tr>
-              <th class="text-left">
-                Validator
-              </th>
-              <th class="text-left">
-                Balance
-              </th>
-              <th class="text-left">
-                Completes
-              </th>
-              <th class="text-left">
-                Action
-              </th>
+              <th class="text-left">Validator</th>
+              <th class="text-left">Balance</th>
+              <th class="text-left">Completes</th>
+              <th class="text-left">Action</th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="u in unbondings"
-              :key="u.validator_address + ':' + u.creation_height"
-            >
+            <tr v-for="u in unbondings" :key="u.validator_address + ':' + u.creation_height">
               <td>
                 <div class="font-mono">
                   {{ u.validator_address }}
@@ -339,20 +289,12 @@
                         v-model="cancelAmount[u.validator_address + ':' + u.creation_height]"
                         class="input input-bordered input-xs w-28 join-item"
                         placeholder="amount"
-                      >
-                      <div
-                        class="join-item input input-xs bg-base-300"
-                        style="width: 3.5rem"
-                      >
+                      />
+                      <div class="join-item input input-xs bg-base-300" style="width: 3.5rem">
                         dys
                       </div>
                     </div>
-                    <button
-                      class="btn btn-error btn-xs"
-                      type="submit"
-                    >
-                      Cancel
-                    </button>
+                    <button class="btn btn-error btn-xs" type="submit">Cancel</button>
                   </fieldset>
                 </form>
                 <div
@@ -369,34 +311,16 @@
     </div>
 
     <div>
-      <h3 class="font-semibold">
-        Redelegations
-      </h3>
-      <div
-        v-if="redelegations.length === 0"
-        class="text-sm opacity-70"
-      >
-        None
-      </div>
-      <div
-        v-else
-        class="overflow-x-auto"
-      >
+      <h3 class="font-semibold">Redelegations</h3>
+      <div v-if="redelegations.length === 0" class="text-sm opacity-70">None</div>
+      <div v-else class="overflow-x-auto">
         <table class="table table-xs w-full">
           <thead>
             <tr>
-              <th class="text-left">
-                Source
-              </th>
-              <th class="text-left">
-                Destination
-              </th>
-              <th class="text-left">
-                Balance
-              </th>
-              <th class="text-left">
-                Completes
-              </th>
+              <th class="text-left">Source</th>
+              <th class="text-left">Destination</th>
+              <th class="text-left">Balance</th>
+              <th class="text-left">Completes</th>
             </tr>
           </thead>
           <tbody>
@@ -506,13 +430,9 @@ function validatorByOp(val: string) {
 }
 
 function validatorOptions(exclude: string) {
-  try {
-    return (validators.value as any[]).filter(
-      (x: any) => x && x.operator_address && x.operator_address !== exclude
-    )
-  } catch (e) {
-    return [] as any[]
-  }
+  return (validators.value as any[]).filter(
+    (x: any) => x && x.operator_address && x.operator_address !== exclude
+  )
 }
 
 function rewardUdysByVal(val: string) {
@@ -624,7 +544,6 @@ const canSetWithdraw = computed(() =>
 // Redelegate per-card state
 const redDst = ref<Record<string, string>>({})
 const redAmountMap = ref<Record<string, string>>({})
-const redDenom = ref('udys')
 const redelegateErrorByVal = ref<Record<string, string>>({})
 function canRedelegatePer(src: string) {
   const dst = String(redDst.value[src] || '').trim()
@@ -643,6 +562,18 @@ function canUndelegatePer(valoper: string) {
 // Cancel unbonding per-entry state
 const cancelAmount = ref<Record<string, string>>({})
 const cancelErrorByKey = ref<Record<string, string>>({})
+
+// Top-level delegate state
+const topDelValoper = ref('')
+const topDelAmount = ref('')
+const topDelegateError = ref('')
+const canDelegateTop = computed(() =>
+  Boolean(
+    props.address &&
+      String(topDelValoper.value || '').trim() &&
+      isValidDisplayAmount(String(topDelAmount.value || '').trim())
+  )
+)
 
 async function refresh() {
   if (!props.address) return
@@ -771,6 +702,30 @@ async function submitDelegatePer(valoper: string) {
   }
 }
 
+async function submitDelegateTop() {
+  topDelegateError.value = ''
+  if (!canDelegateTop.value) return
+  try {
+    const coin = displayToBaseCoin(topDelAmount.value)
+    if (!coin.amount) throw new Error('Invalid amount')
+    await useAxiosRepo(Delegation)
+      .api()
+      .delegate({
+        delegatorAddress: props.address,
+        validatorAddress: String(topDelValoper.value || ''),
+        amount: coin.amount,
+        denom: coin.denom,
+        wallet: { sendMsg: wallet.sendMsg },
+        gasLimit: 'auto',
+      })
+    topDelAmount.value = ''
+    await refresh()
+  } catch (e: any) {
+    console.error(e)
+    topDelegateError.value = e?.message || String(e)
+  }
+}
+
 async function submitCancelUnbonding(u: any) {
   const key = `${u.validator_address}:${u.creation_height}`
   cancelErrorByKey.value[key] = ''
@@ -818,26 +773,6 @@ async function withdrawAll() {
 watchEffect(() => {
   if (props.address) void refresh()
 })
-
-// Simple decimal string addition used for rewards
-function addDecimalStrings(a: string, b: string): string {
-  const [ai, af = ''] = String(a || '0').split('.')
-  const [bi, bf = ''] = String(b || '0').split('.')
-  const fracLen = Math.max(af.length, bf.length)
-  const A = ai + (af + '0'.repeat(fracLen - af.length))
-  const B = bi + (bf + '0'.repeat(fracLen - bf.length))
-  let carry = 0
-  let out = ''
-  for (let i = A.length - 1; i >= 0; i -= 1) {
-    const s = A.charCodeAt(i) - 48 + (B.charCodeAt(i) - 48) + carry
-    out = String(s % 10) + out
-    carry = Math.floor(s / 10)
-  }
-  if (carry) out = String(carry) + out
-  const int = out.slice(0, out.length - fracLen) || '0'
-  const frac = out.slice(out.length - fracLen).replace(/0+$/, '')
-  return frac ? `${int}.${frac}` : int
-}
 
 defineExpose({
   submitSetWithdrawAddress,

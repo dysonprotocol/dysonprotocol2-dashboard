@@ -1,15 +1,6 @@
 import { Model } from 'pinia-orm'
 import type { Request } from '@pinia-orm/axios'
 
-type Coin = { denom?: string; amount?: string }
-
-function toCoin(c?: Coin | null): Coin {
-  return {
-    denom: String(c?.denom || ''),
-    amount: String(c?.amount || '0'),
-  }
-}
-
 export class CrontaskTask extends Model {
   static entity = 'crontask_tasks'
   static primaryKey = 'task_id'
@@ -21,15 +12,17 @@ export class CrontaskTask extends Model {
       scheduled_timestamp: this.string(''),
       expiry_timestamp: this.string(''),
       task_gas_limit: this.string('0'),
-      task_gas_price: this.attr<Coin>({}),
-      task_gas_fee: this.attr<Coin>({}),
-      msgs: this.attr<unknown[]>([]),
-      msg_results: this.attr<unknown[]>([]),
+      task_gas_price: this.attr({}),
+      task_gas_fee: this.attr({}),
+      msgs: this.attr([]),
+      msg_results: this.attr([]),
       status: this.string(''),
       creation_time: this.string(''),
       error_log: this.string(''),
       task_gas_consumed: this.string('0'),
       execution_timestamp: this.string(''),
+      creation_block_height: this.string(''),
+      execution_block_height: this.string(''),
     }
   }
 
@@ -38,28 +31,8 @@ export class CrontaskTask extends Model {
       actions: {
         async fetchByID(this: Request, taskId: string | number) {
           return this.get(`/dysonprotocol/crontask/v1/tasks/${taskId}`, {
-            dataTransformer: ({ data }: { data: { task?: Record<string, unknown> } }) => {
-              const t = data?.task as any
-              if (!t?.task_id && t?.task_id !== 0) return []
-              return [
-                {
-                  task_id: String(t.task_id ?? ''),
-                  creator: String(t.creator || ''),
-                  scheduled_timestamp: String(t.scheduled_timestamp ?? ''),
-                  expiry_timestamp: String(t.expiry_timestamp ?? ''),
-                  task_gas_limit: String(t.task_gas_limit ?? '0'),
-                  task_gas_price: toCoin(t.task_gas_price as Coin),
-                  task_gas_fee: toCoin(t.task_gas_fee as Coin),
-                  msgs: Array.isArray(t.msgs) ? t.msgs : [],
-                  msg_results: Array.isArray(t.msg_results) ? t.msg_results : [],
-                  status: String(t.status || ''),
-                  creation_time: String(t.creation_time ?? ''),
-                  error_log: String(t.error_log || ''),
-                  task_gas_consumed: String(t.task_gas_consumed ?? '0'),
-                  execution_timestamp: String(t.execution_timestamp ?? ''),
-                },
-              ]
-            },
+            dataTransformer: ({ data }: { data: { task?: unknown } }) =>
+              data?.task ? [data.task] : [],
           })
         },
         async fetchByCreatorInit(
@@ -83,33 +56,16 @@ export class CrontaskTask extends Model {
               data,
             }: {
               data: {
-                tasks?: any[]
+                tasks?: unknown[]
                 pagination?: { next_key?: string; total?: string | number }
               }
             }) => {
-              const list = (Array.isArray(data?.tasks) ? data.tasks : []).filter(
-                (t) => t?.task_id != null
-              )
+              const list = Array.isArray(data.tasks) ? data.tasks : []
               returned = list.length
-              nextKey = data?.pagination?.next_key || ''
-              const tot = data?.pagination?.total
+              nextKey = data.pagination?.next_key || ''
+              const tot = data.pagination?.total
               total = typeof tot === 'number' ? String(tot) : (tot as string | undefined)
-              return list.map((t) => ({
-                task_id: String(t.task_id ?? ''),
-                creator: String(t.creator || ''),
-                scheduled_timestamp: String(t.scheduled_timestamp ?? ''),
-                expiry_timestamp: String(t.expiry_timestamp ?? ''),
-                task_gas_limit: String(t.task_gas_limit ?? '0'),
-                task_gas_price: toCoin(t.task_gas_price as Coin),
-                task_gas_fee: toCoin(t.task_gas_fee as Coin),
-                msgs: Array.isArray(t.msgs) ? t.msgs : [],
-                msg_results: Array.isArray(t.msg_results) ? t.msg_results : [],
-                status: String(t.status || ''),
-                creation_time: String(t.creation_time ?? ''),
-                error_log: String(t.error_log || ''),
-                task_gas_consumed: String(t.task_gas_consumed ?? '0'),
-                execution_timestamp: String(t.execution_timestamp ?? ''),
-              }))
+              return list
             },
           })
           return { next_key: nextKey || undefined, total, returned, page: 1, limit }
@@ -138,33 +94,16 @@ export class CrontaskTask extends Model {
               data,
             }: {
               data: {
-                tasks?: any[]
+                tasks?: unknown[]
                 pagination?: { next_key?: string; total?: string | number }
               }
             }) => {
-              const list = (Array.isArray(data?.tasks) ? data.tasks : []).filter(
-                (t) => t?.task_id != null
-              )
+              const list = Array.isArray(data.tasks) ? data.tasks : []
               returned = list.length
-              nextKey = data?.pagination?.next_key || ''
-              const tot = data?.pagination?.total
+              nextKey = data.pagination?.next_key || ''
+              const tot = data.pagination?.total
               total = typeof tot === 'number' ? String(tot) : (tot as string | undefined)
-              return list.map((t) => ({
-                task_id: String(t.task_id ?? ''),
-                creator: String(t.creator || ''),
-                scheduled_timestamp: String(t.scheduled_timestamp ?? ''),
-                expiry_timestamp: String(t.expiry_timestamp ?? ''),
-                task_gas_limit: String(t.task_gas_limit ?? '0'),
-                task_gas_price: toCoin(t.task_gas_price as Coin),
-                task_gas_fee: toCoin(t.task_gas_fee as Coin),
-                msgs: Array.isArray(t.msgs) ? t.msgs : [],
-                msg_results: Array.isArray(t.msg_results) ? t.msg_results : [],
-                status: String(t.status || ''),
-                creation_time: String(t.creation_time ?? ''),
-                error_log: String(t.error_log || ''),
-                task_gas_consumed: String(t.task_gas_consumed ?? '0'),
-                execution_timestamp: String(t.execution_timestamp ?? ''),
-              }))
+              return list
             },
           })
           if (!params.next_key && page) page += 1
@@ -178,27 +117,8 @@ export class CrontaskTask extends Model {
           const qs = new URLSearchParams()
           if (limit) qs.set('pagination.limit', limit)
           return this.get(`/dysonprotocol/crontask/v1/tasks/status/${status}?${qs}`, {
-            dataTransformer: ({ data }: { data: { tasks?: any[] } }) => {
-              const list = (Array.isArray(data?.tasks) ? data.tasks : []).filter(
-                (t) => t?.task_id != null
-              )
-              return list.map((t) => ({
-                task_id: String(t.task_id ?? ''),
-                creator: String(t.creator || ''),
-                scheduled_timestamp: String(t.scheduled_timestamp ?? ''),
-                expiry_timestamp: String(t.expiry_timestamp ?? ''),
-                task_gas_limit: String(t.task_gas_limit ?? '0'),
-                task_gas_price: toCoin(t.task_gas_price as Coin),
-                task_gas_fee: toCoin(t.task_gas_fee as Coin),
-                msgs: Array.isArray(t.msgs) ? t.msgs : [],
-                msg_results: Array.isArray(t.msg_results) ? t.msg_results : [],
-                status: String(t.status || ''),
-                creation_time: String(t.creation_time ?? ''),
-                error_log: String(t.error_log || ''),
-                task_gas_consumed: String(t.task_gas_consumed ?? '0'),
-                execution_timestamp: String(t.execution_timestamp ?? ''),
-              }))
-            },
+            dataTransformer: ({ data }: { data: { tasks?: unknown[] } }) =>
+              Array.isArray(data.tasks) ? data.tasks : [],
           })
         },
         async fetchByStatusGasPriceInit(this: Request, params: { status: string; limit?: string }) {
@@ -206,27 +126,8 @@ export class CrontaskTask extends Model {
           const qs = new URLSearchParams()
           if (limit) qs.set('pagination.limit', limit)
           return this.get(`/dysonprotocol/crontask/v1/tasks/status/${status}/by_gas?${qs}`, {
-            dataTransformer: ({ data }: { data: { tasks?: any[] } }) => {
-              const list = (Array.isArray(data?.tasks) ? data.tasks : []).filter(
-                (t) => t?.task_id != null
-              )
-              return list.map((t) => ({
-                task_id: String(t.task_id ?? ''),
-                creator: String(t.creator || ''),
-                scheduled_timestamp: String(t.scheduled_timestamp ?? ''),
-                expiry_timestamp: String(t.expiry_timestamp ?? ''),
-                task_gas_limit: String(t.task_gas_limit ?? '0'),
-                task_gas_price: toCoin(t.task_gas_price as Coin),
-                task_gas_fee: toCoin(t.task_gas_fee as Coin),
-                msgs: Array.isArray(t.msgs) ? t.msgs : [],
-                msg_results: Array.isArray(t.msg_results) ? t.msg_results : [],
-                status: String(t.status || ''),
-                creation_time: String(t.creation_time ?? ''),
-                error_log: String(t.error_log || ''),
-                task_gas_consumed: String(t.task_gas_consumed ?? '0'),
-                execution_timestamp: String(t.execution_timestamp ?? ''),
-              }))
-            },
+            dataTransformer: ({ data }: { data: { tasks?: unknown[] } }) =>
+              Array.isArray(data.tasks) ? data.tasks : [],
           })
         },
         async fetchAllInit(
@@ -250,33 +151,16 @@ export class CrontaskTask extends Model {
               data,
             }: {
               data: {
-                tasks?: any[]
+                tasks?: unknown[]
                 pagination?: { next_key?: string; total?: string | number }
               }
             }) => {
-              const list = (Array.isArray(data?.tasks) ? data.tasks : []).filter(
-                (t) => t?.task_id != null
-              )
+              const list = Array.isArray(data.tasks) ? data.tasks : []
               returned = list.length
-              nextKey = data?.pagination?.next_key || ''
-              const tot = data?.pagination?.total
+              nextKey = data.pagination?.next_key || ''
+              const tot = data.pagination?.total
               total = typeof tot === 'number' ? String(tot) : (tot as string | undefined)
-              return list.map((t) => ({
-                task_id: String(t.task_id ?? ''),
-                creator: String(t.creator || ''),
-                scheduled_timestamp: String(t.scheduled_timestamp ?? ''),
-                expiry_timestamp: String(t.expiry_timestamp ?? ''),
-                task_gas_limit: String(t.task_gas_limit ?? '0'),
-                task_gas_price: toCoin(t.task_gas_price as Coin),
-                task_gas_fee: toCoin(t.task_gas_fee as Coin),
-                msgs: Array.isArray(t.msgs) ? t.msgs : [],
-                msg_results: Array.isArray(t.msg_results) ? t.msg_results : [],
-                status: String(t.status || ''),
-                creation_time: String(t.creation_time ?? ''),
-                error_log: String(t.error_log || ''),
-                task_gas_consumed: String(t.task_gas_consumed ?? '0'),
-                execution_timestamp: String(t.execution_timestamp ?? ''),
-              }))
+              return list
             },
           })
           return { next_key: nextKey || undefined, total, returned, page: 1, limit }
@@ -305,33 +189,16 @@ export class CrontaskTask extends Model {
               data,
             }: {
               data: {
-                tasks?: any[]
+                tasks?: unknown[]
                 pagination?: { next_key?: string; total?: string | number }
               }
             }) => {
-              const list = (Array.isArray(data?.tasks) ? data.tasks : []).filter(
-                (t) => t?.task_id != null
-              )
+              const list = Array.isArray(data.tasks) ? data.tasks : []
               returned = list.length
-              nextKey = data?.pagination?.next_key || ''
-              const tot = data?.pagination?.total
+              nextKey = data.pagination?.next_key || ''
+              const tot = data.pagination?.total
               total = typeof tot === 'number' ? String(tot) : (tot as string | undefined)
-              return list.map((t) => ({
-                task_id: String(t.task_id ?? ''),
-                creator: String(t.creator || ''),
-                scheduled_timestamp: String(t.scheduled_timestamp ?? ''),
-                expiry_timestamp: String(t.expiry_timestamp ?? ''),
-                task_gas_limit: String(t.task_gas_limit ?? '0'),
-                task_gas_price: toCoin(t.task_gas_price as Coin),
-                task_gas_fee: toCoin(t.task_gas_fee as Coin),
-                msgs: Array.isArray(t.msgs) ? t.msgs : [],
-                msg_results: Array.isArray(t.msg_results) ? t.msg_results : [],
-                status: String(t.status || ''),
-                creation_time: String(t.creation_time ?? ''),
-                error_log: String(t.error_log || ''),
-                task_gas_consumed: String(t.task_gas_consumed ?? '0'),
-                execution_timestamp: String(t.execution_timestamp ?? ''),
-              }))
+              return list
             },
           })
           if (!params.next_key && page) page += 1
@@ -344,7 +211,7 @@ export class CrontaskTask extends Model {
             scheduled_timestamp: string
             expiry_timestamp: string
             task_gas_limit: string
-            task_gas_fee: Coin
+            task_gas_fee: { denom?: string; amount?: string }
             msgs: unknown[]
             wallet: {
               sendMsg: (args: {
@@ -383,27 +250,8 @@ export class CrontaskTask extends Model {
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: creator })
           if (!res?.success) throw new Error(res?.rawLog || 'Crontask create failed')
           await this.get(`/dysonprotocol/crontask/v1/tasks/creator/${creator}`, {
-            dataTransformer: ({ data }: { data: { tasks?: any[] } }) => {
-              const list = (Array.isArray(data?.tasks) ? data.tasks : []).filter(
-                (t) => t?.task_id != null
-              )
-              return list.map((t) => ({
-                task_id: String(t.task_id ?? ''),
-                creator: String(t.creator || ''),
-                scheduled_timestamp: String(t.scheduled_timestamp ?? ''),
-                expiry_timestamp: String(t.expiry_timestamp ?? ''),
-                task_gas_limit: String(t.task_gas_limit ?? '0'),
-                task_gas_price: toCoin(t.task_gas_price as Coin),
-                task_gas_fee: toCoin(t.task_gas_fee as Coin),
-                msgs: Array.isArray(t.msgs) ? t.msgs : [],
-                msg_results: Array.isArray(t.msg_results) ? t.msg_results : [],
-                status: String(t.status || ''),
-                creation_time: String(t.creation_time ?? ''),
-                error_log: String(t.error_log || ''),
-                task_gas_consumed: String(t.task_gas_consumed ?? '0'),
-                execution_timestamp: String(t.execution_timestamp ?? ''),
-              }))
-            },
+            dataTransformer: ({ data }: { data: { tasks?: unknown[] } }) =>
+              Array.isArray(data.tasks) ? data.tasks : [],
           })
           return res
         },
@@ -433,27 +281,8 @@ export class CrontaskTask extends Model {
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: creator })
           if (!res?.success) throw new Error(res?.rawLog || 'Crontask delete failed')
           await this.get(`/dysonprotocol/crontask/v1/tasks/creator/${creator}`, {
-            dataTransformer: ({ data }: { data: { tasks?: any[] } }) => {
-              const list = (Array.isArray(data?.tasks) ? data.tasks : []).filter(
-                (t) => t?.task_id != null
-              )
-              return list.map((t) => ({
-                task_id: String(t.task_id ?? ''),
-                creator: String(t.creator || ''),
-                scheduled_timestamp: String(t.scheduled_timestamp ?? ''),
-                expiry_timestamp: String(t.expiry_timestamp ?? ''),
-                task_gas_limit: String(t.task_gas_limit ?? '0'),
-                task_gas_price: toCoin(t.task_gas_price as Coin),
-                task_gas_fee: toCoin(t.task_gas_fee as Coin),
-                msgs: Array.isArray(t.msgs) ? t.msgs : [],
-                msg_results: Array.isArray(t.msg_results) ? t.msg_results : [],
-                status: String(t.status || ''),
-                creation_time: String(t.creation_time ?? ''),
-                error_log: String(t.error_log || ''),
-                task_gas_consumed: String(t.task_gas_consumed ?? '0'),
-                execution_timestamp: String(t.execution_timestamp ?? ''),
-              }))
-            },
+            dataTransformer: ({ data }: { data: { tasks?: unknown[] } }) =>
+              Array.isArray(data.tasks) ? data.tasks : [],
           })
           return res
         },
