@@ -1,4 +1,5 @@
 import { Model } from 'pinia-orm'
+import { useRepo } from 'pinia-orm'
 import type { Request } from '@pinia-orm/axios'
 import type { WalletLike } from '@/orm/types/WalletLike'
 import { useAxiosRepo } from '@pinia-orm/axios'
@@ -6,6 +7,7 @@ import DenomMetadata from '@/orm/models/bank/DenomMetadata'
 import Supply from '@/orm/models/bank/Supply'
 import Balance from '@/orm/models/bank/Balance'
 import SpendableBalance from '@/orm/models/bank/SpendableBalance'
+import NftItem from '@/orm/models/nft/NftItem'
 
 export class NameserviceActions extends Model {
   static entity = 'nameservice_actions'
@@ -1013,6 +1015,12 @@ export class NameserviceActions extends Model {
             executorAddress: executorAddress || name_destination,
           })
           if (!res?.success) throw new Error(res?.rawLog || 'Mint NFT failed')
+          // After successful mint, fetch the NFT so it's added to the store
+          try {
+            await useAxiosRepo(NftItem).api().fetchNftWithOwner(class_id, nft_id)
+          } catch (e) {
+            console.error(e)
+          }
           return res
         },
         async burnNft(
@@ -1042,6 +1050,15 @@ export class NameserviceActions extends Model {
             executorAddress: executorAddress || name_destination,
           })
           if (!res?.success) throw new Error(res?.rawLog || 'Burn NFT failed')
+          // After successful burn, remove the NFT from the store
+          try {
+            useRepo(NftItem)
+              .query()
+              .where((r: any) => r.class_id === class_id && r.id === nft_id)
+              .delete()
+          } catch (e) {
+            console.error(e)
+          }
           return res
         },
         async moveCoins(

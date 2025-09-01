@@ -5,202 +5,214 @@
       <div v-if="!hasLoaded" class="opacity-70">Loading…</div>
       <div v-else-if="error" class="text-error">{{ error }}</div>
       <div v-else-if="!klass" class="opacity-70">Class not found.</div>
-      <div v-else class="space-y-4">
-        <table class="table table-sm">
-          <tbody>
-            <tr>
-              <th>Class ID</th>
-              <td class="font-mono break-all">{{ klass.id }}</td>
-            </tr>
-            <tr>
-              <th>Name</th>
-              <td>{{ klass.name || '—' }}</td>
-            </tr>
-            <tr>
-              <th>Symbol</th>
-              <td>{{ klass.symbol || '—' }}</td>
-            </tr>
-            <tr>
-              <th>Description</th>
-              <td class="whitespace-pre-wrap">{{ klass.description || '—' }}</td>
-            </tr>
-            <tr>
-              <th>URI</th>
-              <td class="font-mono break-all">{{ klass.uri || '—' }}</td>
-            </tr>
-            <tr>
-              <th>URI Hash</th>
-              <td class="font-mono break-all">{{ klass.uri_hash || '—' }}</td>
-            </tr>
-            <tr>
-              <th>Data</th>
-              <td>
-                <pre class="text-xs whitespace-pre-wrap break-words">{{
-                  prettyJson(klass.data)
-                }}</pre>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-else class="grid gap-6 md:grid-cols-2">
+        <div class="space-y-4">
+          <table class="table table-sm">
+            <tbody>
+              <tr>
+                <th>Class ID</th>
+                <td class="font-mono break-all">{{ klass.id }}</td>
+              </tr>
+              <tr>
+                <th>Name</th>
+                <td>{{ klass.name || '—' }}</td>
+              </tr>
+              <tr>
+                <th>Symbol</th>
+                <td>{{ klass.symbol || '—' }}</td>
+              </tr>
+              <tr>
+                <th>Description</th>
+                <td class="whitespace-pre-wrap">{{ klass.description || '—' }}</td>
+              </tr>
+              <tr>
+                <th>URI</th>
+                <td class="font-mono break-all">{{ klass.uri || '—' }}</td>
+              </tr>
+              <tr>
+                <th>URI Hash</th>
+                <td class="font-mono break-all">{{ klass.uri_hash || '—' }}</td>
+              </tr>
+              <tr>
+                <th>Data</th>
+                <td>
+                  <pre class="text-xs whitespace-pre-wrap break-words">{{
+                    prettyJson(klass.data)
+                  }}</pre>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-        <div class="space-y-6">
-          <div>
-            <div class="font-medium mb-2">Manage Class</div>
-            <div class="text-xs opacity-70 mb-2">
-              {{ routeName }} managed by: <span class="font-mono">{{ resolvedAddress }}</span>
-            </div>
-
-            <div class="grid gap-3">
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Set Extra Data</div>
-                <input v-model.trim="classExtra" class="input w-full" placeholder="extra_data" />
-                <div class="mt-2">
-                  <button class="btn btn-primary btn-sm" @click="setClassExtra">Save</button>
-                </div>
-                <div v-if="classExtraError" class="text-error text-sm mt-1">
-                  {{ classExtraError }}
-                </div>
+          <div class="space-y-6">
+            <div>
+              <div class="font-medium mb-2">Manage Class</div>
+              <div class="text-xs opacity-70 mb-2">
+                {{ routeName }} managed by: <span class="font-mono">{{ resolvedAddress }}</span>
               </div>
 
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Set Always Listed</div>
-                <select v-model="classAlwaysListed" class="select select-bordered w-full">
-                  <option :value="true">true</option>
-                  <option :value="false">false</option>
-                </select>
-                <div class="mt-2">
-                  <button class="btn btn-primary btn-sm" @click="setClassAlwaysListed">Save</button>
+              <div class="grid gap-3">
+                <div class="p-3 border rounded">
+                  <div class="font-semibold text-sm mb-2">Set Extra Data</div>
+                  <input v-model.trim="classExtra" class="input w-full" placeholder="extra_data" />
+                  <div class="mt-2">
+                    <button class="btn btn-primary btn-sm" @click="setClassExtra">Save</button>
+                  </div>
+                  <div v-if="classExtraError" class="text-error text-sm mt-1">
+                    {{ classExtraError }}
+                  </div>
                 </div>
-                <div v-if="classAlwaysError" class="text-error text-sm mt-1">
-                  {{ classAlwaysError }}
-                </div>
-              </div>
 
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Set Valuation Fee Percent</div>
-                <input
-                  v-model.trim="classValFeePct"
-                  class="input w-full"
-                  placeholder="valuation_fee_pct (Dec)"
-                />
-                <div class="mt-2">
-                  <button class="btn btn-primary btn-sm" @click="setClassValFeePct">Save</button>
+                <div class="p-3 border rounded">
+                  <div class="font-semibold text-sm mb-2">Set Always Listed</div>
+                  <select v-model="classAlwaysListed" class="select select-bordered w-full">
+                    <option :value="true">true</option>
+                    <option :value="false">false</option>
+                  </select>
+                  <div class="mt-2">
+                    <button class="btn btn-primary btn-sm" @click="setClassAlwaysListed">
+                      Save
+                    </button>
+                  </div>
+                  <div v-if="classAlwaysError" class="text-error text-sm mt-1">
+                    {{ classAlwaysError }}
+                  </div>
                 </div>
-                <div v-if="classValFeeError" class="text-error text-sm mt-1">
-                  {{ classValFeeError }}
-                </div>
-              </div>
 
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Set Valuation Period</div>
-                <input
-                  v-model.trim="classValPeriodSec"
-                  class="input w-full"
-                  placeholder="seconds"
-                />
-                <div class="mt-2">
-                  <button class="btn btn-primary btn-sm" @click="setClassValPeriod">Save</button>
+                <div class="p-3 border rounded">
+                  <div class="font-semibold text-sm mb-2">Set Valuation Fee Percent</div>
+                  <input
+                    v-model.trim="classValFeePct"
+                    class="input w-full"
+                    placeholder="valuation_fee_pct (Dec)"
+                  />
+                  <div class="mt-2">
+                    <button class="btn btn-primary btn-sm" @click="setClassValFeePct">Save</button>
+                  </div>
+                  <div v-if="classValFeeError" class="text-error text-sm mt-1">
+                    {{ classValFeeError }}
+                  </div>
                 </div>
-                <div v-if="classValPeriodError" class="text-error text-sm mt-1">
-                  {{ classValPeriodError }}
-                </div>
-              </div>
 
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Set Bid Timeout</div>
-                <input
-                  v-model.trim="classBidTimeoutSec"
-                  class="input w-full"
-                  placeholder="seconds"
-                />
-                <div class="mt-2">
-                  <button class="btn btn-primary btn-sm" @click="setClassBidTimeout">Save</button>
+                <div class="p-3 border rounded">
+                  <div class="font-semibold text-sm mb-2">Set Valuation Period</div>
+                  <input
+                    v-model.trim="classValPeriodSec"
+                    class="input w-full"
+                    placeholder="seconds"
+                  />
+                  <div class="mt-2">
+                    <button class="btn btn-primary btn-sm" @click="setClassValPeriod">Save</button>
+                  </div>
+                  <div v-if="classValPeriodError" class="text-error text-sm mt-1">
+                    {{ classValPeriodError }}
+                  </div>
                 </div>
-                <div v-if="classBidTimeoutError" class="text-error text-sm mt-1">
-                  {{ classBidTimeoutError }}
-                </div>
-              </div>
 
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Set Allowed Denoms</div>
-                <input
-                  v-model.trim="classAllowedDenoms"
-                  class="input w-full"
-                  placeholder="denoms (comma-separated)"
-                />
-                <div class="mt-2">
-                  <button class="btn btn-primary btn-sm" @click="setClassAllowedDenoms">
-                    Save
-                  </button>
+                <div class="p-3 border rounded">
+                  <div class="font-semibold text-sm mb-2">Set Bid Timeout</div>
+                  <input
+                    v-model.trim="classBidTimeoutSec"
+                    class="input w-full"
+                    placeholder="seconds"
+                  />
+                  <div class="mt-2">
+                    <button class="btn btn-primary btn-sm" @click="setClassBidTimeout">Save</button>
+                  </div>
+                  <div v-if="classBidTimeoutError" class="text-error text-sm mt-1">
+                    {{ classBidTimeoutError }}
+                  </div>
                 </div>
-                <div v-if="classAllowedDenomsError" class="text-error text-sm mt-1">
-                  {{ classAllowedDenomsError }}
-                </div>
-              </div>
 
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Set Reject Bid Fee Percent</div>
-                <input
-                  v-model.trim="classRejectFeePct"
-                  class="input w-full"
-                  placeholder="reject fee percent (Dec)"
-                />
-                <div class="mt-2">
-                  <button class="btn btn-primary btn-sm" @click="setClassRejectFeePct">Save</button>
+                <div class="p-3 border rounded">
+                  <div class="font-semibold text-sm mb-2">Set Allowed Denoms</div>
+                  <input
+                    v-model.trim="classAllowedDenoms"
+                    class="input w-full"
+                    placeholder="denoms (comma-separated)"
+                  />
+                  <div class="mt-2">
+                    <button class="btn btn-primary btn-sm" @click="setClassAllowedDenoms">
+                      Save
+                    </button>
+                  </div>
+                  <div v-if="classAllowedDenomsError" class="text-error text-sm mt-1">
+                    {{ classAllowedDenomsError }}
+                  </div>
                 </div>
-                <div v-if="classRejectFeeError" class="text-error text-sm mt-1">
-                  {{ classRejectFeeError }}
-                </div>
-              </div>
 
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Set Minimum Bid Increase Percent</div>
-                <input
-                  v-model.trim="classMinBidIncPct"
-                  class="input w-full"
-                  placeholder="min bid increase percent (Dec)"
-                />
-                <div class="mt-2">
-                  <button class="btn btn-primary btn-sm" @click="setClassMinBidIncPct">Save</button>
+                <div class="p-3 border rounded">
+                  <div class="font-semibold text-sm mb-2">Set Reject Bid Fee Percent</div>
+                  <input
+                    v-model.trim="classRejectFeePct"
+                    class="input w-full"
+                    placeholder="reject fee percent (Dec)"
+                  />
+                  <div class="mt-2">
+                    <button class="btn btn-primary btn-sm" @click="setClassRejectFeePct">
+                      Save
+                    </button>
+                  </div>
+                  <div v-if="classRejectFeeError" class="text-error text-sm mt-1">
+                    {{ classRejectFeeError }}
+                  </div>
                 </div>
-                <div v-if="classMinBidIncError" class="text-error text-sm mt-1">
-                  {{ classMinBidIncError }}
-                </div>
-              </div>
 
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Delete Class</div>
-                <button class="btn btn-error btn-sm" @click="deleteClass">Delete</button>
-                <div v-if="delClassError" class="text-error text-sm mt-1">{{ delClassError }}</div>
-              </div>
-
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Mint NFT</div>
-                <input v-model.trim="mintNftId" class="input w-full" placeholder="nft_id" />
-                <input v-model.trim="mintUri" class="input w-full" placeholder="uri (optional)" />
-                <input
-                  v-model.trim="mintUriHash"
-                  class="input w-full"
-                  placeholder="uri_hash (optional)"
-                />
-                <div class="mt-2">
-                  <button class="btn btn-primary btn-sm" @click="mintNft">Mint</button>
+                <div class="p-3 border rounded">
+                  <div class="font-semibold text-sm mb-2">Set Minimum Bid Increase Percent</div>
+                  <input
+                    v-model.trim="classMinBidIncPct"
+                    class="input w-full"
+                    placeholder="min bid increase percent (Dec)"
+                  />
+                  <div class="mt-2">
+                    <button class="btn btn-primary btn-sm" @click="setClassMinBidIncPct">
+                      Save
+                    </button>
+                  </div>
+                  <div v-if="classMinBidIncError" class="text-error text-sm mt-1">
+                    {{ classMinBidIncError }}
+                  </div>
                 </div>
-                <div v-if="mintError" class="text-error text-sm mt-1">{{ mintError }}</div>
-              </div>
 
-              <div class="p-3 border rounded">
-                <div class="font-semibold text-sm mb-2">Burn NFT</div>
-                <input v-model.trim="burnNftId" class="input w-full" placeholder="nft_id" />
-                <div class="mt-2">
-                  <button class="btn btn-primary btn-sm" @click="burnNft">Burn</button>
+                <div class="p-3 border rounded">
+                  <div class="font-semibold text-sm mb-2">Delete Class</div>
+                  <button class="btn btn-error btn-sm" @click="deleteClass">Delete</button>
+                  <div v-if="delClassError" class="text-error text-sm mt-1">
+                    {{ delClassError }}
+                  </div>
                 </div>
-                <div v-if="burnNftError" class="text-error text-sm mt-1">{{ burnNftError }}</div>
               </div>
             </div>
           </div>
+        </div>
 
+        <div class="space-y-3">
+          <div class="p-3 border rounded">
+            <div class="font-semibold text-sm mb-2">Mint NFT</div>
+            <input v-model.trim="mintNftId" class="input w-full" placeholder="nft_id" />
+            <input v-model.trim="mintUri" class="input w-full" placeholder="uri (optional)" />
+            <input
+              v-model.trim="mintUriHash"
+              class="input w-full"
+              placeholder="uri_hash (optional)"
+            />
+            <div class="mb-2">
+              <button class="btn btn-primary btn-sm" @click="mintNft">Mint</button>
+            </div>
+            <div v-if="mintError" class="text-error text-sm mt-1">{{ mintError }}</div>
+          </div>
+
+          <div class="p-3 border rounded">
+            <div class="font-semibold text-sm mb-2">Burn NFT</div>
+            <input v-model.trim="burnNftId" class="input w-full" placeholder="nft_id" />
+            <div class="mt-2">
+              <button class="btn btn-primary btn-sm" @click="burnNft">Burn</button>
+            </div>
+            <div v-if="burnNftError" class="text-error text-sm mt-1">{{ burnNftError }}</div>
+          </div>
           <div class="font-medium mb-2">NFTs</div>
+
           <div v-if="isLoadingNfts" class="opacity-70">Loading…</div>
           <div v-else-if="nftsError" class="text-error">{{ nftsError }}</div>
           <div v-else-if="nfts.length === 0" class="opacity-70">No NFTs in this class.</div>
@@ -277,7 +289,20 @@ const klass = ref<{
 
 const isLoadingNfts = ref(false)
 const nftsError = ref('')
-const nfts = ref<Array<{ id: string; owner: string; uri: string }>>([])
+const nfts = computed(() => {
+  const id = klassId.value
+  if (!id) return []
+  const repo = useRepo(NftItem)
+  const list = repo
+    .query()
+    .where('class_id', (v: string) => v === id)
+    .get() as any[] as Array<{ id: string; owner?: string; uri?: string }>
+  return list.map((r) => ({
+    id: String(r.id),
+    owner: String(r.owner || ''),
+    uri: String(r.uri || ''),
+  }))
+})
 
 // Class management form state
 const classExtra = ref('')
@@ -342,35 +367,16 @@ async function fetchClass(id: string) {
   }
 }
 
-async function fetchNfts(id: string) {
+// Removed explicit fetchNfts logic; rely on reactive Pinia ORM store instead
+
+async function loadInitialNfts(id: string) {
   if (!id) return
   isLoadingNfts.value = true
   nftsError.value = ''
-  nfts.value = []
   try {
     await useAxiosRepo(NftItem).api().fetchNfts({ class_id: id, limit: '100' })
-    const repo = useRepo(NftItem)
-    const list = repo
-      .query()
-      .where('class_id', (v: string) => v === id)
-      .get() as any[] as Array<{ id: string; owner?: string; uri?: string }>
-    // Backfill owners for items without owner field
-    const idsNeedingOwner = list.filter((r) => !r.owner).map((r) => r.id)
-    if (idsNeedingOwner.length > 0) {
-      const tasks = idsNeedingOwner.map((nid) => useAxiosRepo(NftItem).api().fetchOwner(id, nid))
-      const results = await Promise.allSettled(tasks)
-      for (const r of results) if (r.status === 'rejected') console.error(r.reason)
-    }
-    const refreshed = repo
-      .query()
-      .where('class_id', (v: string) => v === id)
-      .get() as any[] as Array<{ id: string; owner?: string; uri?: string }>
-    nfts.value = refreshed.map((r) => ({
-      id: String(r.id),
-      owner: String(r.owner || ''),
-      uri: String(r.uri || ''),
-    }))
   } catch (e: any) {
+    console.error(e)
     nftsError.value = e?.message || 'Failed to load NFTs'
   } finally {
     isLoadingNfts.value = false
@@ -382,7 +388,7 @@ watchEffect(() => {
   if (!id) return
   // Resolve manager address for forms
   void useAxiosRepo(NameResolution).api().resolve(routeName.value)
-  void Promise.all([fetchClass(id), fetchNfts(id)])
+  void Promise.all([fetchClass(id), loadInitialNfts(id)])
 })
 
 // ---- Class management actions ----
@@ -583,7 +589,6 @@ async function mintNft() {
         gasLimit: 'auto',
       })
     if (!res?.success) throw new Error(res?.rawLog || 'Mint NFT failed')
-    await fetchNfts(klassId.value)
   } catch (e: any) {
     console.error(e)
     mintError.value = e?.message || String(e)
@@ -603,7 +608,6 @@ async function burnNft() {
         gasLimit: 'auto',
       })
     if (!res?.success) throw new Error(res?.rawLog || 'Burn NFT failed')
-    await fetchNfts(klassId.value)
   } catch (e: any) {
     console.error(e)
     burnNftError.value = e?.message || String(e)
