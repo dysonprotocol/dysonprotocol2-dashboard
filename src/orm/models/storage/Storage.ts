@@ -121,20 +121,28 @@ export class Storage extends Model {
                 gasLimit?: number | 'auto'
                 memo?: string
                 executorAddress?: string
+                grantee?: string
               }) => Promise<{ success: boolean; rawLog?: string }>
             }
             gasLimit?: number | 'auto'
             memo?: string
+            grantee?: string
           }
         ) {
-          const { owner, index, data, wallet, gasLimit, memo } = params
+          const { owner, index, data, wallet, gasLimit, memo, grantee } = params
           const msg = {
             '@type': '/dysonprotocol.storage.v1.MsgStorageSet',
             owner,
             index,
             data,
           }
-          const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: owner })
+          const res = await wallet.sendMsg({
+            msg,
+            gasLimit,
+            memo,
+            executorAddress: owner,
+            grantee,
+          })
           if (!res?.success) throw new Error(res?.rawLog || 'Storage set failed')
           await this.storageGet({ owner, index })
           return res

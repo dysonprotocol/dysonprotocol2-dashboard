@@ -1,19 +1,23 @@
 <template>
   <div class="relative min-w-0 overflow-hidden">
-    <button
-      type="button"
-      :class="['btn', 'min-w-0', 'overflow-hidden', buttonClass]"
-      data-testid="wallet-selector-open"
-      @click="openModal"
-    >
-      <span class="ml-1 flex-1 min-w-0 truncate">{{ selectedLabel }}</span>
-      <ChevronUpIcon v-if="isOpen" class="size-4 opacity-70" />
-      <ChevronDownIcon v-else class="size-4 opacity-70" />
-    </button>
+    <Dialog v-model:open="isOpen">
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          :class="['btn', 'min-w-0', 'overflow-hidden', buttonClass]"
+          data-testid="wallet-selector-open"
+        >
+          <span class="ml-1 flex-1 min-w-0 truncate">{{ selectedLabel }}</span>
+          <ChevronUpIcon v-if="isOpen" class="size-4 opacity-70" />
+          <ChevronDownIcon v-else class="size-4 opacity-70" />
+        </button>
+      </DialogTrigger>
 
-    <dialog ref="dialogRef" class="modal" data-testid="wallet-selector-modal">
-      <div class="modal-box">
-        <h3 class="text-lg font-bold">Select wallet</h3>
+      <DialogContent data-testid="wallet-selector-modal">
+        <DialogHeader>
+          <DialogTitle>Select wallet</DialogTitle>
+        </DialogHeader>
+
         <div v-if="selectedAuthz && selectedAuthz.notes" class="mt-2 text-xs opacity-80 break-all">
           Note: {{ selectedAuthz.notes }}
         </div>
@@ -89,22 +93,25 @@
             </div>
           </li>
         </ul>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
-    </dialog>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/20/solid'
 import { useWallet } from '@/composables/useWallet'
-import AddressDisplay from '@/components/AddressDisplay.vue'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import { Grant } from '@/orm/models/authz/Grant'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -133,7 +140,6 @@ onMounted(async () => {
   }
 })
 
-const dialogRef = ref(null)
 const isOpen = ref(false)
 
 const allowedSet = computed(() => (props.allowedAddresses ? new Set(props.allowedAddresses) : null))
@@ -298,22 +304,10 @@ const selectedLabel = computed(() => {
   return props.modelValue ? truncate(props.modelValue) : 'Select wallet'
 })
 
-function onUpdate(val) {
-  emit('update:modelValue', val)
-}
-
-function openModal() {
-  if (dialogRef.value) {
-    dialogRef.value.showModal()
-    isOpen.value = true
-  }
-}
+// removed unused onUpdate handler
 
 function closeModal() {
-  if (dialogRef.value) {
-    dialogRef.value.close()
-    isOpen.value = false
-  }
+  isOpen.value = false
 }
 
 function selectDirect(address) {
@@ -356,16 +350,5 @@ function isAuthzSelected(granteeAddress, auth) {
 
 // copy removed; AddressDisplay handles presentation
 
-onMounted(() => {
-  if (!dialogRef.value) return
-  const onClose = () => (isOpen.value = false)
-  dialogRef.value.addEventListener('close', onClose)
-  // Store remover for onUnmounted
-  dialogRef.value.__onClose = onClose
-})
-
-onUnmounted(() => {
-  if (dialogRef.value && dialogRef.value.__onClose)
-    dialogRef.value.removeEventListener('close', dialogRef.value.__onClose)
-})
+// no-op: shadcn Dialog handled via v-model:open
 </script>

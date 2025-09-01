@@ -13,6 +13,7 @@ import { useWallet } from '@/composables/useWallet'
 import { ref } from 'vue'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
+import { Button } from '@/components/ui/button'
 
 const route = useRoute()
 const id = computed(() => String(route.params.proposalId || ''))
@@ -131,20 +132,11 @@ const t = computed(
       no_with_veto_count: string
     } | null
 )
-const votes = computed(
-  () =>
-    vRepo.where('proposal_id', (x: string) => x === id.value).get() as Array<{
-      voter: string
-      metadata: string
-      options?: Array<{ option: string | number; weight: string }>
-    }>
+const votes = computed<any[]>(
+  () => vRepo.where('proposal_id', (x: string) => x === id.value).get() as any[]
 )
-const deposits = computed(
-  () =>
-    dRepo.where('proposal_id', (x: string) => x === id.value).get() as Array<{
-      depositor: string
-      amount?: Array<{ denom: string; amount: string }>
-    }>
+const deposits = computed<any[]>(
+  () => dRepo.where('proposal_id', (x: string) => x === id.value).get() as any[]
 )
 
 function formatCoin(input?: { denom: string; amount: string }) {
@@ -184,18 +176,12 @@ function classifyVote(
   return '-'
 }
 
-function voteBadgeClass(options?: Array<{ option: string | number; weight: string }>) {
-  const cls = classifyVote(options)
-  if (cls === 'yes') return 'badge-success badge-soft'
-  if (cls === 'abstain') return 'badge-info badge-soft'
-  if (cls === 'no') return 'badge-error badge-soft'
-  if (cls === 'veto') return 'badge-error'
-  return ''
-}
+// badge variants removed; display plain text instead
 
-const unlockedWallets = computed(() =>
-  Array.isArray(wallet.unlockedWallets?.value) ? wallet.unlockedWallets.value : []
-)
+const unlockedWallets = computed<Array<{ address: string; name?: string }>>(() => {
+  const list = Array.isArray(wallet.unlockedWallets?.value) ? wallet.unlockedWallets.value : []
+  return list as Array<{ address: string; name?: string }>
+})
 
 async function loadStakingPower(address: string) {
   if (!address) return
@@ -220,17 +206,12 @@ watch(
 )
 
 function walletNameForAddress(address: string) {
-  const entry = unlockedWallets.value.find((w: any) => String(w?.address || '') === String(address))
-  return entry?.name || (address ? String(address).slice(0, 10) + '…' : 'wallet')
+  const list = unlockedWallets.value as Array<{ address: string; name?: string }>
+  const entry = list.find((w) => String(w?.address || '') === String(address))
+  return (entry && entry.name) || (address ? String(address).slice(0, 10) + '…' : 'wallet')
 }
 
-function walletVoteClass(address: string) {
-  const rec = vRepo
-    .where('proposal_id', (x: string) => x === id.value)
-    .where('voter', (x: string) => x === address)
-    .first() as { options?: Array<{ option: string | number; weight: string }> } | null
-  return voteBadgeClass(rec?.options || [])
-}
+// walletVoteClass removed (replaced with Badge variants)
 
 function walletVoteValue(address: string) {
   const rec = vRepo
@@ -244,10 +225,23 @@ function walletVoteValue(address: string) {
   if (cls === 'veto') return 'Veto'
   return '-'
 }
+
+function isVoted(address: string, option: number) {
+  const rec = vRepo
+    .where('proposal_id', (x: string) => x === id.value)
+    .where('voter', (x: string) => x === address)
+    .first() as { options?: Array<{ option: string | number; weight: string }> } | null
+  const cls = classifyVote(rec?.options || [])
+  if (option === 1) return cls === 'yes'
+  if (option === 2) return cls === 'abstain'
+  if (option === 3) return cls === 'no'
+  if (option === 4) return cls === 'veto'
+  return false
+}
 </script>
 
 <template>
-  <div class="p-4 space-y-4 mx-auto max-w-screen-md">
+  <div class="p-4 space-y-4 mx-auto max-w-screen-lg">
     <div class="text-lg font-medium">Proposal #{{ id }}</div>
 
     <div class="grid grid-cols-1 gap-3">
@@ -258,7 +252,7 @@ function walletVoteValue(address: string) {
       </div>
       <div class="flex items-center gap-2">
         <span class="opacity-70">Status:</span>
-        <span class="badge badge-outline">{{ p?.status || '—' }}</span>
+        <span>{{ p?.status || '—' }}</span>
       </div>
       <div class="whitespace-pre-wrap">
         <span class="opacity-70">Summary:</span>
@@ -274,13 +268,13 @@ function walletVoteValue(address: string) {
         />
         <div class="flex gap-2">
           <WalletSelector v-model="selectedDepositor" :buttonClass="'btn btn-outline'" />
-          <button
-            class="btn btn-primary"
+          <Button
+            variant="outline"
             @click="submitDeposit"
             :disabled="!selectedDepositor || isSubmitting"
           >
             Deposit
-          </button>
+          </Button>
           <div v-if="depositError" class="text-red-600">{{ depositError }}</div>
         </div>
       </div>
@@ -334,46 +328,42 @@ function walletVoteValue(address: string) {
                   </RouterLink>
                 </td>
                 <td class="font-mono">{{ stakingPower[w.address] || '—' }}</td>
+                <td>{{ walletVoteValue(w.address) }}</td>
                 <td>
-                  <span class="badge" :class="walletVoteClass(w.address)">{{
-                    walletVoteValue(w.address)
-                  }}</span>
-                </td>
-                <td>
-                  <button
-                    class="btn btn-primary"
+                  <Button
+                    :variant="isVoted(w.address, 1) ? undefined : 'outline'"
                     @click="submitVoteFor(w.address, 1)"
                     :disabled="isSubmitting"
                   >
                     Yes
-                  </button>
+                  </Button>
                 </td>
                 <td>
-                  <button
-                    class="btn btn-primary"
+                  <Button
+                    :variant="isVoted(w.address, 2) ? undefined : 'outline'"
                     @click="submitVoteFor(w.address, 2)"
                     :disabled="isSubmitting"
                   >
                     Abstain
-                  </button>
+                  </Button>
                 </td>
                 <td>
-                  <button
-                    class="btn btn-primary"
+                  <Button
+                    :variant="isVoted(w.address, 3) ? undefined : 'outline'"
                     @click="submitVoteFor(w.address, 3)"
                     :disabled="isSubmitting"
                   >
                     No
-                  </button>
+                  </Button>
                 </td>
                 <td>
-                  <button
-                    class="btn btn-primary"
+                  <Button
+                    :variant="isVoted(w.address, 4) ? undefined : 'outline'"
                     @click="submitVoteFor(w.address, 4)"
                     :disabled="isSubmitting"
                   >
                     Veto
-                  </button>
+                  </Button>
                 </td>
               </tr>
             </tbody>
@@ -394,9 +384,7 @@ function walletVoteValue(address: string) {
           >
             {{ v.voter }}
           </RouterLink>
-          <span class="badge badge-outline" :class="voteBadgeClass(v.options)">{{
-            classifyVote(v.options)
-          }}</span>
+          <span>{{ classifyVote(v.options) }}</span>
         </div>
       </div>
 

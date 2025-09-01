@@ -1,4 +1,5 @@
 import { Model } from 'pinia-orm'
+import { useRepo } from 'pinia-orm'
 import type { Request } from '@pinia-orm/axios'
 
 type GrantAuthorization = {
@@ -12,6 +13,36 @@ type GrantsResponse = {
   grants?: GrantAuthorization[]
 }
 
+function deriveMsgTypeUrlFromAuthorization(auth?: GrantAuthorization['authorization']): string {
+  const typeUrl = auth?.['@type'] || ''
+  if (typeUrl === '/cosmos.authz.v1beta1.GenericAuthorization') {
+    return String(auth?.msg || '')
+  }
+  switch (typeUrl) {
+    case '/cosmos.bank.v1beta1.SendAuthorization':
+      return '/cosmos.bank.v1beta1.MsgSend'
+    case '/cosmos.staking.v1beta1.StakeAuthorization': {
+      const raw = (auth as Record<string, unknown>)?.['authorization_type']
+      const value = typeof raw === 'string' ? raw : typeof raw === 'number' ? raw : 0
+      if (value === 1 || value === 'AUTHORIZATION_TYPE_DELEGATE')
+        return '/cosmos.staking.v1beta1.MsgDelegate'
+      if (value === 2 || value === 'AUTHORIZATION_TYPE_UNDELEGATE')
+        return '/cosmos.staking.v1beta1.MsgUndelegate'
+      if (value === 3 || value === 'AUTHORIZATION_TYPE_REDELEGATE')
+        return '/cosmos.staking.v1beta1.MsgBeginRedelegate'
+      if (value === 4 || value === 'AUTHORIZATION_TYPE_CANCEL_UNBONDING_DELEGATION')
+        return '/cosmos.staking.v1beta1.MsgCancelUnbondingDelegation'
+      return ''
+    }
+    case '/ibc.applications.transfer.v1.TransferAuthorization':
+      return '/ibc.applications.transfer.v1.MsgTransfer'
+    case '/dysonprotocol.script.v1.ScriptExecAuthorization':
+      return '/dysonprotocol.script.v1.MsgExec'
+    default:
+      return ''
+  }
+}
+
 function transformGrants(
   fallbackGranter: string | undefined,
   fallbackGrantee: string | undefined,
@@ -23,10 +54,8 @@ function transformGrants(
       const granter = g.granter || fallbackGranter || ''
       const grantee = g.grantee || fallbackGrantee || ''
       const typeUrl = g.authorization?.['@type'] || ''
-      const msgTypeUrl =
-        typeUrl === '/cosmos.authz.v1beta1.GenericAuthorization'
-          ? String(g.authorization?.msg || '')
-          : String(providedMsgTypeUrl || '')
+      const derived = deriveMsgTypeUrlFromAuthorization(g.authorization)
+      const msgTypeUrl = derived || String(providedMsgTypeUrl || '')
       return {
         granter,
         grantee,
@@ -119,10 +148,7 @@ export class Grant extends Model {
           }
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: granter })
           ensureOk(res, 'Authz grant failed')
-          const qs = new URLSearchParams({ granter, grantee, msg_type_url: msgTypeUrl })
-          await this.get(`/cosmos/authz/v1beta1/grants?${qs}`, {
-            dataTransformer: transformGrants(granter, grantee, msgTypeUrl),
-          })
+          await this.fetchGrants({ granter, grantee, msgTypeUrl })
           return res
         },
         async revoke(
@@ -152,10 +178,17 @@ export class Grant extends Model {
           }
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: granter })
           ensureOk(res, 'Authz revoke failed')
-          const qs = new URLSearchParams({ granter, grantee })
-          await this.get(`/cosmos/authz/v1beta1/grants?${qs}`, {
-            dataTransformer: transformGrants(granter, grantee, undefined),
-          })
+          // Remove any existing grants between granter and grantee before refresh
+          try {
+            await useRepo(Grant).delete((r: { granter?: string; grantee?: string }) => {
+              console.log(r)
+              return r.granter === granter && r.grantee === grantee
+            })
+          } catch (e) {
+            // Best-effort cache clear; proceed to refresh regardless
+            console.error(e)
+          }
+          await this.fetchByGranter(granter)
           return res
         },
         async exec(
@@ -191,14 +224,7 @@ export class Grant extends Model {
               .filter((t): t is string => typeof t === 'string' && t.length > 0)
             await Promise.allSettled(
               msgTypes.map((t) =>
-                this.get(
-                  `/cosmos/authz/v1beta1/grants?${new URLSearchParams({
-                    granter: granterForRefresh,
-                    grantee,
-                    msg_type_url: t,
-                  })}`,
-                  { dataTransformer: transformGrants(granterForRefresh, grantee, t) }
-                )
+                this.fetchGrants({ granter: granterForRefresh, grantee, msgTypeUrl: t })
               )
             )
           }
@@ -240,11 +266,7 @@ export class Grant extends Model {
             authorization?.['@type'] === '/cosmos.authz.v1beta1.GenericAuthorization'
               ? String((authorization as { msg?: string }).msg || '')
               : ''
-          const qs = new URLSearchParams({ granter, grantee })
-          if (maybeGenericMsg) qs.set('msg_type_url', maybeGenericMsg)
-          await this.get(`/cosmos/authz/v1beta1/grants?${qs}`, {
-            dataTransformer: transformGrants(granter, grantee, maybeGenericMsg || undefined),
-          })
+          await this.fetchGrants({ granter, grantee, msgTypeUrl: maybeGenericMsg || undefined })
           return res
         },
       },

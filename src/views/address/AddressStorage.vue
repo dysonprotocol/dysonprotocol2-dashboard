@@ -4,105 +4,217 @@
       Storage — <code>{{ address }}</code>
     </h2>
 
-    <div class="grid md:grid-cols-1 gap-6">
-      <!-- List Form -->
-      <section class="space-y-2 p-4 border rounded">
-        <h3 class="font-semibold">List</h3>
-        <div class="grid md:grid-cols-3 gap-2">
-          <input v-model="listOwner" class="input w-full" placeholder="owner (name or address)" />
-          <input v-model="prefix" class="input w-full" placeholder="index_prefix (optional)" />
-          <input v-model="filter" class="input w-full" placeholder="filter (optional)" />
-          <input v-model="extract" class="input w-full" placeholder="extract (optional)" />
-          <input v-model="limit" class="input w-full" placeholder="pagination.limit (default 50)" />
-          <input v-model="offset" class="input w-full" placeholder="pagination.offset (optional)" />
-          <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" v-model="countTotal" />
-            count_total
-          </label>
-          <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" v-model="reverse" />
-            reverse
-          </label>
-        </div>
-        <div class="flex gap-2">
-          <button class="btn btn-primary btn-sm" @click="search">Search</button>
-          <button class="btn btn-ghost btn-sm" @click="resetList">Reset</button>
-        </div>
-        <div class="text-xs opacity-70 grid grid-cols-3 gap-x-4">
-          <div>
-            count=<code>{{ entries.length }}</code>
+    <div class="grid md:grid-cols-2 gap-6 items-start">
+      <!-- Left: Search + Table -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Search</CardTitle>
+          <CardDescription>Filter and paginate storage entries</CardDescription>
+        </CardHeader>
+        <CardContent class="space-y-3">
+          <div class="grid md:grid-cols-1 gap-2">
+            <input
+              :value="address"
+              class="input w-full"
+              placeholder="owner (name or address)"
+              disabled
+            />
+            <input v-model="prefix" class="input w-full" placeholder="index_prefix (optional)" />
+            <input v-model="filter" class="input w-full" placeholder="filter (optional)" />
+            <input v-model="extract" class="input w-full" placeholder="extract (optional)" />
+            <input v-model="limit" class="input w-full" placeholder="page size (default 50)" />
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" v-model="countTotal" />
+              count_total
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" v-model="reverse" />
+              reverse
+            </label>
           </div>
-          <div>
-            total=<code>{{ total || '' }}</code>
+          <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm" @click="search">Search</button>
+            <button class="btn btn-ghost btn-sm" @click="resetList">Reset</button>
           </div>
-          <div>
-            next_key=<code class="break-all">{{ nextKey || '' }}</code>
+          <div v-if="listError" class="text-sm text-red-600">{{ listError }}</div>
+          <div class="text-xs opacity-70 grid grid-cols-3 gap-x-4">
+            <div>
+              count=<code>{{ entries.length }}</code>
+            </div>
+            <div>
+              total=<code>{{ total || '' }}</code>
+            </div>
+            <div>
+              next_key=<code class="break-all">{{ nextKey || '' }}</code>
+            </div>
           </div>
-        </div>
-        <div v-if="error" class="text-sm text-red-600">
-          {{ error }}
-        </div>
-      </section>
-    </div>
 
-    <!-- Set form removed per request; logic is retained for future use -->
+          <form class="grid md:grid-cols-3 gap-2 items-end" @submit.prevent="submitDelete">
+            <div>
+              <label class="text-xs">Delete indexes (comma-separated)</label>
+              <input v-model="deleteIndexes" class="input w-full" placeholder="idx1,idx2" />
+            </div>
+            <div class="text-xs opacity-70">
+              Owner: <code>{{ address }}</code>
+            </div>
+            <button class="btn btn-warning" type="submit" :disabled="!canDelete">Delete</button>
+          </form>
+          <div v-if="deleteError" class="text-xs text-red-600">{{ deleteError }}</div>
 
-    <form class="grid md:grid-cols-3 gap-2 items-end" @submit.prevent="submitDelete">
-      <div>
-        <label class="text-xs">Delete indexes (comma-separated)</label>
-        <input v-model="deleteIndexes" class="input w-full" placeholder="idx1,idx2" />
-      </div>
-      <div class="text-xs opacity-70">
-        Owner: <code>{{ address }}</code>
-      </div>
-      <button class="btn btn-warning" type="submit" :disabled="!canDelete">Delete</button>
-    </form>
+          <div class="space-y-2">
+            <div class="text-sm opacity-70">Results</div>
+            <div class="overflow-x-auto">
+              <div class="mb-2">
+                <Pagination
+                  v-slot="{ page }"
+                  :items-per-page="limitNum"
+                  :total="totalNum"
+                  :default-page="currentPage"
+                >
+                  <PaginationContent v-slot="{ items }">
+                    <PaginationPrevious @click="prevPage" />
 
-    <div class="space-y-2">
-      <div class="text-sm opacity-70">Results</div>
-      <div class="overflow-x-auto">
-        <table class="table table-xs w-full">
-          <thead>
-            <tr>
-              <th>owner</th>
-              <th>index</th>
-              <th>hash</th>
-              <th>extract</th>
-              <th>height</th>
-              <th>timestamp</th>
-              <th>data</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="e in entries" :key="e.owner + ':' + e.index + ':' + (extract || '')">
-              <td class="font-mono">{{ e.owner }}</td>
-              <td class="font-mono">{{ e.index }}</td>
-              <td class="max-w-[16rem] truncate">
-                <code>{{ e.hash }}</code>
-              </td>
-              <td class="font-mono">{{ extract || '' }}</td>
-              <td class="font-mono">{{ e.updated_height }}</td>
-              <td class="font-mono">{{ e.updated_timestamp }}</td>
-              <td class="max-w-[24rem] truncate">
-                <code>{{ e.data }}</code>
-              </td>
-            </tr>
-            <tr v-if="entries.length === 0">
-              <td colspan="7" class="opacity-70">No entries</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                    <template v-for="(item, index) in items" :key="index">
+                      <PaginationItem
+                        v-if="item.type === 'page'"
+                        :value="item.value"
+                        :is-active="item.value === page"
+                        @click="goToPage(item.value)"
+                      >
+                        {{ item.value }}
+                      </PaginationItem>
+                    </template>
+
+                    <PaginationNext @click="nextPage" />
+                  </PaginationContent>
+                </Pagination>
+              </div>
+              <Table class="table table-xs w-full">
+                <TableCaption>Storage entries</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>index</TableHead>
+                    <TableHead>hash</TableHead>
+                    <TableHead>height</TableHead>
+                    <TableHead>timestamp</TableHead>
+                    <TableHead>data</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow
+                    v-for="e in entries"
+                    :key="e.owner + ':' + e.index"
+                    class="cursor-pointer"
+                    @click="select(e)"
+                  >
+                    <TableCell class="font-mono">{{ e.index }}</TableCell>
+                    <TableCell class="max-w-[16rem] truncate"
+                      ><code>{{ e.hash }}</code></TableCell
+                    >
+                    <TableCell class="font-mono">{{ e.updated_height }}</TableCell>
+                    <TableCell class="font-mono">{{ e.updated_timestamp }}</TableCell>
+                    <TableCell class="max-w-[24rem] truncate"
+                      ><code>{{ e.data }}</code></TableCell
+                    >
+                  </TableRow>
+                  <TableRow v-if="entries.length === 0">
+                    <TableCell colspan="5" class="opacity-70">No entries</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <!-- Right: Edit only -->
+      <Card>
+        <CardHeader>
+          <CardTitle>Set Storage</CardTitle>
+          <CardDescription>Full original data</CardDescription>
+        </CardHeader>
+        <CardContent class="space-y-3">
+          <div v-if="editError" class="text-xs text-red-600">{{ editError }}</div>
+
+          <!-- Signer selection (direct or via authz) -->
+          <div>
+            <label class="text-xs">Signer</label>
+            <div class="mt-1">
+              <WalletSelector
+                v-model="selectedExecutor"
+                :show-locked="true"
+                :allowed-addresses="[props.address]"
+                :default-address="props.address"
+                :default-grantee="selectedGranteeAddress"
+                :button-class="''"
+                :msg-type-filter="msgTypeFilter"
+                @update:executor-address="onExecutorAddress"
+                @update:grantee-address="onGranteeAddress"
+                @update:is-authz="onIsAuthz"
+                @update:authz-notes="onAuthzNotes"
+                @update:selected-grant="onSelectedGrant"
+              />
+              <div v-if="isAuthz" class="mt-2 text-xs opacity-80 break-all">
+                <div v-if="authzNotes">Note: {{ authzNotes }}</div>
+                <div v-if="selectedGrant">
+                  <div>
+                    Authz: <code>{{ selectedGrant.type_url }}</code>
+                    <span v-if="selectedGrant.expiration" class="ml-2"
+                      >exp: {{ selectedGrant.expiration }}</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-2 items-end">
+            <div class="flex-1">
+              <label class="text-xs">index</label>
+              <input v-model="editIndex" class="input w-full" placeholder="index (e.g. user/123)" />
+            </div>
+            <button class="btn btn-primary" :disabled="!canSaveEdit" @click="saveEdit">
+              Set Storage
+            </button>
+          </div>
+          <textarea
+            ref="fullDataTextarea"
+            v-model="fullData"
+            class="textarea w-full min-h-64 resize-none autosize-textarea"
+            :disabled="isFetchingFull"
+            placeholder="Select a row to load its original data"
+          />
+        </CardContent>
+      </Card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useTextareaAutosize } from '@vueuse/core'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import api from '@/orm/http'
 import Storage from '@/orm/models/storage/Storage'
 import { useWallet } from '@/composables/useWallet'
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
+import WalletSelector from '@/components/shared/WalletSelector.vue'
 
 const props = defineProps<{ address: string }>()
 
@@ -113,23 +225,56 @@ const filter = ref('')
 const extract = ref('')
 const limit = ref('50')
 const offset = ref('')
-const countTotal = ref(false)
+const countTotal = ref(true)
 const reverse = ref(false)
 const nextKey = ref<string | undefined>(undefined)
 const total = ref<string | undefined>(undefined)
 const error = ref('')
+const listError = ref('')
+const deleteError = ref('')
 const entries = ref<StorageRow[]>([])
+const selected = ref<StorageRow | null>(null)
+const isFetchingFull = ref(false)
+const fullData = ref('')
+const editError = ref('')
+const canSaveEdit = computed(() => Boolean(props.address && editIndex.value.trim()))
+const editIndex = ref('')
+
+// Autosize for full data textarea
+const { textarea: fullDataTextarea, triggerResize } = useTextareaAutosize({
+  input: fullData,
+  styleProp: 'minHeight',
+})
+
+const limitNum = computed(() => {
+  const n = Number(limit.value || '50')
+  return Number.isFinite(n) && n > 0 ? n : 50
+})
+const totalNum = computed(() => Number(total.value || 0))
+const currentPage = computed(() => {
+  const off = Number(offset.value || '0')
+  const n = limitNum.value
+  if (!n) return 1
+  return Math.floor(off / n) + 1
+})
 
 watch(
   () => props.address,
   (addr) => {
     if (!addr) return
-    if (!listOwner.value) listOwner.value = addr
+    listOwner.value = addr
+    offset.value = ''
+    void search()
   }
 )
 
+onMounted(() => {
+  if (!props.address) return
+  void search()
+})
+
 async function doList(loadMore: boolean) {
-  error.value = ''
+  listError.value = ''
   const owner = listOwner.value.trim()
   const index_prefix = prefix.value.trim()
   if (!owner) return
@@ -138,7 +283,7 @@ async function doList(loadMore: boolean) {
   if (filter.value) qs.set('filter', filter.value)
   if (extract.value) qs.set('extract', extract.value)
   if (limit.value) qs.set('pagination.limit', limit.value)
-  if (countTotal.value) qs.set('pagination.count_total', String(countTotal.value))
+  if (countTotal.value) qs.set('pagination.count_total', 'true')
   if (reverse.value) qs.set('pagination.reverse', String(reverse.value))
   if (loadMore && nextKey.value) qs.set('pagination.key', nextKey.value)
   else if (offset.value) qs.set('pagination.offset', offset.value)
@@ -163,13 +308,87 @@ async function doList(loadMore: boolean) {
 }
 
 async function search() {
-  await doList(false)
+  try {
+    await doList(false)
+  } catch (e) {
+    console.error('search failed', e)
+    listError.value = (e as any)?.message || 'Failed to search'
+  }
 }
 function resetList() {
-  error.value = ''
+  listError.value = ''
   nextKey.value = undefined
   total.value = undefined
   entries.value = []
+}
+
+function goToPage(p: number) {
+  const pageNum = Number(p)
+  const n = limitNum.value
+  if (!Number.isFinite(pageNum) || pageNum < 1 || !n) return
+  offset.value = String((pageNum - 1) * n)
+  void search()
+}
+
+function prevPage() {
+  if (currentPage.value > 1) goToPage(currentPage.value - 1)
+}
+
+function nextPage() {
+  const n = limitNum.value
+  const t = totalNum.value
+  if (!n || !t) return
+  const maxPage = Math.max(1, Math.ceil(t / n))
+  if (currentPage.value < maxPage) goToPage(currentPage.value + 1)
+}
+
+function select(e: StorageRow) {
+  selected.value = e
+  editIndex.value = e.index
+  void fetchFull(e.owner, e.index)
+}
+
+async function fetchFull(owner: string, index: string) {
+  editError.value = ''
+  fullData.value = ''
+  isFetchingFull.value = true
+  try {
+    const { data } = await api.get(
+      `/dysonprotocol/storage/v1/storage_get?${new URLSearchParams({ owner, index })}`
+    )
+    fullData.value = String(data?.entry?.data || '')
+    // Ensure resize after programmatic content update
+    triggerResize()
+  } catch (e) {
+    editError.value = (e as any)?.message || 'Failed to fetch full data'
+  } finally {
+    isFetchingFull.value = false
+  }
+}
+
+// removed onEditTabClick: always edit mode
+
+async function saveEdit() {
+  editError.value = ''
+  if (!editIndex.value.trim()) return
+  try {
+    await useAxiosRepo(Storage)
+      .api()
+      .storageSet({
+        owner: props.address,
+        index: editIndex.value,
+        data: fullData.value,
+        wallet: { sendMsg: wallet.sendMsg },
+        gasLimit: 'auto',
+        grantee:
+          isAuthz.value && selectedGranteeAddress.value ? selectedGranteeAddress.value : undefined,
+      })
+    await search()
+  } catch (e) {
+    console.error('saveEdit storageSet failed', e)
+    editError.value = (e as any)?.message || 'Failed to save storage'
+    throw e
+  }
 }
 
 // Set/Delete
@@ -199,23 +418,64 @@ async function submitSet() {
 }
 
 async function submitDelete() {
-  error.value = ''
+  deleteError.value = ''
   if (!canDelete.value) return
   const indexes = deleteIndexes.value
     .split(',')
     .map((s) => s.trim())
     .filter((s) => s)
   if (indexes.length === 0) return
-  await useAxiosRepo(Storage)
-    .api()
-    .storageDelete({
-      owner: props.address,
-      indexes,
-      wallet: { sendMsg: wallet.sendMsg },
-      gasLimit: 'auto',
-    })
+  try {
+    await useAxiosRepo(Storage)
+      .api()
+      .storageDelete({
+        owner: props.address,
+        indexes,
+        wallet: { sendMsg: wallet.sendMsg },
+        gasLimit: 'auto',
+      })
+  } catch (e) {
+    console.error('delete failed', e)
+    deleteError.value = (e as any)?.message || 'Failed to delete indexes'
+    return
+  }
   deleteIndexes.value = ''
   await search()
+}
+
+// Authz selection state
+const selectedExecutor = ref('')
+const selectedGranteeAddress = ref('')
+const isAuthz = ref(false)
+const authzNotes = ref('')
+const selectedGrant = ref<any>(null)
+
+// Filter for storage set msg
+function msgTypeFilter(grant: any) {
+  const auth = grant?.authorization
+  if (!auth?.['@type']) return { valid: false, notes: 'No authorization' }
+  if (grant?.granter !== props.address) return { valid: false, notes: 'Different granter' }
+  if (auth['@type'] === '/cosmos.authz.v1beta1.GenericAuthorization') {
+    const ok = auth.msg === '/dysonprotocol.storage.v1.MsgStorageSet'
+    return { valid: ok, notes: ok ? 'Generic MsgStorageSet' : 'Wrong msg' }
+  }
+  return { valid: false, notes: 'Unsupported authz type' }
+}
+
+function onExecutorAddress(addr: string) {
+  selectedExecutor.value = addr || ''
+}
+function onGranteeAddress(addr: string | null) {
+  selectedGranteeAddress.value = addr || ''
+}
+function onIsAuthz(v: boolean) {
+  isAuthz.value = !!v
+}
+function onAuthzNotes(n: string) {
+  authzNotes.value = n || ''
+}
+function onSelectedGrant(g: any) {
+  selectedGrant.value = g || null
 }
 
 interface StorageRow {
@@ -230,3 +490,13 @@ interface StorageRow {
 // Expose retained logic for future integration
 defineExpose({ submitSet })
 </script>
+
+<style scoped>
+.autosize-textarea {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.autosize-textarea::-webkit-scrollbar {
+  display: none;
+}
+</style>

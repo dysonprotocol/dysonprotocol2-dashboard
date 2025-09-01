@@ -9,6 +9,7 @@ import GovVote from '@/orm/models/gov/Vote'
 import DenomMetadata from '@/orm/models/bank/DenomMetadata'
 import { useWallet } from '@/composables/useWallet'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
+import { Badge } from '@/components/ui/badge'
 
 const api = useAxiosRepo(GovProposal).api()
 const repo = useRepo(GovProposal)
@@ -268,16 +269,18 @@ async function refreshVotes() {
   await Promise.allSettled(tasks)
 }
 
-function voteBadgeClass(proposalId: string | number, address: string) {
+function voteBadgeVariant(
+  proposalId: string | number,
+  address: string
+): 'default' | 'secondary' | 'destructive' | 'outline' {
   const pid = String(proposalId)
   const status = votesByProposalAndAddress.value?.[pid]?.[address]
-  if (status === 'yes') return 'badge-success badge-soft'
-  if (status === 'no') return 'badge-error badge-soft'
-  if (status === 'abstain') return 'badge-info badge-soft'
-  if (status === 'veto') return 'badge-error'
-  if (status === 'loading') return 'badge-ghost'
-  // black badge for missing/neutral
-  return ''
+  if (status === 'yes') return 'default'
+  if (status === 'no') return 'destructive'
+  if (status === 'abstain') return 'secondary'
+  if (status === 'veto') return 'destructive'
+  if (status === 'loading') return 'outline'
+  return 'outline'
 }
 
 function walletNameForAddress(address: string) {
@@ -525,20 +528,20 @@ onMounted(async () => {
             #{{ p.id }} — {{ p.title || 'Untitled' }}
           </RouterLink>
           <div class="text-xs opacity-70 truncate" v-if="p.summary">{{ p.summary }}</div>
-          <div class="flex items-center gap-2 justify-start">
-            <span
+          <div class="">
+            <Badge
               v-for="w in unlockedWallets"
               :key="w.address"
-              class="badge text-xs"
-              :class="voteBadgeClass(p.id, w.address)"
+              :variant="voteBadgeVariant(p.id, w.address)"
               :title="w.address"
+              class="text-xs"
             >
               {{ voteBadgeLabel(p.id, w.address) }}
-            </span>
+            </Badge>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <span class="badge badge-outline text-xs">{{ p.status }}</span>
+          <Badge variant="outline" class="text-xs">{{ p.status }}</Badge>
         </div>
       </div>
     </div>

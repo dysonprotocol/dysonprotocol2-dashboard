@@ -50,39 +50,37 @@ const val = computed(() => repo.find(valAddress.value) as ValidatorRecord | null
             <tr>
               <th>Operator Address</th>
               <td class="break-all">
-                <code class="text-xs">{{ val.operator_address }}</code>
+                <code class="">{{ val.operator_address }}</code>
               </td>
             </tr>
             <tr>
               <th>Status</th>
               <td>
-                <span class="badge badge-ghost badge-sm">{{ val.status }}</span>
+                <span class="">{{ val.status }}</span>
               </td>
             </tr>
             <tr>
               <th>Jailed</th>
               <td>
-                <span :class="['badge', 'badge-sm', val.jailed ? 'badge-error' : 'badge-success']">
-                  {{ val.jailed ? 'Yes' : 'No' }}
-                </span>
+                {{ val.jailed ? 'Yes' : 'No' }}
               </td>
             </tr>
             <tr>
               <th>Tokens</th>
               <td>
-                <code class="text-xs">{{ val.tokens || '0' }}</code>
+                <code class="">{{ val.tokens || '0' }}</code>
               </td>
             </tr>
             <tr>
               <th>Delegator Shares</th>
               <td>
-                <code class="text-xs">{{ val.delegator_shares || '0' }}</code>
+                <code class="">{{ val.delegator_shares || '0' }}</code>
               </td>
             </tr>
             <tr>
               <th>Min Self Delegation</th>
               <td>
-                <code class="text-xs">{{ val.min_self_delegation || '0' }}</code>
+                <code class="">{{ val.min_self_delegation || '0' }}</code>
               </td>
             </tr>
             <tr>
