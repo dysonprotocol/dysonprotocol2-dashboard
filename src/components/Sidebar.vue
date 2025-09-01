@@ -19,7 +19,7 @@
             <router-link to="/txs" class="w-full justify-start"> Transactions </router-link>
             <router-link to="/validators" class="w-full justify-start"> Validators </router-link>
             <router-link to="/gov" class="w-full justify-start"> Governance </router-link>
-            <router-link to="/tasks" class="w-full justify-start"> Tasks </router-link>
+            <router-link to="/tasks" class="w-full justify-start"> Crontasks </router-link>
           </nav>
         </div>
       </div>

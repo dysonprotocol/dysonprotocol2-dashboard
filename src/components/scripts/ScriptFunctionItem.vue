@@ -1,203 +1,149 @@
 <template>
-  <div class="collapse collapse-arrow border border-primary/20 bg-base-100">
-    <input
-      type="checkbox"
-      :checked="isOpen"
-      @change="toggle"
-    >
-    <div class="collapse-title">
-      <span class="font-semibold font-mono text-sm">{{
-        func.signature || func.function_name
-      }}</span>
-      <pre
-        class="text-sm whitespace-pre-wrap"
-        :class="{ 'line-clamp-3': !isOpen }"
-      >{{
-        func.docstring
-      }}</pre>
-    </div>
-    <div class="collapse-content">
-      <div v-if="hasParameters">
-        <label class="block text-sm font-medium mb-2">Parameters:</label>
-        <textarea
-          ref="textareaRef"
-          v-model="kwargsInput"
-          class="textarea textarea-bordered w-full text-sm font-mono resize-y"
-          :placeholder="placeholder"
-        />
-        <div
-          v-if="jsonError"
-          class="text-error text-xs mt-1"
-        >
-          {{ jsonError }}
-        </div>
-      </div>
-      <div
-        v-else
-        class="text-center py-4 text-base-content/60 text-sm"
-      >
-        {{ noParamsMessage }}
-      </div>
-
-      <!-- Optional: attach a coin transfer to this call -->
-      <div class="mt-3">
-        <label class="label cursor-pointer justify-start gap-2 text-sm">
-          <input
-            v-model="attachSend"
-            type="checkbox"
-            class="checkbox checkbox-sm"
-          >
-          <span>Attach coin transfer (bank MsgSend)</span>
-        </label>
-        <div
-          v-if="attachSend"
-          class="mt-2"
-        >
-          <AmountDenomSelector
-            :disabled="isSimulating || isExecuting"
-            @update:base="onSendBaseUpdate"
-          />
-          <div class="text-xs opacity-70 mt-1">
-            From
-            <span class="font-mono text-xs font-bold">
-              <AddressDisplay
-                :address="selectedExecutor"
-                :truncate="5"
-              />
-            </span>
-            to
-            <span class="font-mono text-xs font-bold">
-              <AddressDisplay
-                :address="address"
-                :truncate="5"
-              />
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Error Display -->
-      <div
-        v-if="errorText"
-        class="mt-4 break-all"
-      >
-        <div class="font-medium text-error">
-          {{ errorHeader }}:
-        </div>
-        <div class="mt-2">
-          <pre class="text-xs mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words">{{
-            errorText
-          }}</pre>
-          <div
-            v-if="exception"
-            class="mt-2 text-xs"
-          >
-            <button
-              class="link link-error"
-              @click="goToException"
-            >
-              Go to line {{ exception.lineno }}:{{ exception.col_offset }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Success Display -->
-      <div
-        v-if="result"
-        class="mt-2 break-all"
-      >
-        <div class="text-sm font-medium text-success">
-          {{ result.simulate ? 'Simulation' : 'Execution' }} Successful
-        </div>
-        <div>
-          <div
-            v-if="result.result !== null"
-            class="mt-2"
-          >
-            <div class="font-medium text-xs opacity-80">
-              Result:
-            </div>
-            <pre class="text-xs mt-1 max-h-64 overflow-x-auto wrap-anywhere">{{
-              formatResult(result.result)
+  <Card class="border-primary/20">
+    <Accordion class="px-6" type="single" collapsible v-model="accordionValue">
+      <AccordionItem :value="storageKey">
+        <AccordionTrigger>
+          <div class="flex-1 text-left">
+            <span class="font-semibold font-mono text-sm">{{
+              func.signature || func.function_name
+            }}</span>
+            <pre class="text-sm whitespace-pre-wrap" :class="{ 'line-clamp-3': !isOpen }">{{
+              func.docstring
             }}</pre>
           </div>
-          <div
-            v-if="result.stdout"
-            class="mt-2"
-          >
-            <div class="font-medium text-xs opacity-80">
-              Output:
+        </AccordionTrigger>
+        <AccordionContent>
+          <div class="pt-2">
+            <div v-if="hasParameters">
+              <label class="block text-sm font-medium mb-2">Parameters:</label>
+              <textarea
+                ref="textareaRef"
+                v-model="kwargsInput"
+                class="textarea textarea-bordered w-full text-sm font-mono resize-y"
+                :placeholder="placeholder"
+              />
+              <div v-if="jsonError" class="text-error text-xs mt-1">
+                {{ jsonError }}
+              </div>
             </div>
-            <pre class="text-xs mt-1 max-h-32 overflow-x-auto">{{ result.stdout }}</pre>
-          </div>
-          <div class="mt-2 text-xs opacity-80 flex gap-4">
-            <span>Gas: {{ formatNumber(result.gasConsumed) }}</span>
-            <span>Nodes: {{ formatNumber(result.nodesExecuted) }}</span>
-          </div>
-          <div
-            v-if="!result.simulate && result.txHash"
-            class="mt-2"
-          >
-            <div class="font-medium text-xs opacity-80">
-              Transaction:
+            <div v-else class="text-center py-4 text-base-content/60 text-sm">
+              {{ noParamsMessage }}
             </div>
-            <div class="text-xs mt-1">
-              <div>
-                Hash:
-                <TxHashDisplay
-                  :hash="result.txHash"
-                  :truncate="8"
+
+            <!-- Optional: attach a coin transfer to this call -->
+            <div class="mt-3">
+              <div class="flex items-center gap-2 text-sm">
+                <Checkbox id="attach-send" v-model:checked="attachSend" />
+                <label for="attach-send" class="cursor-pointer select-none"
+                  >Attach coin transfer (bank MsgSend)</label
+                >
+              </div>
+              <div v-if="attachSend" class="mt-2">
+                <AmountDenomSelector
+                  :disabled="isSimulating || isExecuting"
+                  @update:base="onSendBaseUpdate"
                 />
-              </div>
-              <div v-if="result.blockHeight">
-                Block: {{ result.blockHeight }}
+                <div class="text-xs opacity-70 mt-1">
+                  From
+                  <span class="font-mono text-xs font-bold">
+                    <AddressDisplay :address="selectedExecutor" :truncate="5" />
+                  </span>
+                  to
+                  <span class="font-mono text-xs font-bold">
+                    <AddressDisplay :address="address" :truncate="5" />
+                  </span>
+                </div>
               </div>
             </div>
+
+            <!-- Error Display -->
+            <div
+              v-if="errorText"
+              class="mt-4 break-all rounded-md border border-destructive/30 bg-destructive/10 p-3"
+            >
+              <div class="font-medium text-destructive">{{ errorHeader }}:</div>
+              <div class="mt-2">
+                <pre class="text-xs mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words">{{
+                  errorText
+                }}</pre>
+                <div v-if="exception" class="mt-2 text-xs">
+                  <Button variant="link" class="p-0 h-auto" @click="goToException">
+                    Go to line {{ exception.lineno }}:{{ exception.col_offset }}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Success Display -->
+            <div v-if="result" class="mt-2 break-all rounded-md border p-3">
+              <div class="text-sm font-medium">
+                <Badge variant="secondary"
+                  >{{ result.simulate ? 'Simulation' : 'Execution' }} Successful</Badge
+                >
+              </div>
+              <div>
+                <div v-if="result.result !== null" class="mt-2">
+                  <div class="font-medium text-xs opacity-80">Result:</div>
+                  <pre class="text-xs mt-1 max-h-64 overflow-x-auto wrap-anywhere">{{
+                    formatResult(result.result)
+                  }}</pre>
+                </div>
+                <div v-if="result.stdout" class="mt-2">
+                  <div class="font-medium text-xs opacity-80">Output:</div>
+                  <pre class="text-xs mt-1 max-h-32 overflow-x-auto">{{ result.stdout }}</pre>
+                </div>
+                <div class="mt-2 text-xs opacity-80 flex gap-4">
+                  <span>Gas: {{ formatNumber(result.gasConsumed) }}</span>
+                  <span>Nodes: {{ formatNumber(result.nodesExecuted) }}</span>
+                </div>
+                <div v-if="!result.simulate && result.txHash" class="mt-2">
+                  <div class="font-medium text-xs opacity-80">Transaction:</div>
+                  <div class="text-xs mt-1">
+                    <div>
+                      Hash:
+                      <TxHashDisplay :hash="result.txHash" :truncate="8" />
+                    </div>
+                    <div v-if="result.blockHeight">Block: {{ result.blockHeight }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-4 flex justify-end items-center gap-2">
+              <WalletSelector
+                v-model="selectedExecutor"
+                :show-locked="true"
+                :default-address="selectedExecutor"
+                :default-grantee="selectedGranteeAddress"
+                :button-class="'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 disabled:pointer-events-none disabled:opacity-50'"
+                :msg-type-filter="msgTypeFilter"
+                @update:executor-address="onExecutorAddress"
+                @update:grantee-address="onGranteeAddress"
+                @update:is-authz="onIsAuthz"
+                @update:authz-notes="onAuthzNotes"
+                @update:selected-grant="onSelectedGrant"
+              />
+              <Button :disabled="isExecuting || !!jsonError || hasUnsavedChanges" @click="execute">
+                {{ isExecuting ? 'Sending...' : 'Tx' }}
+              </Button>
+              <Button
+                variant="secondary"
+                :disabled="isSimulating || !!jsonError || hasUnsavedChanges"
+                @click="simulate"
+              >
+                {{ isSimulating ? 'Simulating...' : 'Simulate' }}
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="mt-4 flex justify-end">
-        <div class="join">
-          <WalletSelector
-            v-model="selectedExecutor"
-            :show-locked="true"
-            :default-address="selectedExecutor"
-            :default-grantee="selectedGranteeAddress"
-            :button-class="'btn-primary join-item'"
-            :msg-type-filter="msgTypeFilter"
-            @update:executor-address="onExecutorAddress"
-            @update:grantee-address="onGranteeAddress"
-            @update:is-authz="onIsAuthz"
-            @update:authz-notes="onAuthzNotes"
-            @update:selected-grant="onSelectedGrant"
-          />
-
-          <button
-            class="btn btn-primary join-item"
-            :disabled="isExecuting || !!jsonError || hasUnsavedChanges"
-            @click="execute"
-          >
-            {{ isExecuting ? 'Sending...' : 'Tx' }}
-          </button>
-          <button
-            class="btn join-item"
-            :disabled="isSimulating || !!jsonError || hasUnsavedChanges"
-            @click="simulate"
-          >
-            {{ isSimulating ? 'Simulating...' : 'Simulate' }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  </Card>
 </template>
 
 <script setup>
-import { computed, ref, watch, nextTick, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, ref, watch } from 'vue'
 import { useGoToException } from '@/composables/useGoToException'
 import { useStorage } from '@vueuse/core'
 import { useAxiosRepo } from '@pinia-orm/axios'
@@ -206,6 +152,16 @@ import WalletSelector from '@/components/shared/WalletSelector.vue'
 import TxHashDisplay from '@/components/TxHashDisplay.vue'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
 import AddressDisplay from '@/components/AddressDisplay.vue'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 
 const props = defineProps({
   address: { type: String, required: true },
@@ -214,15 +170,17 @@ const props = defineProps({
 })
 const emit = defineEmits(['function-executed', 'focus-code'])
 
-const route = useRoute()
-const router = useRouter()
 const { goToException: goTo } = useGoToException()
 
 // Open state per address+fn
 const openStates = useStorage('script-function-open-states', {})
 const storageKey = computed(() => `${props.address}_${props.func.function_name}`)
 const isOpen = computed(() => openStates.value[storageKey.value] ?? false)
-const toggle = () => (openStates.value[storageKey.value] = !isOpen.value)
+
+const accordionValue = computed({
+  get: () => (isOpen.value ? storageKey.value : ''),
+  set: (v) => (openStates.value[storageKey.value] = v === storageKey.value),
+})
 
 // Per-function executor/grantee persistence
 const functionExecutors = useStorage('script-function-executors', {})
@@ -273,6 +231,8 @@ function onSendBaseUpdate(v) {
   sendBaseDenom.value = String(v?.denom || '')
 }
 
+// v-model handles attachSend; no explicit handler needed
+
 function buildKwargsPlaceholder(f) {
   const parameters = f.parameters
   if (!parameters || parameters.length === 0) return '{}'
@@ -312,7 +272,8 @@ function validateJson(v) {
   try {
     JSON.parse(v || '{}')
     jsonError.value = ''
-  } catch {
+  } catch (e) {
+    console.error('Invalid JSON for kwargsInput', e)
     jsonError.value = 'Invalid JSON format'
   }
 }
