@@ -30,32 +30,6 @@
               {{ noParamsMessage }}
             </div>
 
-            <!-- Optional: attach a coin transfer to this call -->
-            <div class="mt-3">
-              <div class="flex items-center gap-2 text-sm">
-                <Checkbox id="attach-send" v-model:checked="attachSend" />
-                <label for="attach-send" class="cursor-pointer select-none"
-                  >Attach coin transfer (bank MsgSend)</label
-                >
-              </div>
-              <div v-if="attachSend" class="mt-2">
-                <AmountDenomSelector
-                  :disabled="isSimulating || isExecuting"
-                  @update:base="onSendBaseUpdate"
-                />
-                <div class="text-xs opacity-70 mt-1">
-                  From
-                  <span class="font-mono text-xs font-bold">
-                    <AddressDisplay :address="selectedExecutor" :truncate="5" />
-                  </span>
-                  to
-                  <span class="font-mono text-xs font-bold">
-                    <AddressDisplay :address="address" :truncate="5" />
-                  </span>
-                </div>
-              </div>
-            </div>
-
             <!-- Error Display -->
             <div
               v-if="errorText"
@@ -124,16 +98,63 @@
                 @update:authz-notes="onAuthzNotes"
                 @update:selected-grant="onSelectedGrant"
               />
-              <Button :disabled="isExecuting || !!jsonError || hasUnsavedChanges" @click="execute">
+              <Button
+                :disabled="
+                  isExecuting ||
+                  !!jsonError ||
+                  hasUnsavedChanges ||
+                  (attachSend && !!sendValidationError)
+                "
+                @click="execute"
+              >
                 {{ isExecuting ? 'Sending...' : 'Tx' }}
               </Button>
               <Button
                 variant="secondary"
-                :disabled="isSimulating || !!jsonError || hasUnsavedChanges"
+                :disabled="
+                  isSimulating ||
+                  !!jsonError ||
+                  hasUnsavedChanges ||
+                  (attachSend && !!sendValidationError)
+                "
                 @click="simulate"
               >
                 {{ isSimulating ? 'Simulating...' : 'Simulate' }}
               </Button>
+            </div>
+
+            <!-- Optional: attach a coin transfer to this call -->
+            <div class="mt-3">
+              <div class="flex items-center gap-2 text-sm">
+                <Checkbox
+                  id="attach-send"
+                  v-model:checked="attachSend"
+                  @click.stop="attachSend = !attachSend"
+                />
+                <label for="attach-send" class="cursor-pointer select-none">
+                  Attach coins (bank MsgSend)
+                </label>
+              </div>
+              <div v-if="attachSend" class="mt-2">
+                <AmountDenomSelector
+                  :disabled="isSimulating || isExecuting"
+                  :base-denoms="ownedBaseDenoms"
+                  @update:base="onSendBaseUpdate"
+                />
+                <div v-if="sendValidationError" class="text-error text-xs mt-1">
+                  {{ sendValidationError }}
+                </div>
+                <div class="text-xs opacity-70 mt-1">
+                  From
+                  <span class="font-mono text-xs font-bold">
+                    <AddressDisplay :address="selectedExecutor" :truncate="5" />
+                  </span>
+                  to
+                  <span class="font-mono text-xs font-bold">
+                    <AddressDisplay :address="address" :truncate="5" />
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </AccordionContent>
@@ -144,10 +165,13 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useRepo } from 'pinia-orm'
 import { useGoToException } from '@/composables/useGoToException'
 import { useStorage } from '@vueuse/core'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import Script from '@/orm/models/script/Script'
+import SpendableBalance from '@/orm/models/bank/SpendableBalance'
+import DenomMetadata from '@/orm/models/bank/DenomMetadata'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
 import TxHashDisplay from '@/components/TxHashDisplay.vue'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
@@ -226,12 +250,51 @@ const attachSend = ref(false)
 const sendBaseAmount = ref('')
 const sendBaseDenom = ref('')
 
+// Spendable balances for selected executor
+const spendableRepo = useRepo(SpendableBalance)
+const spendables = computed(() =>
+  selectedExecutor.value ? spendableRepo.where('address', selectedExecutor.value).get() : []
+)
+const spendableMap = computed(() => {
+  const m = new Map()
+  for (const s of spendables.value) m.set(s.denom, s.amount)
+  return m
+})
+const ownedBaseDenoms = computed(() =>
+  Array.from(spendableMap.value.entries())
+    .filter(([, amount]) => /^\d+$/.test(String(amount)) && String(amount) !== '0')
+    .map(([denom]) => denom)
+)
+
+const sendValidationError = computed(() => {
+  if (!attachSend.value) return ''
+  const denom = String(sendBaseDenom.value || '').trim()
+  const amt = String(sendBaseAmount.value || '').trim()
+  if (!denom || !amt) return ''
+  if (!/^\d+$/.test(amt)) return 'Amount must be an integer in base units'
+  if (amt === '0') return 'Amount must be greater than 0'
+  const bal = spendableMap.value.get(denom) || '0'
+  if (BigInt(amt) > BigInt(bal)) {
+    const entered = DenomMetadata.normalize({ amount: amt, denom }).display
+    const spendable = DenomMetadata.normalize({ amount: bal, denom }).display
+    return `Insufficient funds. Spendable: ${spendable.amount} ${spendable.denom}. Entered: ${entered.amount} ${entered.denom}`
+  }
+  return ''
+})
+
 function onSendBaseUpdate(v) {
   sendBaseAmount.value = String(v?.amount || '')
   sendBaseDenom.value = String(v?.denom || '')
 }
 
-// v-model handles attachSend; no explicit handler needed
+watch(
+  selectedExecutor,
+  async (addr) => {
+    if (!addr) return
+    await useAxiosRepo(SpendableBalance).api().fetchAll(addr)
+  },
+  { immediate: true }
+)
 
 function buildKwargsPlaceholder(f) {
   const parameters = f.parameters
@@ -292,6 +355,7 @@ function formatNumber(num) {
 
 async function run(simulate) {
   if (jsonError.value) return
+  if (attachSend.value && sendValidationError.value) return
   errorText.value = ''
   result.value = null
   context.value = null
@@ -302,7 +366,7 @@ async function run(simulate) {
     const attached = []
     const amt = sendBaseAmount.value.trim()
     const denom = sendBaseDenom.value.trim()
-    if (attachSend.value && amt !== '' && denom !== '' && Number(amt) > 0) {
+    if (attachSend.value && /^\d+$/.test(amt) && denom !== '' && amt !== '0') {
       const msgSend = {
         '@type': '/cosmos.bank.v1beta1.MsgSend',
         from_address: selectedExecutor.value,

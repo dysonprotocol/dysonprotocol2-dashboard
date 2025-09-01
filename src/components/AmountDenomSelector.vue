@@ -1,34 +1,41 @@
 <template>
-  <div class="join w-full">
-    <input
+  <div class="w-full flex flex-col sm:flex-row gap-2">
+    <Input
+      id="amount"
       :value="amountDisplay"
       type="number"
+      inputmode="decimal"
       min="0"
       step="0.000001"
       placeholder="Amount"
-      class="input input-md join-item"
+      class="w-full"
       :disabled="disabled"
       @input="onAmountInput"
-    >
-    <select
-      v-model="selectedBaseDenom"
-      class="select select-md join-item"
-      :disabled="disabled || options.length === 0"
-    >
-      <option
-        v-for="opt in options"
-        :key="opt.base"
-        :value="opt.base"
-      >
-        {{ opt.display }}
-      </option>
-    </select>
+    />
+    <Select v-model="selectedBaseDenom" :disabled="disabled || options.length === 0">
+      <SelectTrigger class="w-full sm:w-48">
+        <SelectValue placeholder="Denom" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem v-for="opt in options" :key="opt.base" :value="opt.base">
+          {{ opt.display }}
+        </SelectItem>
+      </SelectContent>
+    </Select>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useWallet } from '@/composables/useWallet'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from '@/components/ui/select'
 
 const props = defineProps({
   baseDenoms: { type: Array, default: () => [] },
