@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import LatestBlock from '@/orm/models/base/TendermintService'
@@ -15,7 +16,16 @@ const blockRepo = useRepo(LatestBlock)
 const tmRepo = useRepo(TendermintBlock)
 const txBlockRepo = useRepo(TxBlock)
 
-const currentPage = ref(1)
+const route = useRoute()
+const router = useRouter()
+
+function parsePage(value: unknown): number {
+  const n = Number(value)
+  if (!Number.isFinite(n) || n < 1) return 1
+  return Math.floor(n)
+}
+
+const currentPage = computed(() => parsePage(route.query.page as string))
 const isLoading = ref(false)
 const hasError = ref(false)
 const errorMessage = ref('')
@@ -27,29 +37,19 @@ const SQUARES_PER_ROW = 10
 const ROWS_PER_PAGE = 10
 const totalSquaresPerPage = computed(() => SQUARES_PER_ROW * ROWS_PER_PAGE)
 
-// Keep newest block in the top row, snap to modulo 10 to avoid shifting
-const targetTop = computed(() => {
-  const h = latestHeight.value || 0
-  if (h <= 0) return 0
-  const rounded = Math.ceil(h / SQUARES_PER_ROW) * SQUARES_PER_ROW
-  return rounded
-})
-
 const maxPage = computed(() => {
-  const total = targetTop.value
+  const h = latestHeight.value || 0
   const per = totalSquaresPerPage.value || 1
-  return Math.max(1, Math.ceil(total / per))
+  return Math.max(1, Math.ceil(h / per))
 })
 
 const gridHeights = computed(() => {
-  const top = targetTop.value
-  const start = top - (currentPage.value - 1) * totalSquaresPerPage.value
+  const per = totalSquaresPerPage.value
+  const end = currentPage.value * per
+  const start = end - per + 1
+  const startClamped = Math.max(1, start)
   const heights: number[] = []
-  for (let i = 0; i < totalSquaresPerPage.value; i++) {
-    const h = start - i
-    if (h <= 0) break
-    heights.push(h)
-  }
+  for (let h = end; h >= startClamped; h--) heights.push(h)
   return heights
 })
 
@@ -110,23 +110,45 @@ async function loadPage() {
   }
 }
 
-async function nextPage() {
-  if (currentPage.value < maxPage.value) {
-    currentPage.value += 1
-    await loadPage()
-  }
-}
+const isPrevDisabled = computed(() => currentPage.value <= 1 || isLoading.value)
+const isNextDisabled = computed(() => isLoading.value || currentPage.value >= maxPage.value)
+const isCurrentDisabled = computed(() => isLoading.value || currentPage.value >= maxPage.value)
 
-async function prevPage() {
-  if (currentPage.value <= 1) return
-  currentPage.value -= 1
-  await loadPage()
+const prevTo = computed(() => ({
+  query: { ...route.query, page: String(Math.max(1, currentPage.value - 1)) },
+}))
+
+const nextTo = computed(() => ({
+  query: { ...route.query, page: String(Math.min(maxPage.value, currentPage.value + 1)) },
+}))
+
+const currentTo = computed(() => ({
+  query: { ...route.query, page: String(maxPage.value) },
+}))
+
+async function ensurePageInQuery() {
+  const hasPage = typeof route.query.page !== 'undefined'
+  if (hasPage) return
+  await blockApi.fetch()
+  latestHeight.value = getLatestHeightFromRepo()
+  const per = totalSquaresPerPage.value || 1
+  const defaultPage = Math.max(1, Math.ceil((latestHeight.value || 0) / per))
+  router.replace({ query: { ...route.query, page: String(defaultPage) } })
 }
 
 // no timestamp formatting needed for square grid
 
-onMounted(() => {
-  loadPage()
+watch(
+  () => route.query.page,
+  () => {
+    // react to URL page changes and load data for that fixed window
+    loadPage()
+  }
+)
+
+onMounted(async () => {
+  await ensurePageInQuery()
+  if (route.query.page) await loadPage()
 })
 </script>
 
@@ -138,17 +160,15 @@ onMounted(() => {
           <CardTitle>Recent Blocks</CardTitle>
           <div class="flex items-center gap-2">
             <div class="text-sm text-muted-foreground">Page {{ currentPage }} / {{ maxPage }}</div>
-            <Button
-              size="sm"
-              variant="outline"
-              :disabled="currentPage <= 1 || isLoading"
-              @click="prevPage"
-            >
-              Prev
-            </Button>
-            <Button size="sm" :disabled="isLoading || currentPage >= maxPage" @click="nextPage">
-              Next
-            </Button>
+            <RouterLink :to="prevTo" class="inline-block">
+              <Button size="sm" variant="outline" :disabled="isPrevDisabled">Prev</Button>
+            </RouterLink>
+            <RouterLink :to="nextTo" class="inline-block">
+              <Button size="sm" :disabled="isNextDisabled">Next</Button>
+            </RouterLink>
+            <RouterLink :to="currentTo" class="inline-block">
+              <Button size="sm" :disabled="isCurrentDisabled">Current</Button>
+            </RouterLink>
           </div>
         </div>
       </CardHeader>
@@ -171,7 +191,7 @@ onMounted(() => {
                   ? 'pointer-events-none border-muted-foreground/20 text-muted-foreground/40 bg-muted'
                   : 'border-muted-foreground/40',
                 !b.isFuture && b.txCountSafe > 0
-                  ? ' text-foreground'
+                  ? ' text-foreground bg-success/20'
                   : !b.isFuture
                     ? b.minuteEven
                       ? 'border-primary/20'

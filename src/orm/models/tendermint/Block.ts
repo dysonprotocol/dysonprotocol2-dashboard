@@ -30,14 +30,13 @@ export class TendermintBlock extends Model {
           const qs = new URLSearchParams()
           if (opts?.pageKey) qs.set('pagination.key', opts.pageKey)
           if (opts?.limit) qs.set('pagination.limit', opts.limit)
-          
+
           // Use different endpoint for "latest"
-          const basePath = h === 'latest' 
-            ? '/cosmos/base/tendermint/v1beta1/blocks/latest'
-            : `/cosmos/tx/v1beta1/txs/block/${h}`
-          const path = qs.toString() && h !== 'latest'
-            ? `${basePath}?${qs.toString()}`
-            : basePath
+          const basePath =
+            h === 'latest'
+              ? '/cosmos/base/tendermint/v1beta1/blocks/latest'
+              : `/cosmos/tx/v1beta1/txs/block/${h}`
+          const path = qs.toString() && h !== 'latest' ? `${basePath}?${qs.toString()}` : basePath
 
           return this.get(path, {
             dataTransformer: ({
