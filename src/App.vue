@@ -18,6 +18,7 @@
       <label id="layout-sidebar-backdrop" for="layout-sidebar-toggle-trigger" />
     </div>
     <GlobalTransactionDialog />
+    <Toaster />
   </div>
 </template>
 
@@ -27,11 +28,15 @@ import Sidebar from './components/Sidebar.vue'
 import Topbar from './components/Topbar.vue'
 import { useWallet } from './composables/useWallet'
 import GlobalTransactionDialog from '@/components/shared/GlobalTransactionDialog.vue'
+import { Toaster } from '@/components/ui/sonner'
+import { useTxToasts } from '@/composables/useTxToasts'
 
 const { init, cleanup } = useWallet()
 
 onMounted(() => {
   init()
+  // Activate txHistory → toast bridge once at app root
+  useTxToasts()
 })
 
 onBeforeUnmount(() => {
