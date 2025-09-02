@@ -12,6 +12,6 @@
 <script setup lang="ts">
 import ScriptFunctionItem from './ScriptFunctionItem.vue'
 
-const props = defineProps<{ functions: any[]; address: string; hasUnsavedChanges?: boolean }>()
-const emit = defineEmits(['focus-code'])
+defineProps<{ functions: any[]; address: string; hasUnsavedChanges?: boolean }>()
+defineEmits(['focus-code'])
 </script>

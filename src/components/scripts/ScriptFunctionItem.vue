@@ -1,166 +1,169 @@
 <template>
-  <Card class="border-primary/20">
-    <Accordion class="px-6" type="single" collapsible v-model="accordionValue">
-      <AccordionItem :value="storageKey">
-        <AccordionTrigger>
-          <div class="flex-1 text-left">
-            <span class="font-semibold font-mono text-sm">{{
-              func.signature || func.function_name
-            }}</span>
-            <pre class="text-sm whitespace-pre-wrap" :class="{ 'line-clamp-3': !isOpen }">{{
-              func.docstring
-            }}</pre>
+  <Accordion
+    type="single"
+    collapsible
+    v-model="accordionValue"
+    class="border-b hover:bg-gray-500/10"
+  >
+    <AccordionItem :value="storageKey">
+      <AccordionTrigger>
+        <div class="flex-1 text-left">
+          <span class="font-semibold font-mono text-sm">{{
+            func.signature || func.function_name
+          }}</span>
+          <pre class="text-sm whitespace-pre-wrap" :class="{ 'line-clamp-3': !isOpen }">{{
+            func.docstring
+          }}</pre>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent>
+        <div class="pt-2">
+          <div v-if="hasParameters">
+            <label class="block font-medium mb-2">Parameters:</label>
+            <Textarea
+              ref="textareaRef"
+              v-model="kwargsInput"
+              class="font-mono resize-y"
+              :placeholder="placeholder"
+            />
+            <div v-if="jsonError" class="text-destructive mt-1">
+              {{ jsonError }}
+            </div>
           </div>
-        </AccordionTrigger>
-        <AccordionContent>
-          <div class="pt-2">
-            <div v-if="hasParameters">
-              <label class="block text-sm font-medium mb-2">Parameters:</label>
-              <textarea
-                ref="textareaRef"
-                v-model="kwargsInput"
-                class="textarea textarea-bordered w-full text-sm font-mono resize-y"
-                :placeholder="placeholder"
-              />
-              <div v-if="jsonError" class="text-error text-xs mt-1">
-                {{ jsonError }}
+          <div v-else class="text-center py-4 text-muted-foreground">
+            {{ noParamsMessage }}
+          </div>
+
+          <!-- Error Display -->
+          <div
+            v-if="errorText"
+            class="mt-4 break-all rounded-md border border-destructive/30 bg-destructive/10 p-3"
+          >
+            <div class="font-medium text-destructive">{{ errorHeader }}:</div>
+            <div class="mt-2">
+              <pre class="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words">{{
+                errorText
+              }}</pre>
+              <div v-if="exception" class="mt-2">
+                <Button variant="link" class="p-0 h-auto" @click="goToException">
+                  Go to line {{ exception.lineno }}:{{ exception.col_offset }}
+                </Button>
               </div>
             </div>
-            <div v-else class="text-center py-4 text-base-content/60 text-sm">
-              {{ noParamsMessage }}
-            </div>
+          </div>
 
-            <!-- Error Display -->
-            <div
-              v-if="errorText"
-              class="mt-4 break-all rounded-md border border-destructive/30 bg-destructive/10 p-3"
-            >
-              <div class="font-medium text-destructive">{{ errorHeader }}:</div>
-              <div class="mt-2">
-                <pre class="text-xs mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words">{{
-                  errorText
+          <!-- Success Display -->
+          <div v-if="result" class="mt-2 break-all rounded-md border p-3">
+            <div class="text-sm font-medium">
+              <Badge variant="secondary"
+                >{{ result.simulate ? 'Simulation' : 'Execution' }} Successful</Badge
+              >
+            </div>
+            <div>
+              <div v-if="result.result !== null" class="mt-2">
+                <div class="font-medium opacity-80">Result:</div>
+                <pre class="mt-1 max-h-64 overflow-x-auto wrap-anywhere">{{
+                  formatResult(result.result)
                 }}</pre>
-                <div v-if="exception" class="mt-2 text-xs">
-                  <Button variant="link" class="p-0 h-auto" @click="goToException">
-                    Go to line {{ exception.lineno }}:{{ exception.col_offset }}
-                  </Button>
-                </div>
               </div>
-            </div>
-
-            <!-- Success Display -->
-            <div v-if="result" class="mt-2 break-all rounded-md border p-3">
-              <div class="text-sm font-medium">
-                <Badge variant="secondary"
-                  >{{ result.simulate ? 'Simulation' : 'Execution' }} Successful</Badge
-                >
+              <div v-if="result.stdout" class="mt-2">
+                <div class="font-medium opacity-80">Output:</div>
+                <pre class="mt-1 max-h-32 overflow-x-auto">{{ result.stdout }}</pre>
               </div>
-              <div>
-                <div v-if="result.result !== null" class="mt-2">
-                  <div class="font-medium text-xs opacity-80">Result:</div>
-                  <pre class="text-xs mt-1 max-h-64 overflow-x-auto wrap-anywhere">{{
-                    formatResult(result.result)
-                  }}</pre>
-                </div>
-                <div v-if="result.stdout" class="mt-2">
-                  <div class="font-medium text-xs opacity-80">Output:</div>
-                  <pre class="text-xs mt-1 max-h-32 overflow-x-auto">{{ result.stdout }}</pre>
-                </div>
-                <div class="mt-2 text-xs opacity-80 flex gap-4">
-                  <span>Gas: {{ formatNumber(result.gasConsumed) }}</span>
-                  <span>Nodes: {{ formatNumber(result.nodesExecuted) }}</span>
-                </div>
-                <div v-if="!result.simulate && result.txHash" class="mt-2">
-                  <div class="font-medium text-xs opacity-80">Transaction:</div>
-                  <div class="text-xs mt-1">
-                    <div>
-                      Hash:
-                      <TxHashDisplay :hash="result.txHash" :truncate="8" />
-                    </div>
-                    <div v-if="result.blockHeight">Block: {{ result.blockHeight }}</div>
+              <div class="mt-2 opacity-80 flex gap-4">
+                <span>Gas: {{ formatNumber(result.gasConsumed) }}</span>
+                <span>Nodes: {{ formatNumber(result.nodesExecuted) }}</span>
+              </div>
+              <div v-if="!result.simulate && result.txHash" class="mt-2">
+                <div class="font-medium opacity-80">Transaction:</div>
+                <div class="mt-1">
+                  <div>
+                    Hash:
+                    <TxHashDisplay :hash="result.txHash" :truncate="8" />
                   </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="mt-4 flex justify-end items-center gap-2">
-              <WalletSelector
-                v-model="selectedExecutor"
-                :show-locked="true"
-                :default-address="selectedExecutor"
-                :default-grantee="selectedGranteeAddress"
-                :button-class="'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 disabled:pointer-events-none disabled:opacity-50'"
-                :msg-type-filter="msgTypeFilter"
-                @update:executor-address="onExecutorAddress"
-                @update:grantee-address="onGranteeAddress"
-                @update:is-authz="onIsAuthz"
-                @update:authz-notes="onAuthzNotes"
-                @update:selected-grant="onSelectedGrant"
-              />
-              <Button
-                :disabled="
-                  isExecuting ||
-                  !!jsonError ||
-                  hasUnsavedChanges ||
-                  (attachSend && !!sendValidationError)
-                "
-                @click="execute"
-              >
-                {{ isExecuting ? 'Sending...' : 'Tx' }}
-              </Button>
-              <Button
-                variant="secondary"
-                :disabled="
-                  isSimulating ||
-                  !!jsonError ||
-                  hasUnsavedChanges ||
-                  (attachSend && !!sendValidationError)
-                "
-                @click="simulate"
-              >
-                {{ isSimulating ? 'Simulating...' : 'Simulate' }}
-              </Button>
-            </div>
-
-            <!-- Optional: attach a coin transfer to this call -->
-            <div class="mt-3">
-              <div class="flex items-center gap-2 text-sm">
-                <Checkbox
-                  id="attach-send"
-                  v-model:checked="attachSend"
-                  @click.stop="attachSend = !attachSend"
-                />
-                <label for="attach-send" class="cursor-pointer select-none">
-                  Attach coins (bank MsgSend)
-                </label>
-              </div>
-              <div v-if="attachSend" class="mt-2">
-                <AmountDenomSelector
-                  :disabled="isSimulating || isExecuting"
-                  :base-denoms="ownedBaseDenoms"
-                  @update:base="onSendBaseUpdate"
-                />
-                <div v-if="sendValidationError" class="text-error text-xs mt-1">
-                  {{ sendValidationError }}
-                </div>
-                <div class="text-xs opacity-70 mt-1">
-                  From
-                  <span class="font-mono text-xs font-bold">
-                    <AddressDisplay :address="selectedExecutor" :truncate="5" />
-                  </span>
-                  to
-                  <span class="font-mono text-xs font-bold">
-                    <AddressDisplay :address="address" :truncate="5" />
-                  </span>
+                  <div v-if="result.blockHeight">Block: {{ result.blockHeight }}</div>
                 </div>
               </div>
             </div>
           </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  </Card>
+
+          <!-- Actions -->
+          <div class="mt-4 flex justify-end items-center gap-2">
+            <WalletSelector
+              v-model="selectedExecutor"
+              :show-locked="true"
+              :default-address="selectedExecutor"
+              :default-grantee="selectedGranteeAddress"
+              :button-class="'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 disabled:pointer-events-none disabled:opacity-50'"
+              :msg-type-filter="msgTypeFilter"
+              @update:executor-address="onExecutorAddress"
+              @update:grantee-address="onGranteeAddress"
+              @update:is-authz="onIsAuthz"
+              @update:authz-notes="onAuthzNotes"
+              @update:selected-grant="onSelectedGrant"
+            />
+            <Button
+              :disabled="
+                isExecuting ||
+                !!jsonError ||
+                hasUnsavedChanges ||
+                (attachSend && !!sendValidationError)
+              "
+              @click="execute"
+            >
+              {{ isExecuting ? 'Sending...' : 'Tx' }}
+            </Button>
+            <Button
+              variant="secondary"
+              :disabled="
+                isSimulating ||
+                !!jsonError ||
+                hasUnsavedChanges ||
+                (attachSend && !!sendValidationError)
+              "
+              @click="simulate"
+            >
+              {{ isSimulating ? 'Simulating...' : 'Simulate' }}
+            </Button>
+          </div>
+
+          <!-- Optional: attach a coin transfer to this call -->
+          <div class="mt-3">
+            <div class="flex items-center gap-2 text-sm">
+              <Checkbox
+                id="attach-send"
+                v-model:checked="attachSend"
+                @click.stop="attachSend = !attachSend"
+              />
+              <label for="attach-send" class="cursor-pointer select-none">
+                Attach coins (bank MsgSend)
+              </label>
+            </div>
+            <div v-if="attachSend" class="mt-2">
+              <AmountDenomSelector
+                :disabled="isSimulating || isExecuting"
+                :base-denoms="ownedBaseDenoms"
+                @update:base="onSendBaseUpdate"
+              />
+              <div v-if="sendValidationError" class="text-error text-xs mt-1">
+                {{ sendValidationError }}
+              </div>
+              <div class="text-xs opacity-70 mt-1">
+                From
+                <span class="font-mono text-xs font-bold">
+                  <AddressDisplay :address="selectedExecutor" :truncate="5" />
+                </span>
+                to
+                <span class="font-mono text-xs font-bold">
+                  <AddressDisplay :address="address" :truncate="5" />
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
 </template>
 
 <script setup>
@@ -176,10 +179,10 @@ import WalletSelector from '@/components/shared/WalletSelector.vue'
 import TxHashDisplay from '@/components/TxHashDisplay.vue'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
 import AddressDisplay from '@/components/AddressDisplay.vue'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Accordion,
   AccordionContent,

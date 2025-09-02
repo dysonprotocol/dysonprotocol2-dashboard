@@ -2,25 +2,15 @@
   <div class="script-editor flex flex-col h-full p-4 space-y-4">
     <div class="flex justify-between items-center">
       <div class="flex gap-2 items-center">
-        <div class="join">
-          <button
-            v-if="canEdit"
-            class="btn btn-primary join-item"
-            :disabled="isSaving || !hasChanges"
-            @click="save"
-          >
-            <span
-              v-if="isSaving"
-              class="loading loading-spinner loading-xs mr-1"
-            />
-            {{ isSaving ? 'Saving...' : 'Save' }}
-          </button>
+        <div class="flex gap-2 items-center">
+          <Button v-if="canEdit" :disabled="isSaving || !hasChanges" @click="save">
+            {{ isSaving ? 'Saving…' : 'Save' }}
+          </Button>
 
           <WalletSelector
             v-model="selectedEditorExecutor"
             :allowed-addresses="[props.address]"
             :default-address="props.address"
-            :button-class="'join-item'"
             :msg-type-filter="editorMsgTypeFilter"
             @update:executor-address="onEditorExecutor"
             @update:grantee-address="onEditorGrantee"
@@ -30,32 +20,16 @@
           />
         </div>
 
-        <div
-          v-if="errorMessage"
-          class="text-error text-sm ml-2"
-        >
+        <div v-if="errorMessage" class="text-destructive ml-2">
           {{ errorMessage }}
-          <button
-            class="btn btn-xs btn-ghost ml-1"
-            @click="clearError"
-          >
-            ✕
-          </button>
+          <Button variant="ghost" class="h-auto p-0 ml-1" @click="clearError">✕</Button>
         </div>
-        <div
-          v-if="showSuccess"
-          class="text-success text-sm ml-2"
-        >
+        <div v-if="showSuccess" class="text-green-600 ml-2">
           Script saved!
-          <button
-            class="btn btn-xs btn-ghost ml-1"
-            @click="clearSuccessMessage"
-          >
-            ✕
-          </button>
+          <Button variant="ghost" class="h-auto p-0 ml-1" @click="clearSuccessMessage">✕</Button>
         </div>
       </div>
-      <div class="text-sm text-base-content/60 flex items-center gap-2">
+      <div class="text-muted-foreground flex items-center gap-2">
         <div>Version: {{ scriptVersion }}</div>
       </div>
     </div>
@@ -79,6 +53,7 @@ import { useAxiosRepo } from '@pinia-orm/axios'
 import Script from '../../orm/models/script/Script'
 import { useStorage } from '@vueuse/core'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
+import { Button } from '@/components/ui/button'
 
 const props = defineProps({
   address: { type: String, required: true },
@@ -100,7 +75,6 @@ const showSuccess = ref(false)
 const localError = ref('')
 const isSaving = ref(false)
 const editorHeightPx = ref(0)
-const ignoreContentResize = ref(false)
 const heightRaf = ref(0)
 const selectedEditorExecutor = useStorage(() => `executor:edit:${props.address}`, props.address)
 
@@ -273,7 +247,7 @@ onUnmounted(() => {
     editor = null
   }
   clearSuccessMessage()
-  if (heightRaf.value) cancelAnimationFrame(heightRaf.value)
+  if (heightRaf.value) window.cancelAnimationFrame(heightRaf.value)
   window.removeEventListener('dyson:script-exception', onExceptionEvent)
   window.removeEventListener('resize', updateEditorHeight)
 })
@@ -292,8 +266,8 @@ function updateEditorHeight() {
   const bottomGapPx = 16 // space below editor (padding/margin)
   const desiredHeight = Math.max(200, Math.floor(window.innerHeight - rect.top - bottomGapPx))
   if (Math.abs(desiredHeight - editorHeightPx.value) < 2) return
-  if (heightRaf.value) cancelAnimationFrame(heightRaf.value)
-  heightRaf.value = requestAnimationFrame(() => {
+  if (heightRaf.value) window.cancelAnimationFrame(heightRaf.value)
+  heightRaf.value = window.requestAnimationFrame(() => {
     editorHeightPx.value = desiredHeight
     heightRaf.value = 0
   })
