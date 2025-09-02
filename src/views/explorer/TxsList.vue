@@ -36,6 +36,7 @@ const isLoading = ref(false)
 const error = ref('')
 const total = ref<number | undefined>()
 const lastQuery = ref('')
+const limitedFromHeight = ref<number | undefined>()
 
 const rows = ref<
   Array<{ hash: string; height: string; timestamp: string; code: string; msgTypes: string }>
@@ -69,12 +70,17 @@ async function runSearch() {
   if (isLoading.value) return
   isLoading.value = true
   error.value = ''
-  try {
-    const qs = new URLSearchParams({ query: q })
+  limitedFromHeight.value = undefined
+
+  const fetchTxs = async (queryStr: string) => {
+    const qs = new URLSearchParams({ query: queryStr })
     qs.set('order_by', searchForm.value.orderBy)
     qs.set('page', String(searchForm.value.page))
     qs.set('limit', String(searchForm.value.limit))
-    const { data } = await api.get(`/cosmos/tx/v1beta1/txs?${qs}`)
+    return api.get(`/cosmos/tx/v1beta1/txs?${qs}`)
+  }
+
+  const applyResponse = (data: any) => {
     const listResponses = Array.isArray(data?.tx_responses) ? data.tx_responses : []
     const listTxs = Array.isArray(data?.txs) ? data.txs : []
     rows.value = listResponses
@@ -95,8 +101,46 @@ async function runSearch() {
       .filter((r: any) => r.hash)
     const totAny = (data?.pagination?.total ?? data?.total) as string | number | undefined
     total.value = typeof totAny === 'number' ? totAny : totAny ? Number(totAny) : undefined
+  }
+
+  try {
+    const { data } = await fetchTxs(q)
+    applyResponse(data)
   } catch (e) {
-    error.value = (e as Error).message || String(e)
+    const anyErr: any = e
+    const code = anyErr?.response?.data?.code
+    const message = String(anyErr?.response?.data?.message || anyErr?.message || '')
+    const match = message.match(/lowest height is\s*(\d+)/i)
+    if (code === 13 && match && Number.isFinite(Number(match[1]))) {
+      const lowestHeight = Number(match[1])
+      // Ensure tx.height>=lowestHeight is present and not lower than min
+      const heightRegex = /tx\.height\s*>?=\s*(\d+)/i
+      const existing = q.match(heightRegex)
+      let adjusted = q
+      if (existing) {
+        const existingVal = Number(existing[1])
+        if (!Number.isFinite(existingVal) || existingVal < lowestHeight) {
+          adjusted = adjusted.replace(/tx\.height\s*>?=\s*\d+/i, `tx.height>=${lowestHeight}`)
+        }
+      } else {
+        adjusted =
+          adjusted.trim().length > 0
+            ? `${adjusted} AND tx.height>=${lowestHeight}`
+            : `tx.height>=${lowestHeight}`
+      }
+      try {
+        const { data } = await fetchTxs(adjusted)
+        applyResponse(data)
+        limitedFromHeight.value = lowestHeight
+        return
+      } catch (ee) {
+        console.error('limitedFromHeight retry failed', ee)
+        error.value = (ee as Error).message || String(ee)
+      }
+    } else {
+      console.error('Transaction search failed', e)
+      error.value = (e as Error).message || String(e)
+    }
   } finally {
     isLoading.value = false
   }
@@ -309,6 +353,15 @@ function qScriptAddr(addr: string) {
         </div>
 
         <div v-else-if="hasResults" class="space-y-4">
+          <div v-if="limitedFromHeight" class="alert alert-warning alert-soft">
+            <span>
+              This node serves cometbft transactions starting from height
+              {{ limitedFromHeight }}. Your search was adjusted to include
+              <code>"tx.height&gt;={{ limitedFromHeight }}"</code>. Note, this is managed by the
+              node's <code>min-retain-blocks</code> setting and is different from the
+              <code>pruning</code> settings.</span
+            >
+          </div>
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold">Search Results ({{ rows.length }} transactions)</h2>
             <div v-if="total" class="text-sm text-muted-foreground">Total: {{ total }}</div>
