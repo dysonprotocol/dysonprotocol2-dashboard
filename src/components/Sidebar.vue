@@ -21,34 +21,39 @@
                 <span>Names</span>
               </a>
             </router-link>
+
+            <router-link to="/tasks" custom v-slot="{ href, navigate, isActive }">
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">
+                <Clock class="size-4" />
+                <span>Crontasks</span>
+              </a>
+            </router-link>
+
             <router-link to="/blocks" custom v-slot="{ href, navigate, isActive }">
               <a :href="href" @click="navigate" :class="linkClass(isActive)">
                 <SquareStack class="size-4" />
                 <span>Blocks</span>
               </a>
             </router-link>
+
             <router-link to="/txs" custom v-slot="{ href, navigate, isActive }">
               <a :href="href" @click="navigate" :class="linkClass(isActive)">
                 <ArrowLeftRight class="size-4" />
                 <span>Transactions</span>
               </a>
             </router-link>
+
             <router-link to="/validators" custom v-slot="{ href, navigate, isActive }">
               <a :href="href" @click="navigate" :class="linkClass(isActive)">
                 <ShieldCheck class="size-4" />
                 <span>Validators</span>
               </a>
             </router-link>
+
             <router-link to="/gov" custom v-slot="{ href, navigate, isActive }">
               <a :href="href" @click="navigate" :class="linkClass(isActive)">
                 <Landmark class="size-4" />
                 <span>Governance</span>
-              </a>
-            </router-link>
-            <router-link to="/tasks" custom v-slot="{ href, navigate, isActive }">
-              <a :href="href" @click="navigate" :class="linkClass(isActive)">
-                <Clock class="size-4" />
-                <span>Crontasks</span>
               </a>
             </router-link>
           </nav>
@@ -63,5 +68,11 @@ defineOptions({ name: 'AppSidebar' })
 import KeplrCard from '@/components/wallet/KeplrCard.vue'
 import CosmjsWallets from '@/components/wallet/CosmjsWallets.vue'
 import { Tag, SquareStack, ArrowLeftRight, ShieldCheck, Landmark, Clock } from 'lucide-vue-next'
-import { linkClass } from '@/navigation/linkClass'
+
+function linkClass(isActive) {
+  const base =
+    'w-full inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm justify-start transition-colors text-muted-foreground hover:text-foreground hover:bg-muted'
+  if (isActive) return base + ' bg-muted text-foreground'
+  return base
+}
 </script>
