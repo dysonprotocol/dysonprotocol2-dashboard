@@ -3,6 +3,27 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/orm/http'
 import { useWallet } from '@/composables/useWallet'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
+import { Loader2 } from 'lucide-vue-next'
+import AddressDisplay from '@/components/AddressDisplay.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,6 +40,16 @@ const lastQuery = ref('')
 const rows = ref<
   Array<{ hash: string; height: string; timestamp: string; code: string; msgTypes: string }>
 >([])
+
+const DEFAULT_QUERY = 'tx.height>0'
+
+const limitModel = computed({
+  get: () => String(searchForm.value.limit),
+  set: (value) => {
+    const n = Number(value as any)
+    searchForm.value.limit = Number.isFinite(n) ? n : 25
+  },
+})
 
 const hasResults = computed(() => rows.value.length > 0 && !!searchForm.value.query)
 const hasNextPage = computed(() => {
@@ -72,8 +103,8 @@ async function runSearch() {
 }
 
 function handleSearch() {
-  const qTrim = searchForm.value.query.trim()
-  if (!qTrim) return
+  const qTrimRaw = searchForm.value.query.trim()
+  const qTrim = qTrimRaw || DEFAULT_QUERY
   searchForm.value.query = qTrim
   searchForm.value.page = 1
   const needNav = route.query.query !== qTrim || String(route.query.page || '') !== '1'
@@ -161,7 +192,17 @@ watch(
       runSearch()
       return
     }
+    // If no query provided, default to a safe catch-all that returns recent txs
     error.value = ''
+    if (route.query.query !== DEFAULT_QUERY) {
+      router.replace({
+        query: {
+          ...route.query,
+          query: DEFAULT_QUERY,
+          page: '1',
+        },
+      })
+    }
   },
   { immediate: true }
 )
@@ -186,142 +227,154 @@ function qScriptAddr(addr: string) {
 <template>
   <div class="space-y-6 p-6">
     <div>
-      <h1 class="text-2xl font-bold text-base-content">Transaction Explorer</h1>
-      <p class="text-base-content/60">Search and explore blockchain transactions</p>
+      <h1 class="text-2xl font-bold text-foreground">Transaction Explorer</h1>
+      <p class="text-muted-foreground">Search and explore blockchain transactions</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Left column: search + results -->
       <div class="space-y-6 md:col-span-2">
-        <div class="card bg-base-100 shadow-xl">
-          <div class="card-body">
-            <h2 class="card-title">Search Transactions</h2>
-
+        <Card :aria-busy="isLoading">
+          <CardHeader>
+            <CardTitle>Search Transactions</CardTitle>
+          </CardHeader>
+          <CardContent>
             <form class="space-y-4" @submit.prevent="handleSearch">
-              <div class="form-control">
-                <label class="label"><span class="label-text">Query</span></label>
-                <input
-                  v-model="searchForm.query"
-                  type="text"
-                  placeholder="e.g. tx.height=123"
-                  class="input input-bordered w-full"
-                />
+              <div class="space-y-1">
+                <label class="text-sm text-muted-foreground">Query</label>
+                <Input v-model="searchForm.query" type="text" placeholder="e.g. tx.height=123" />
                 <div class="mt-1 text-xs">
-                  <button type="button" class="link" @click="appendLast1000">
+                  <Button type="button" variant="link" class="px-0" @click="appendLast1000">
                     … in the last 1000 blocks
-                  </button>
+                  </Button>
                 </div>
               </div>
 
-              <div class="bg-base-200 rounded-box p-4">
+              <div class="rounded-lg border p-4">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div class="form-control">
-                    <label class="label"><span class="label-text">Order By</span></label>
-                    <select v-model="searchForm.orderBy" class="select select-bordered">
-                      <option value="ORDER_BY_DESC">Newest First</option>
-                      <option value="ORDER_BY_ASC">Oldest First</option>
-                    </select>
+                  <div class="space-y-1">
+                    <label class="text-sm text-muted-foreground">Order By</label>
+                    <Select v-model="searchForm.orderBy">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Order" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ORDER_BY_DESC">Newest First</SelectItem>
+                        <SelectItem value="ORDER_BY_ASC">Oldest First</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div class="form-control">
-                    <label class="label"><span class="label-text">Results per page</span></label>
-                    <select v-model.number="searchForm.limit" class="select select-bordered">
-                      <option :value="10">10</option>
-                      <option :value="25">25</option>
-                      <option :value="50">50</option>
-                      <option :value="100">100</option>
-                    </select>
+                  <div class="space-y-1">
+                    <label class="text-sm text-muted-foreground">Results per page</label>
+                    <Select v-model="limitModel">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Limit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div class="form-control">
-                    <label class="label"><span class="label-text">Page</span></label>
-                    <input
-                      v-model.number="searchForm.page"
-                      type="number"
-                      min="1"
-                      class="input input-bordered"
-                    />
+                  <div class="space-y-1">
+                    <label class="text-sm text-muted-foreground">Page</label>
+                    <Input v-model.number="searchForm.page" type="number" min="1" />
                   </div>
                 </div>
               </div>
 
-              <div class="card-actions">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                  :class="{ loading: isLoading }"
-                  :disabled="isLoading"
-                >
+              <div>
+                <Button type="submit" :disabled="isLoading">
+                  <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
                   Search Transactions
-                </button>
+                </Button>
               </div>
             </form>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         <div v-if="isLoading" class="text-center py-12">
-          <span class="loading loading-spinner loading-lg" />
-          <p class="mt-4 text-base-content/60">Searching transactions...</p>
+          <Loader2 class="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+          <p class="mt-4 text-muted-foreground">Searching transactions...</p>
         </div>
 
-        <div v-else-if="error" class="alert alert-error">
-          <span>Error: {{ error }}</span>
+        <div
+          v-else-if="error"
+          role="alert"
+          class="rounded-lg border border-destructive/50 bg-destructive/10 text-destructive p-3 text-sm"
+        >
+          Error: {{ error }}
         </div>
 
         <div v-else-if="hasResults" class="space-y-4">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold">Search Results ({{ rows.length }} transactions)</h2>
-            <div v-if="total" class="text-sm text-base-content/60">Total: {{ total }}</div>
+            <div v-if="total" class="text-sm text-muted-foreground">Total: {{ total }}</div>
           </div>
 
           <div v-if="rows.length > 0" class="overflow-x-auto">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Height</th>
-                  <th>Timestamp</th>
-                  <th>Messages</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Height</TableHead>
+                  <TableHead>Timestamp</TableHead>
+                  <TableHead>Messages</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow
                   v-for="t in rows"
                   :key="t.hash"
-                  class="hover cursor-pointer hover:bg-primary/20"
+                  class="cursor-pointer hover:bg-accent/50"
+                  role="button"
+                  :aria-label="`Open transaction ${t.hash}`"
                   @click="goToTx(t.hash)"
                 >
-                  <td class="font-mono">{{ t.height }}</td>
-                  <td class="text-sm">{{ t.timestamp }}</td>
-                  <td class="text-xs whitespace-pre-wrap break-words">{{ t.msgTypes || '—' }}</td>
-                  <td>
-                    <span class="text-xs" :class="t.code === '0' ? 'text-success' : 'text-error'">
+                  <TableCell class="font-mono">{{ t.height }}</TableCell>
+                  <TableCell class="text-sm">{{ t.timestamp }}</TableCell>
+                  <TableCell class="text-xs whitespace-pre-wrap break-words">{{
+                    t.msgTypes || '—'
+                  }}</TableCell>
+                  <TableCell>
+                    <Badge
+                      :class="
+                        t.code === '0'
+                          ? 'bg-emerald-500/10 text-emerald-600'
+                          : 'bg-red-500/10 text-red-600'
+                      "
+                      class="text-xs"
+                    >
                       {{ t.code === '0' ? 'OK' : 'ERR ' + t.code }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
           <div v-else class="text-center py-12">
-            <p class="text-base-content/60">No transactions found matching your search criteria.</p>
+            <p class="text-muted-foreground">
+              No transactions found matching your search criteria.
+            </p>
           </div>
 
           <div v-if="rows.length > 0" class="flex justify-center mt-2">
-            <div class="join">
-              <button
-                class="join-item btn"
+            <div class="flex items-center gap-2">
+              <Button
+                variant="outline"
                 :disabled="searchForm.page <= 1"
                 @click="goToPage(searchForm.page - 1)"
+                >Previous</Button
               >
-                Previous
-              </button>
-              <button class="join-item btn btn-active">Page {{ searchForm.page }}</button>
-              <button
-                class="join-item btn"
+              <Button variant="secondary" disabled>Page {{ searchForm.page }}</Button>
+              <Button
+                variant="outline"
                 :disabled="!hasNextPage && searchForm.page >= 1"
                 @click="goToPage(searchForm.page + 1)"
+                >Next</Button
               >
-                Next
-              </button>
             </div>
           </div>
         </div>
@@ -329,51 +382,68 @@ function qScriptAddr(addr: string) {
 
       <!-- Right column: quick links -->
       <div>
-        <div class="card bg-base-100 shadow-xl">
-          <div class="card-body">
-            <div class="font-semibold mb-3">Quick Links</div>
-            <div v-if="wallets.length === 0" class="text-sm text-base-content/60">
-              Connect or unlock a wallet to see quick links.
-            </div>
-            <div v-else class="space-y-4">
-              <div
-                v-for="(w, idx) in wallets"
-                :key="(w as any).address || idx"
-                class="rounded-box border border-base-300 p-4"
-              >
-                <div class="text-sm font-medium mb-2">
-                  {{ (w as any).name }} — {{ (w as any).address }}
-                </div>
-                <ul class="space-y-2 text-sm">
-                  <li>
-                    <button class="link" @click="applyQuickQuery(qSender((w as any).address))">
-                      All Transactions
-                    </button>
-                  </li>
-                  <li>
-                    <button class="link" @click="applyQuickQuery(qSpent((w as any).address))">
-                      Coins sent from
-                    </button>
-                  </li>
-                  <li>
-                    <button class="link" @click="applyQuickQuery(qReceived((w as any).address))">
-                      Coins sent to
-                    </button>
-                  </li>
-                  <li>
-                    <button class="link" @click="applyQuickQuery(qExecBy((w as any).address))">
-                      All scripts this address has called
-                    </button>
-                  </li>
-                  <li>
-                    <button class="link" @click="applyQuickQuery(qScriptAddr((w as any).address))">
-                      All addresses that have called this script
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
+        <div class="font-semibold mb-3">Quick Links</div>
+        <div v-if="wallets.length === 0" class="text-sm text-muted-foreground">
+          Connect or unlock a wallet to see quick links.
+        </div>
+        <div v-else class="space-y-4">
+          <Card v-for="(w, idx) in wallets" :key="(w as any).address || idx" class="gap-3">
+            <CardHeader class="">
+              <CardTitle class="font-medium">
+                {{ (w as any).name }} —
+                <AddressDisplay :address="(w as any).address" :truncate="8" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul class="">
+                <li>
+                  <Button
+                    variant="link"
+                    class="px-0"
+                    @click="applyQuickQuery(qSender((w as any).address))"
+                  >
+                    All Transactions
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    variant="link"
+                    class="px-0"
+                    @click="applyQuickQuery(qSpent((w as any).address))"
+                  >
+                    Coins sent from
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    variant="link"
+                    class="px-0"
+                    @click="applyQuickQuery(qReceived((w as any).address))"
+                  >
+                    Coins sent to
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    variant="link"
+                    class="px-0"
+                    @click="applyQuickQuery(qExecBy((w as any).address))"
+                  >
+                    All scripts this address has called
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    variant="link"
+                    class="px-0"
+                    @click="applyQuickQuery(qScriptAddr((w as any).address))"
+                  >
+                    All addresses that have called this script
+                  </Button>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

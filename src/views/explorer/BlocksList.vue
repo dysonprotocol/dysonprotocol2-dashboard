@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import LatestBlock from '@/orm/models/base/TendermintService'
@@ -17,7 +17,6 @@ const tmRepo = useRepo(TendermintBlock)
 const txBlockRepo = useRepo(TxBlock)
 
 const route = useRoute()
-const router = useRouter()
 
 function parsePage(value: unknown): number {
   const n = Number(value)
@@ -25,7 +24,10 @@ function parsePage(value: unknown): number {
   return Math.floor(n)
 }
 
-const currentPage = computed(() => parsePage(route.query.page as string))
+const currentPage = computed(() => {
+  if (typeof route.query.page !== 'undefined') return parsePage(route.query.page as string)
+  return maxPage.value
+})
 const isLoading = ref(false)
 const hasError = ref(false)
 const errorMessage = ref('')
@@ -126,15 +128,8 @@ const currentTo = computed(() => ({
   query: { ...route.query, page: String(maxPage.value) },
 }))
 
-async function ensurePageInQuery() {
-  const hasPage = typeof route.query.page !== 'undefined'
-  if (hasPage) return
-  await blockApi.fetch()
-  latestHeight.value = getLatestHeightFromRepo()
-  const per = totalSquaresPerPage.value || 1
-  const defaultPage = Math.max(1, Math.ceil((latestHeight.value || 0) / per))
-  router.replace({ query: { ...route.query, page: String(defaultPage) } })
-}
+// When no page is provided in the query, we default to the latest page in-memory
+// without mutating the URL.
 
 // no timestamp formatting needed for square grid
 
@@ -147,8 +142,7 @@ watch(
 )
 
 onMounted(async () => {
-  await ensurePageInQuery()
-  if (route.query.page) await loadPage()
+  await loadPage()
 })
 </script>
 
@@ -166,7 +160,7 @@ onMounted(async () => {
             <RouterLink :to="nextTo" class="inline-block">
               <Button size="sm" :disabled="isNextDisabled">Next</Button>
             </RouterLink>
-            <RouterLink :to="currentTo" class="inline-block">
+            <RouterLink :to="{ name: 'BlocksList' }" class="inline-block">
               <Button size="sm" :disabled="isCurrentDisabled">Current</Button>
             </RouterLink>
           </div>

@@ -1,169 +1,172 @@
 <template>
   <section class="w-full max-w-6xl mx-auto p-4 flex flex-col gap-6">
-    <div class="breadcrumbs text-sm">
-      <ul>
-        <li>
-          <router-link to="/blocks" class="link link-hover">Blocks</router-link>
-        </li>
-        <li v-if="actualDisplayHeight">Block {{ actualDisplayHeight }}</li>
-      </ul>
-    </div>
-
     <div class="flex items-center justify-between">
       <h1 v-if="actualDisplayHeight" class="text-2xl font-bold">Block {{ actualDisplayHeight }}</h1>
       <div class="flex gap-2">
-        <router-link v-if="prevHeight" :to="`/block/${prevHeight}`" class="btn btn-sm btn-outline"
-          >← Prev</router-link
-        >
-        <router-link v-if="nextHeight" :to="`/block/${nextHeight}`" class="btn btn-sm btn-outline"
-          >Next →</router-link
-        >
+        <router-link v-if="prevHeight" :to="`/block/${prevHeight}`">
+          <Button variant="outline">← Prev</Button>
+        </router-link>
+        <router-link v-if="nextHeight" :to="`/block/${nextHeight}`">
+          <Button variant="outline">Next →</Button>
+        </router-link>
       </div>
     </div>
 
     <div v-if="isLoadingMeta || isLoadingTxs" class="flex justify-center items-center py-12">
-      <span class="loading loading-spinner loading-lg" />
+      <div>Loading…</div>
     </div>
 
-    <div v-else-if="errorMeta || errorTxs" class="alert alert-error">
-      <span>{{ errorMeta || errorTxs }}</span>
+    <div
+      v-else-if="errorMeta || errorTxs"
+      class="rounded-md border border-destructive/30 p-3 text-destructive"
+    >
+      {{ errorMeta || errorTxs }}
     </div>
 
-    <div v-else>
-      <div class="card bg-base-100">
-        <div class="card-body gap-2">
-          <div class="font-semibold">Header</div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+    <template v-else>
+      <Card>
+        <CardHeader>
+          <CardTitle>Header</CardTitle>
+        </CardHeader>
+        <CardContent class="gap-2">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-              <div class="text-base-content/60">Time</div>
+              <div class="text-muted-foreground">Time</div>
               <div>{{ headerTime }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Proposer</div>
-              <div class="break-all">{{ block?.header?.proposer_address || '' }}</div>
+              <div class="text-muted-foreground">Proposer</div>
+              <div class="break-all">{{ blockView?.header?.proposer_address || '' }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Block Hash</div>
-              <div class="font-mono text-xs break-all">{{ block?.block_id?.hash || '' }}</div>
+              <div class="text-muted-foreground">Block Hash</div>
+              <div class="font-mono break-all">{{ blockView?.block_id?.hash || '' }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">App Hash</div>
-              <div class="font-mono text-xs break-all">{{ block?.header?.app_hash || '' }}</div>
+              <div class="text-muted-foreground">App Hash</div>
+              <div class="font-mono break-all">{{ blockView?.header?.app_hash || '' }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Data Hash</div>
-              <div class="font-mono text-xs break-all">{{ block?.header?.data_hash || '' }}</div>
+              <div class="text-muted-foreground">Data Hash</div>
+              <div class="font-mono break-all">{{ blockView?.header?.data_hash || '' }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Results Hash</div>
-              <div class="font-mono text-xs break-all">
-                {{ block?.header?.last_results_hash || '' }}
+              <div class="text-muted-foreground">Results Hash</div>
+              <div class="font-mono break-all">
+                {{ blockView?.header?.last_results_hash || '' }}
               </div>
             </div>
             <div>
-              <div class="text-base-content/60">Validators Hash</div>
-              <div class="font-mono text-xs break-all">
-                {{ block?.header?.validators_hash || '' }}
+              <div class="text-muted-foreground">Validators Hash</div>
+              <div class="font-mono break-all">
+                {{ blockView?.header?.validators_hash || '' }}
               </div>
             </div>
             <div>
-              <div class="text-base-content/60">Consensus Hash</div>
-              <div class="font-mono text-xs break-all">
-                {{ block?.header?.consensus_hash || '' }}
+              <div class="text-muted-foreground">Consensus Hash</div>
+              <div class="font-mono break-all">
+                {{ blockView?.header?.consensus_hash || '' }}
               </div>
             </div>
           </div>
-          <div class="divider my-2" />
-          <div class="grid grid-cols-3 gap-2 text-sm">
+          <div class="h-px bg-border my-2" />
+          <div class="grid grid-cols-3 gap-2">
             <div>
-              <div class="text-base-content/60">Txs</div>
+              <div class="text-muted-foreground">Txs</div>
               <div>{{ txCount }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Success</div>
+              <div class="text-muted-foreground">Success</div>
               <div>{{ successCount }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Gas Used</div>
+              <div class="text-muted-foreground">Gas Used</div>
               <div>{{ gasUsedTotal }}</div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div class="card bg-base-100">
-        <div class="card-body gap-3">
-          <div class="font-semibold">Validators</div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Validators</CardTitle>
+        </CardHeader>
+        <CardContent class="gap-3">
           <div class="overflow-x-auto">
             <div v-if="!valoperResolved" class="flex justify-center items-center py-4">
-              <span class="loading loading-spinner loading-sm" />
+              Loading…
             </div>
-            <table v-else class="table table-zebra w-full" data-testid="validators-table">
-              <thead>
-                <tr>
-                  <th>Address</th>
-                  <th>Voting Power</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="v in validators" :key="v.address">
-                  <td class="font-mono text-xs break-all">
+            <Table v-else data-testid="validators-table">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Voting Power</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="v in validators" :key="v.address">
+                  <TableCell class="font-mono break-all">
                     <router-link
                       :to="{
                         name: 'ValidatorDetails',
                         params: { valAddress: valconsToValoper(v.address) },
                       }"
-                      class="link link-hover"
+                      class="underline underline-offset-2"
                     >
                       {{ v.address }}
                     </router-link>
-                  </td>
-                  <td class="text-xs">{{ v.voting_power }}</td>
-                </tr>
-              </tbody>
-            </table>
+                  </TableCell>
+                  <TableCell>{{ v.voting_power }}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div class="card bg-base-100">
-        <div class="card-body">
-          <div class="flex items-center justify-between mb-2">
-            <div class="font-semibold">Transactions</div>
-            <div class="text-sm text-base-content/60">{{ txs.length }} txs</div>
+      <Card>
+        <CardHeader>
+          <div class="flex items-center justify-between">
+            <CardTitle>Transactions</CardTitle>
+            <div class="text-muted-foreground">{{ txs.length }} txs</div>
           </div>
+        </CardHeader>
+        <CardContent>
           <div class="overflow-x-auto">
-            <table class="table table-zebra w-full">
-              <thead>
-                <tr>
-                  <th>Hash</th>
-                  <th>Msg Types</th>
-                  <th>Code</th>
-                  <th>Gas</th>
-                  <th>Gas Efficiency</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="t in txs" :key="t.hash">
-                  <td class="font-mono text-xs break-all">
-                    <router-link :to="`/txs/${t.hash}`" class="link link-primary">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Hash</TableHead>
+                  <TableHead>Msg Types</TableHead>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Gas</TableHead>
+                  <TableHead>Gas Efficiency</TableHead>
+                  <TableHead>Time</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="t in txs" :key="t.hash">
+                  <TableCell class="font-mono break-all">
+                    <router-link
+                      :to="`/txs/${t.hash}`"
+                      class="text-primary underline underline-offset-2"
+                    >
                       <TxHashDisplay :hash="t.hash" :truncate="5" />
                     </router-link>
-                  </td>
-                  <td class="text-xs font-mono break-all">{{ msgTypes(t.hash) || '-' }}</td>
-                  <td class="text-xs">{{ t.code }}</td>
-                  <td class="text-xs">{{ t.gas_used }}/{{ t.gas_wanted }}</td>
-                  <td class="text-xs">{{ gasEfficiencyRow(t) }}</td>
-                  <td class="text-xs">{{ formatTime(t.timestamp) }}</td>
-                </tr>
-              </tbody>
-            </table>
-            <div v-if="!txs.length" class="text-base-content/60 italic p-4">No transactions.</div>
+                  </TableCell>
+                  <TableCell class="font-mono break-all">{{ msgTypes(t.hash) || '-' }}</TableCell>
+                  <TableCell>{{ t.code }}</TableCell>
+                  <TableCell>{{ t.gas_used }}/{{ t.gas_wanted }}</TableCell>
+                  <TableCell>{{ gasEfficiencyRow(t) }}</TableCell>
+                  <TableCell>{{ formatTime(t.timestamp) }}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+            <div v-if="!txs.length" class="text-muted-foreground italic p-4">No transactions.</div>
           </div>
-        </div>
-      </div>
-    </div>
+        </CardContent>
+      </Card>
+    </template>
   </section>
 </template>
 
@@ -177,6 +180,16 @@ import TxRecord from '@/orm/models/tx/TxRecord'
 import { ValidatorSetByHeight } from '@/orm/models/base/TendermintService'
 import TxHashDisplay from '@/components/TxHashDisplay.vue'
 import Validator from '@/orm/models/staking/Validator'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 const route = useRoute()
 const tmRepo = useRepo(TendermintBlock)
@@ -226,7 +239,7 @@ const heightNum = computed(() => {
 const actualDisplayHeight = computed(() => {
   return (
     actualBlockHeight.value ||
-    block.value?.height ||
+    blockView.value?.height ||
     (heightStr.value !== 'latest' ? heightStr.value : null)
   )
 })
@@ -234,7 +247,7 @@ const actualDisplayHeight = computed(() => {
 const prevHeight = computed(() => (heightNum.value > 1 ? heightNum.value - 1 : null))
 const nextHeight = computed(() => (heightNum.value > 0 ? heightNum.value + 1 : null))
 
-const block = computed(() => {
+const block = computed<any>(() => {
   // First try to find by heightStr, then try to find the latest block record
   return (
     tmRepo.find(heightStr.value) ||
@@ -270,8 +283,10 @@ const gasUsedTotal = computed(() => {
   return String(sum)
 })
 
+const blockView = computed<any>(() => (block.value as any) || {})
+
 const headerTime = computed(() => {
-  const t = (block.value?.header?.time as string | undefined) || ''
+  const t = (blockView.value?.header?.time as string | undefined) || ''
   return t ? new Date(t).toLocaleString() : ''
 })
 
@@ -318,7 +333,7 @@ function valconsToValoper(valconsAddr: string): string | null {
     if (typeof k === 'string' && k) byKey.set(k, String(v?.operator_address || ''))
   }
   // Find the row in vset by address and grab its pubkey
-  const row = vsetRepo
+  const row: any = vsetRepo
     .where('height', (x: string) => x === String(actualBlockHeight.value || heightStr.value))
     .get()
     .find((r: any) => String(r?.address || '') === valconsAddr)

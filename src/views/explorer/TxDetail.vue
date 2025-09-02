@@ -4,6 +4,16 @@ import { useRoute, RouterLink } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import TxRecord from '@/orm/models/tx/TxRecord'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 
 const route = useRoute()
 const hash = computed(() => String(route.params.hash || ''))
@@ -155,231 +165,240 @@ onMounted(load)
 
 <template>
   <section class="w-full max-w-6xl mx-auto p-4 flex flex-col gap-4">
-    <div class="breadcrumbs text-sm">
-      <ul>
-        <li><router-link to="/txs" class="link link-hover">Transactions</router-link></li>
-        <li v-if="hash">{{ String(hash).slice(0, 12) }}…</li>
-      </ul>
-    </div>
+    <div v-if="isLoading" class="flex justify-center items-center py-12">Loading…</div>
 
-    <div v-if="isLoading" class="flex justify-center items-center py-12">
-      <span class="loading loading-spinner loading-lg" />
-    </div>
-
-    <div v-else-if="loadError" class="alert alert-error">
-      <span>{{ loadError }}</span>
+    <div v-else-if="loadError" class="rounded-md border border-destructive/30 p-3 text-destructive">
+      {{ loadError }}
     </div>
 
     <div v-else-if="record" class="flex flex-col gap-4">
       <!-- Summary -->
-      <div class="card bg-base-100">
-        <div class="card-body gap-2">
-          <div class="font-semibold">Summary</div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+      <Card>
+        <CardHeader>
+          <CardTitle>Summary</CardTitle>
+        </CardHeader>
+        <CardContent class="gap-2">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-              <div class="text-base-content/60">Hash</div>
-              <div class="font-mono text-xs break-all">{{ record.hash }}</div>
+              <div class="text-muted-foreground">Hash</div>
+              <div class="font-mono break-all">{{ record.hash }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Height</div>
+              <div class="text-muted-foreground">Height</div>
               <div>
-                <RouterLink :to="`/block/${height}`" class="link link-hover">{{
-                  height
-                }}</RouterLink>
+                <RouterLink :to="`/block/${height}`" class="underline underline-offset-2">
+                  {{ height }}
+                </RouterLink>
               </div>
             </div>
             <div>
-              <div class="text-base-content/60">Msg Types</div>
-              <div class="text-xs font-mono break-all">
+              <div class="text-muted-foreground">Msg Types</div>
+              <div class="font-mono break-all">
                 {{ (msgTypes as any).join(', ') || '-' }}
               </div>
             </div>
             <div>
-              <div class="text-base-content/60">Time</div>
+              <div class="text-muted-foreground">Time</div>
               <div>{{ formatTime(timestamp) }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Status</div>
+              <div class="text-muted-foreground">Status</div>
               <div>
-                <span v-if="code === '0'" class="badge badge-success">Success</span>
-                <span v-else class="badge badge-error">Failed {{ codespace }} {{ code }}</span>
+                <Badge v-if="code === '0'" variant="secondary">Success</Badge>
+                <Badge v-else variant="destructive">Failed {{ codespace }} {{ code }}</Badge>
               </div>
             </div>
             <div>
-              <div class="text-base-content/60">Gas</div>
-              <div class="text-xs">
-                {{ gasUsed }}/{{ gasWanted }} ({{ gasEfficiency(gasUsed, gasWanted) }})
-              </div>
+              <div class="text-muted-foreground">Gas</div>
+              <div>{{ gasUsed }}/{{ gasWanted }} ({{ gasEfficiency(gasUsed, gasWanted) }})</div>
             </div>
             <div>
-              <div class="text-base-content/60">Memo</div>
-              <div class="text-xs break-words">{{ memo || '-' }}</div>
+              <div class="text-muted-foreground">Memo</div>
+              <div class="break-words">{{ memo || '-' }}</div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- Fee / Tip -->
-      <div class="card bg-base-100">
-        <div class="card-body gap-2">
-          <div class="font-semibold">Fee</div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+      <Card>
+        <CardHeader>
+          <CardTitle>Fee</CardTitle>
+        </CardHeader>
+        <CardContent class="gap-2">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div>
-              <div class="text-base-content/60">Amount</div>
-              <div class="text-xs">{{ joinCoins(feeCoins as any) || '-' }}</div>
+              <div class="text-muted-foreground">Amount</div>
+              <div>{{ joinCoins(feeCoins as any) || '-' }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Gas Limit</div>
-              <div class="text-xs">{{ gasLimit }}</div>
+              <div class="text-muted-foreground">Gas Limit</div>
+              <div>{{ gasLimit }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Payer / Granter</div>
-              <div class="text-xs break-all">
+              <div class="text-muted-foreground">Payer / Granter</div>
+              <div class="break-all">
                 {{ payer || '-' }}<span v-if="granter"> / {{ granter }}</span>
               </div>
             </div>
           </div>
-          <div class="divider my-2" />
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+          <div class="h-px bg-border my-2" />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-              <div class="text-base-content/60">Tip</div>
-              <div class="text-xs">{{ joinCoins(tipCoins as any) || '-' }}</div>
+              <div class="text-muted-foreground">Tip</div>
+              <div>{{ joinCoins(tipCoins as any) || '-' }}</div>
             </div>
             <div>
-              <div class="text-base-content/60">Tipper</div>
-              <div class="text-xs break-all">{{ tipper || '-' }}</div>
+              <div class="text-muted-foreground">Tipper</div>
+              <div class="break-all">{{ tipper || '-' }}</div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- Signers -->
-      <div class="card bg-base-100">
-        <div class="card-body gap-2">
-          <div class="font-semibold">Signers</div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Signers</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div class="overflow-x-auto">
-            <table class="table table-zebra w-full text-xs">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Mode</th>
-                  <th>Sequence</th>
-                  <th>PubKey</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(s, i) in signerInfos" :key="i">
-                  <td>{{ i + 1 }}</td>
-                  <td>{{ (s?.mode_info as any)?.single?.mode || '-' }}</td>
-                  <td>{{ String((s?.sequence as any) ?? '0') }}</td>
-                  <td class="font-mono break-all">{{ (s?.public_key as any)?.type_url || '-' }}</td>
-                </tr>
-                <tr v-if="!signerInfos.length">
-                  <td colspan="4" class="text-base-content/60 italic">No signer infos.</td>
-                </tr>
-              </tbody>
-            </table>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Mode</TableHead>
+                  <TableHead>Sequence</TableHead>
+                  <TableHead>PubKey</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="(s, i) in signerInfos" :key="i">
+                  <TableCell>{{ i + 1 }}</TableCell>
+                  <TableCell>{{ (s?.mode_info as any)?.single?.mode || '-' }}</TableCell>
+                  <TableCell>{{ String((s?.sequence as any) ?? '0') }}</TableCell>
+                  <TableCell class="font-mono break-all">{{
+                    (s?.public_key as any)?.type_url || '-'
+                  }}</TableCell>
+                </TableRow>
+                <TableRow v-if="!signerInfos.length">
+                  <TableCell colspan="4" class="italic text-muted-foreground"
+                    >No signer infos.</TableCell
+                  >
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- Messages with inline events -->
-      <div class="card bg-base-100">
-        <div class="card-body gap-2">
-          <div class="font-semibold">Messages ({{ msgs.length }})</div>
-          <div v-if="!msgs.length" class="text-sm text-base-content/60">No messages.</div>
-          <div v-else class="flex flex-col gap-3 text-xs">
-            <div v-for="(m, i) in msgs" :key="i" class="bg-base-200 rounded-box p-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Messages ({{ msgs.length }})</CardTitle>
+        </CardHeader>
+        <CardContent class="gap-2">
+          <div v-if="!msgs.length" class="text-muted-foreground">No messages.</div>
+          <div v-else class="flex flex-col gap-3">
+            <div v-for="(m, i) in msgs" :key="i" class="rounded-md border p-3">
               <div class="font-mono break-all mb-2">
                 {{ (m as any)['@type'] || (m as any).type_url || 'unknown' }}
               </div>
-              <pre class="whitespace-pre-wrap break-words p-2 bg-base-100 rounded">{{
+              <pre class="whitespace-pre-wrap break-words border rounded p-2">{{
                 JSON.stringify(m, null, 2)
               }}</pre>
               <div class="mt-3">
-                <div class="text-base-content/60 mb-1">Events for msg {{ i }}</div>
+                <div class="text-muted-foreground mb-1">Events for msg {{ i }}</div>
                 <div class="overflow-x-auto">
-                  <table class="table table-zebra w-full text-xs">
-                    <thead>
-                      <tr>
-                        <th>Event Type</th>
-                        <th>Attributes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Event Type</TableHead>
+                        <TableHead>Attributes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       <template
                         v-for="(ev, ei) in eventsByMsgIndex[String(i)] || []"
                         :key="`msg-${i}-ev-${ei}`"
                       >
-                        <tr>
-                          <td class="font-mono">{{ String((ev as any)?.type || '') }}</td>
-                          <td>
+                        <TableRow>
+                          <TableCell class="font-mono">{{
+                            String((ev as any)?.type || '')
+                          }}</TableCell>
+                          <TableCell>
                             <div class="overflow-x-auto">
-                              <table class="table table-compact w-full text-[11px]">
-                                <thead>
-                                  <tr>
-                                    <th>Key</th>
-                                    <th>Value</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Key</TableHead>
+                                    <TableHead>Value</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  <TableRow
                                     v-for="(a, ai) in ((ev as any)?.attributes as any[]) || []"
                                     :key="`msg-${i}-att-${ei}-${ai}`"
                                   >
-                                    <td class="font-mono">{{ String((a as any)?.key || '') }}</td>
-                                    <td class="font-mono break-all">
+                                    <TableCell class="font-mono">{{
+                                      String((a as any)?.key || '')
+                                    }}</TableCell>
+                                    <TableCell class="font-mono break-all">
                                       {{ String((a as any)?.value || '') }}
-                                    </td>
-                                  </tr>
-                                  <tr v-if="!((ev as any)?.attributes || []).length">
-                                    <td colspan="2" class="text-base-content/60 italic">
-                                      No attributes.
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow v-if="!((ev as any)?.attributes || []).length">
+                                    <TableCell colspan="2" class="italic text-muted-foreground"
+                                      >No attributes.</TableCell
+                                    >
+                                  </TableRow>
+                                </TableBody>
+                              </Table>
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       </template>
                       <template
                         v-for="(ev, ei) in typedEventsByMsgIndex[String(i)] || []"
                         :key="`msg-${i}-tev-${ei}`"
                       >
-                        <tr>
-                          <td class="font-mono">{{ String((ev as any)?.type || '') }}</td>
-                          <td>
+                        <TableRow>
+                          <TableCell class="font-mono">{{
+                            String((ev as any)?.type || '')
+                          }}</TableCell>
+                          <TableCell>
                             <div class="overflow-x-auto">
-                              <table class="table table-compact w-full text-[11px]">
-                                <thead>
-                                  <tr>
-                                    <th>Key</th>
-                                    <th>Value</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Key</TableHead>
+                                    <TableHead>Value</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  <TableRow
                                     v-for="(a, ai) in ((ev as any)?.attributes as any[]) || []"
                                     :key="`msg-${i}-tatt-${ei}-${ai}`"
                                   >
-                                    <td class="font-mono">{{ String((a as any)?.key || '') }}</td>
-                                    <td class="font-mono break-all">
+                                    <TableCell class="font-mono">{{
+                                      String((a as any)?.key || '')
+                                    }}</TableCell>
+                                    <TableCell class="font-mono break-all">
                                       {{ String((a as any)?.value || '') }}
-                                    </td>
-                                  </tr>
-                                  <tr v-if="!((ev as any)?.attributes || []).length">
-                                    <td colspan="2" class="text-base-content/60 italic">
-                                      No attributes.
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                                    </TableCell>
+                                  </TableRow>
+                                  <TableRow v-if="!((ev as any)?.attributes || []).length">
+                                    <TableCell colspan="2" class="italic text-muted-foreground"
+                                      >No attributes.</TableCell
+                                    >
+                                  </TableRow>
+                                </TableBody>
+                              </Table>
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       </template>
-                      <tr
+                      <TableRow
                         v-if="
                           !(
                             eventsByMsgIndex[String(i)]?.length ||
@@ -387,73 +406,83 @@ onMounted(load)
                           )
                         "
                       >
-                        <td colspan="2" class="text-base-content/60 italic">No events.</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                        <TableCell colspan="2" class="italic text-muted-foreground"
+                          >No events.</TableCell
+                        >
+                      </TableRow>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- Logs & Events -->
-      <div class="card bg-base-100">
-        <div class="card-body gap-2">
-          <div class="font-semibold">Logs & Events</div>
-          <div class="text-sm">
-            <div class="text-base-content/60">Raw Log</div>
-            <pre class="whitespace-pre-wrap break-words text-xs">{{ rawLog || '-' }}</pre>
+      <Card>
+        <CardHeader>
+          <CardTitle>Logs & Events</CardTitle>
+        </CardHeader>
+        <CardContent class="gap-2">
+          <div>
+            <div class="text-muted-foreground">Raw Log</div>
+            <pre class="whitespace-pre-wrap break-words">{{ rawLog || '-' }}</pre>
           </div>
-          <div class="divider my-2" />
+          <div class="h-px bg-border my-2" />
           <div class="font-semibold">Transaction Events</div>
           <div class="overflow-x-auto">
-            <table class="table table-zebra w-full text-xs">
-              <thead>
-                <tr>
-                  <th>Event Type</th>
-                  <th>Attributes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(ev, i) in txLevelEvents" :key="`tx-ev-${i}`">
-                  <td class="font-mono">{{ String((ev as any)?.type || '') }}</td>
-                  <td>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Event Type</TableHead>
+                  <TableHead>Attributes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="(ev, i) in txLevelEvents" :key="`tx-ev-${i}`">
+                  <TableCell class="font-mono">{{ String((ev as any)?.type || '') }}</TableCell>
+                  <TableCell>
                     <div class="overflow-x-auto">
-                      <table class="table table-compact w-full text-[11px]">
-                        <thead>
-                          <tr>
-                            <th>Key</th>
-                            <th>Value</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Key</TableHead>
+                            <TableHead>Value</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow
                             v-for="(a, ai) in ((ev as any)?.attributes as any[]) || []"
                             :key="`tx-att-${i}-${ai}`"
                           >
-                            <td class="font-mono">{{ String((a as any)?.key || '') }}</td>
-                            <td class="font-mono break-all">
+                            <TableCell class="font-mono">{{
+                              String((a as any)?.key || '')
+                            }}</TableCell>
+                            <TableCell class="font-mono break-all">
                               {{ String((a as any)?.value || '') }}
-                            </td>
-                          </tr>
-                          <tr v-if="!((ev as any)?.attributes || []).length">
-                            <td colspan="2" class="text-base-content/60 italic">No attributes.</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow v-if="!((ev as any)?.attributes || []).length">
+                            <TableCell colspan="2" class="italic text-muted-foreground"
+                              >No attributes.</TableCell
+                            >
+                          </TableRow>
+                        </TableBody>
+                      </Table>
                     </div>
-                  </td>
-                </tr>
-                <tr v-if="!txLevelEvents.length">
-                  <td colspan="2" class="text-base-content/60 italic">No transaction events.</td>
-                </tr>
-              </tbody>
-            </table>
+                  </TableCell>
+                </TableRow>
+                <TableRow v-if="!txLevelEvents.length">
+                  <TableCell colspan="2" class="italic text-muted-foreground"
+                    >No transaction events.</TableCell
+                  >
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   </section>
 </template>

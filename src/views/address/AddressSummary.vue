@@ -1,209 +1,153 @@
 <template>
-  <div class="text-sm space-y-4 flex">
-    <div class="w-1/4">
-      <div class="card bg-base-100">
-        <div class="card-body p-4">
-          <h3 class="card-title text-base">
-            Bank
-          </h3>
+  <section class="w-full max-w-6xl mx-auto p-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Bank</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div class="overflow-x-auto">
-            <table class="table table-xs table-fixed w-full">
-              <thead>
-                <tr>
-                  <th class="text-left">
-                    denom
-                  </th>
-                  <th class="text-left">
-                    amount
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="r in bankRows"
-                  :key="r.key"
-                >
-                  <td class="text-left">
-                    {{ r.denom }}
-                  </td>
-                  <td class="text-left">
-                    <code>{{ r.amount }}</code>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead class="text-left">denom</TableHead>
+                  <TableHead class="text-left">amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="r in bankRows" :key="r.key">
+                  <TableCell class="text-left">{{ r.denom }}</TableCell>
+                  <TableCell class="text-left font-mono">{{ r.amount }}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div class="card bg-base-100">
-        <div class="card-body p-4">
-          <h3 class="card-title text-base">
-            Staking
-          </h3>
+      <Card>
+        <CardHeader>
+          <CardTitle>Staking</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div class="overflow-x-auto">
-            <table class="table table-xs table-fixed w-full">
-              <thead>
-                <tr>
-                  <th class="text-left">
-                    metric
-                  </th>
-                  <th class="text-left">
-                    value
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="r in stakingRows"
-                  :key="r.key"
-                >
-                  <td class="text-left">
-                    {{ r.label }}
-                  </td>
-                  <td class="text-left">
-                    <code>{{ r.value }}</code>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead class="text-left">metric</TableHead>
+                  <TableHead class="text-left">value</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="r in stakingRows" :key="r.key">
+                  <TableCell class="text-left">{{ r.label }}</TableCell>
+                  <TableCell class="text-left"
+                    ><span class="font-mono">{{ r.value }}</span></TableCell
+                  >
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div class="card bg-base-100">
-        <div class="card-body p-4">
-          <h3 class="card-title text-base">
-            Authz Grants
-          </h3>
+      <Card>
+        <CardHeader>
+          <CardTitle>Authz Grants</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div class="overflow-x-auto">
-            <table class="table table-xs table-fixed w-full">
-              <thead>
-                <tr>
-                  <th class="text-left">
-                    role
-                  </th>
-                  <th class="text-left">
-                    count
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="r in authzRows"
-                  :key="r.key"
-                >
-                  <td class="text-left">
-                    {{ r.label }}
-                  </td>
-                  <td class="text-left">
-                    <code>{{ r.value }}</code>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead class="text-left">role</TableHead>
+                  <TableHead class="text-left">count</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="r in authzRows" :key="r.key">
+                  <TableCell class="text-left">{{ r.label }}</TableCell>
+                  <TableCell class="text-left"
+                    ><span class="font-mono">{{ r.value }}</span></TableCell
+                  >
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div class="card bg-base-100 md:col-span-2 lg:col-span-1">
-        <div class="card-body p-4">
-          <h3 class="card-title text-base">
-            NFTs
-          </h3>
-          <div>
-            NFTs total: <code>{{ nfts.length }}</code>
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>NFTs (Total: {{ nfts.length }})</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div class="overflow-x-auto">
-            <table class="table table-xs table-fixed w-full">
-              <thead>
-                <tr>
-                  <th class="text-left">
-                    class
-                  </th>
-                  <th class="text-left">
-                    count
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="c in nftClassRows"
-                  :key="c.class_id"
-                >
-                  <td class="text-left font-mono">
-                    {{ c.class_id }}
-                  </td>
-                  <td class="text-left">
-                    <code>{{ c.count }}</code>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead class="text-left">class</TableHead>
+                  <TableHead class="text-left">count</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="c in nftClassRows" :key="c.class_id">
+                  <TableCell class="text-left font-mono">{{ c.class_id }}</TableCell>
+                  <TableCell class="text-left"
+                    ><span class="font-mono">{{ c.count }}</span></TableCell
+                  >
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
-        </div>
+        </CardContent>
+      </Card>
+
+      <div class="lg:col-span-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Script</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-2">
+            <div class="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead class="text-left">info</TableHead>
+                    <TableHead class="text-left">value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell class="text-left">version</TableCell>
+                    <TableCell class="text-left font-mono">{{ scriptVersion }}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell class="text-left">height</TableCell>
+                    <TableCell class="text-left font-mono">{{ scriptHeight }}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+
+            <Button v-if="hasWsgi" as-child variant="outline">
+              <a :href="dwappUrl" target="_blank" rel="noopener noreferrer">
+                Go to Dwapp
+                <ArrowTopRightOnSquareIcon class="w-4 h-4 inline-block ml-1" />
+              </a>
+            </Button>
+
+            <div>
+              <div class="font-semibold">Docstring</div>
+              <pre v-if="scriptDocstring" class="whitespace-pre-wrap break-words overflow-x-auto">{{
+                scriptDocstring
+              }}</pre>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-    <div class="w-3/4">
-      <div class="card bg-base-100">
-        <div class="card-body p-4">
-          <h3 class="card-title text-base">
-            Script
-          </h3>
-
-          <div class="overflow-x-auto">
-            <table class="table table-xs table-fixed w-full">
-              <thead>
-                <tr>
-                  <th class="text-left">
-                    info
-                  </th>
-                  <th class="text-left">
-                    value
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="text-left">
-                    version
-                  </td>
-                  <td class="text-left">
-                    <code>{{ scriptVersion }}</code>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="text-left">
-                    height
-                  </td>
-                  <td class="text-left">
-                    <code>{{ scriptHeight }}</code>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <a
-            v-if="hasWsgi"
-            :href="dwappUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="btn btn-outline"
-          >
-            Go to Dwapp
-            <ArrowTopRightOnSquareIcon class="w-4 h-4 inline-block ml-1" />
-          </a>
-          <h4 class="text-sm font-semibold">
-            Docstring
-          </h4>
-          <pre
-            v-if="scriptDocstring"
-            class="overflow-x-auto"
-          >{{ scriptDocstring }}</pre>
-        </div>
-      </div>
-    </div>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -220,6 +164,16 @@ import DelegatorTotalReward from '@/orm/models/distribution/DelegatorTotalReward
 import Grant from '@/orm/models/authz/Grant'
 import DenomMetadata from '@/orm/models/bank/DenomMetadata'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/outline'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 const props = defineProps<{ address: string }>()
 
