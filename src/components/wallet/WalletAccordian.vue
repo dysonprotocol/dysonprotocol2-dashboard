@@ -26,9 +26,15 @@
       <div v-if="address" class="mb-2 break-all">
         <AddressDisplay :address="address" :truncate="10" />
       </div>
-      <div v-if="address" class="mt-2 grid grid-cols-3 gap-2 text-xs">
-        <RouterLink v-for="item in linkItems(address)" :key="item.text" :to="item.to">
-          <span class="iconify size-3 mr-1" :class="item.iconClass" />
+      <div v-if="address" class="mt-2 grid grid-cols-3 gap-2">
+        <RouterLink
+          v-for="item in linkItems(address)"
+          :key="item.text"
+          :to="item.to"
+          class="inline-flex items-center"
+        >
+          <component v-if="item.icon" :is="item.icon" class="size-3 mr-1" />
+          <span v-else class="iconify size-3 mr-1" :class="item.iconClass" />
           {{ item.text }}
         </RouterLink>
       </div>
@@ -40,13 +46,16 @@
 
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import type { Component } from 'vue'
+import { Tag, Clock } from 'lucide-vue-next'
 import AddressDisplay from '@/components/AddressDisplay.vue'
 import { cn } from '@/lib/utils'
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 
 interface LinkItem {
   text: string
-  iconClass: string
+  iconClass?: string
+  icon?: Component
   to: any
 }
 
@@ -91,7 +100,7 @@ function linkItems(address?: string): LinkItem[] {
     },
     {
       text: 'Names',
-      iconClass: 'lucide--shield-check',
+      icon: Tag,
       to: { name: 'AddressNames', params: { address } },
     },
     {
@@ -106,7 +115,7 @@ function linkItems(address?: string): LinkItem[] {
     },
     {
       text: 'Tasks',
-      iconClass: 'lucide--clock',
+      icon: Clock,
       to: { name: 'AddressTasks', params: { address } },
     },
     {
