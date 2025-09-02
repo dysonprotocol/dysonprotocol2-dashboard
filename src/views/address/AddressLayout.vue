@@ -2,14 +2,17 @@
   <div class="space-y-4">
     <div class="flex flex-wrap gap-2">
       <router-link
-        v-for="t in tabs"
-        :key="t.name"
-        :to="{ name: t.name as any, params: { address } }"
+        v-for="link in links"
+        :key="link.text"
+        :to="link.to"
+        custom
+        v-slot="{ href, navigate, isExactActive }"
       >
-        <Button :variant="route.name === t.name ? 'secondary' : 'outline'" class="gap-2">
-          <component :is="t.icon" class="size-4" aria-hidden="true" />
-          {{ t.label }}
-        </Button>
+        <a :href="href" @click="navigate" :class="tabButtonClass(isExactActive)">
+          <component v-if="link.icon" :is="link.icon" class="size-4" aria-hidden="true" />
+          <span v-else class="iconify size-4" :class="link.iconClass" aria-hidden="true" />
+          <span>{{ link.text }}</span>
+        </a>
       </router-link>
     </div>
 
@@ -19,31 +22,16 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { getAddressLinks } from '@/navigation/addressLinks'
 import { Button } from '@/components/ui/button'
-import {
-  DocumentTextIcon,
-  CodeBracketIcon,
-  TagIcon,
-  FolderIcon,
-  CubeIcon,
-  UserGroupIcon,
-  KeyIcon,
-  BanknotesIcon,
-} from '@heroicons/vue/24/outline'
 
 const props = defineProps<{ address: string }>()
-const route = useRoute()
 const address = computed(() => props.address)
 
-const tabs = [
-  { name: 'AddressSummary', label: 'Summary', icon: DocumentTextIcon },
-  { name: 'AddressScript', label: 'Script', icon: CodeBracketIcon },
-  { name: 'AddressNames', label: 'Names', icon: TagIcon },
-  { name: 'AddressCoins', label: 'Coins', icon: BanknotesIcon },
-  { name: 'AddressStorage', label: 'Storage', icon: FolderIcon },
-  { name: 'AddressStaking', label: 'Staking', icon: UserGroupIcon },
-  { name: 'AddressNFTs', label: 'NFTs', icon: CubeIcon },
-  { name: 'AddressAuthz', label: 'Authz', icon: KeyIcon },
-]
+const links = computed(() => getAddressLinks(address.value))
+
+function tabButtonClass(isActive: boolean): string {
+  const base = 'inline-flex items-center gap-2  px-3 py-1.5 h-8 text-sm transition-colors '
+  return isActive ? base + 'text-primary ' : base
+}
 </script>

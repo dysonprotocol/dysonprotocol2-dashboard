@@ -94,7 +94,6 @@
               :show-locked="true"
               :default-address="selectedExecutor"
               :default-grantee="selectedGranteeAddress"
-              :button-class="'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 disabled:pointer-events-none disabled:opacity-50'"
               :msg-type-filter="msgTypeFilter"
               @update:executor-address="onExecutorAddress"
               @update:grantee-address="onGranteeAddress"

@@ -2,15 +2,15 @@
   <div class="relative min-w-0 overflow-hidden">
     <Dialog v-model:open="isOpen">
       <DialogTrigger asChild>
-        <button
+        <Button
           type="button"
-          :class="['btn', 'min-w-0', 'overflow-hidden', buttonClass]"
+          :class="['min-w-0', 'overflow-hidden', buttonClass]"
           data-testid="wallet-selector-open"
         >
           <span class="ml-1 flex-1 min-w-0 truncate">{{ selectedLabel }}</span>
           <ChevronUpIcon v-if="isOpen" class="size-4 opacity-70" />
           <ChevronDownIcon v-else class="size-4 opacity-70" />
-        </button>
+        </Button>
       </DialogTrigger>
 
       <DialogContent data-testid="wallet-selector-modal">
@@ -60,34 +60,39 @@
               <div v-if="group.wallet.isUnlocked && group.authzOptions.length > 0" class="mt-3">
                 <div class="text-xs text-base-content/60 mb-1">Via Authz</div>
                 <div class="space-y-1">
-                  <button
+                  <Button
                     v-for="(auth, idx) in group.authzOptions"
                     :key="auth.granterAddress + ':' + idx"
                     type="button"
-                    class="w-full text-left p-2 rounded-md border border-primary/60 hover:bg-primary/10 cursor-pointer"
+                    variant="outline"
+                    class="w-full justify-start p-2 border-primary/60 hover:bg-primary/10"
                     :class="{
                       'bg-primary/10': isAuthzSelected(group.wallet.address, auth),
-                      'bg-base-100': !isAuthzSelected(group.wallet.address, auth),
                     }"
                     @click.stop="selectAuthz(group.wallet, auth)"
                   >
-                    <div class="flex items-center justify-between">
-                      <div>
-                        <span class="font-medium">{{ short(auth.granterAddress) }}</span>
-                        <span class="opacity-70"> via Authz</span>
-                        <span class="opacity-70"> (signed by {{ group.wallet.name }})</span>
+                    <div class="w-full">
+                      <div class="flex items-center justify-between">
+                        <div>
+                          <span class="font-medium">{{ short(auth.granterAddress) }}</span>
+                          <span class="opacity-70"> via Authz</span>
+                          <span class="opacity-70"> (signed by {{ group.wallet.name }})</span>
+                        </div>
+                        <span
+                          v-if="isAuthzSelected(group.wallet.address, auth)"
+                          class="text-primary"
+                        >
+                          <CheckIcon class="size-5" />
+                        </span>
                       </div>
-                      <span v-if="isAuthzSelected(group.wallet.address, auth)" class="text-primary">
-                        <CheckIcon class="size-5" />
-                      </span>
+                      <div class="text-xs opacity-70 mt-1 flex items-center gap-2">
+                        <span>{{ auth.notes }}</span>
+                        <span v-if="auth.expiration" :title="auth.expiration"
+                          >exp: {{ shortTs(auth.expiration) }}</span
+                        >
+                      </div>
                     </div>
-                    <div class="text-xs opacity-70 mt-1 flex items-center gap-2">
-                      <span>{{ auth.notes }}</span>
-                      <span v-if="auth.expiration" :title="auth.expiration"
-                        >exp: {{ shortTs(auth.expiration) }}</span
-                      >
-                    </div>
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -112,6 +117,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
