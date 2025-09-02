@@ -98,15 +98,18 @@
           <div v-if="importError" class="text-error">
             {{ importError }}
           </div>
-          <button
-            class="btn btn-primary w-full btn-sm"
+          <Button
+            class="w-full h-8"
             :disabled="!canImport || importLoading"
             data-testid="cosmjs-add-button"
             @click="handleImport"
           >
-            <span v-if="importLoading" class="loading loading-spinner loading-xs mr-1" />
+            <span
+              v-if="importLoading"
+              class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-current"
+            />
             Add Wallet
-          </button>
+          </Button>
         </div>
       </template>
     </WalletAccordian>
@@ -120,6 +123,7 @@ import { useRoute } from 'vue-router'
 import { Accordion } from '@/components/ui/accordion'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import WalletAccordian from '@/components/wallet/WalletAccordian.vue'
 
 const {
