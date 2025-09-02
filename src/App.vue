@@ -1,7 +1,6 @@
 <template>
   <div class="size-full">
     <div class="flex h-screen overflow-hidden">
-      <!-- Hidden toggles replicate Nexus structure -->
       <input
         id="layout-sidebar-toggle-trigger"
         type="checkbox"

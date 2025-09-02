@@ -1,64 +1,46 @@
 <template>
-  <div class="collapse collapse-arrow border border-primary/20">
-    <input type="checkbox" />
-    <div class="collapse-title" :class="{ 'font-bold': isCurrentAddress }">
-      <div class="text-base">
-        {{ titleText }}
-      </div>
-    </div>
-    <div class="collapse-content">
-      <div v-if="isKeplrConnected" class="mb-2">
-        <p class="">Connected</p>
-        <AddressDisplay :address="address" :truncate="10" />
-      </div>
-      <div v-else-if="!isKeplrAvailable" class="mb-2">Keplr not available</div>
-      <div v-else class="mb-2">Not connected</div>
-      <div class="flex items-center gap-2">
-        <button
-          class="btn btn-outline btn-xs"
-          :disabled="isBusy || isKeplrConnected || !isKeplrAvailable"
-          @click="connectKeplr"
-        >
-          Connect
-        </button>
-        <button
-          class="btn btn-outline btn-xs"
-          :disabled="isBusy || !isKeplrConnected"
-          @click="disconnect"
-        >
-          Disconnect
-        </button>
-        <div v-if="errorMessage" class="text-error">
-          {{ errorMessage }}
-        </div>
-      </div>
-      <div v-if="isKeplrConnected && links.length" class="mt-2 grid grid-cols-3 gap-2 text-xs">
-        <RouterLink
-          v-for="item in links"
-          :key="item.text"
-          v-slot="{ href, navigate, isExactActive }"
-          :to="item.to"
-        >
-          <a
-            :href="href"
-            class="link link-hover"
-            :class="{ 'font-bold': isExactActive }"
-            @click="navigate"
+  <Accordion type="single" collapsible class="">
+    <WalletAccordian
+      value="keplr"
+      :title="titleText"
+      :is-active="isCurrentAddress"
+      :unlocked-active="isKeplrConnected"
+      :address="address"
+    >
+      <template #default>
+        <div class="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="isBusy || isKeplrConnected || !isKeplrAvailable"
+            @click="connectKeplr"
           >
-            <span class="iconify size-3 mr-1" :class="item.iconClass" />
-            {{ item.text }}
-          </a>
-        </RouterLink>
-      </div>
-    </div>
-  </div>
+            Connect
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="isBusy || !isKeplrConnected"
+            @click="disconnect"
+          >
+            Disconnect
+          </Button>
+          <div v-if="errorMessage" class="text-destructive">
+            {{ errorMessage }}
+          </div>
+        </div>
+      </template>
+    </WalletAccordian>
+  </Accordion>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useWallet } from '@/composables/useWallet'
-import AddressDisplay from '@/components/AddressDisplay.vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
+import { Accordion } from '@/components/ui/accordion'
+import { Button } from '@/components/ui/button'
+import WalletAccordian from '@/components/wallet/WalletAccordian.vue'
 
 const { unlockedWallets, connectExtension, lockWallet } = useWallet()
 
@@ -75,58 +57,6 @@ const titleText = computed(() => keplrWallet.value?.name || 'Keplr Wallet')
 const isBusy = ref(false)
 const errorMessage = ref('')
 const isKeplrAvailable = ref(false)
-
-const links = computed(() => {
-  const addr = address.value
-  if (!addr) return []
-  return [
-    {
-      text: 'Summary',
-      iconClass: 'lucide--scroll-text',
-      to: { name: 'AddressSummary', params: { address: addr } },
-    },
-    {
-      text: 'Coins',
-      iconClass: 'lucide--coins',
-      to: { name: 'AddressCoins', params: { address: addr } },
-    },
-    {
-      text: 'NFTs',
-      iconClass: 'lucide--file-badge-2',
-      to: { name: 'AddressNFTs', params: { address: addr } },
-    },
-    {
-      text: 'Staking',
-      iconClass: 'lucide--landmark',
-      to: { name: 'AddressStaking', params: { address: addr } },
-    },
-    {
-      text: 'Names',
-      iconClass: 'lucide--shield-check',
-      to: { name: 'AddressNames', params: { address: addr } },
-    },
-    {
-      text: 'Script',
-      iconClass: 'lucide--file-json',
-      to: { name: 'AddressScript', params: { address: addr } },
-    },
-    {
-      text: 'Storage',
-      iconClass: 'lucide--table',
-      to: { name: 'AddressStorage', params: { address: addr } },
-    },
-    {
-      text: 'Tasks',
-      iconClass: 'lucide--clock',
-      to: { name: 'AddressTasks', params: { address: addr } },
-    },
-    {
-      text: 'Authz',
-      iconClass: 'lucide--key-round',
-      to: { name: 'AddressAuthz', params: { address: addr } },
-    },
-  ]
-})
 
 onMounted(() => {
   isKeplrAvailable.value = typeof window !== 'undefined' && !!window.keplr

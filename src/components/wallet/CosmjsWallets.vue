@@ -1,31 +1,16 @@
 <template>
-  <div class="space-y-2">
-    <div
+  <Accordion type="multiple" collapsible class="">
+    <WalletAccordian
       v-for="wallet in localCosmJsWallets"
       :key="wallet.name"
-      class="collapse collapse-arrow border border-primary/20"
-      :class="{
-        'border-success': route.params.address === wallet.address && isWalletUnlocked(wallet),
-        'border-warning': route.params.address === wallet.address && !isWalletUnlocked(wallet),
-      }"
-      :data-testid="`wallet-item-${wallet.name}`"
+      :value="wallet.name"
+      :title="wallet.name"
+      :is-active="route.params.address === wallet.address"
+      :unlocked-active="isWalletUnlocked(wallet)"
+      :address="wallet.address"
+      :data-test-id="`wallet-item-${wallet.name}`"
     >
-      <input type="checkbox" />
-      <div class="collapse-title">
-        <div class="text-base" :class="{ 'font-bold': route.params.address === wallet.address }">
-          {{ wallet.name }}
-        </div>
-      </div>
-      <div class="collapse-content">
-        <div class="mb-2 break-all">
-          <AddressDisplay :address="wallet.address" :truncate="10" />
-        </div>
-        <div class="mt-1 grid grid-cols-3 gap-2 text-xs">
-          <RouterLink v-for="item in linkItems(wallet.address)" :key="item.text" :to="item.to">
-            <span class="iconify size-3 mr-1" :class="item.iconClass" />
-            {{ item.text }}
-          </RouterLink>
-        </div>
+      <template #default>
         <div class="flex items-center justify-between gap-2 mt-2">
           <div class="">
             <button
@@ -37,12 +22,11 @@
             </button>
 
             <div v-else class="flex items-center gap-1">
-              <input
+              <Input
                 v-model="unlockPassword[wallet.name]"
                 type="password"
                 placeholder="Password"
-                class="input input-xs w-24"
-                :class="{ 'input-error': unlockErrors[wallet.name] }"
+                :class="['h-8 w-24', { 'border-destructive': unlockErrors[wallet.name] }]"
               />
               <button class="btn btn-primary btn-xs" @click="doUnlock(wallet.name)">Unlock</button>
             </div>
@@ -58,74 +42,86 @@
         <div v-if="unlockErrors[wallet.name]" class="text-error mt-1">
           {{ unlockErrors[wallet.name] }}
         </div>
-      </div>
-    </div>
+      </template>
+    </WalletAccordian>
 
-    <div class="collapse collapse-arrow border border-primary/20" data-testid="cosmjs-add-collapse">
-      <input type="checkbox" data-testid="cosmjs-add-toggle" />
-      <div class="collapse-title">Add web wallet</div>
-      <div class="collapse-content flex flex-col gap-2">
-        <input
-          v-model="newWalletName"
-          placeholder="Wallet name"
-          class="input input-xs w-full"
-          data-testid="cosmjs-name-input"
-        />
-        <textarea
-          v-model="mnemonic"
-          placeholder="Enter recovery phrase..."
-          class="textarea textarea-xs w-full resize-none"
-          rows="4"
-          data-testid="cosmjs-mnemonic-input"
-        />
-
-        <button type="button" class="btn btn-outline btn-xs" @click="generateSeed(24)">
-          Generate Seed
-        </button>
-        <label class="flex items-start gap-2">
-          <Checkbox
-            v-model:checked="seedBackedUp"
-            class="mt-0.5"
-            data-testid="cosmjs-seed-confirm"
-            aria-label="Confirm seed backup"
+    <AccordionItem
+      value="add-cosmjs"
+      data-testid="cosmjs-add-collapse"
+      :class="'border last:border-b rounded-md p-1 my-2'"
+    >
+      <AccordionTrigger data-testid="cosmjs-add-toggle">Add web wallet</AccordionTrigger>
+      <AccordionContent>
+        <div class="flex flex-col gap-2">
+          <Input
+            v-model="newWalletName"
+            placeholder="Wallet name"
+            class="h-8 w-full"
+            data-testid="cosmjs-name-input"
           />
-          <span class="opacity-80">
-            I have backed up my seed phrase and understand the risks. I take full responsibility for
-            my actions.
-          </span>
-        </label>
+          <Textarea
+            v-model="mnemonic"
+            placeholder="Enter recovery phrase..."
+            class="w-full resize-none min-h-24"
+            data-testid="cosmjs-mnemonic-input"
+          />
 
-        <input
-          v-model="newWalletPassword"
-          type="password"
-          placeholder="Password"
-          class="input input-xs w-full"
-          :disabled="!seedBackedUp"
-          data-testid="cosmjs-password-input"
-        />
-        <div v-if="importError" class="text-error">
-          {{ importError }}
+          <button type="button" class="btn btn-outline btn-xs" @click="generateSeed(24)">
+            Generate Seed
+          </button>
+          <label class="flex items-start gap-2">
+            <input
+              type="checkbox"
+              v-model="seedBackedUp"
+              class="mt-0.5"
+              data-testid="cosmjs-seed-confirm"
+              aria-label="Confirm seed backup"
+            />
+            <span class="opacity-80">
+              I have backed up my seed phrase and understand the risks. I take full responsibility
+              for my actions.
+            </span>
+          </label>
+
+          <Input
+            v-model="newWalletPassword"
+            type="password"
+            placeholder="Password"
+            class="h-8 w-full"
+            :disabled="!seedBackedUp"
+            data-testid="cosmjs-password-input"
+          />
+          <div v-if="importError" class="text-error">
+            {{ importError }}
+          </div>
+          <button
+            class="btn btn-primary w-full btn-sm"
+            :disabled="!canImport || importLoading"
+            data-testid="cosmjs-add-button"
+            @click="handleImport"
+          >
+            <span v-if="importLoading" class="loading loading-spinner loading-xs mr-1" />
+            Add Wallet
+          </button>
         </div>
-        <button
-          class="btn btn-primary w-full btn-sm"
-          :disabled="!canImport || importLoading"
-          data-testid="cosmjs-add-button"
-          @click="handleImport"
-        >
-          <span v-if="importLoading" class="loading loading-spinner loading-xs mr-1" />
-          Add Wallet
-        </button>
-      </div>
-    </div>
-  </div>
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
 </template>
 
 <script setup>
 import { ref, computed, reactive, watch } from 'vue'
 import { useWallet } from '@/composables/useWallet'
-import AddressDisplay from '@/components/AddressDisplay.vue'
-import { RouterLink, useRoute } from 'vue-router'
-import { Checkbox } from '@/components/ui/checkbox'
+import { useRoute } from 'vue-router'
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import WalletAccordian from '@/components/wallet/WalletAccordian.vue'
 
 const {
   unlockedWallets,
@@ -213,56 +209,7 @@ watch([newWalletName, mnemonic], () => {
   if (importError.value) importError.value = ''
 })
 
-function linkItems(address) {
-  if (!address) return []
-  return [
-    {
-      text: 'Summary',
-      iconClass: 'lucide--scroll-text',
-      to: { name: 'AddressSummary', params: { address } },
-    },
-    {
-      text: 'Coins',
-      iconClass: 'lucide--coins',
-      to: { name: 'AddressCoins', params: { address } },
-    },
-    {
-      text: 'NFTs',
-      iconClass: 'lucide--file-badge-2',
-      to: { name: 'AddressNFTs', params: { address } },
-    },
-    {
-      text: 'Staking',
-      iconClass: 'lucide--landmark',
-      to: { name: 'AddressStaking', params: { address } },
-    },
-    {
-      text: 'Names',
-      iconClass: 'lucide--shield-check',
-      to: { name: 'AddressNames', params: { address } },
-    },
-    {
-      text: 'Script',
-      iconClass: 'lucide--file-json',
-      to: { name: 'AddressScript', params: { address } },
-    },
-    {
-      text: 'Storage',
-      iconClass: 'lucide--table',
-      to: { name: 'AddressStorage', params: { address } },
-    },
-    {
-      text: 'Tasks',
-      iconClass: 'lucide--clock',
-      to: { name: 'AddressTasks', params: { address } },
-    },
-    {
-      text: 'Authz',
-      iconClass: 'lucide--key-round',
-      to: { name: 'AddressAuthz', params: { address } },
-    },
-  ]
-}
+// links are now provided by WalletAccordian
 </script>
 
 <style scoped>

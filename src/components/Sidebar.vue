@@ -12,7 +12,7 @@
         <div class="mt-4 px-2.5 pb-4 space-y-2">
           <KeplrCard />
           <CosmjsWallets />
-          <div class="divider" />
+
           <nav class="space-y-2 flex flex-col">
             <router-link to="/names" class="w-full justify-start"> Names </router-link>
             <router-link to="/blocks" class="w-full justify-start"> Blocks </router-link>
