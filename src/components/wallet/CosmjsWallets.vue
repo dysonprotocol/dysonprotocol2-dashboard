@@ -45,13 +45,17 @@
       </template>
     </WalletAccordian>
 
-    <AccordionItem
+    <WalletAccordian
       value="add-cosmjs"
-      data-testid="cosmjs-add-collapse"
-      :class="'border last:border-b rounded-md p-1 my-2'"
+      title="Add web wallet"
+      :is-active="false"
+      :unlocked-active="false"
+      data-test-id="cosmjs-add-collapse"
+      :item-class="''"
+      :address="undefined"
+      :trigger-test-id="'cosmjs-add-toggle'"
     >
-      <AccordionTrigger data-testid="cosmjs-add-toggle">Add web wallet</AccordionTrigger>
-      <AccordionContent>
+      <template #default>
         <div class="flex flex-col gap-2">
           <Input
             v-model="newWalletName"
@@ -104,8 +108,8 @@
             Add Wallet
           </button>
         </div>
-      </AccordionContent>
-    </AccordionItem>
+      </template>
+    </WalletAccordian>
   </Accordion>
 </template>
 
@@ -113,12 +117,7 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { useWallet } from '@/composables/useWallet'
 import { useRoute } from 'vue-router'
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from '@/components/ui/accordion'
+import { Accordion } from '@/components/ui/accordion'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import WalletAccordian from '@/components/wallet/WalletAccordian.vue'

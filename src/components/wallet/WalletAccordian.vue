@@ -4,8 +4,21 @@
     :data-testid="dataTestId"
     :class="cn('border last:border-b rounded-md p-1 my-2', borderClass(), itemClass)"
   >
-    <AccordionTrigger :class="cn({ 'font-bold': isActive })">
-      <span class="text-base">{{ title }}</span>
+    <AccordionTrigger :data-testid="triggerTestId" :class="cn({ 'font-bold': isActive })">
+      <span class="text-base">
+        <template v-if="address">
+          <RouterLink
+            :to="{ name: 'AddressSummary', params: { address } }"
+            class="hover:underline"
+            @click.stop
+          >
+            {{ title }}
+          </RouterLink>
+        </template>
+        <template v-else>
+          {{ title }}
+        </template>
+      </span>
     </AccordionTrigger>
     <AccordionContent>
       <slot name="content-top" />
@@ -45,6 +58,7 @@ const props = defineProps<{
   address?: string
   itemClass?: string
   dataTestId?: string
+  triggerTestId?: string
 }>()
 
 function borderClass(): string {
