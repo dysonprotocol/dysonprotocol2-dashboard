@@ -1,7 +1,7 @@
-import { watch } from 'vue'
-import { useRouter } from 'vue-router'
+/* no router needed for custom link */
 import { toast } from 'vue-sonner'
 import { useWallet } from '@/composables/useWallet'
+import { defineComponent, h, markRaw, watch } from 'vue'
 
 const publishedKeys = new Set<string>()
 
@@ -20,8 +20,27 @@ function shortHash(hash: string) {
   return `${hash.slice(0, 8)}…${hash.slice(-6)}`
 }
 
+function CustomTxToast(title: string, statusText: string, hash: string) {
+  const href = `/txs/${hash}`
+  return markRaw(
+    defineComponent({
+      name: 'CustomTxToast',
+      setup() {
+        return () =>
+          h('div', { class: 'space-y-1' }, [
+            h('div', { class: 'text-sm opacity-80' }, [
+              statusText,
+              ' · ',
+              h('a', { href, class: 'underline underline-offset-4' }, shortHash(hash)),
+            ]),
+            h('div', { class: 'font-medium' }, title || 'Transaction'),
+          ])
+      },
+    })
+  )
+}
+
 export function useTxToasts() {
-  const router = useRouter()
   const { txHistory, removeTransaction } = useWallet()
 
   watch(
@@ -34,20 +53,23 @@ export function useTxToasts() {
         if (publishedKeys.has(key)) continue
 
         const title = item.type || 'Transaction'
-        const desc = `${String(item.status || '').toLowerCase()} • ${shortHash(item.txHash)}`
+        const statusText = String(item.status || '').toLowerCase()
         const status = String(item.status || '').toLowerCase()
         const isError = status === 'failed' || status === 'error'
         const isSuccess = status === 'success'
         const show = isError ? toast.error : isSuccess ? toast.success : toast.message
-        show(desc, {
+        const Comp = CustomTxToast(title, statusText, item.txHash)
+        show(Comp as unknown as string, {
           id: key,
-          description: title,
-          duration: Infinity,
-          action: {
-            label: 'View Tx',
-            onClick: () => router.push(`/txs/${item.txHash}`),
-          },
+          duration: 999999,
           onDismiss: () => {
+            try {
+              removeTransaction(item.txHash)
+            } catch {
+              console.error('Failed to remove transaction from txHistory', item.txHash)
+            }
+          },
+          onAutoClose: () => {
             try {
               removeTransaction(item.txHash)
             } catch {

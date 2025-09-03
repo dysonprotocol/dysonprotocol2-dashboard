@@ -14,10 +14,6 @@ defineOptions({ name: 'UiSonnerToaster' })
     :expand="true"
     :visible-toasts="5"
     rich-colors
-    :style="{
-      '--normal-bg': 'var(--popover)',
-      '--normal-text': 'var(--popover-foreground)',
-      '--normal-border': 'var(--border)',
-    }"
+    close-button
   />
 </template>

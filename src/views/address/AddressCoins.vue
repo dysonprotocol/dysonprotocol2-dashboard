@@ -1,13 +1,8 @@
 <template>
   <div class="">
-    <form
-      class="max-w-xl mx-auto"
-      @submit.prevent="submitSend"
-    >
+    <form class="max-w-xl mx-auto" @submit.prevent="submitSend">
       <fieldset class="space-y-4 border border-base-300 rounded-md p-4">
-        <legend class="mb-0">
-          Send Coins
-        </legend>
+        <legend class="mb-0">Send Coins</legend>
         <!-- Signer selection (direct or via authz) -->
 
         <div>
@@ -27,31 +22,25 @@
             @update:authz-notes="onAuthzNotes"
             @update:selected-grant="onSelectedGrant"
           />
-          <div
-            v-if="isAuthz"
-            class="mt-2 text-xs opacity-80 break-all"
-          >
-            <div v-if="authzNotes">
-              Note: {{ authzNotes }}
-            </div>
+          <div v-if="isAuthz" class="mt-2 text-xs opacity-80 break-all">
+            <div v-if="authzNotes">Note: {{ authzNotes }}</div>
             <div v-if="selectedGrant">
               <div>
                 Authz: <code>{{ selectedGrant.type_url }}</code>
-                <span
-                  v-if="selectedGrant.expiration"
-                  class="ml-2"
-                >exp: {{ selectedGrant.expiration }}</span>
+                <span v-if="selectedGrant.expiration" class="ml-2"
+                  >exp: {{ selectedGrant.expiration }}</span
+                >
               </div>
               <div
                 v-if="
                   selectedGrant.authorization?.['@type'] ===
-                    '/cosmos.bank.v1beta1.SendAuthorization'
+                  '/cosmos.bank.v1beta1.SendAuthorization'
                 "
               >
                 <div
                   v-if="
                     Array.isArray(selectedGrant.authorization?.spend_limit) &&
-                      selectedGrant.authorization.spend_limit.length
+                    selectedGrant.authorization.spend_limit.length
                   "
                 >
                   Limit:
@@ -59,12 +48,13 @@
                     v-for="c in selectedGrant.authorization.spend_limit"
                     :key="c.denom"
                     class="mr-2"
-                  >{{ c.amount }} {{ c.denom }}</span>
+                    >{{ c.amount }} {{ c.denom }}</span
+                  >
                 </div>
                 <div
                   v-if="
                     Array.isArray(selectedGrant.authorization?.allow_list) &&
-                      selectedGrant.authorization.allow_list.length
+                    selectedGrant.authorization.allow_list.length
                   "
                 >
                   Allowed recipients:
@@ -74,29 +64,25 @@
                 </div>
               </div>
             </div>
-            <ul
-              v-if="authzWarnings.length"
-              class="text-warning mt-1 list-disc pl-4"
-            >
-              <li
-                v-for="w in authzWarnings"
-                :key="w"
-              >
+            <ul v-if="authzWarnings.length" class="text-warning mt-1 list-disc pl-4">
+              <li v-for="w in authzWarnings" :key="w">
                 {{ w }}
               </li>
             </ul>
           </div>
         </div>
-        <label for="sendFrom">From:
+        <label for="sendFrom"
+          >From:
           <input
             type="text"
             name="sendFrom"
             :value="address"
             class="input w-full cursor-default select-none bg-base-300"
             readonly
-          >
+          />
         </label>
-        <label for="sendTo">To:
+        <label for="sendTo"
+          >To:
           <ResolveNameOrAddresInput
             v-model="sendTo"
             v-model:text="sendToText"
@@ -105,10 +91,7 @@
         </label>
         <div>
           <!-- spendable display amount -->
-          <a
-            class="text-xs cursor-pointer hover:underline"
-            @click="spendableClick"
-          >
+          <a class="text-xs cursor-pointer hover:underline" @click="spendableClick">
             Spendable:
             {{
               DenomMetadata.normalize({
@@ -127,14 +110,8 @@
             @update:base="onUpdateBase"
             @update:display="onUpdateDisplay"
           />
-          <ul
-            v-if="sendValidation.length"
-            class="text-xs text-warning mt-2"
-          >
-            <li
-              v-for="m in sendValidation"
-              :key="m"
-            >
+          <ul v-if="sendValidation.length" class="text-xs text-warning mt-2">
+            <li v-for="m in sendValidation" :key="m">
               {{ m }}
             </li>
           </ul>
@@ -147,7 +124,7 @@
               type="checkbox"
               name="confirm"
               :disabled="!hasInputs"
-            >
+            />
             Confirm Send
             <span class="font-mono">{{ sendAmount || '0' }} {{ sendDenom }}</span>
             to
@@ -155,23 +132,13 @@
           </label>
         </div>
 
-        <button
-          class="btn btn-primary"
-          type="submit"
-          :disabled="!canSend || !signerReady"
-        >
+        <button class="btn btn-primary" type="submit" :disabled="!canSend || !signerReady">
           Send
         </button>
-        <div
-          v-if="sendError"
-          class="text-sm text-red-600"
-        >
+        <div v-if="sendError" class="text-sm text-red-600">
           {{ sendError }}
         </div>
-        <div
-          v-else-if="!signerReady"
-          class="text-sm"
-        >
+        <div v-else-if="!signerReady" class="text-sm">
           Unlock this wallet or select an authorized signer to send.
         </div>
       </fieldset>
@@ -180,10 +147,7 @@
     <div>
       <div class="overflow-x-auto">
         <table class="table table-pin-rows table-zebra bg-base-200 text-sm">
-          <template
-            v-for="section in grouped"
-            :key="section.group"
-          >
+          <template v-for="section in grouped" :key="section.group">
             <thead>
               <tr>
                 <th colspan="4">
@@ -194,10 +158,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="row in section.items"
-                :key="row.key"
-              >
+              <tr v-for="row in section.items" :key="row.key">
                 <td class="font-mono">
                   {{ row.denom }}
                   <span class="text-xs text-gray-500">{{ row.description }}</span>
@@ -208,22 +169,14 @@
                 </td>
                 <td>
                   <code>{{ row.total }}</code>
-                  <span
-                    v-if="row.differs"
-                    class="ml-1 text-warning"
-                  >≠</span>
+                  <span v-if="row.differs" class="ml-1 text-warning">≠</span>
                 </td>
               </tr>
             </tbody>
           </template>
           <tbody v-if="grouped.length === 0">
             <tr>
-              <td
-                colspan="4"
-                class="opacity-70"
-              >
-                No balances
-              </td>
+              <td colspan="4" class="opacity-70">No balances</td>
             </tr>
           </tbody>
         </table>
@@ -388,7 +341,7 @@ const allowedBases = computed(() => {
     return [] as string[]
   }
 })
-const defaultBaseDenom = computed(() => allowedBases.value[0] || 'udys')
+const defaultBaseDenom = computed(() => 'udys')
 
 function onUpdateBase(payload: { amount: string; denom: string }) {
   sendAmount.value = payload.amount || ''
