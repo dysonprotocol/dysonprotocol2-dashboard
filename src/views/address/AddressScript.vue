@@ -1,16 +1,25 @@
 <template>
-  <div class="grid md:grid-cols-2 gap-3">
-    <div
-      ref="listEl"
-      class="overflow-y-auto min-h-0 space-y-3"
-      :style="{ height: listHeightPx + 'px' }"
-    >
-      <FunctionsList :functions="functions" :address="address" @focus-code="focusCode" />
-    </div>
-    <div>
-      <ScriptEditor ref="editorRef" :address="address" :script="script" />
-    </div>
-  </div>
+  <ResizablePanelGroup
+    direction="horizontal"
+    class="gap-3"
+    :auto-save-id="`address-script:${address}`"
+  >
+    <ResizablePanel :default-size="35" :min-size="20" :max-size="80">
+      <div
+        ref="listEl"
+        class="overflow-y-auto min-h-0 space-y-3"
+        :style="{ height: listHeightPx + 'px' }"
+      >
+        <FunctionsList :functions="functions" :address="address" @focus-code="focusCode" />
+      </div>
+    </ResizablePanel>
+    <ResizableHandle with-handle />
+    <ResizablePanel :default-size="65" :min-size="20" :max-size="80">
+      <div>
+        <ScriptEditor ref="editorRef" :address="address" :script="script" />
+      </div>
+    </ResizablePanel>
+  </ResizablePanelGroup>
 </template>
 
 <script setup lang="ts">
@@ -20,6 +29,7 @@ import { useAxiosRepo } from '@pinia-orm/axios'
 import Script from '@/orm/models/script/Script'
 import ScriptEditor from '@/components/scripts/ScriptEditor.vue'
 import FunctionsList from '@/components/scripts/FunctionsList.vue'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 
 const props = defineProps<{ address: string }>()
 
