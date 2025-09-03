@@ -1,5 +1,5 @@
 <template>
-  <Accordion type="multiple" collapsible class="">
+  <Accordion type="multiple" collapsible v-model="openValues" class="">
     <WalletAccordian
       v-for="wallet in localCosmJsWallets"
       :key="wallet.name"
@@ -118,6 +118,7 @@
 
 <script setup>
 import { ref, computed, reactive, watch } from 'vue'
+import { useStorage } from '@vueuse/core'
 import { useWallet } from '@/composables/useWallet'
 import { useRoute } from 'vue-router'
 import { Accordion } from '@/components/ui/accordion'
@@ -138,6 +139,9 @@ const {
 } = useWallet()
 
 const route = useRoute()
+
+// Persist open states across reloads (multiple selection supported)
+const openValues = useStorage('accordion:cosmjs-open', [])
 
 const unlockPassword = reactive({})
 const unlockErrors = reactive({})

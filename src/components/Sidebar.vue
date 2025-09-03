@@ -10,6 +10,56 @@
     <div class="relative min-h-0 grow">
       <div data-simplebar class="size-full overflow-y-auto">
         <div class="mt-4 px-2.5 pb-4 space-y-2">
+          <div class="rounded-md bg-muted/60 p-3 text-[11px] text-muted-foreground space-y-1">
+            <div class="flex items-center justify-between gap-2">
+              <span class="truncate">Chain ID:</span>
+              <span
+                :class="['font-mono', isNonMainnet ? 'text-destructive' : 'text-muted-foreground']"
+              >
+                {{ chainIdDisplay || '…' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="truncate">Height:</span>
+              <span class="font-mono text-muted-foreground">{{ latestHeight || '…' }}</span>
+            </div>
+            <div v-if="nodeVersion || nodeCommit" class="flex items-center justify-between gap-2">
+              <span class="truncate">Version:</span>
+              <span class="font-mono text-muted-foreground">
+                <span v-if="nodeVersion">
+                  <a
+                    :href="nodeBranchUrl"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="hover:text-foreground"
+                    >{{ nodeVersion }}</a
+                  >
+                </span>
+                <span v-if="nodeCommit">
+                  -
+                  <a
+                    :href="nodeCommitUrl"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="hover:text-foreground"
+                    >{{ nodeCommit }}</a
+                  >
+                </span>
+              </span>
+            </div>
+            <div v-if="dashCommit" class="flex items-center justify-between gap-2">
+              <span class="truncate">Dashboard:</span>
+              <span class="font-mono text-muted-foreground">
+                <a
+                  :href="dashboardCommitUrl"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="hover:text-foreground"
+                  >{{ dashCommit }}</a
+                >
+              </span>
+            </div>
+          </div>
           <KeplrCard />
           <CosmjsWallets />
 
@@ -68,6 +118,9 @@ defineOptions({ name: 'AppSidebar' })
 import KeplrCard from '@/components/wallet/KeplrCard.vue'
 import CosmjsWallets from '@/components/wallet/CosmjsWallets.vue'
 import { Tag, SquareStack, ArrowLeftRight, ShieldCheck, Landmark, Clock } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useRepo } from 'pinia-orm'
+import { LatestBlock, NodeInfo } from '@/orm/models/base/TendermintService'
 
 function linkClass(isActive) {
   const base =
@@ -75,4 +128,35 @@ function linkClass(isActive) {
   if (isActive) return base + ' bg-muted text-foreground'
   return base
 }
+
+const latestBlockRepo = useRepo(LatestBlock)
+const nodeInfoRepo = useRepo(NodeInfo)
+
+const latest = computed(() => latestBlockRepo.query().orderBy('height', 'desc').first() || {})
+const node = computed(() => nodeInfoRepo.find('default') || {})
+
+const chainIdDisplay = computed(() => String(node.value.network || latest.value.chain_id || ''))
+const latestHeight = computed(() => (latest.value.height ? String(latest.value.height) : ''))
+const isNonMainnet = computed(() => {
+  const id = String(chainIdDisplay.value || '').toLowerCase()
+  if (!id) return false
+  return !id.includes('mainnet')
+})
+
+const nodeVersion = computed(() => String(node.value.version || ''))
+const nodeCommit = computed(() => String(node.value.git_commit || ''))
+
+const nodeRepoUrl = 'https://github.com/dysonprotocol/dysonprotocol2'
+const dashRepoUrl = 'https://github.com/dysonprotocol/dysonprotocol2-dashboard'
+const nodeBranchUrl = computed(() =>
+  nodeVersion.value ? `${nodeRepoUrl}/tree/${nodeVersion.value}` : '#'
+)
+const nodeCommitUrl = computed(() =>
+  nodeCommit.value ? `${nodeRepoUrl}/commit/${nodeCommit.value}` : '#'
+)
+
+const dashCommit = import.meta.env.VITE_GIT_COMMIT || ''
+const dashboardCommitUrl = computed(() =>
+  dashCommit ? `${dashRepoUrl}/commit/${dashCommit}` : '#'
+)
 </script>

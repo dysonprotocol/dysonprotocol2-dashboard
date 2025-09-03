@@ -30,6 +30,7 @@ import { useWallet } from './composables/useWallet'
 import GlobalTransactionDialog from '@/components/shared/GlobalTransactionDialog.vue'
 import { Toaster } from '@/components/ui/sonner'
 import { useTxToasts } from '@/composables/useTxToasts'
+import { startLatestBlockPoller, stopLatestBlockPoller } from '@/orm/pollers/latestBlock'
 
 const { init, cleanup } = useWallet()
 
@@ -37,9 +38,11 @@ onMounted(() => {
   init()
   // Activate txHistory → toast bridge once at app root
   useTxToasts()
+  startLatestBlockPoller()
 })
 
 onBeforeUnmount(() => {
   cleanup()
+  stopLatestBlockPoller()
 })
 </script>

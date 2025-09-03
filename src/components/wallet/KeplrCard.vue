@@ -1,5 +1,5 @@
 <template>
-  <Accordion type="single" collapsible class="">
+  <Accordion type="single" collapsible v-model="openValue" class="">
     <WalletAccordian
       value="keplr"
       :title="titleText"
@@ -36,6 +36,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useStorage } from '@vueuse/core'
 import { useWallet } from '@/composables/useWallet'
 import { useRoute } from 'vue-router'
 import { Accordion } from '@/components/ui/accordion'
@@ -45,6 +46,9 @@ import WalletAccordian from '@/components/wallet/WalletAccordian.vue'
 const { unlockedWallets, connectExtension, lockWallet } = useWallet()
 
 const route = useRoute()
+
+// Persist single open state across reloads
+const openValue = useStorage('accordion:keplr-open', '')
 
 const keplrWallet = computed(() => unlockedWallets.value.find((w) => w.type === 'keplr') || null)
 const address = computed(() => keplrWallet.value?.address || '')

@@ -190,7 +190,7 @@ watchEffect(() => {
 // Create task
 const { sendMsg, loadDenomMetadata } = useWallet()
 const form = ref({
-  scheduled: '+1h',
+  scheduled: '+10s',
   expiry: '',
   gasLimit: '500000',
   feeBase: { amount: '0', denom: 'udys' },

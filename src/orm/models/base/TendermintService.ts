@@ -10,6 +10,7 @@ export class LatestBlock extends Model {
       height: this.string('0'),
       time: this.string(''),
       proposer_address: this.string(''),
+      chain_id: this.string(''),
       hash: this.string(''),
     }
   }
@@ -24,7 +25,12 @@ export class LatestBlock extends Model {
             }: {
               data: {
                 sdk_block?: {
-                  header?: { height?: string | number; time?: string; proposer_address?: string }
+                  header?: {
+                    height?: string | number
+                    time?: string
+                    proposer_address?: string
+                    chain_id?: string
+                  }
                 }
                 block_id?: { hash?: string }
               }
@@ -37,6 +43,7 @@ export class LatestBlock extends Model {
                   height: String(h.height),
                   time: String(h.time || ''),
                   proposer_address: String(h.proposer_address || ''),
+                  chain_id: String(h.chain_id || ''),
                   hash: String(hash || ''),
                 },
               ]
@@ -50,7 +57,12 @@ export class LatestBlock extends Model {
             }: {
               data: {
                 sdk_block?: {
-                  header?: { height?: string | number; time?: string; proposer_address?: string }
+                  header?: {
+                    height?: string | number
+                    time?: string
+                    proposer_address?: string
+                    chain_id?: string
+                  }
                 }
                 block_id?: { hash?: string }
               }
@@ -63,6 +75,7 @@ export class LatestBlock extends Model {
                   height: String(h.height),
                   time: String(h.time || ''),
                   proposer_address: String(h.proposer_address || ''),
+                  chain_id: String(h.chain_id || ''),
                   hash: String(hash || ''),
                 },
               ]
@@ -208,6 +221,9 @@ export class NodeInfo extends Model {
       app_name: this.string(''),
       version: this.string(''),
       cosmos_sdk_version: this.string(''),
+      network: this.string(''),
+      git_commit: this.string(''),
+      rpc_address: this.string(''),
     }
   }
 
@@ -224,7 +240,9 @@ export class NodeInfo extends Model {
                   app_name?: string
                   version?: string
                   cosmos_sdk_version?: string
+                  git_commit?: string
                 }
+                default_node_info?: { network?: string; other?: { rpc_address?: string } }
               }
             }) => [
               {
@@ -232,6 +250,9 @@ export class NodeInfo extends Model {
                 app_name: String(data?.application_version?.app_name || ''),
                 version: String(data?.application_version?.version || ''),
                 cosmos_sdk_version: String(data?.application_version?.cosmos_sdk_version || ''),
+                network: String(data?.default_node_info?.network || ''),
+                git_commit: String(data?.application_version?.git_commit || ''),
+                rpc_address: String(data?.default_node_info?.other?.rpc_address || ''),
               },
             ],
           })
