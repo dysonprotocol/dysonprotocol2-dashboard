@@ -13,7 +13,7 @@
         <FunctionsList :functions="functions" :address="address" @focus-code="focusCode" />
       </div>
     </ResizablePanel>
-    <ResizableHandle with-handle />
+    <ResizableHandle with-handle class="hover:bg-green-500" />
     <ResizablePanel :default-size="65" :min-size="20" :max-size="80">
       <div>
         <ScriptEditor ref="editorRef" :address="address" :script="script" />

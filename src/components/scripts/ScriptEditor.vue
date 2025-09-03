@@ -46,7 +46,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useWallet } from '@/composables/useWallet'
-import { useTheme } from '@/composables/useTheme'
+import { useAppColorMode } from '@/composables/useAppColorMode'
 import * as monaco from 'monaco-editor'
 
 import { useAxiosRepo } from '@pinia-orm/axios'
@@ -63,7 +63,7 @@ const props = defineProps({
 const emit = defineEmits(['script-updated', 'content-changed'])
 
 const wallet = useWallet()
-const { theme } = useTheme()
+const { isDark } = useAppColorMode()
 
 const editorEl = ref()
 
@@ -99,7 +99,7 @@ const hasChanges = computed(() => canEdit.value && currentContent.value !== orig
 
 const readOnly = computed(() => !canEdit.value || isSaving.value)
 
-const editorTheme = computed(() => (theme.value === 'dark' ? 'vs-dark' : 'vs'))
+const editorTheme = computed(() => (isDark.value ? 'vs-dark' : 'vs'))
 
 const errorMessage = computed(() => localError.value)
 
