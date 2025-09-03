@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, computed } from 'vue'
+import { decodeJsonRecursively } from '@/utils/decodeJsonRecursively'
 import { useRoute, RouterLink } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
@@ -106,25 +107,6 @@ function tryParseErrorJson(raw: string): unknown | null {
 }
 
 const parsedError = computed(() => tryParseErrorJson(String(t.value?.error_log || '')))
-
-function decodeJsonRecursively(value: unknown, depth = 0, maxDepth = 6): unknown {
-  if (depth > maxDepth) return value
-  if (Array.isArray(value)) return value.map((v) => decodeJsonRecursively(v, depth + 1, maxDepth))
-  if (value && typeof value === 'object') {
-    const out: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(value as Record<string, unknown>))
-      out[k] = decodeJsonRecursively(v, depth + 1, maxDepth)
-    return out
-  }
-  if (typeof value !== 'string') return value
-  const s = value.trim()
-  try {
-    const parsed = JSON.parse(s)
-    return decodeJsonRecursively(parsed, depth + 1, maxDepth)
-  } catch {
-    return value
-  }
-}
 
 const msgPairsDecoded = computed(() =>
   msgPairs.value.map((p) => ({

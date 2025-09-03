@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
+import { decodeJsonRecursively } from '@/utils/decodeJsonRecursively'
 import { useRoute, RouterLink } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
@@ -161,6 +162,14 @@ async function load() {
 }
 
 onMounted(load)
+watch(hash, () => {
+  load()
+})
+
+function formatDecoded(value: unknown) {
+  const v = decodeJsonRecursively(value)
+  return typeof v === 'string' ? v : JSON.stringify(v, null, 2)
+}
 </script>
 
 <template>
@@ -178,7 +187,7 @@ onMounted(load)
           <CardTitle>Summary</CardTitle>
         </CardHeader>
         <CardContent class="gap-2">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div class="flex flex-col cols-2 gap-2">
             <div>
               <div class="text-muted-foreground">Hash</div>
               <div class="font-mono break-all">{{ record.hash }}</div>
@@ -204,8 +213,10 @@ onMounted(load)
             <div>
               <div class="text-muted-foreground">Status</div>
               <div>
-                <Badge v-if="code === '0'" variant="secondary">Success</Badge>
-                <Badge v-else variant="destructive">Failed {{ codespace }} {{ code }}</Badge>
+                <Badge v-if="code === '0'" variant="success">Success</Badge>
+                <Badge v-else variant="destructive"
+                  >Failed {{ codespace }} with code: {{ code }}</Badge
+                >
               </div>
             </div>
             <div>
@@ -277,9 +288,10 @@ onMounted(load)
                   <TableCell>{{ i + 1 }}</TableCell>
                   <TableCell>{{ (s?.mode_info as any)?.single?.mode || '-' }}</TableCell>
                   <TableCell>{{ String((s?.sequence as any) ?? '0') }}</TableCell>
-                  <TableCell class="font-mono break-all">{{
-                    (s?.public_key as any)?.type_url || '-'
-                  }}</TableCell>
+                  <TableCell class="font-mono break-all"
+                    >{{ (s?.public_key as any)?.['@type'] }}
+                    {{ (s?.public_key as any)?.key }}
+                  </TableCell>
                 </TableRow>
                 <TableRow v-if="!signerInfos.length">
                   <TableCell colspan="4" class="italic text-muted-foreground"
@@ -305,7 +317,7 @@ onMounted(load)
                 {{ (m as any)['@type'] || (m as any).type_url || 'unknown' }}
               </div>
               <pre class="whitespace-pre-wrap break-words border rounded p-2">{{
-                JSON.stringify(m, null, 2)
+                formatDecoded(m)
               }}</pre>
               <div class="mt-3">
                 <div class="text-muted-foreground mb-1">Events for msg {{ i }}</div>
@@ -343,8 +355,8 @@ onMounted(load)
                                     <TableCell class="font-mono">{{
                                       String((a as any)?.key || '')
                                     }}</TableCell>
-                                    <TableCell class="font-mono break-all">
-                                      {{ String((a as any)?.value || '') }}
+                                    <TableCell class="font-mono break-all whitespace-pre-wrap">
+                                      {{ formatDecoded((a as any)?.value) }}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow v-if="!((ev as any)?.attributes || []).length">
@@ -383,8 +395,8 @@ onMounted(load)
                                     <TableCell class="font-mono">{{
                                       String((a as any)?.key || '')
                                     }}</TableCell>
-                                    <TableCell class="font-mono break-all">
-                                      {{ String((a as any)?.value || '') }}
+                                    <TableCell class="font-mono break-all whitespace-pre-wrap">
+                                      {{ formatDecoded((a as any)?.value) }}
                                     </TableCell>
                                   </TableRow>
                                   <TableRow v-if="!((ev as any)?.attributes || []).length">
@@ -459,8 +471,8 @@ onMounted(load)
                             <TableCell class="font-mono">{{
                               String((a as any)?.key || '')
                             }}</TableCell>
-                            <TableCell class="font-mono break-all">
-                              {{ String((a as any)?.value || '') }}
+                            <TableCell class="font-mono break-all whitespace-pre-wrap">
+                              {{ formatDecoded((a as any)?.value) }}
                             </TableCell>
                           </TableRow>
                           <TableRow v-if="!((ev as any)?.attributes || []).length">

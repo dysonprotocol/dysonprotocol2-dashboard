@@ -11,27 +11,19 @@
       class="alert alert-soft shadow wrap-anywhere flex items-center justify-between flex-wrap gap-4"
     >
       <span class="text-sm">
-        <span class="">{{ item.type || "unknown" }}</span>:
+        <span class="">{{ item.type || 'unknown' }}</span
+        >:
         <span class="">{{ item.status }}</span>
       </span>
-      <TransactionLink
-        :hash="item.txHash"
-        :truncate="8"
-        variant="link"
-      />
-      <button
-        class="btn btn-ghost btn-xs ml-1"
-        @click="$emit('dismiss', item.txHash)"
-      >
-        ✕
-      </button>
+      <TransactionLink :hash="item.txHash" :truncate="8" variant="link" />
+      <button class="btn btn-ghost btn-xs ml-1" @click="$emit('dismiss', item.txHash)">✕</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
-import TransactionLink from "@/components/shared/TransactionLink.vue";
+import { computed } from 'vue'
+import TransactionLink from '@/components/shared/TransactionLink.vue'
 
 const props = defineProps({
   history: {
@@ -42,12 +34,12 @@ const props = defineProps({
     type: Number,
     default: 4,
   },
-});
+})
 
-defineEmits(["dismiss"]);
+defineEmits(['dismiss'])
 
 const visibleHistory = computed(() => {
-  const list = Array.isArray(props.history) ? props.history : [];
-  return list.slice(0, props.limit);
-});
+  const list = Array.isArray(props.history) ? props.history : []
+  return list.slice(0, props.limit)
+})
 </script>
