@@ -1,6 +1,5 @@
 *.review
 node_modules/
-dist/
 .devcontainer/
 .cursor
 AGENT.md

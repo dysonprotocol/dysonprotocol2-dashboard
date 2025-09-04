@@ -1,0 +1,1 @@
+function s(r,n=0,o=6){if(n>o)return r;if(Array.isArray(r))return r.map(t=>s(t,n+1,o));if(r&&typeof r=="object"){const t={};for(const[i,f]of Object.entries(r))t[i]=s(f,n+1,o);return t}if(typeof r!="string")return r;const c=r.trim();try{const t=JSON.parse(c);return s(t,n+1,o)}catch{return r}}export{s as d};

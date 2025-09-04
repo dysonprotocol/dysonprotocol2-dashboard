@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" class="group/html">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dyson Protocol Dashboard</title>
+    <meta name="description" content="Make Dwapps, get Paid." />
+    <script>
+      ;(() => {
+        try {
+          const k = 'vueuse-color-scheme'
+          const s = localStorage.getItem(k)
+          const d = s ? s : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          if (d === 'dark') document.documentElement.classList.add('dark')
+          else document.documentElement.classList.remove('dark')
+          console.log('[theme/bootstrap] resolved', { stored: s, applied: d })
+        } catch (e) {
+          console.warn('[theme/bootstrap] error', e)
+        }
+      })()
+    </script>
+    <script type="module" crossorigin src="/assets/index-D3u62SY9.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CUazpBT6.css">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
