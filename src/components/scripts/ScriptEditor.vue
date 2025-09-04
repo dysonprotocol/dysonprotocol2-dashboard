@@ -1,5 +1,5 @@
 <template>
-  <div class="script-editor flex flex-col h-full p-4 space-y-4">
+  <div class="script-editor flex flex-col h-full space-y-4">
     <div class="flex justify-between items-center">
       <div class="flex gap-2 items-center">
         <div class="flex gap-2 items-center">
@@ -43,11 +43,10 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useWallet } from '@/composables/useWallet'
 import { useAppColorMode } from '@/composables/useAppColorMode'
-import * as monaco from 'monaco-editor'
 
 import { useAxiosRepo } from '@pinia-orm/axios'
 import Script from '../../orm/models/script/Script'
@@ -67,7 +66,14 @@ const { isDark } = useAppColorMode()
 
 const editorEl = ref()
 
-let editor = null
+let monaco: any = null
+let editor: any = null
+
+async function ensureMonaco() {
+  if (!monaco) monaco = await import('monaco-editor/esm/vs/editor/editor.api')
+  await import('monaco-editor/esm/vs/basic-languages/python/python.contribution')
+  return monaco
+}
 
 const currentContent = ref('')
 const originalContent = ref('')
@@ -89,9 +95,16 @@ let errorDecorations = null
 
 const defaultCode = `# No script found.`
 
-const canEdit = computed(() =>
-  wallet.unlockedWallets.value?.some((w) => w.address === props.address)
-)
+const canEdit = computed(() => {
+  const directOwnerUnlocked = wallet.unlockedWallets.value?.some((w) => w.address === props.address)
+  if (directOwnerUnlocked) return true
+  if (!editorIsAuthz.value) return false
+  if (!editorSelectedGrant.value) return false
+  const grantee = editorGranteeAddress.value
+  if (!grantee) return false
+  const granteeUnlocked = wallet.unlockedWallets.value?.some((w) => w.address === grantee)
+  return !!granteeUnlocked
+})
 
 const source = computed(() => (props.script ? (props.script.code ?? '') : defaultCode))
 
@@ -115,9 +128,21 @@ async function save() {
   }
   clearError()
   clearSuccessMessage()
-  const hasWallet = wallet.unlockedWallets.value?.some((w) => w.address === props.address)
-  if (!hasWallet) {
-    localError.value = 'Unlock the wallet that controls this script address to save'
+  const directOwnerUnlocked = wallet.unlockedWallets.value?.some((w) => w.address === props.address)
+  let canProceed = !!directOwnerUnlocked
+  if (
+    !canProceed &&
+    editorIsAuthz.value &&
+    editorSelectedGrant.value &&
+    editorGranteeAddress.value
+  ) {
+    const granteeUnlocked = wallet.unlockedWallets.value?.some(
+      (w) => w.address === editorGranteeAddress.value
+    )
+    canProceed = !!granteeUnlocked
+  }
+  if (!canProceed) {
+    localError.value = 'Unlock the owner wallet or the selected grantee wallet to save'
     return
   }
   isSaving.value = true
@@ -142,6 +167,7 @@ async function save() {
     emit('script-updated', { address: props.address, code: originalContent.value })
     await useAxiosRepo(Script).api().fetchInfo(props.address)
   } catch (error) {
+    console.error('Save failed', error)
     localError.value = `Save failed: ${error?.message || String(error)}`
   } finally {
     isSaving.value = false
@@ -193,9 +219,9 @@ function restore() {
   originalContent.value = saved
 }
 
-function initEditor() {
+async function initEditor() {
   if (!editorEl.value) return
-  const m = monaco
+  const m = await ensureMonaco()
   editor = m.editor.create(editorEl.value, {
     value: source.value,
     language: 'python',

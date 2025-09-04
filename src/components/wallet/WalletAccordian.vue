@@ -2,7 +2,7 @@
   <AccordionItem
     :value="value"
     :data-testid="dataTestId"
-    :class="cn('border last:border-b rounded-md p-1 my-2', borderClass(), itemClass)"
+    :class="cn('border last:border-b rounded-md my-2', borderClass(), itemClass)"
   >
     <AccordionTrigger :data-testid="triggerTestId" :class="cn({ 'font-bold': isActive })">
       <span class="text-base">

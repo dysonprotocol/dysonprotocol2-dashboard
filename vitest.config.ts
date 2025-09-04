@@ -9,6 +9,14 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,ts,vue}'],
     setupFiles: ['./src/test-setup.ts'],
   },
+  build: {
+    manifest: true,
+    rollupOptions: {
+      // overwrite default .html entry
+      input: 'src/main.ts',
+    },
+  },
+
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

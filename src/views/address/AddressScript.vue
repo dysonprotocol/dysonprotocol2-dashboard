@@ -10,24 +10,42 @@
         class="overflow-y-auto min-h-0 space-y-3"
         :style="{ height: listHeightPx + 'px' }"
       >
-        <FunctionsList :functions="functions" :address="address" @focus-code="focusCode" />
+        <ScriptExtraCode
+          :address="address"
+          :current-script-content="script?.code || ''"
+          :has-unsaved-changes="hasUnsavedChanges"
+          @focus-code="focusCode"
+        />
+        <FunctionsList
+          :functions="functions"
+          :address="address"
+          :has-unsaved-changes="hasUnsavedChanges"
+          @focus-code="focusCode"
+        />
       </div>
     </ResizablePanel>
     <ResizableHandle with-handle class="hover:bg-green-500" />
     <ResizablePanel :default-size="65" :min-size="20" :max-size="80">
-      <div>
-        <ScriptEditor ref="editorRef" :address="address" :script="script" />
+      <div class="space-y-3">
+        <ScriptEditor
+          ref="editorRef"
+          :address="address"
+          :script="script"
+          @content-changed="onEditorContentChanged"
+          @script-updated="onScriptSaved"
+        />
       </div>
     </ResizablePanel>
   </ResizablePanelGroup>
 </template>
 
 <script setup lang="ts">
-import { computed, watchEffect, ref, onMounted, onUnmounted } from 'vue'
+import { computed, watchEffect, ref, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { useRepo } from 'pinia-orm'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import Script from '@/orm/models/script/Script'
-import ScriptEditor from '@/components/scripts/ScriptEditor.vue'
+const ScriptEditor = defineAsyncComponent(() => import('@/components/scripts/ScriptEditor.vue'))
+import ScriptExtraCode from '@/components/scripts/ScriptExtraCode.vue'
 import FunctionsList from '@/components/scripts/FunctionsList.vue'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 
@@ -42,6 +60,11 @@ const editorRef = ref<InstanceType<typeof ScriptEditor> | null>(null)
 const listEl = ref<any>(null)
 const listHeightPx = ref(0)
 const listRaf = ref(0)
+const editedContent = ref('')
+const hasUnsavedChanges = computed(() => {
+  const code = (script.value as any)?.code || ''
+  return editedContent.value !== '' && editedContent.value !== code
+})
 
 async function refresh() {
   if (!props.address) return
@@ -52,6 +75,14 @@ function focusCode() {
   const root = editorRef.value?.$el as any
   const el = root?.querySelector?.('.monaco-error-inline') as any
   el?.scrollIntoView({ behavior: 'smooth', block: 'center' }) // This is a hack, but required, DON'T REMOVE IT!
+}
+
+function onEditorContentChanged(content: string) {
+  editedContent.value = content || ''
+}
+
+function onScriptSaved(e: { address: string; code: string }) {
+  editedContent.value = e?.code || ''
 }
 
 watchEffect(() => {

@@ -65,7 +65,7 @@
                     :key="auth.granterAddress + ':' + idx"
                     type="button"
                     variant="outline"
-                    class="w-full justify-start p-2 border-primary/60 hover:bg-primary/10"
+                    class="w-full justify-start border-primary/60 hover:bg-primary/10 h-auto"
                     :class="{
                       'bg-primary/10': isAuthzSelected(group.wallet.address, auth),
                     }"

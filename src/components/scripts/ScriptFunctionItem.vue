@@ -3,10 +3,10 @@
     type="single"
     collapsible
     v-model="accordionValue"
-    class="border-b hover:bg-gray-500/10"
+    class="border rounded-md hover:border-success"
   >
     <AccordionItem :value="storageKey">
-      <AccordionTrigger>
+      <AccordionTrigger class="font-semibold">
         <div class="flex-1 text-left">
           <span class="font-semibold font-mono text-sm">{{
             func.signature || func.function_name
@@ -17,7 +17,7 @@
         </div>
       </AccordionTrigger>
       <AccordionContent>
-        <div class="pt-2">
+        <div class="">
           <div v-if="hasParameters">
             <label class="block font-medium mb-2">Parameters:</label>
             <Textarea
@@ -35,48 +35,48 @@
           </div>
 
           <!-- Error Display -->
-          <div
-            v-if="errorText"
-            class="mt-4 break-all rounded-md border border-destructive/30 bg-destructive/10 p-3"
-          >
-            <div class="font-medium text-destructive">{{ errorHeader }}:</div>
-            <div class="mt-2">
-              <pre class="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words">{{
-                errorText
-              }}</pre>
-              <div v-if="exception" class="mt-2">
+          <Alert v-if="errorText" variant="destructive" class="mt-3 break-all">
+            <AlertTitle>{{ errorHeader }}</AlertTitle>
+            <AlertDescription>
+              <div class="font-medium text-xs opacity-80">Error:</div>
+              <pre
+                class="text-xs p-2 mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-words border rounded"
+                >{{ errorText }}</pre
+              >
+              <div v-if="exception" class="mt-2 text-xs">
                 <Button variant="link" class="p-0 h-auto" @click="goToException">
                   Go to line {{ exception.lineno }}:{{ exception.col_offset }}
                 </Button>
               </div>
-            </div>
-          </div>
+            </AlertDescription>
+          </Alert>
 
           <!-- Success Display -->
-          <div v-if="result" class="mt-2 break-all rounded-md border p-3">
-            <div class="text-sm font-medium">
-              <Badge variant="secondary"
-                >{{ result.simulate ? 'Simulation' : 'Execution' }} Successful</Badge
-              >
-            </div>
-            <div>
-              <div v-if="result.result !== null" class="mt-2">
-                <div class="font-medium opacity-80">Result:</div>
-                <pre class="mt-1 max-h-64 overflow-x-auto wrap-anywhere">{{
+          <Alert v-if="result" class="mt-3 break-all">
+            <AlertTitle>{{ result.simulate ? 'Simulation' : 'Execution' }} Successful</AlertTitle>
+            <AlertDescription>
+              <div v-if="result.result !== null" class="mt-2 break-all whitespace-pre-wrap w-full">
+                <div class="font-medium text-xs opacity-80">Result:</div>
+                <pre class="text-xs p-2 mt-1 max-h-64 overflow-auto border rounded">{{
                   formatResult(result.result)
                 }}</pre>
               </div>
-              <div v-if="result.stdout" class="mt-2">
-                <div class="font-medium opacity-80">Output:</div>
-                <pre class="mt-1 max-h-32 overflow-x-auto">{{ result.stdout }}</pre>
+              <div v-if="result.stdout" class="mt-2 break-all whitespace-pre-wrap w-full">
+                <div class="font-medium text-xs opacity-80">Output:</div>
+                <pre class="text-xs p-2 mt-1 max-h-32 overflow-auto border rounded">{{
+                  result.stdout
+                }}</pre>
               </div>
-              <div class="mt-2 opacity-80 flex gap-4">
+              <div class="mt-2 text-xs opacity-80 flex gap-4">
                 <span>Gas: {{ formatNumber(result.gasConsumed) }}</span>
                 <span>Nodes: {{ formatNumber(result.nodesExecuted) }}</span>
               </div>
-              <div v-if="!result.simulate && result.txHash" class="mt-2">
-                <div class="font-medium opacity-80">Transaction:</div>
-                <div class="mt-1">
+              <div
+                v-if="!result.simulate && result.txHash"
+                class="mt-2 text-xs break-all whitespace-pre-wrap w-full"
+              >
+                <div class="font-medium text-xs opacity-80">Transaction:</div>
+                <div class="p-2 mt-1 rounded border">
                   <div>
                     Hash:
                     <TxHashDisplay :hash="result.txHash" :truncate="8" />
@@ -84,8 +84,8 @@
                   <div v-if="result.blockHeight">Block: {{ result.blockHeight }}</div>
                 </div>
               </div>
-            </div>
-          </div>
+            </AlertDescription>
+          </Alert>
 
           <!-- Actions -->
           <div class="mt-4 flex justify-end items-center gap-2">
@@ -102,50 +102,30 @@
               @update:selected-grant="onSelectedGrant"
             />
             <Button
-              :disabled="
-                isExecuting ||
-                !!jsonError ||
-                hasUnsavedChanges ||
-                (attachSend && !!sendValidationError)
-              "
+              :disabled="isExecuting || !!jsonError || hasUnsavedChanges || !!validationError"
               @click="execute"
             >
               {{ isExecuting ? 'Sending...' : 'Tx' }}
             </Button>
             <Button
               variant="secondary"
-              :disabled="
-                isSimulating ||
-                !!jsonError ||
-                hasUnsavedChanges ||
-                (attachSend && !!sendValidationError)
-              "
+              :disabled="isSimulating || !!jsonError || hasUnsavedChanges || !!validationError"
               @click="simulate"
             >
               {{ isSimulating ? 'Simulating...' : 'Simulate' }}
             </Button>
           </div>
-
-          <!-- Optional: attach a coin transfer to this call -->
+          <!-- Attach a coin transfer to this call (always visible) -->
           <div class="mt-3">
-            <div class="flex items-center gap-2 text-sm">
-              <Checkbox
-                id="attach-send"
-                v-model:checked="attachSend"
-                @click.stop="attachSend = !attachSend"
-              />
-              <label for="attach-send" class="cursor-pointer select-none">
-                Attach coins (bank MsgSend)
-              </label>
-            </div>
-            <div v-if="attachSend" class="mt-2">
+            <div class="text-sm mb-2">Attach coins - /cosmos.bank.v1beta1.MsgSend</div>
+            <div class="mt-2">
               <AmountDenomSelector
                 :disabled="isSimulating || isExecuting"
                 :base-denoms="ownedBaseDenoms"
                 @update:base="onSendBaseUpdate"
               />
-              <div v-if="sendValidationError" class="text-error text-xs mt-1">
-                {{ sendValidationError }}
+              <div v-if="validationError" class="text-destructive text-xs mt-1">
+                {{ validationError }}
               </div>
               <div class="text-xs opacity-70 mt-1">
                 From
@@ -179,8 +159,7 @@ import TxHashDisplay from '@/components/TxHashDisplay.vue'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
 import AddressDisplay from '@/components/AddressDisplay.vue'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Accordion,
@@ -247,8 +226,7 @@ const errorHeader = computed(() =>
 const isExecuting = ref(false)
 const isSimulating = ref(false)
 
-// Attached bank send state
-const attachSend = ref(false)
+// Attached bank send state (always available)
 const sendBaseAmount = ref('')
 const sendBaseDenom = ref('')
 
@@ -268,13 +246,13 @@ const ownedBaseDenoms = computed(() =>
     .map(([denom]) => denom)
 )
 
-const sendValidationError = computed(() => {
-  if (!attachSend.value) return ''
+const validationError = computed(() => {
   const denom = String(sendBaseDenom.value || '').trim()
   const amt = String(sendBaseAmount.value || '').trim()
   if (!denom || !amt) return ''
   if (!/^\d+$/.test(amt)) return 'Amount must be an integer in base units'
   if (amt === '0') return 'Amount must be greater than 0'
+  if (!spendableMap.value.has(denom)) return ''
   const bal = spendableMap.value.get(denom) || '0'
   if (BigInt(amt) > BigInt(bal)) {
     const entered = DenomMetadata.normalize({ amount: amt, denom }).display
@@ -357,7 +335,6 @@ function formatNumber(num) {
 
 async function run(simulate) {
   if (jsonError.value) return
-  if (attachSend.value && sendValidationError.value) return
   errorText.value = ''
   result.value = null
   context.value = null
@@ -368,7 +345,7 @@ async function run(simulate) {
     const attached = []
     const amt = sendBaseAmount.value.trim()
     const denom = sendBaseDenom.value.trim()
-    if (attachSend.value && /^\d+$/.test(amt) && denom !== '' && amt !== '0') {
+    if (/^\d+$/.test(amt) && denom !== '' && amt !== '0') {
       const msgSend = {
         '@type': '/cosmos.bank.v1beta1.MsgSend',
         from_address: selectedExecutor.value,

@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model:open="isOpen">
+  <Dialog v-model:open="isOpen" @update:open="onOpenChange">
     <DialogContent class="max-w-3xl w-full md:max-w-3xl">
       <DialogHeader>
         <DialogTitle>Confirm Transaction</DialogTitle>
@@ -119,5 +119,9 @@ function confirm() {
   } catch (e) {
     errorMessage.value = e?.message || 'Invalid JSON in messages or fee.'
   }
+}
+
+function onOpenChange(nextOpen) {
+  if (!nextOpen) cancel()
 }
 </script>

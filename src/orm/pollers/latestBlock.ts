@@ -9,8 +9,7 @@ const WS_ONLY_DELAY = 15000
 let ws: globalThis.WebSocket | null = null
 let wsFailures = 0
 let wsActive = false
-let wsPushSeenAt = 0
-const WS_STALE_MS = 15000
+// removed unused wsPushSeenAt/WS_STALE_MS
 
 export function startLatestBlockPoller() {
   if (started) return
@@ -110,7 +109,6 @@ export function startLatestBlockPoller() {
       ws.onmessage = async (ev) => {
         // On any event, refresh latest block once; adaptive loop will handle pacing
         try {
-          wsPushSeenAt = Date.now()
           // Optional minimal debug for visibility
           try {
             const msg = JSON.parse(String(ev?.data ?? '{}')) as {
@@ -119,11 +117,6 @@ export function startLatestBlockPoller() {
                 data?: { type?: string; value?: unknown }
               }
             }
-            const evType =
-              (msg?.result?.events && Object.keys(msg.result!.events!)[0]) ||
-              msg?.result?.data?.type ||
-              ''
-            if (evType) console.debug('[tm.ws] event', evType)
             // Upsert latest block directly from WS to avoid HTTP when possible
             const data = msg?.result?.data
             if (data && typeof data === 'object') {
@@ -154,6 +147,83 @@ export function startLatestBlockPoller() {
                     hash: String(blockId?.hash ?? ''),
                   })
                   console.debug('[tm.ws] upsert latest', { height })
+                }
+
+                // Emit all chain events as CustomEvents
+                try {
+                  const canDispatch =
+                    typeof globalThis !== 'undefined' &&
+                    typeof (globalThis as { dispatchEvent?: unknown }).dispatchEvent ===
+                      'function' &&
+                    typeof (globalThis as { CustomEvent?: unknown }).CustomEvent === 'function'
+                  if (canDispatch) {
+                    const fb = (
+                      value as {
+                        result_finalize_block?: {
+                          events?: Array<{
+                            type?: string
+                            attributes?: Array<{ key?: string; value?: unknown; index?: unknown }>
+                          }>
+                          tx_results?: Array<{
+                            events?: Array<{
+                              type?: string
+                              attributes?: Array<{
+                                key?: string
+                                value?: unknown
+                                index?: unknown
+                              }>
+                            }>
+                          }>
+                        }
+                      }
+                    )?.result_finalize_block
+                    type ChainEventAttr = { key?: string; value?: unknown; index?: unknown }
+                    type ChainEvent = { type?: string; attributes?: ChainEventAttr[] }
+                    const rawEvents = (fb && fb.events) || []
+                    const rawTxResults = (fb && fb.tx_results) || []
+                    const listA: ChainEvent[] = Array.isArray(rawEvents)
+                      ? (rawEvents as ChainEvent[])
+                      : []
+                    const listB: ChainEvent[] = Array.isArray(rawTxResults)
+                      ? rawTxResults.flatMap((r: { events?: ChainEvent[] }) =>
+                          Array.isArray(r?.events) ? (r.events as ChainEvent[]) : []
+                        )
+                      : []
+                    const all: ChainEvent[] = [...listA, ...listB]
+                    for (const ev of all) {
+                      const evtType = String(ev?.type || '').trim()
+                      const attrs = Array.isArray(ev?.attributes) ? ev.attributes : []
+                      if (!evtType || attrs.length === 0) continue
+                      const detail: Record<string, unknown> = { orignalBlock: msg }
+                      for (const a of attrs) {
+                        const k = String((a?.key as string | undefined) || '').trim()
+                        if (!k) continue
+                        const v = (a as { value?: unknown })?.value
+                        if (Object.prototype.hasOwnProperty.call(detail, k)) {
+                          const cur = detail[k]
+                          detail[k] = Array.isArray(cur) ? [...(cur as unknown[]), v] : [cur, v]
+                        } else {
+                          detail[k] = v
+                        }
+                      }
+                      try {
+                        type CustomEventCtorLike = new (
+                          type: string,
+                          init?: { detail?: unknown }
+                        ) => unknown
+                        const CE = (globalThis as unknown as { CustomEvent?: CustomEventCtorLike })
+                          .CustomEvent
+                        if (CE)
+                          (
+                            globalThis as unknown as { dispatchEvent: (e: unknown) => boolean }
+                          ).dispatchEvent(new CE(evtType, { detail }))
+                      } catch (e) {
+                        console.error('[tm.ws] dispatch event error', e)
+                      }
+                    }
+                  }
+                } catch (e) {
+                  console.error('[tm.ws] emit events error', e)
                 }
               }
             }

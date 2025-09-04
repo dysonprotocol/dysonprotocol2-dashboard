@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted } from 'vue'
+import { computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useColorMode } from '@vueuse/core'
 import { Button } from '@/components/ui/button'
 
@@ -53,6 +53,7 @@ watch(
       newVal,
       htmlClass: document.documentElement.className,
     })
+    syncDaisyTheme()
   }
 )
 
@@ -71,4 +72,42 @@ function cycleTheme() {
   console.log('[theme] cycle click', { current, next })
   mode.value = next
 }
+
+function setDaisyTheme(theme: 'light' | 'dark') {
+  document.documentElement.dataset.theme = theme
+}
+
+let stopSystemSync: (() => void) | null = null
+
+function startSystemSync() {
+  const media = window.matchMedia('(prefers-color-scheme: dark)')
+  const apply = () => setDaisyTheme(media.matches ? 'dark' : 'light')
+  apply()
+  media.addEventListener('change', apply)
+  stopSystemSync = () => media.removeEventListener('change', apply)
+}
+
+function endSystemSync() {
+  if (stopSystemSync) {
+    stopSystemSync()
+    stopSystemSync = null
+  }
+}
+
+function syncDaisyTheme() {
+  if (mode.value === 'auto') {
+    startSystemSync()
+    return
+  }
+  endSystemSync()
+  setDaisyTheme(mode.value === 'dark' ? 'dark' : 'light')
+}
+
+onMounted(() => {
+  syncDaisyTheme()
+})
+
+onBeforeUnmount(() => {
+  endSystemSync()
+})
 </script>

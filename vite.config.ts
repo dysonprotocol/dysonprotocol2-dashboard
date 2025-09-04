@@ -74,6 +74,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    manifest: 'manifest.json',
   },
   test: {
     globals: true,

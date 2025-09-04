@@ -11,6 +11,12 @@ export const miscRoutes: RouteRecordRaw[] = [
     props: true,
   },
 
+  {
+    path: '/demo-ws-block',
+    name: 'DemoWsBlock',
+    component: () => import('@/views/DemoWsBlock.vue'),
+  },
+
   { path: '/docs', name: 'ApiDocs', component: Placeholder, meta: { title: 'API Docs' } },
   { path: '/api', name: 'CodeSnippets', component: Placeholder, meta: { title: 'Code Snippets' } },
 

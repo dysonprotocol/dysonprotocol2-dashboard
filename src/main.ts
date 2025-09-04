@@ -11,18 +11,13 @@ import { useWallet } from '@/composables/useWallet'
 import type { Repository } from 'pinia-orm'
 
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 
 type MonacoEnv = { MonacoEnvironment: { getWorker: (moduleId: unknown, label: string) => unknown } }
 ;(globalThis as unknown as MonacoEnv).MonacoEnvironment = {
-  getWorker(_: unknown, label: string) {
-    if (label === 'json') return new jsonWorker()
-    if (['css', 'scss', 'less'].includes(label)) return new cssWorker()
-    if (['html', 'handlebars', 'razor'].includes(label)) return new htmlWorker()
-    if (['typescript', 'javascript'].includes(label)) return new tsWorker()
+  getWorker(_moduleId: unknown, _label: string) {
+    // Prevent unused var lints while matching expected signature
+    void _moduleId
+    void _label
     return new editorWorker()
   },
 }
