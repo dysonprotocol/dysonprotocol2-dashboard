@@ -1,10 +1,10 @@
 import re, json
 from urllib.parse import parse_qs
 
-DEFAULT_VERSION = "main"
+DEFAULT_VERSION = "develop"
 DEFAULT_CDN_TEMPLATE = "https://cdn.jsdelivr.net/gh/{owner}/{repo}@{version}/dist/"
 OWNER = "dysonprotocol"
-REPO = "dysonprotocol-dashboard"
+REPO = "dysonprotocol2-dashboard"
 
 def parse_cookies(h: str) -> dict:
     if not h: return {}

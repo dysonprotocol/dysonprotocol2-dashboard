@@ -1,6 +1,6 @@
 import { useRepo } from 'pinia-orm'
 import { useAxiosRepo } from '@pinia-orm/axios'
-import LatestBlock, { NodeInfo } from '@/orm/models/base/TendermintService'
+import LatestBlock from '@/orm/models/base/TendermintService'
 
 let started = false
 let timer: ReturnType<typeof setTimeout> | null = null
@@ -36,18 +36,19 @@ export function startLatestBlockPoller() {
     }
   }
 
-  function parseRpcWsUrl(addr: string): string | null {
-    if (!addr) return null
-    // addr examples: tcp://127.0.0.1:26657
+  function parseRpcWsUrl(): string | null {
+    // Always use Vite proxy path to Tendermint RPC WS: /rpc/websocket
     try {
-      const url = new globalThis.URL(addr.replace('tcp://', 'http://'))
-      const proto =
-        globalThis.location && globalThis.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const wsUrl = `${proto}//${url.hostname}:${url.port}/websocket`
+      const hasLocation = typeof globalThis !== 'undefined' && !!globalThis.location
+      if (!hasLocation) return null
+      const isHttps = globalThis.location.protocol === 'https:'
+      const proto = isHttps ? 'wss:' : 'ws:'
+      const host = globalThis.location.host
+      const wsUrl = `${proto}//${host}/rpc/websocket`
       console.info('[tm.ws] url', wsUrl)
       return wsUrl
     } catch (e) {
-      console.error('[tm.ws] parseRpcWsUrl error', addr, e)
+      console.error('[tm.ws] build ws url error', e)
       return null
     }
   }
@@ -55,19 +56,9 @@ export function startLatestBlockPoller() {
   function ensureWebSocket() {
     try {
       console.debug('[tm.ws] ensure')
-      const info = useRepo(NodeInfo).find('default') as { rpc_address?: string } | undefined
-      const wsUrl = parseRpcWsUrl(String(info?.rpc_address || ''))
+      const wsUrl = parseRpcWsUrl()
       if (!wsUrl) {
-        console.warn('[tm.ws] missing wsUrl from rpc_address; fetching NodeInfo')
-        try {
-          void useAxiosRepo(NodeInfo)
-            .api()
-            .fetch()
-            .then(() => console.debug('[tm.ws] NodeInfo fetched'))
-            .catch((e: unknown) => console.error('[tm.ws] NodeInfo fetch error', e))
-        } catch (e) {
-          console.error('[tm.ws] ensure fetch NodeInfo error', e)
-        }
+        console.warn('[tm.ws] missing wsUrl; waiting for browser environment')
         globalThis.setTimeout(ensureWebSocket, 1000)
         return
       }

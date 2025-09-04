@@ -1,9 +1,10 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { execSync } from 'child_process'
+import { cwd, env as nodeEnv } from 'node:process'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -17,67 +18,87 @@ function gitOrDefault(cmd: string, fallback = ''): string {
   }
 }
 
-export default defineConfig({
-  plugins: [vue(), tailwindcss()],
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
-    },
-  },
-  define: {
-    'process.env.NODE_ENV': '"production"',
-    'process.env': {},
-    __DEV__: 'false',
-    __VUE_PROD_DEVTOOLS__: 'false',
-    __VUE_OPTIONS_API__: 'true',
-    __GIT_COMMIT__: JSON.stringify(gitOrDefault('git rev-parse --short HEAD', '<none>')),
-    __GIT_BRANCH__: JSON.stringify(
-      gitOrDefault('git name-rev HEAD', 'HEAD <none>').split(/\s+/)[1] || '<none>'
-    ),
-  },
-  optimizeDeps: {
-    esbuildOptions: {
-      target: 'es2020',
-      define: {},
-    },
-  },
-  server: {
-    host: '0.0.0.0',
-    port: 5173,
-    strictPort: true,
-    watch: {
-      usePolling: true,
-    },
-    proxy: {
-      '/cosmos': {
-        target: 'http://localhost:1317',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/dysonprotocol': {
-        target: 'http://localhost:1317',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/swagger': {
-        target: 'http://localhost:1317',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/ibc': {
-        target: 'http://localhost:1317',
-        changeOrigin: true,
-        secure: false,
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, cwd(), '')
+  const proxyTarget =
+    env.DYSONPROTOCOL_API ||
+    env.VITE_DYSONPROTOCOL_API ||
+    nodeEnv.DYSONPROTOCOL_API ||
+    'http://localhost:1317'
+
+  return {
+    plugins: [vue(), tailwindcss()],
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, 'src'),
       },
     },
-  },
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    manifest: 'manifest.json',
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-  },
+    define: {
+      'process.env.NODE_ENV': '"production"',
+      'process.env': {},
+      __DEV__: 'false',
+      __VUE_PROD_DEVTOOLS__: 'false',
+      __VUE_OPTIONS_API__: 'true',
+      __GIT_COMMIT__: JSON.stringify(gitOrDefault('git rev-parse --short HEAD', '<none>')),
+      __GIT_BRANCH__: JSON.stringify(
+        gitOrDefault('git name-rev HEAD', 'HEAD <none>').split(/\s+/)[1] || '<none>'
+      ),
+    },
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'es2020',
+        define: {},
+      },
+    },
+    server: {
+      host: '0.0.0.0',
+      port: 5173,
+      strictPort: true,
+      watch: {
+        usePolling: true,
+      },
+      proxy: {
+        '/cosmos': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/dysonprotocol': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/swagger': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/ibc': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/rpc': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/rpc/websocket': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+        },
+      },
+    },
+    build: {
+      outDir: 'dist',
+      assetsDir: 'assets',
+      manifest: 'manifest.json',
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+    },
+  }
 })
