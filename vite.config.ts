@@ -25,6 +25,8 @@ export default defineConfig(({ mode }) => {
     env.VITE_DYSONPROTOCOL_API ||
     nodeEnv.DYSONPROTOCOL_API ||
     'http://localhost:1317'
+  const wsProxyTarget = proxyTarget.replace(/^http/, 'ws')
+  const isHttpsTarget = /^https:\/\//.test(proxyTarget)
 
   return {
     plugins: [vue(), tailwindcss()],
@@ -78,16 +80,18 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
-        '/rpc': {
-          target: proxyTarget,
-          changeOrigin: true,
-          secure: false,
-        },
         '/rpc/websocket': {
-          target: proxyTarget,
+          target: wsProxyTarget,
           changeOrigin: true,
           secure: false,
           ws: true,
+          rewrite: (path) =>
+            isHttpsTarget ? path.replace(/^\/rpc\/websocket$/, '/websocket') : path,
+        },
+        '/rpc': {
+          target: proxyTarget,
+          changeOrigin: false,
+          secure: false,
         },
       },
     },
