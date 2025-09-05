@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, onMounted, onUnmounted } from 'vue'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import CrontaskTask from '@/orm/models/crontask/Task'
-import { formatTimestamp, formatCoin, formatGasPrice } from '@/utils/format'
+import { formatGasPrice } from '@/utils/format'
+import { formatShortDelta } from '@/utils/format'
 
 import {
   Table,
@@ -14,6 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { subscribeAllCrontaskEvents, unwrap } from '@/orm/subscriptions/crontaskEvents'
 
 const api = useAxiosRepo(CrontaskTask).api()
 const repo = useRepo(CrontaskTask)
@@ -22,6 +24,8 @@ const repo = useRepo(CrontaskTask)
 
 const state = reactive({ loading: false, error: '' })
 const isLoadingAll = ref(false)
+const nowMs = ref<number>(Date.now())
+let tick: ReturnType<typeof globalThis.setInterval> | null = null
 
 // no global list needed; derive per-column lists below
 
@@ -74,12 +78,12 @@ const doneList = computed(() =>
   (
     repo
       .query()
-      .where(
-        'status',
-        (s: string) =>
+      .where('status', (s: string) =>
+        ['DONE', 'FAILED', 'EXPIRED'].includes(
           String(s || '')
             .trim()
-            .toUpperCase() === 'DONE'
+            .toUpperCase()
+        )
       )
       .get() as Array<any>
   )
@@ -112,9 +116,11 @@ async function loadAll() {
       console.error(e)
     }
     await Promise.all([
-      api.fetchByStatusTimestampInit({ status: 'SCHEDULED', limit: '100', count_total: 'true' }),
-      api.fetchByStatusGasPriceInit({ status: 'PENDING', limit: '100', count_total: 'true' }),
-      api.fetchByStatusTimestampInit({ status: 'DONE', limit: '100', count_total: 'true' }),
+      api.fetchByStatusTimestampInit({ status: 'SCHEDULED', limit: '100' }),
+      api.fetchByStatusGasPriceInit({ status: 'PENDING', limit: '100' }),
+      api.fetchByStatusTimestampInit({ status: 'DONE', limit: '100' }),
+      api.fetchByStatusTimestampInit({ status: 'FAILED', limit: '100' }),
+      api.fetchByStatusTimestampInit({ status: 'EXPIRED', limit: '100' }),
     ])
   } catch (e: any) {
     state.error = e?.message || String(e)
@@ -124,10 +130,32 @@ async function loadAll() {
   }
 }
 
-function copyId(id: string) {
-  if (!id) return // use globalThis for SSR-safety and linter friendliness
-  ;(globalThis as any)?.navigator?.clipboard?.writeText(String(id))?.catch(() => {})
-}
+let unsubscribe: (() => void) | null = null
+let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null
+onMounted(() => {
+  tick = globalThis.setInterval(() => {
+    nowMs.value = Date.now()
+  }, 1000)
+  unsubscribe = subscribeAllCrontaskEvents((d: Record<string, unknown>) => {
+    const id = unwrap((d as { task_id?: unknown })?.task_id)
+    if (!id) return
+    api.fetchByID(id).catch((e: unknown) => {
+      console.error('[TaskManager] refresh error', e)
+    })
+  })
+})
+onUnmounted(() => {
+  try {
+    unsubscribe?.()
+  } catch (e) {
+    console.error('[TaskManager] unsubscribe error', e)
+  }
+  if (pendingRefreshTimer) globalThis.clearTimeout(pendingRefreshTimer)
+  if (tick) globalThis.clearInterval(tick)
+  pendingRefreshTimer = null
+  tick = null
+  unsubscribe = null
+})
 
 // initial load
 loadAll()
@@ -158,6 +186,7 @@ loadAll()
 
               <TableHead>created block</TableHead>
               <TableHead>gas_price</TableHead>
+              <TableHead>scheduled</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -179,6 +208,9 @@ loadAll()
               >
 
               <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
+              <TableCell class="font-mono">{{
+                formatShortDelta(t.scheduled_timestamp, nowMs)
+              }}</TableCell>
             </TableRow>
             <TableRow v-if="!state.loading && scheduledList.length === 0">
               <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
@@ -236,6 +268,8 @@ loadAll()
 
               <TableHead>executed block</TableHead>
 
+              <TableHead>status</TableHead>
+
               <TableHead>gas_price</TableHead>
             </TableRow>
           </TableHeader>
@@ -256,6 +290,8 @@ loadAll()
                   >#{{ t.execution_block_height }}</RouterLink
                 ></TableCell
               >
+
+              <TableCell class="font-mono">{{ t.status }}</TableCell>
 
               <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
             </TableRow>

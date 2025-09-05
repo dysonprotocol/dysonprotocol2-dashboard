@@ -3,6 +3,8 @@ import LatestBlock from '@/orm/models/base/TendermintService'
 
 import TendermintBlock from '@/orm/models/tendermint/Block'
 import TxBlock from '@/orm/models/tx/TxBlock'
+import { ensureGlobalCrontaskEventSync } from '@/orm/subscriptions/crontaskEvents'
+import { useWallet } from '@/composables/useWallet'
 
 let started = false
 let timer: ReturnType<typeof setTimeout> | null = null
@@ -17,6 +19,26 @@ export function startLatestBlockPoller() {
   started = true
   console.info('[tm.poll] start')
   // Disable HTTP polling; rely on WebSocket push updates only
+
+  // Start global crontask event sync with known-creator filter
+  try {
+    const { unlockedWallets } = useWallet()
+    const isKnownCreator = (address: string) => {
+      const a = String(address || '').trim()
+      if (!a) return false
+      try {
+        const list =
+          (unlockedWallets as { value?: Array<{ address?: string }> } | undefined)?.value || []
+        return list.some((w) => String(w?.address || '') === a)
+      } catch (e) {
+        console.error('[tm.ws] known-creator check error', e)
+        return false
+      }
+    }
+    ensureGlobalCrontaskEventSync({ isKnownCreator })
+  } catch (e) {
+    console.error('[tm.ws] init crontask sync error', e)
+  }
 
   function parseRpcWsUrl(): string | null {
     // Always use Vite proxy path to Tendermint RPC WS: /rpc/websocket
@@ -239,7 +261,7 @@ export function startLatestBlockPoller() {
                           ;(
                             globalThis as unknown as { dispatchEvent: (e: unknown) => boolean }
                           ).dispatchEvent(new CE(evtType, { detail }))
-                          console.debug('[tm.ws] dispatched event', evtType, detail)
+                          //console.debug('[tm.ws] dispatched event', evtType, detail)
                         } else {
                           console.warn('[tm.ws] CustomEvent API unavailable in this environment')
                         }

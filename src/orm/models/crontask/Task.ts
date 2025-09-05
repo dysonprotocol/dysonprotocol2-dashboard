@@ -31,7 +31,6 @@ export class CrontaskTask extends Model {
       actions: {
         async fetchByID(this: Request, taskId: string | number) {
           return this.get(`/dysonprotocol/crontask/v1/tasks/${taskId}`, {
-            ttl: 0,
             dataTransformer: ({ data }: { data: { task?: unknown } }) =>
               data?.task ? [data.task] : [],
           })
@@ -53,7 +52,6 @@ export class CrontaskTask extends Model {
           let total: string | undefined
           let returned = 0
           await this.get(`/dysonprotocol/crontask/v1/tasks/creator/${creator}?${qs}`, {
-            ttl: 0,
             dataTransformer: ({
               data,
             }: {
@@ -119,7 +117,6 @@ export class CrontaskTask extends Model {
           const qs = new URLSearchParams()
           if (limit) qs.set('pagination.limit', limit)
           return this.get(`/dysonprotocol/crontask/v1/tasks/status/${status}?${qs}`, {
-            ttl: 0,
             dataTransformer: ({ data }: { data: { tasks?: unknown[] } }) =>
               Array.isArray(data.tasks) ? data.tasks : [],
           })
@@ -129,8 +126,6 @@ export class CrontaskTask extends Model {
           const qs = new URLSearchParams()
           if (limit) qs.set('pagination.limit', limit)
           return this.get(`/dysonprotocol/crontask/v1/tasks/status/${status}/by_gas?${qs}`, {
-            ttl: 0,
-            cache: false,
             dataTransformer: ({ data }: { data: { tasks?: unknown[] } }) =>
               Array.isArray(data.tasks) ? data.tasks : [],
           })
@@ -152,7 +147,6 @@ export class CrontaskTask extends Model {
           let total: string | undefined
           let returned = 0
           await this.get(`/dysonprotocol/crontask/v1/tasks?${qs}`, {
-            ttl: 0,
             dataTransformer: ({
               data,
             }: {

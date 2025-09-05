@@ -40,3 +40,53 @@ export function formatGasPrice(task: {
     : '0'
   return `${pretty} ${norm.display.denom}/gas`
 }
+
+function toMs(value: string): number | null {
+  const s = String(value || '').trim()
+  if (!s) return null
+  const n = Number(s)
+  if (Number.isFinite(n) && n > 0) {
+    // Heuristic by magnitude: seconds/ms/µs/ns
+    if (n < 1e11) return Math.floor(n * 1000) // seconds
+    if (n < 1e14) return Math.floor(n) // milliseconds
+    if (n < 1e17) return Math.floor(n / 1e3) // microseconds -> ms
+    return Math.floor(n / 1e6) // nanoseconds -> ms
+  }
+  const d = new Date(s)
+  if (isNaN(d.getTime())) return null
+  return d.getTime()
+}
+
+export function formatShortDelta(value: string, nowMs: number): string {
+  const targetMs = toMs(value)
+  if (targetMs == null || !Number.isFinite(nowMs)) return ''
+  let diff = targetMs - nowMs
+  if (!Number.isFinite(diff)) return ''
+  if (diff < 0) diff = 0
+
+  const SEC = 1000
+  const MIN = 60 * SEC
+  const HOUR = 60 * MIN
+  const DAY = 24 * HOUR
+
+  const parts: string[] = []
+  const d = Math.floor(diff / DAY)
+  if (d > 0) {
+    parts.push(`${d}d`)
+    diff -= d * DAY
+  }
+  const h = Math.floor(diff / HOUR)
+  if (h > 0) {
+    parts.push(`${h}h`)
+    diff -= h * HOUR
+  }
+  const m = Math.floor(diff / MIN)
+  if (m > 0 && parts.length < 2) {
+    parts.push(`${m}m`)
+    diff -= m * MIN
+  }
+  const sec = Math.floor(diff / SEC)
+  if (parts.length < 2) parts.push(`${sec}s`)
+
+  return parts.slice(0, 2).join(' ')
+}
