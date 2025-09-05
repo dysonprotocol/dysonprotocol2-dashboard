@@ -3,91 +3,130 @@ import { computed, reactive, ref } from 'vue'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import CrontaskTask from '@/orm/models/crontask/Task'
+import { formatTimestamp, formatCoin, formatGasPrice } from '@/utils/format'
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 const api = useAxiosRepo(CrontaskTask).api()
 const repo = useRepo(CrontaskTask)
 
-function toNumber(x: string | number | undefined): number {
-  const n = Number(x)
-  return Number.isFinite(n) ? n : 0
-}
+// no local numeric helpers needed when server orders results
 
-// Section state
-const scheduled = reactive({ loading: false, error: '' })
-const pending = reactive({ loading: false, error: '' })
-const finished = reactive({ status: 'DONE', loading: false, error: '' })
+const state = reactive({ loading: false, error: '' })
 const isLoadingAll = ref(false)
 
-// Derived lists from repo
-const scheduledItems = computed(() =>
+// no global list needed; derive per-column lists below
+
+// gas price ordering handled by backend; helper removed
+
+// no client-side ordering; rely on API ordering
+
+const scheduledList = computed(() =>
   (
-    repo.where('status', 'SCHEDULED').get() as Array<{
-      task_id: string
-      creator: string
-      scheduled_timestamp: string
-      expiry_timestamp: string
-      task_gas_limit: string
-      task_gas_fee?: { amount?: string; denom?: string }
-    }>
-  )
-    .slice()
-    .sort((a, b) => toNumber(a.scheduled_timestamp) - toNumber(b.scheduled_timestamp))
+    repo
+      .query()
+      .where(
+        'status',
+        (s: string) =>
+          String(s || '')
+            .trim()
+            .toUpperCase() === 'SCHEDULED'
+      )
+      .get() as Array<any>
+  ).slice(0, 100)
 )
 
-const pendingAll = computed(() =>
+const pendingList = computed(() =>
   (
-    repo.where('status', 'PENDING').get() as Array<{
-      task_id: string
-      creator: string
-      task_gas_price?: { amount?: string; denom?: string }
-    }>
+    repo
+      .query()
+      .where(
+        'status',
+        (s: string) =>
+          String(s || '')
+            .trim()
+            .toUpperCase() === 'PENDING'
+      )
+      .get() as Array<any>
   )
     .slice()
-    .sort((a, b) => toNumber(b.task_gas_price?.amount) - toNumber(a.task_gas_price?.amount))
+    .sort((a, b) => {
+      const limA = Number(a?.task_gas_limit || '0')
+      const limB = Number(b?.task_gas_limit || '0')
+      const feeA = Number(a?.task_gas_fee?.amount || '0')
+      const feeB = Number(b?.task_gas_fee?.amount || '0')
+      const pa = limA > 0 ? feeA / limA : -Infinity
+      const pb = limB > 0 ? feeB / limB : -Infinity
+      return pb - pa
+    })
+    .slice(0, 100)
 )
 
-const finishedItems = computed(() =>
+const doneList = computed(() =>
   (
-    repo.where('status', finished.status).get() as Array<{
-      task_id: string
-      status: string
-      creation_time: string
-      execution_timestamp: string
-      task_gas_consumed: string
-      error_log: string
-    }>
+    repo
+      .query()
+      .where(
+        'status',
+        (s: string) =>
+          String(s || '')
+            .trim()
+            .toUpperCase() === 'DONE'
+      )
+      .get() as Array<any>
   )
     .slice()
-    .sort((a, b) => toNumber(b.execution_timestamp) - toNumber(a.execution_timestamp))
+    .sort(
+      (a, b) => Number(b?.execution_block_height || '0') - Number(a?.execution_block_height || '0')
+    )
+    .slice(0, 100)
 )
 
-// Loader: fetch all tasks into memory (paginate internally)
+// Loader: fetch each segment from dedicated endpoints (limit 50)
 async function loadAll() {
   isLoadingAll.value = true
-  scheduled.loading = true
-  pending.loading = true
-  finished.loading = true
-  scheduled.error = ''
-  pending.error = ''
-  finished.error = ''
+  state.loading = true
+  state.error = ''
   try {
-    const first = await api.fetchAllInit({ limit: '200' })
-    let next = first.next_key
-    while (next) {
-      const res = await api.fetchAllLoadMore({ next_key: next, limit: '200' })
-      next = res.next_key
+    // Clear existing subsets to avoid mixing stale rows
+    try {
+      useRepo(CrontaskTask)
+        .query()
+        .where('status', (s: string) =>
+          ['SCHEDULED', 'PENDING', 'DONE'].includes(
+            String(s || '')
+              .trim()
+              .toUpperCase()
+          )
+        )
+        .delete()
+    } catch (e) {
+      console.error(e)
     }
+    await Promise.all([
+      api.fetchByStatusTimestampInit({ status: 'SCHEDULED', limit: '100', count_total: 'true' }),
+      api.fetchByStatusGasPriceInit({ status: 'PENDING', limit: '100', count_total: 'true' }),
+      api.fetchByStatusTimestampInit({ status: 'DONE', limit: '100', count_total: 'true' }),
+    ])
   } catch (e: any) {
-    const msg = e?.message || String(e)
-    scheduled.error = msg
-    pending.error = msg
-    finished.error = msg
+    state.error = e?.message || String(e)
   } finally {
-    scheduled.loading = false
-    pending.loading = false
-    finished.loading = false
+    state.loading = false
     isLoadingAll.value = false
   }
+}
+
+function copyId(id: string) {
+  if (!id) return // use globalThis for SSR-safety and linter friendliness
+  ;(globalThis as any)?.navigator?.clipboard?.writeText(String(id))?.catch(() => {})
 }
 
 // initial load
@@ -95,165 +134,136 @@ loadAll()
 </script>
 
 <template>
-  <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">Crontasks</h2>
-
-    <!-- Scheduled (by timestamp) -->
-    <div class="bg-base-200 p-4 rounded mb-6">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold">Scheduled (by timestamp)</h3>
-        <div class="flex gap-2 items-end">
-          <button class="btn btn-sm" :disabled="isLoadingAll" @click="loadAll">Reload</button>
-        </div>
-      </div>
-      <div class="text-sm mb-2">
-        <span v-if="scheduled.error" class="text-error">{{ scheduled.error }}</span>
-        <span v-else-if="scheduled.loading">Loading…</span>
-        <span v-else class="opacity-70">{{ scheduledItems.length }} task(s)</span>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
-          <thead>
-            <tr>
-              <th>id</th>
-              <th>creator</th>
-              <th>scheduled</th>
-              <th>expiry</th>
-              <th>gas_limit</th>
-              <th>fee</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="t in scheduledItems" :key="t.task_id">
-              <td class="font-mono">
-                <RouterLink
-                  class="link"
-                  :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
-                  >{{ t.task_id }}</RouterLink
-                >
-              </td>
-              <td class="font-mono break-all">{{ t.creator }}</td>
-              <td class="font-mono">{{ t.scheduled_timestamp }}</td>
-              <td class="font-mono">{{ t.expiry_timestamp }}</td>
-              <td class="font-mono">{{ t.task_gas_limit }}</td>
-              <td class="font-mono">
-                <span v-if="t.task_gas_fee"
-                  >{{ t.task_gas_fee.amount }} {{ t.task_gas_fee.denom }}</span
-                >
-              </td>
-            </tr>
-            <tr v-if="!scheduled.loading && !scheduled.error && scheduledItems.length === 0">
-              <td colspan="6" class="text-center opacity-70">No tasks</td>
-            </tr>
-          </tbody>
-        </table>
+  <div class="p-4 space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-semibold">Crontasks</h2>
+      <div class="flex items-center gap-2">
+        <Button :disabled="isLoadingAll" class="h-9" @click="loadAll">Reload</Button>
       </div>
     </div>
 
-    <!-- Pending (by gas price) -->
-    <div class="bg-base-200 p-4 rounded mb-6">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold">Pending (by gas price)</h3>
-        <div class="flex gap-2 items-end">
-          <button class="btn btn-sm" :disabled="isLoadingAll" @click="loadAll">Reload</button>
-        </div>
-      </div>
-      <div class="text-sm mb-2">
-        <span v-if="pending.error" class="text-error">{{ pending.error }}</span>
-        <span v-else-if="pending.loading">Loading…</span>
-        <span v-else class="opacity-70">{{ pendingAll.length }} task(s)</span>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>id</th>
-              <th>creator</th>
-              <th>gas_price</th>
-              <th>ahead</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(t, i) in pendingAll" :key="t.task_id">
-              <td class="font-mono">{{ i + 1 }}</td>
-              <td class="font-mono">
-                <RouterLink
-                  class="link"
-                  :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
-                  >{{ t.task_id }}</RouterLink
-                >
-              </td>
-              <td class="font-mono break-all">{{ t.creator }}</td>
-              <td class="font-mono">
-                <span v-if="(t as any).task_gas_price"
-                  >{{ (t as any).task_gas_price.amount }}
-                  {{ (t as any).task_gas_price.denom }}</span
-                >
-              </td>
-              <td class="font-mono">{{ i }}</td>
-            </tr>
-            <tr v-if="!pending.loading && !pending.error && pendingAll.length === 0">
-              <td colspan="5" class="text-center opacity-70">No tasks</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="text-sm min-h-5">
+      <span v-if="state.error" class="text-red-600">{{ state.error }}</span>
+      <span v-else-if="state.loading">Loading…</span>
     </div>
 
-    <!-- Finished (by timestamp) -->
-    <div class="bg-base-200 p-4 rounded">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold">Finished (by timestamp)</h3>
-        <div class="flex gap-2 items-end">
-          <label class="form-control">
-            <span class="label-text">status</span>
-            <select v-model="finished.status" class="select select-bordered select-sm">
-              <option value="DONE">DONE</option>
-              <option value="FAILED">FAILED</option>
-              <option value="EXPIRED">EXPIRED</option>
-            </select>
-          </label>
-          <button class="btn btn-sm" :disabled="isLoadingAll" @click="loadAll">Reload</button>
-        </div>
-      </div>
-      <div class="text-sm mb-2">
-        <span v-if="finished.error" class="text-error">{{ finished.error }}</span>
-        <span v-else-if="finished.loading">Loading…</span>
-        <span v-else class="opacity-70">{{ finishedItems.length }} task(s)</span>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
-          <thead>
-            <tr>
-              <th>id</th>
-              <th>status</th>
-              <th>created</th>
-              <th>executed</th>
-              <th>gas_used</th>
-              <th>error</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="t in finishedItems" :key="t.task_id">
-              <td class="font-mono">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Scheduled -->
+      <div class="overflow-x-auto border rounded">
+        <div class="px-3 py-2 text-sm font-medium">Scheduled (by timestamp) (100)</div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>id</TableHead>
+
+              <TableHead>created block</TableHead>
+              <TableHead>gas_price</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="t in scheduledList" :key="t.task_id">
+              <TableCell class="font-mono">
                 <RouterLink
-                  class="link"
+                  class="underline"
                   :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
                   >{{ t.task_id }}</RouterLink
                 >
-              </td>
-              <td>{{ t.status }}</td>
-              <td class="font-mono">{{ t.creation_time }}</td>
-              <td class="font-mono">{{ t.execution_timestamp }}</td>
-              <td class="font-mono">{{ t.task_gas_consumed }}</td>
-              <td class="font-mono break-all">{{ t.error_log }}</td>
-            </tr>
-            <tr v-if="!finished.loading && !finished.error && finishedItems.length === 0">
-              <td colspan="6" class="text-center opacity-70">No tasks</td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+
+              <TableCell class="font-mono"
+                ><RouterLink
+                  class="underline"
+                  :to="{ name: 'BlockDetail', params: { height: t.creation_block_height } }"
+                  >#{{ t.creation_block_height }}</RouterLink
+                ></TableCell
+              >
+
+              <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
+            </TableRow>
+            <TableRow v-if="!state.loading && scheduledList.length === 0">
+              <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+
+      <!-- Pending -->
+      <div class="overflow-x-auto border rounded">
+        <div class="px-3 py-2 text-sm font-medium">Pending (by gas price) (100)</div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>id</TableHead>
+              <TableHead>created block</TableHead>
+              <TableHead>gas_price</TableHead>
+              <TableHead>priority</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(t, i) in pendingList" :key="t.task_id">
+              <TableCell class="font-mono">
+                <RouterLink
+                  class="underline"
+                  :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
+                  >{{ t.task_id }}</RouterLink
+                >
+              </TableCell>
+              <TableCell class="font-mono"
+                ><RouterLink
+                  class="underline"
+                  :to="{ name: 'BlockDetail', params: { height: t.creation_block_height } }"
+                  >#{{ t.creation_block_height }}</RouterLink
+                ></TableCell
+              >
+
+              <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
+              <TableCell class="font-mono">{{ i }}</TableCell>
+            </TableRow>
+            <TableRow v-if="!state.loading && pendingList.length === 0">
+              <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+
+      <!-- Done -->
+      <div class="overflow-x-auto border rounded">
+        <div class="px-3 py-2 text-sm font-medium">Done (by block height) (100)</div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>id</TableHead>
+
+              <TableHead>executed block</TableHead>
+
+              <TableHead>gas_price</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="t in doneList" :key="t.task_id">
+              <TableCell class="font-mono">
+                <RouterLink
+                  class="underline"
+                  :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
+                  >{{ t.task_id }}</RouterLink
+                >
+              </TableCell>
+
+              <TableCell class="font-mono"
+                ><RouterLink
+                  class="underline"
+                  :to="{ name: 'BlockDetail', params: { height: t.execution_block_height } }"
+                  >#{{ t.execution_block_height }}</RouterLink
+                ></TableCell
+              >
+
+              <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
+            </TableRow>
+            <TableRow v-if="!state.loading && doneList.length === 0">
+              <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     </div>
   </div>

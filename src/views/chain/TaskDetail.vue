@@ -5,7 +5,7 @@ import { useRoute, RouterLink } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import CrontaskTask from '@/orm/models/crontask/Task'
-import DenomMetadata from '@/orm/models/bank/DenomMetadata'
+import { formatTimestamp, formatCoin, formatGasPrice } from '@/utils/format'
 import { useWallet } from '@/composables/useWallet'
 
 const route = useRoute()
@@ -46,43 +46,7 @@ const t = computed(
     } | null
 )
 
-function formatTimestamp(v: string): string {
-  if (!v) return ''
-  const s = String(v).trim()
-  if (!s) return ''
-  const n = Number(s)
-  if (Number.isFinite(n) && n > 0) {
-    const ms = s.length <= 10 ? n * 1000 : n
-    const d = new Date(ms)
-    return isNaN(d.getTime()) ? s : d.toLocaleString()
-  }
-  const d = new Date(s)
-  return isNaN(d.getTime()) ? s : d.toLocaleString()
-}
-
-function formatCoin(c?: { amount?: string; denom?: string } | null): string {
-  const amount = String(c?.amount || '0')
-  const denom = String(c?.denom || '')
-  if (!denom) return amount
-  const norm = DenomMetadata.normalize({ amount, denom })
-  return `${norm.display.amount} ${norm.display.denom}`
-}
-
-function formatGasPrice(task: any): string {
-  const limit = Number(task?.task_gas_limit || '0')
-  if (!Number.isFinite(limit) || limit <= 0) return ''
-  const fee = task?.task_gas_fee || {}
-  const denom = String(fee?.denom || '')
-  const amount = String(fee?.amount || '0')
-  if (!denom) return ''
-  const norm = DenomMetadata.normalize({ amount, denom })
-  const disp = Number(norm.display.amount || '0')
-  const price = disp / limit
-  const pretty = Number.isFinite(price)
-    ? price.toLocaleString(undefined, { maximumFractionDigits: 8 })
-    : '0'
-  return `${pretty} ${norm.display.denom}/gas`
-}
+// formatting helpers imported from utils/format
 
 const msgPairs = computed(() => {
   const arr: Array<{ index: number; msg: unknown; res: unknown }> = []

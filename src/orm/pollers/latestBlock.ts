@@ -235,10 +235,14 @@ export function startLatestBlockPoller() {
                         ) => unknown
                         const CE = (globalThis as unknown as { CustomEvent?: CustomEventCtorLike })
                           .CustomEvent
-                        if (CE)
-                          (
+                        if (CE) {
+                          ;(
                             globalThis as unknown as { dispatchEvent: (e: unknown) => boolean }
                           ).dispatchEvent(new CE(evtType, { detail }))
+                          console.debug('[tm.ws] dispatched event', evtType, detail)
+                        } else {
+                          console.warn('[tm.ws] CustomEvent API unavailable in this environment')
+                        }
                       } catch (e) {
                         console.error('[tm.ws] dispatch event error', e)
                       }
