@@ -85,12 +85,15 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           ws: true,
-          rewrite: (path) =>
-            isHttpsTarget ? path.replace(/^\/rpc\/websocket$/, '/websocket') : path,
         },
         '/rpc': {
           target: proxyTarget,
           changeOrigin: false,
+          secure: false,
+        },
+        '/redirect-to-dwapp': {
+          target: proxyTarget,
+          changeOrigin: true,
           secure: false,
         },
       },

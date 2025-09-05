@@ -158,19 +158,21 @@ export class Storage extends Model {
                 gasLimit?: number | 'auto'
                 memo?: string
                 executorAddress?: string
+                grantee?: string
               }) => Promise<{ success: boolean; rawLog?: string }>
             }
             gasLimit?: number | 'auto'
             memo?: string
+            grantee?: string
           }
         ) {
-          const { owner, indexes, wallet, gasLimit, memo } = params
+          const { owner, indexes, wallet, gasLimit, memo, grantee } = params
           const msg = {
             '@type': '/dysonprotocol.storage.v1.MsgStorageDelete',
             owner,
             indexes,
           }
-          const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: owner })
+          const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: owner, grantee })
           if (!res?.success) throw new Error(res?.rawLog || 'Storage delete failed')
           // Remove deleted entries from local store across all extract variants
           const repo = useRepo(Storage)

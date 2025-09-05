@@ -49,9 +49,15 @@ def wsgi(environ, start_response):
       (function() {{
         function boot() {{
           const base = {json.dumps(cdn_base)};
-          fetch(base + 'manifest.json')
-            .then(r => r.json())
+          const version = {json.dumps(version)};
+          const cdnTemplate = {json.dumps(cdn_template)};
+          console.log('[manifest] cfg', base, version, cdnTemplate);
+          const url = base + 'manifest.json';
+          console.log('[manifest] fetch', url);
+          fetch(url)
+            .then(r => {{ console.log('[manifest] manifest fetch status', r.status); return r.json(); }})
             .then(data => {{
+              console.log('[manifest] manifest data', data);
               const e = data["index.html"];
               if (!e || !e.file) throw new Error('manifest missing index.html');
               if (Array.isArray(e.css) && e.css[0]) {{
@@ -60,13 +66,16 @@ def wsgi(environ, start_response):
                 link.crossOrigin = 'anonymous';
                 link.href = base + e.css[0];
                 document.head.appendChild(link);
+                console.log('[manifest] css appended', link.href);
               }}
               const s = document.createElement('script');
               s.type = 'module';
               s.crossOrigin = 'anonymous';
               s.src = base + e.file;
               document.head.appendChild(s);
-            }});
+              console.log('[manifest] script appended', s.src);
+            }})
+            .catch(err => {{ console.error('[manifest] boot error', err); throw err; }});
         }}
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
         else boot();

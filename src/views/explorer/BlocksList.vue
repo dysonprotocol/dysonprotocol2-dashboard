@@ -9,8 +9,6 @@ import TxBlock from '@/orm/models/tx/TxBlock'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-const blockApi = useAxiosRepo(LatestBlock).api()
-const tmApi = useAxiosRepo(TendermintBlock).api()
 const txBlockApi = useAxiosRepo(TxBlock).api()
 const blockRepo = useRepo(LatestBlock)
 const tmRepo = useRepo(TendermintBlock)
@@ -31,7 +29,8 @@ const currentPage = computed(() => {
 const isLoading = ref(false)
 const hasError = ref(false)
 const errorMessage = ref('')
-const latestHeight = ref(0)
+const latestHeight = computed(() => getLatestHeightFromRepo())
+let tipTimer: ReturnType<typeof setTimeout> | null = null
 // Tx counts are sourced from TxBlock summary; cached by height forever
 
 // Grid configuration: 10 columns, 1 row per page
@@ -93,22 +92,32 @@ async function loadPage() {
   hasError.value = false
   errorMessage.value = ''
   try {
-    await blockApi.fetch()
-    latestHeight.value = getLatestHeightFromRepo()
     const heights = gridHeights.value.filter((h) => h <= latestHeight.value && h > 0)
-    await Promise.all(
-      heights.map(async (h) => {
-        const key = String(h)
-        if (!txBlockRepo.find(key)) await txBlockApi.fetchSummary(h)
-        if (!tmRepo.find(key)) await tmApi.fetchWithTxs(h)
-      })
-    )
+    await processInBatches(heights, 8, async (h) => {
+      const key = String(h)
+      if (!txBlockRepo.find(key)) await txBlockApi.fetchSummary(h)
+      // Grid does not require full Tendermint block; fetch lazily in detail pages
+    })
   } catch (e) {
     console.error(e)
     hasError.value = true
     errorMessage.value = (e as Error).message || String(e)
   } finally {
     isLoading.value = false
+  }
+}
+
+// reserved helper for targeted fetches if needed in the future
+// function loadHeights(heights: number[]) {}
+
+/* eslint-disable-next-line no-unused-vars */
+async function processInBatches<T>(items: T[], limit: number, fn: (t: T) => Promise<void>) {
+  const l = Math.max(1, Number(limit) || 1)
+  let i = 0
+  while (i < items.length) {
+    const chunk = items.slice(i, i + l)
+    await Promise.all(chunk.map((it) => fn(it)))
+    i += l
   }
 }
 
@@ -141,6 +150,18 @@ watch(
   }
 )
 
+// When following tip (no page query or already at max), auto-refresh on new heights
+watch(latestHeight, () => {
+  const pinned = typeof route.query.page !== 'undefined'
+  const atTip = currentPage.value >= maxPage.value
+  if (!pinned || atTip) {
+    if (tipTimer) globalThis.clearTimeout(tipTimer)
+    tipTimer = setTimeout(() => {
+      loadPage()
+    }, 150)
+  }
+})
+
 onMounted(async () => {
   await loadPage()
 })
@@ -161,6 +182,7 @@ onMounted(async () => {
               <Button size="sm" :disabled="isNextDisabled">Next</Button>
             </RouterLink>
             <RouterLink :to="{ name: 'BlocksList' }" class="inline-block">
+              <!-- the main page has no query params, so we can just link to it for the current page -->
               <Button size="sm" :disabled="isCurrentDisabled">Current</Button>
             </RouterLink>
           </div>

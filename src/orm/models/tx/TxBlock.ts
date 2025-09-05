@@ -7,6 +7,7 @@ type TxResponse = {
   height?: string | number
   timestamp?: string
 }
+type BlockLike = { header?: { time?: string; height?: string | number } }
 
 export class TxBlock extends Model {
   static entity = 'tx_blocks'
@@ -25,17 +26,29 @@ export class TxBlock extends Model {
       actions: {
         async fetchSummary(this: Request, height: string | number) {
           return this.get(`/cosmos/tx/v1beta1/txs/block/${height}`, {
-            cache: {
-              ttl: 30000 + Math.floor(Math.random() * 1000),
-            },
-            dataTransformer: ({ data }: { data: { txs?: Tx[]; tx_responses?: TxResponse[] } }) => {
+            dataTransformer: ({
+              data,
+            }: {
+              data: {
+                txs?: Tx[]
+                tx_responses?: TxResponse[]
+                block?: BlockLike
+                sdk_block?: BlockLike
+              }
+            }) => {
               const txs = Array.isArray(data?.txs) ? data.txs : []
               const resps = Array.isArray(data?.tx_responses) ? data.tx_responses : []
-              const anyResp = resps[0] || {}
+              const anyResp = (resps[0] || {}) as TxResponse
+              const header = ((data?.block || data?.sdk_block || {}) as BlockLike).header || {}
+              const outHeight = (anyResp?.height as string | number | undefined) ?? header?.height
+              const outTs =
+                (anyResp?.timestamp as string | undefined) ||
+                (header?.time as string | undefined) ||
+                ''
               return [
                 {
-                  height: String((anyResp?.height as string | number | undefined) ?? height ?? '0'),
-                  timestamp: String(anyResp?.timestamp || ''),
+                  height: String(outHeight ?? height ?? '0'),
+                  timestamp: String(outTs || ''),
                   tx_count: String(txs.length),
                 },
               ]

@@ -98,6 +98,7 @@
                     <TableHead>height</TableHead>
                     <TableHead>timestamp</TableHead>
                     <TableHead>data</TableHead>
+                    <TableHead>actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -116,9 +117,18 @@
                     <TableCell class="max-w-[24rem] truncate"
                       ><code>{{ e.data }}</code></TableCell
                     >
+                    <TableCell>
+                      <button
+                        class="btn btn-warning btn-xs"
+                        :disabled="deletingIndex === e.index"
+                        @click.stop="deleteRow(e)"
+                      >
+                        Delete
+                      </button>
+                    </TableCell>
                   </TableRow>
                   <TableRow v-if="entries.length === 0">
-                    <TableCell colspan="5" class="opacity-70">No entries</TableCell>
+                    <TableCell colspan="6" class="opacity-70">No entries</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -130,7 +140,7 @@
       <!-- Right: Edit only -->
       <Card>
         <CardHeader>
-          <CardTitle>Set Storage</CardTitle>
+          <CardTitle>storage detail</CardTitle>
           <CardDescription>Full original data</CardDescription>
         </CardHeader>
         <CardContent class="space-y-3">
@@ -173,8 +183,20 @@
               <label class="text-xs">index</label>
               <input v-model="editIndex" class="input w-full" placeholder="index (e.g. user/123)" />
             </div>
-            <button class="btn btn-primary" :disabled="!canSaveEdit" @click="saveEdit">
-              Set Storage
+            <button
+              class="btn btn-ghost"
+              :disabled="!canSaveEdit || isFetchingFull"
+              @click="getCurrent"
+            >
+              Get
+            </button>
+            <button class="btn btn-primary" :disabled="!canSaveEdit" @click="saveEdit">Set</button>
+            <button
+              class="btn btn-warning"
+              :disabled="!canSaveEdit || deletingIndex === editIndex"
+              @click="deleteCurrentIndex"
+            >
+              Delete
             </button>
           </div>
           <textarea
@@ -239,6 +261,7 @@ const fullData = ref('')
 const editError = ref('')
 const canSaveEdit = computed(() => Boolean(props.address && editIndex.value.trim()))
 const editIndex = ref('')
+const deletingIndex = ref<string | null>(null)
 
 // Autosize for full data textarea
 const { textarea: fullDataTextarea, triggerResize } = useTextareaAutosize({
@@ -391,6 +414,40 @@ async function saveEdit() {
   }
 }
 
+async function getCurrent() {
+  editError.value = ''
+  if (!props.address || !editIndex.value.trim()) return
+  await fetchFull(props.address, editIndex.value)
+}
+
+async function deleteCurrentIndex() {
+  deleteError.value = ''
+  if (!props.address || !editIndex.value.trim()) return
+  const ok = globalThis.confirm ? globalThis.confirm(`Delete index "${editIndex.value}"?`) : true
+  if (!ok) return
+  if (deletingIndex.value) return
+  deletingIndex.value = editIndex.value
+  try {
+    await useAxiosRepo(Storage)
+      .api()
+      .storageDelete({
+        owner: props.address,
+        indexes: [editIndex.value],
+        wallet: { sendMsg: wallet.sendMsg },
+        gasLimit: 'auto',
+        grantee:
+          isAuthz.value && selectedGranteeAddress.value ? selectedGranteeAddress.value : undefined,
+      })
+    await search()
+    fullData.value = ''
+  } catch (e) {
+    console.error('delete current failed', e)
+    deleteError.value = (e as any)?.message || 'Failed to delete index'
+  } finally {
+    deletingIndex.value = null
+  }
+}
+
 // Set/Delete
 const wallet = useWallet()
 const setIndex = ref('')
@@ -433,6 +490,8 @@ async function submitDelete() {
         indexes,
         wallet: { sendMsg: wallet.sendMsg },
         gasLimit: 'auto',
+        grantee:
+          isAuthz.value && selectedGranteeAddress.value ? selectedGranteeAddress.value : undefined,
       })
   } catch (e) {
     console.error('delete failed', e)
@@ -441,6 +500,33 @@ async function submitDelete() {
   }
   deleteIndexes.value = ''
   await search()
+}
+
+async function deleteRow(e: StorageRow) {
+  deleteError.value = ''
+  if (!e?.index) return
+  if (deletingIndex.value) return
+  const ok = globalThis.confirm ? globalThis.confirm(`Delete index "${e.index}"?`) : true
+  if (!ok) return
+  deletingIndex.value = e.index
+  try {
+    await useAxiosRepo(Storage)
+      .api()
+      .storageDelete({
+        owner: props.address,
+        indexes: [e.index],
+        wallet: { sendMsg: wallet.sendMsg },
+        gasLimit: 'auto',
+        grantee:
+          isAuthz.value && selectedGranteeAddress.value ? selectedGranteeAddress.value : undefined,
+      })
+    await search()
+  } catch (err) {
+    console.error('row delete failed', err)
+    deleteError.value = (err as any)?.message || `Failed to delete index ${e.index}`
+  } finally {
+    deletingIndex.value = null
+  }
 }
 
 // Authz selection state
