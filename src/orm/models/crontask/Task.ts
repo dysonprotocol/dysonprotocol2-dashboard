@@ -37,7 +37,7 @@ export class CrontaskTask extends Model {
         },
         async fetchByCreatorInit(
           this: Request,
-          params: { creator: string; limit?: string }
+          params: { creator: string; limit?: string; reverse?: boolean }
         ): Promise<{
           next_key?: string
           total?: string
@@ -45,9 +45,10 @@ export class CrontaskTask extends Model {
           page?: number
           limit?: string
         }> {
-          const { creator, limit } = params
+          const { creator, limit, reverse } = params
           const qs = new URLSearchParams()
           if (limit) qs.set('pagination.limit', limit)
+          if (reverse) qs.set('pagination.reverse', 'true')
           let nextKey: string | undefined
           let total: string | undefined
           let returned = 0
@@ -72,7 +73,13 @@ export class CrontaskTask extends Model {
         },
         async fetchByCreatorLoadMore(
           this: Request,
-          params: { creator: string; limit?: string; next_key?: string; page?: number }
+          params: {
+            creator: string
+            limit?: string
+            next_key?: string
+            page?: number
+            reverse?: boolean
+          }
         ): Promise<{
           next_key?: string
           total?: string
@@ -80,12 +87,13 @@ export class CrontaskTask extends Model {
           page?: number
           limit?: string
         }> {
-          const { creator, limit } = params
+          const { creator, limit, reverse } = params
           const qs = new URLSearchParams()
           let page = params.page
           if (params.next_key) qs.set('pagination.key', params.next_key)
           else if (page) qs.set('page', String(page))
           if (limit) qs.set(params.next_key ? 'pagination.limit' : 'limit', limit)
+          if (reverse) qs.set('pagination.reverse', 'true')
           let nextKey: string | undefined
           let total: string | undefined
           let returned = 0
@@ -249,10 +257,13 @@ export class CrontaskTask extends Model {
           }
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: creator })
           if (!res?.success) throw new Error(res?.rawLog || 'Crontask create failed')
-          await this.get(`/dysonprotocol/crontask/v1/tasks/creator/${creator}`, {
-            dataTransformer: ({ data }: { data: { tasks?: unknown[] } }) =>
-              Array.isArray(data.tasks) ? data.tasks : [],
-          })
+          await this.get(
+            `/dysonprotocol/crontask/v1/tasks/creator/${creator}?pagination.reverse=true`,
+            {
+              dataTransformer: ({ data }: { data: { tasks?: unknown[] } }) =>
+                Array.isArray(data.tasks) ? data.tasks : [],
+            }
+          )
           return res
         },
         async deleteTask(
@@ -280,10 +291,13 @@ export class CrontaskTask extends Model {
           }
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: creator })
           if (!res?.success) throw new Error(res?.rawLog || 'Crontask delete failed')
-          await this.get(`/dysonprotocol/crontask/v1/tasks/creator/${creator}`, {
-            dataTransformer: ({ data }: { data: { tasks?: unknown[] } }) =>
-              Array.isArray(data.tasks) ? data.tasks : [],
-          })
+          await this.get(
+            `/dysonprotocol/crontask/v1/tasks/creator/${creator}?pagination.reverse=true`,
+            {
+              dataTransformer: ({ data }: { data: { tasks?: unknown[] } }) =>
+                Array.isArray(data.tasks) ? data.tasks : [],
+            }
+          )
           return res
         },
       },

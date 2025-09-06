@@ -63,6 +63,7 @@ export function formatShortDelta(value: string, nowMs: number): string {
   let diff = targetMs - nowMs
   if (!Number.isFinite(diff)) return ''
   if (diff < 0) diff = 0
+  if (diff === 0) return 'now'
 
   const SEC = 1000
   const MIN = 60 * SEC
@@ -85,7 +86,7 @@ export function formatShortDelta(value: string, nowMs: number): string {
     parts.push(`${m}m`)
     diff -= m * MIN
   }
-  const sec = Math.floor(diff / SEC)
+  const sec = Math.ceil(diff / SEC)
   if (parts.length < 2) parts.push(`${sec}s`)
 
   return parts.slice(0, 2).join(' ')

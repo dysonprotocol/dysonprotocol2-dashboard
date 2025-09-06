@@ -133,6 +133,16 @@
           </tbody>
         </table>
       </div>
+      <div class="mt-3 flex justify-center">
+        <button
+          v-if="nextKey && !error"
+          class="btn btn-sm"
+          :disabled="isLoading || isLoadingMore"
+          @click="loadMore"
+        >
+          {{ isLoadingMore ? 'Loading…' : 'Load more' }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -159,27 +169,46 @@ const tasks = computed<any[]>(() =>
 
 const isLoading = ref(false)
 const error = ref('')
+const nextKey = ref<string | null>(null)
+const isLoadingMore = ref(false)
 
 async function refreshAll() {
   if (!props.address) return
   isLoading.value = true
   error.value = ''
   try {
-    const first = await api.fetchByCreatorInit({ creator: props.address, limit: '200' })
-    let next = first.next_key
-    while (next) {
-      const r = await api.fetchByCreatorLoadMore({
-        creator: props.address,
-        next_key: next,
-        limit: '200',
-      })
-      next = r.next_key
-    }
+    const first = await api.fetchByCreatorInit({
+      creator: props.address,
+      limit: '20',
+      reverse: true,
+    })
+    nextKey.value = first?.next_key || null
   } catch (e: any) {
     console.error(e)
     error.value = e?.message || String(e)
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadMore() {
+  if (!props.address) return
+  if (!nextKey.value) return
+  isLoadingMore.value = true
+  error.value = ''
+  try {
+    const r = await api.fetchByCreatorLoadMore({
+      creator: props.address,
+      next_key: nextKey.value,
+      limit: '20',
+      reverse: true,
+    })
+    nextKey.value = r?.next_key || null
+  } catch (e: any) {
+    console.error(e)
+    error.value = e?.message || String(e)
+  } finally {
+    isLoadingMore.value = false
   }
 }
 

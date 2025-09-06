@@ -3,10 +3,6 @@
     <h2 class="text-xl font-semibold">
       Authz — <code>{{ address }}</code>
     </h2>
-    <div class="flex gap-2">
-      <button class="btn btn-primary" @click="refreshAsGranter">As Granter</button>
-      <button class="btn btn-primary" @click="refreshAsGrantee">As Grantee</button>
-    </div>
     <div class="grid md:grid-cols-2 gap-6">
       <div>
         <h3 class="font-semibold">Grants given</h3>

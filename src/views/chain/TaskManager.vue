@@ -45,7 +45,12 @@ const scheduledList = computed(() =>
             .toUpperCase() === 'SCHEDULED'
       )
       .get() as Array<any>
-  ).slice(0, 100)
+  )
+    .slice()
+    .sort((a, b) => {
+      return a.scheduled_timestamp - b.scheduled_timestamp
+    })
+    .slice(0, 100)
 )
 
 const pendingList = computed(() =>
@@ -135,7 +140,7 @@ let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null
 onMounted(() => {
   tick = globalThis.setInterval(() => {
     nowMs.value = Date.now()
-  }, 1000)
+  }, 200)
   unsubscribe = subscribeAllCrontaskEvents((d: Record<string, unknown>) => {
     const id = unwrap((d as { task_id?: unknown })?.task_id)
     if (!id) return
@@ -182,15 +187,17 @@ loadAll()
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>scheduled</TableHead>
               <TableHead>id</TableHead>
 
               <TableHead>created block</TableHead>
-              <TableHead>gas_price</TableHead>
-              <TableHead>scheduled</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             <TableRow v-for="t in scheduledList" :key="t.task_id">
+              <TableCell class="font-mono">{{
+                formatShortDelta(t.scheduled_timestamp, nowMs)
+              }}</TableCell>
               <TableCell class="font-mono">
                 <RouterLink
                   class="underline"
@@ -203,14 +210,9 @@ loadAll()
                 ><RouterLink
                   class="underline"
                   :to="{ name: 'BlockDetail', params: { height: t.creation_block_height } }"
-                  >#{{ t.creation_block_height }}</RouterLink
+                  >{{ t.creation_block_height }}</RouterLink
                 ></TableCell
               >
-
-              <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
-              <TableCell class="font-mono">{{
-                formatShortDelta(t.scheduled_timestamp, nowMs)
-              }}</TableCell>
             </TableRow>
             <TableRow v-if="!state.loading && scheduledList.length === 0">
               <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
@@ -225,14 +227,16 @@ loadAll()
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>priority</TableHead>
               <TableHead>id</TableHead>
               <TableHead>created block</TableHead>
               <TableHead>gas_price</TableHead>
-              <TableHead>priority</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             <TableRow v-for="(t, i) in pendingList" :key="t.task_id">
+              <TableCell class="font-mono">{{ i }}</TableCell>
+
               <TableCell class="font-mono">
                 <RouterLink
                   class="underline"
@@ -244,12 +248,11 @@ loadAll()
                 ><RouterLink
                   class="underline"
                   :to="{ name: 'BlockDetail', params: { height: t.creation_block_height } }"
-                  >#{{ t.creation_block_height }}</RouterLink
+                  >{{ t.creation_block_height }}</RouterLink
                 ></TableCell
               >
 
               <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
-              <TableCell class="font-mono">{{ i }}</TableCell>
             </TableRow>
             <TableRow v-if="!state.loading && pendingList.length === 0">
               <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
@@ -264,17 +267,21 @@ loadAll()
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>id</TableHead>
-
               <TableHead>executed block</TableHead>
-
+              <TableHead>id</TableHead>
               <TableHead>status</TableHead>
-
               <TableHead>gas_price</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             <TableRow v-for="t in doneList" :key="t.task_id">
+              <TableCell class="font-mono"
+                ><RouterLink
+                  class="underline"
+                  :to="{ name: 'BlockDetail', params: { height: t.execution_block_height } }"
+                  >{{ t.execution_block_height }}</RouterLink
+                ></TableCell
+              >
               <TableCell class="font-mono">
                 <RouterLink
                   class="underline"
@@ -282,17 +289,7 @@ loadAll()
                   >{{ t.task_id }}</RouterLink
                 >
               </TableCell>
-
-              <TableCell class="font-mono"
-                ><RouterLink
-                  class="underline"
-                  :to="{ name: 'BlockDetail', params: { height: t.execution_block_height } }"
-                  >#{{ t.execution_block_height }}</RouterLink
-                ></TableCell
-              >
-
               <TableCell class="font-mono">{{ t.status }}</TableCell>
-
               <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
             </TableRow>
             <TableRow v-if="!state.loading && doneList.length === 0">
