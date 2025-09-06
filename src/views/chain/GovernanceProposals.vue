@@ -10,6 +10,17 @@ import DenomMetadata from '@/orm/models/bank/DenomMetadata'
 import { useWallet } from '@/composables/useWallet'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion'
+import UpgradeAuthority from '@/orm/models/upgrade/Authority'
 
 const api = useAxiosRepo(GovProposal).api()
 const repo = useRepo(GovProposal)
@@ -17,7 +28,9 @@ const govParamsApi = useAxiosRepo(GovParams).api()
 const govParamsRepo = useRepo(GovParams)
 const votesApi = useAxiosRepo(GovVote).api()
 const votesRepo = useRepo(GovVote)
+const upgradeRepo = useRepo(UpgradeAuthority)
 const denomMetadataApi = useAxiosRepo(DenomMetadata).api()
+const upgradeApi = useAxiosRepo(UpgradeAuthority).api()
 const wallet = useWallet()
 
 const VOTE_OPTION_YES = 'VOTE_OPTION_YES'
@@ -97,6 +110,10 @@ const govParams = computed(
           min_deposit_ratio: string
         }
       | undefined
+)
+
+const upgradeAuthorityAddress = computed(
+  () => (upgradeRepo.find('default') as { address?: string } | null)?.address || ''
 )
 
 function formatCoin(input?: { denom: string; amount: string }) {
@@ -353,6 +370,11 @@ onMounted(async () => {
   trySetDefaultProposer()
   await refreshGovParams()
   await refreshDenomMetadata()
+  try {
+    await upgradeApi.fetch()
+  } catch (e) {
+    console.error(e)
+  }
   refresh()
 })
 </script>
@@ -362,9 +384,6 @@ onMounted(async () => {
     <div class="border rounded p-4 space-y-3 bg-base-100 shadow">
       <div class="flex items-center justify-between">
         <div class="font-medium">Governance Parameters</div>
-        <button class="btn btn-xs" :disabled="isLoadingParams" @click="refreshGovParams">
-          {{ isLoadingParams ? 'Loading…' : 'Refresh' }}
-        </button>
       </div>
 
       <div v-if="!govParams" class="text-sm opacity-70">No parameters loaded.</div>
@@ -431,19 +450,19 @@ onMounted(async () => {
             <div class="font-medium">Other</div>
             <div class="flex flex-wrap gap-3">
               <div>
-                <span class="opacity-70">Burn Vote Quorum:</span>
+                <span class="opacity-70">Burn Vote Quorum: </span>
                 {{ govParams.burn_vote_quorum ? 'Yes' : 'No' }}
               </div>
               <div>
-                <span class="opacity-70">Burn Prevote Deposit:</span>
+                <span class="opacity-70">Burn Prevote Deposit: </span>
                 {{ govParams.burn_proposal_deposit_prevote ? 'Yes' : 'No' }}
               </div>
               <div>
-                <span class="opacity-70">Burn Vote Veto:</span>
+                <span class="opacity-70">Burn Vote Veto: </span>
                 {{ govParams.burn_vote_veto ? 'Yes' : 'No' }}
               </div>
               <div>
-                <span class="opacity-70">Cancel Ratio:</span>
+                <span class="opacity-70">Cancel Ratio: </span>
                 {{
                   govParams.proposal_cancel_ratio
                     ? percentLabel(govParams.proposal_cancel_ratio)
@@ -451,7 +470,7 @@ onMounted(async () => {
                 }}
               </div>
               <div class="min-w-0">
-                <span class="opacity-70">Cancel Dest:</span>
+                <span class="opacity-70">Cancel Dest: </span>
                 <span class="truncate inline-block max-w-[12rem] align-bottom">{{
                   govParams.proposal_cancel_dest || '—'
                 }}</span>
@@ -459,57 +478,60 @@ onMounted(async () => {
             </div>
           </div>
         </div>
+
+        <div class="card bg-base-200/50 sm:col-span-2">
+          <div class="card-body p-3 text-sm">
+            <div class="font-medium">Authority</div>
+            <div>
+              <span class="opacity-70">Authority address: </span>
+              <span class="font-mono">{{ upgradeAuthorityAddress || '—' }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="collapse collapse-arrow border rounded bg-base-100">
-      <input type="checkbox" />
-      <div class="collapse-title font-medium">Submit New Proposal</div>
-      <div class="collapse-content">
-        <div class="space-y-3">
-          <WalletSelector
-            v-model="proposer"
-            :button-class="'btn-sm w-full'"
-            :msg-type-filter="disableAuthz"
-          />
-          <input v-model="title" class="input input-sm w-full" placeholder="title (optional)" />
-          <input v-model="summary" class="input input-sm w-full" placeholder="summary (optional)" />
-          <textarea
-            ref="messagesTextarea"
-            v-model="messages"
-            class="textarea w-full h-28 resize-none overflow-hidden"
-            placeholder="messages JSON (Anys)"
-          ></textarea>
-          <textarea
-            ref="depositTextarea"
-            v-model="initialDeposit"
-            class="textarea w-full h-20 resize-none overflow-hidden"
-            placeholder="initial_deposit JSON (coins)"
-          ></textarea>
-          <input
-            v-model="metadata"
-            class="input input-sm w-full"
-            placeholder="metadata (optional)"
-          />
-          <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" v-model="expedited" class="checkbox checkbox-sm" />
-            <span>Expedited</span>
-          </label>
-        </div>
-        <div class="flex flex-wrap gap-2 mt-3">
-          <button class="btn btn-primary btn-sm" :disabled="isSubmitting" @click="submit">
-            {{ isSubmitting ? 'Submitting…' : 'Submit Proposal' }}
-          </button>
-        </div>
-        <div v-if="submitError" class="text-sm text-red-600 mt-2">{{ submitError }}</div>
-      </div>
-    </div>
+    <Accordion type="single" collapsible>
+      <AccordionItem value="submit">
+        <AccordionTrigger>Submit New Proposal</AccordionTrigger>
+        <AccordionContent>
+          <div class="space-y-3">
+            <WalletSelector v-model="proposer" :button-class="''" :msg-type-filter="disableAuthz" />
+            <Input v-model="title" class="w-full" placeholder="title (optional)" />
+            <Input v-model="summary" class="w-full" placeholder="summary (optional)" />
+            <Textarea
+              ref="messagesTextarea"
+              v-model="messages"
+              class="w-full h-28 resize-none overflow-hidden"
+              placeholder="messages JSON (Anys)"
+            />
+            <Textarea
+              ref="depositTextarea"
+              v-model="initialDeposit"
+              class="w-full h-20 resize-none overflow-hidden"
+              placeholder="initial_deposit JSON (coins)"
+            />
+            <Input v-model="metadata" class="w-full" placeholder="metadata (optional)" />
+            <label class="flex items-center gap-2 text-sm">
+              <Checkbox v-model:checked="expedited" />
+              <span>Expedited</span>
+            </label>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <Button size="sm" :disabled="isSubmitting" @click="submit">
+              {{ isSubmitting ? 'Submitting…' : 'Submit Proposal' }}
+            </Button>
+          </div>
+          <div v-if="submitError" class="text-sm text-red-600 mt-2">{{ submitError }}</div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
 
     <div class="flex items-center justify-between">
       <div class="text-lg font-medium">Governance Proposals</div>
-      <button class="btn btn-sm" :disabled="isLoading" @click="refresh">
+      <Button size="sm" :disabled="isLoading" @click="refresh">
         {{ isLoading ? 'Loading…' : 'Refresh' }}
-      </button>
+      </Button>
     </div>
     <div v-if="error" class="text-sm text-red-600">{{ error }}</div>
 

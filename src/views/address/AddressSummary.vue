@@ -12,12 +12,14 @@
                 <TableRow>
                   <TableHead class="text-left">denom</TableHead>
                   <TableHead class="text-left">amount</TableHead>
+                  <TableHead class="text-left">spendable</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <TableRow v-for="r in bankRows" :key="r.key">
                   <TableCell class="text-left">{{ r.denom }}</TableCell>
                   <TableCell class="text-left font-mono">{{ r.amount }}</TableCell>
+                  <TableCell class="text-left font-mono">{{ r.spendable }}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -186,14 +188,15 @@ const scriptRepo = useRepo(Script)
 const rewardRepo = useRepo(DelegatorTotalReward)
 const grantRepo = useRepo(Grant)
 
-const spendables = computed<any[]>(() =>
-  props.address
-    ? (spendableRepo.where('address', (v: string) => v === props.address).get() as any[])
-    : []
-)
+// removed unused spendables
 const balances = computed<any[]>(() =>
   props.address
     ? (balanceRepo.where('address', (v: string) => v === props.address).get() as any[])
+    : []
+)
+const spendables = computed<any[]>(() =>
+  props.address
+    ? (spendableRepo.where('address', (v: string) => v === props.address).get() as any[])
     : []
 )
 const delegations = computed<any[]>(() =>
@@ -240,25 +243,55 @@ function addDecimalStrings(a: string, b: string): string {
 }
 
 const bankRows = computed(() => {
-  const byBase = new Map<string, bigint>()
+  const byBase = new Map<string, { total: bigint; spend: bigint }>()
   for (const c of balances.value as Array<{ amount: string; denom: string }>) {
     try {
       const n = (DenomMetadata as any).normalize({ amount: c.amount, denom: c.denom })
       const baseDenom = n.base.denom
       const baseAmt = BigInt(n.base.amount)
-      byBase.set(baseDenom, (byBase.get(baseDenom) || 0n) + baseAmt)
-    } catch {}
+      const entry = byBase.get(baseDenom) || { total: 0n, spend: 0n }
+      entry.total += baseAmt
+      byBase.set(baseDenom, entry)
+    } catch (e) {
+      console.error('normalize balance failed', e)
+    }
   }
-  const out: Array<{ key: string; amount: string; denom: string }> = []
-  for (const [base, amt] of byBase.entries()) {
+  for (const c of spendables.value as Array<{ amount: string; denom: string }>) {
     try {
-      const disp = (DenomMetadata as any).normalize({ amount: amt.toString(), denom: base }).display
-      if (String(disp.denom || '').includes('/')) continue
-      out.push({ key: base, amount: disp.amount, denom: disp.denom })
-    } catch {}
+      const n = (DenomMetadata as any).normalize({ amount: c.amount, denom: c.denom })
+      const baseDenom = n.base.denom
+      const baseAmt = BigInt(n.base.amount)
+      const entry = byBase.get(baseDenom) || { total: 0n, spend: 0n }
+      entry.spend += baseAmt
+      byBase.set(baseDenom, entry)
+    } catch (e) {
+      console.error('normalize spendable failed', e)
+    }
   }
-  out.sort((a, b) => (a.denom > b.denom ? 1 : a.denom < b.denom ? -1 : 0))
-  return out
+  const withSpend: Array<{ key: string; amount: string; spendable: string; denom: string }> = []
+  for (const [base, entry] of byBase.entries()) {
+    try {
+      const disp = (DenomMetadata as any).normalize({
+        amount: entry.total.toString(),
+        denom: base,
+      }).display
+      const spendDisp = (DenomMetadata as any).normalize({
+        amount: entry.spend.toString(),
+        denom: base,
+      }).display
+      if (String(disp.denom || '').includes('/')) continue
+      withSpend.push({
+        key: base,
+        amount: disp.amount,
+        spendable: spendDisp.amount,
+        denom: disp.denom,
+      })
+    } catch (e) {
+      console.error('normalize display failed', e)
+    }
+  }
+  withSpend.sort((a, b) => (a.denom > b.denom ? 1 : a.denom < b.denom ? -1 : 0))
+  return withSpend
 })
 
 const stakedShares = computed(() => {

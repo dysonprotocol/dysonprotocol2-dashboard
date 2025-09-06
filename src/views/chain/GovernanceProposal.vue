@@ -14,6 +14,15 @@ import { ref } from 'vue'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
 import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
 
 const route = useRoute()
 const id = computed(() => String(route.params.proposalId || ''))
@@ -267,7 +276,7 @@ function isVoted(address: string, option: number) {
           :defaultBaseDenom="'udys'"
         />
         <div class="flex gap-2">
-          <WalletSelector v-model="selectedDepositor" :buttonClass="'btn btn-outline'" />
+          <WalletSelector v-model="selectedDepositor" :buttonClass="''" />
           <Button
             variant="outline"
             @click="submitDeposit"
@@ -280,56 +289,64 @@ function isVoted(address: string, option: number) {
       </div>
 
       <div class="font-medium">Tally</div>
-      <div class="stats shadow w-full">
-        <div class="stat">
-          <div class="stat-title">Yes</div>
-          <div class="stat-value text-success">{{ t?.yes_count || '0' }}</div>
-          <div class="stat-desc"></div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-title">Abstain</div>
-          <div class="stat-value">{{ t?.abstain_count || '0' }}</div>
-          <div class="stat-desc"></div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-title">No</div>
-          <div class="stat-value text-error">{{ t?.no_count || '0' }}</div>
-          <div class="stat-desc"></div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-title">No w/ Veto</div>
-          <div class="stat-value text-error">{{ t?.no_with_veto_count || '0' }}</div>
-          <div class="stat-desc"></div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Votes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>option</TableHead>
+                <TableHead>count</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>Yes</TableCell>
+                <TableCell class="font-mono">{{ t?.yes_count || '0' }}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Abstain</TableCell>
+                <TableCell class="font-mono">{{ t?.abstain_count || '0' }}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>No</TableCell>
+                <TableCell class="font-mono">{{ t?.no_count || '0' }}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>No w/ Veto</TableCell>
+                <TableCell class="font-mono">{{ t?.no_with_veto_count || '0' }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
       <div class="font-medium">Your Wallets</div>
       <div v-if="unlockedWallets.length">
         <div class="overflow-x-auto">
-          <table class="table w-full">
-            <thead>
-              <tr>
-                <th>Wallet</th>
-                <th>Staked Voting Power</th>
-                <th>Current Vote</th>
-                <th class="w-0"></th>
-                <th class="w-0"></th>
-                <th class="w-0"></th>
-                <th class="w-0"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="w in unlockedWallets" :key="w.address">
-                <td class="font-mono" :title="w.address">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Wallet</TableHead>
+                <TableHead>Staked Voting Power</TableHead>
+                <TableHead>Current Vote</TableHead>
+                <TableHead class="w-0"></TableHead>
+                <TableHead class="w-0"></TableHead>
+                <TableHead class="w-0"></TableHead>
+                <TableHead class="w-0"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="w in unlockedWallets" :key="w.address">
+                <TableCell class="font-mono" :title="w.address">
                   <RouterLink :to="{ name: 'AddressSummary', params: { address: w.address } }">
                     {{ walletNameForAddress(w.address) }}
                   </RouterLink>
-                </td>
-                <td class="font-mono">{{ stakingPower[w.address] || '—' }}</td>
-                <td>{{ walletVoteValue(w.address) }}</td>
-                <td>
+                </TableCell>
+                <TableCell class="font-mono">{{ stakingPower[w.address] || '—' }}</TableCell>
+                <TableCell>{{ walletVoteValue(w.address) }}</TableCell>
+                <TableCell>
                   <Button
                     :variant="isVoted(w.address, 1) ? undefined : 'outline'"
                     @click="submitVoteFor(w.address, 1)"
@@ -337,8 +354,8 @@ function isVoted(address: string, option: number) {
                   >
                     Yes
                   </Button>
-                </td>
-                <td>
+                </TableCell>
+                <TableCell>
                   <Button
                     :variant="isVoted(w.address, 2) ? undefined : 'outline'"
                     @click="submitVoteFor(w.address, 2)"
@@ -346,8 +363,8 @@ function isVoted(address: string, option: number) {
                   >
                     Abstain
                   </Button>
-                </td>
-                <td>
+                </TableCell>
+                <TableCell>
                   <Button
                     :variant="isVoted(w.address, 3) ? undefined : 'outline'"
                     @click="submitVoteFor(w.address, 3)"
@@ -355,8 +372,8 @@ function isVoted(address: string, option: number) {
                   >
                     No
                   </Button>
-                </td>
-                <td>
+                </TableCell>
+                <TableCell>
                   <Button
                     :variant="isVoted(w.address, 4) ? undefined : 'outline'"
                     @click="submitVoteFor(w.address, 4)"
@@ -364,10 +381,10 @@ function isVoted(address: string, option: number) {
                   >
                     Veto
                   </Button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
         <div v-if="voteError" class="text-red-600">{{ voteError }}</div>
       </div>

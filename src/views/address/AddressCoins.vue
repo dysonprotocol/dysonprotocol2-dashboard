@@ -1,187 +1,180 @@
 <template>
-  <div class="">
-    <form class="max-w-xl mx-auto" @submit.prevent="submitSend">
-      <fieldset class="space-y-4 border border-base-300 rounded-md p-4">
-        <legend class="mb-0">Send Coins</legend>
-        <!-- Signer selection (direct or via authz) -->
+  <div class="max-w-xl mx-auto">
+    <form class="" @submit.prevent="submitSend">
+      <Card>
+        <CardHeader>
+          <CardTitle>Send Coins</CardTitle>
+        </CardHeader>
+        <CardContent class="space-y-4">
+          <!-- Signer selection (direct or via authz) -->
 
-        <div>
-          Signer:
+          <div>
+            Signer:
 
-          <WalletSelector
-            v-model="selectedExecutor"
-            :show-locked="true"
-            :allowed-addresses="[address]"
-            :default-address="address"
-            :default-grantee="selectedGranteeAddress"
-            :button-class="''"
-            :msg-type-filter="msgTypeFilter"
-            @update:executor-address="onExecutorAddress"
-            @update:grantee-address="onGranteeAddress"
-            @update:is-authz="onIsAuthz"
-            @update:authz-notes="onAuthzNotes"
-            @update:selected-grant="onSelectedGrant"
-          />
-          <div v-if="isAuthz" class="mt-2 text-xs opacity-80 break-all">
-            <div v-if="authzNotes">Note: {{ authzNotes }}</div>
-            <div v-if="selectedGrant">
-              <div>
-                Authz: <code>{{ selectedGrant.type_url }}</code>
-                <span v-if="selectedGrant.expiration" class="ml-2"
-                  >exp: {{ selectedGrant.expiration }}</span
-                >
-              </div>
-              <div
-                v-if="
-                  selectedGrant.authorization?.['@type'] ===
-                  '/cosmos.bank.v1beta1.SendAuthorization'
-                "
-              >
-                <div
-                  v-if="
-                    Array.isArray(selectedGrant.authorization?.spend_limit) &&
-                    selectedGrant.authorization.spend_limit.length
-                  "
-                >
-                  Limit:
-                  <span
-                    v-for="c in selectedGrant.authorization.spend_limit"
-                    :key="c.denom"
-                    class="mr-2"
-                    >{{ c.amount }} {{ c.denom }}</span
+            <WalletSelector
+              v-model="selectedExecutor"
+              :show-locked="true"
+              :allowed-addresses="[address]"
+              :default-address="address"
+              :default-grantee="selectedGranteeAddress"
+              :button-class="''"
+              :msg-type-filter="msgTypeFilter"
+              @update:executor-address="onExecutorAddress"
+              @update:grantee-address="onGranteeAddress"
+              @update:is-authz="onIsAuthz"
+              @update:authz-notes="onAuthzNotes"
+              @update:selected-grant="onSelectedGrant"
+            />
+            <div v-if="isAuthz" class="mt-2 text-xs opacity-80 break-all">
+              <div v-if="authzNotes">Note: {{ authzNotes }}</div>
+              <div v-if="selectedGrant">
+                <div>
+                  Authz: <code>{{ selectedGrant.type_url }}</code>
+                  <span v-if="selectedGrant.expiration" class="ml-2"
+                    >exp: {{ selectedGrant.expiration }}</span
                   >
                 </div>
                 <div
                   v-if="
-                    Array.isArray(selectedGrant.authorization?.allow_list) &&
-                    selectedGrant.authorization.allow_list.length
+                    selectedGrant.authorization?.['@type'] ===
+                    '/cosmos.bank.v1beta1.SendAuthorization'
                   "
                 >
-                  Allowed recipients:
-                  <span class="font-mono">
-                    {{ selectedGrant.authorization.allow_list.join(', ') }}
-                  </span>
+                  <div
+                    v-if="
+                      Array.isArray(selectedGrant.authorization?.spend_limit) &&
+                      selectedGrant.authorization.spend_limit.length
+                    "
+                  >
+                    Limit:
+                    <span
+                      v-for="c in selectedGrant.authorization.spend_limit"
+                      :key="c.denom"
+                      class="mr-2"
+                      >{{ c.amount }} {{ c.denom }}</span
+                    >
+                  </div>
+                  <div
+                    v-if="
+                      Array.isArray(selectedGrant.authorization?.allow_list) &&
+                      selectedGrant.authorization.allow_list.length
+                    "
+                  >
+                    Allowed recipients:
+                    <span class="font-mono">
+                      {{ selectedGrant.authorization.allow_list.join(', ') }}
+                    </span>
+                  </div>
                 </div>
               </div>
+              <ul v-if="authzWarnings.length" class="text-warning mt-1 list-disc pl-4">
+                <li v-for="w in authzWarnings" :key="w">
+                  {{ w }}
+                </li>
+              </ul>
             </div>
-            <ul v-if="authzWarnings.length" class="text-warning mt-1 list-disc pl-4">
-              <li v-for="w in authzWarnings" :key="w">
-                {{ w }}
+          </div>
+          <label for="sendFrom"
+            >From:
+            <Input type="text" name="sendFrom" :value="address" class="w-full" readonly />
+          </label>
+          <label for="sendTo"
+            >To:
+            <ResolveNameOrAddresInput
+              v-model="sendTo"
+              v-model:text="sendToText"
+              :disabled="!signerReady"
+            />
+          </label>
+          <div>
+            <!-- spendable display amount -->
+            <a class="text-xs cursor-pointer hover:underline" @click="spendableClick">
+              Spendable:
+              {{
+                DenomMetadata.normalize({
+                  amount: spendables.find((c: any) => c.denom === sendDenom)?.amount || '0',
+                  denom: sendDenom,
+                }).display.amount
+              }}
+              {{ sendDenom }}
+            </a>
+            <!-- amount selector -->
+            <AmountDenomSelector
+              :base-denoms="allowedBases"
+              :default-base-denom="defaultBaseDenom"
+              :disabled="!signerReady"
+              :base="{ amount: selectorBaseAmount, denom: selectorBaseDenom }"
+              @update:base="onUpdateBase"
+              @update:display="onUpdateDisplay"
+            />
+            <ul v-if="sendValidation.length" class="text-xs text-yellow-600 mt-2">
+              <li v-for="m in sendValidation" :key="m">
+                {{ m }}
               </li>
             </ul>
           </div>
-        </div>
-        <label for="sendFrom"
-          >From:
-          <input
-            type="text"
-            name="sendFrom"
-            :value="address"
-            class="input w-full cursor-default select-none bg-base-300"
-            readonly
-          />
-        </label>
-        <label for="sendTo"
-          >To:
-          <ResolveNameOrAddresInput
-            v-model="sendTo"
-            v-model:text="sendToText"
-            :disabled="!signerReady"
-          />
-        </label>
-        <div>
-          <!-- spendable display amount -->
-          <a class="text-xs cursor-pointer hover:underline" @click="spendableClick">
-            Spendable:
-            {{
-              DenomMetadata.normalize({
-                amount: spendables.find((c: any) => c.denom === sendDenom)?.amount || '0',
-                denom: sendDenom,
-              }).display.amount
-            }}
-            {{ sendDenom }}
-          </a>
-          <!-- amount selector -->
-          <AmountDenomSelector
-            :base-denoms="allowedBases"
-            :default-base-denom="defaultBaseDenom"
-            :disabled="!signerReady"
-            :base="{ amount: selectorBaseAmount, denom: selectorBaseDenom }"
-            @update:base="onUpdateBase"
-            @update:display="onUpdateDisplay"
-          />
-          <ul v-if="sendValidation.length" class="text-xs text-warning mt-2">
-            <li v-for="m in sendValidation" :key="m">
-              {{ m }}
-            </li>
-          </ul>
-        </div>
-        <div class="text-xs">
-          <label for="confirm">
-            <input
-              id="confirm"
-              v-model="confirm"
-              type="checkbox"
-              name="confirm"
-              :disabled="!hasInputs"
-            />
-            Confirm Send
-            <span class="font-mono">{{ sendAmount || '0' }} {{ sendDenom }}</span>
-            to
-            <span class="font-mono">{{ sendTo }}</span>
-          </label>
-        </div>
-
-        <button class="btn btn-primary" type="submit" :disabled="!canSend || !signerReady">
-          Send
-        </button>
-        <div v-if="sendError" class="text-sm text-red-600">
-          {{ sendError }}
-        </div>
-        <div v-else-if="!signerReady" class="text-sm">
-          Unlock this wallet or select an authorized signer to send.
-        </div>
-      </fieldset>
+          <div class="text-xs">
+            <label for="confirm">
+              <Checkbox
+                id="confirm"
+                v-model:checked="confirm"
+                name="confirm"
+                :disabled="!hasInputs"
+              />
+              Confirm Send
+              <span class="font-mono">{{ sendAmount || '0' }} {{ sendDenom }}</span>
+              to
+              <span class="font-mono">{{ sendTo }}</span>
+            </label>
+          </div>
+          <Button type="submit" :disabled="!canSend || !signerReady">Send</Button>
+          <Alert v-if="sendError" variant="destructive" class="mt-2">
+            <AlertDescription>{{ sendError }}</AlertDescription>
+          </Alert>
+          <div v-else-if="!signerReady" class="text-sm">
+            Unlock this wallet or select an authorized signer to send.
+          </div>
+        </CardContent>
+      </Card>
     </form>
 
-    <div>
-      <div class="overflow-x-auto">
-        <table class="table table-pin-rows table-zebra bg-base-200 text-sm">
-          <template v-for="section in grouped" :key="section.group">
-            <thead>
-              <tr>
-                <th colspan="4">
-                  <h3 class="text-lg font-semibold">
-                    {{ section.group }}
-                  </h3>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in section.items" :key="row.key">
-                <td class="font-mono">
-                  {{ row.denom }}
-                  <span class="text-xs text-gray-500">{{ row.description }}</span>
-                </td>
+    <Table class="mt-4 max-w-full">
+      <template v-for="section in grouped" :key="section.group">
+        <TableHeader>
+          <TableRow>
+            <TableHead colspan="3" class="text-left text-base font-semibold">
+              {{ section.group }}
+            </TableHead>
+          </TableRow>
+          <TableRow>
+            <TableHead class="text-left">denom</TableHead>
+            <TableHead class="text-left">spendable</TableHead>
+            <TableHead class="text-left">total</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="row in section.items" :key="row.key">
+            <TableCell class="font-mono overflow-x-auto">
+              {{ row.denom }}
+              <div class="text-xs opacity-70 break-all">{{ row.description }}</div>
+            </TableCell>
 
-                <td>
-                  <code>{{ row.spend }}</code>
-                </td>
-                <td>
-                  <code>{{ row.total }}</code>
-                  <span v-if="row.differs" class="ml-1 text-warning">≠</span>
-                </td>
-              </tr>
-            </tbody>
-          </template>
-          <tbody v-if="grouped.length === 0">
-            <tr>
-              <td colspan="4" class="opacity-70">No balances</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+            <TableCell>
+              <code>{{ row.spend }}</code>
+            </TableCell>
+            <TableCell>
+              <code>{{ row.total }}</code>
+              <span v-if="row.differs" class="ml-1 text-yellow-600">≠</span>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </template>
+      <TableBody v-if="grouped.length === 0">
+        <TableRow>
+          <TableCell colspan="3" class="opacity-70">No balances</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
   </div>
 </template>
 
@@ -198,6 +191,19 @@ import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
 import ResolveNameOrAddresInput from '@/components/ResolveNameOrAddresInput.vue'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
 import { Grant } from '@/orm/models/authz/Grant'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
 
 const props = defineProps<{ address: string }>()
 

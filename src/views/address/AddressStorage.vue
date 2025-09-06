@@ -13,30 +13,27 @@
         </CardHeader>
         <CardContent class="space-y-3">
           <div class="grid md:grid-cols-1 gap-2">
-            <input
-              :value="address"
-              class="input w-full"
-              placeholder="owner (name or address)"
-              disabled
-            />
-            <input v-model="prefix" class="input w-full" placeholder="index_prefix (optional)" />
-            <input v-model="filter" class="input w-full" placeholder="filter (optional)" />
-            <input v-model="extract" class="input w-full" placeholder="extract (optional)" />
-            <input v-model="limit" class="input w-full" placeholder="page size (default 50)" />
+            <Input :value="address" class="w-full" placeholder="owner (name or address)" disabled />
+            <Input v-model="prefix" class="w-full" placeholder="index_prefix (optional)" />
+            <Input v-model="filter" class="w-full" placeholder="filter (optional)" />
+            <Input v-model="extract" class="w-full" placeholder="extract (optional)" />
+            <Input v-model="limit" class="w-full" placeholder="page size (default 50)" />
             <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" v-model="countTotal" />
+              <Checkbox v-model:checked="countTotal" />
               count_total
             </label>
             <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" v-model="reverse" />
+              <Checkbox v-model:checked="reverse" />
               reverse
             </label>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-primary btn-sm" @click="search">Search</button>
-            <button class="btn btn-ghost btn-sm" @click="resetList">Reset</button>
+            <Button size="sm" @click="search">Search</Button>
+            <Button size="sm" variant="outline" @click="resetList">Reset</Button>
           </div>
-          <div v-if="listError" class="text-sm text-red-600">{{ listError }}</div>
+          <Alert v-if="listError" variant="destructive"
+            ><AlertDescription>{{ listError }}</AlertDescription></Alert
+          >
           <div class="text-xs opacity-70 grid grid-cols-3 gap-x-4">
             <div>
               count=<code>{{ entries.length }}</code>
@@ -49,17 +46,9 @@
             </div>
           </div>
 
-          <form class="grid md:grid-cols-3 gap-2 items-end" @submit.prevent="submitDelete">
-            <div>
-              <label class="text-xs">Delete indexes (comma-separated)</label>
-              <input v-model="deleteIndexes" class="input w-full" placeholder="idx1,idx2" />
-            </div>
-            <div class="text-xs opacity-70">
-              Owner: <code>{{ address }}</code>
-            </div>
-            <button class="btn btn-warning" type="submit" :disabled="!canDelete">Delete</button>
-          </form>
-          <div v-if="deleteError" class="text-xs text-red-600">{{ deleteError }}</div>
+          <Alert v-if="deleteError" variant="destructive" class="text-xs">
+            <AlertDescription>{{ deleteError }}</AlertDescription>
+          </Alert>
 
           <div class="space-y-2">
             <div class="text-sm opacity-70">Results</div>
@@ -118,13 +107,13 @@
                       ><code>{{ e.data }}</code></TableCell
                     >
                     <TableCell>
-                      <button
-                        class="btn btn-warning btn-xs"
+                      <Button
+                        variant="destructive"
                         :disabled="deletingIndex === e.index"
                         @click.stop="deleteRow(e)"
                       >
                         Delete
-                      </button>
+                      </Button>
                     </TableCell>
                   </TableRow>
                   <TableRow v-if="entries.length === 0">
@@ -144,7 +133,9 @@
           <CardDescription>Full original data</CardDescription>
         </CardHeader>
         <CardContent class="space-y-3">
-          <div v-if="editError" class="text-xs text-red-600">{{ editError }}</div>
+          <Alert v-if="editError" variant="destructive" class="text-xs">
+            <AlertDescription>{{ editError }}</AlertDescription>
+          </Alert>
 
           <!-- Signer selection (direct or via authz) -->
           <div>
@@ -181,28 +172,23 @@
           <div class="flex gap-2 items-end">
             <div class="flex-1">
               <label class="text-xs">index</label>
-              <input v-model="editIndex" class="input w-full" placeholder="index (e.g. user/123)" />
+              <Input v-model="editIndex" class="w-full" placeholder="index (e.g. user/123)" />
             </div>
-            <button
-              class="btn btn-ghost"
-              :disabled="!canSaveEdit || isFetchingFull"
-              @click="getCurrent"
+            <Button variant="outline" :disabled="!canSaveEdit || isFetchingFull" @click="getCurrent"
+              >Get</Button
             >
-              Get
-            </button>
-            <button class="btn btn-primary" :disabled="!canSaveEdit" @click="saveEdit">Set</button>
-            <button
-              class="btn btn-warning"
+            <Button :disabled="!canSaveEdit" @click="saveEdit">Set</Button>
+            <Button
+              variant="destructive"
               :disabled="!canSaveEdit || deletingIndex === editIndex"
               @click="deleteCurrentIndex"
+              >Delete</Button
             >
-              Delete
-            </button>
           </div>
-          <textarea
+          <Textarea
             ref="fullDataTextarea"
             v-model="fullData"
-            class="textarea w-full min-h-64 resize-none autosize-textarea"
+            class="w-full min-h-64 resize-none autosize-textarea"
             :disabled="isFetchingFull"
             placeholder="Select a row to load its original data"
           />
@@ -237,6 +223,11 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Textarea } from '@/components/ui/textarea'
 
 const props = defineProps<{ address: string }>()
 

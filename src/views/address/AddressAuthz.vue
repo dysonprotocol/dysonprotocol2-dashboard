@@ -106,30 +106,26 @@
       <div class="space-y-2 p-4 border rounded">
         <h3 class="font-semibold">Grant</h3>
         <div class="grid gap-2 md:grid-cols-2">
-          <input v-model="grantGranter" class="input w-full" placeholder="granter address" />
-          <input v-model="grantGrantee" class="input w-full" placeholder="grantee address" />
+          <Input v-model="grantGranter" class="w-full" placeholder="granter address" />
+          <Input v-model="grantGrantee" class="w-full" placeholder="grantee address" />
         </div>
-        <input v-model="grantExpiration" class="input w-full" placeholder="expiration RFC3339" />
-        <input
+        <Input v-model="grantExpiration" class="w-full" placeholder="expiration RFC3339" />
+        <Input
           v-model="grantAuthzMsgType"
-          class="input w-full"
+          class="w-full"
           placeholder="msg_type_url (for Generic)"
         />
-        <textarea
+        <Textarea
           v-model="authorizationJson"
-          class="input w-full h-24"
+          class="w-full h-24"
           placeholder="authorization JSON (optional; if set, used instead of Generic)"
         />
         <div class="flex gap-2">
-          <button class="btn btn-primary" @click="prefillGenericGrant">
-            Prefill Generic (MsgSend)
-          </button>
-          <button class="btn btn-primary" @click="prefillBankSendAuthz">
-            Prefill Bank SendAuthorization
-          </button>
+          <Button @click="prefillGenericGrant">Prefill Generic (MsgSend)</Button>
+          <Button @click="prefillBankSendAuthz">Prefill Bank SendAuthorization</Button>
         </div>
         <div class="flex gap-2">
-          <button class="btn btn-primary" @click="submitGrant">Grant</button>
+          <Button @click="submitGrant">Grant</Button>
         </div>
         <div v-if="grantError" class="text-sm text-red-600">
           {{ grantError }}
@@ -139,12 +135,12 @@
       <div class="space-y-2 p-4 border rounded">
         <h3 class="font-semibold">Revoke</h3>
         <div class="grid gap-2 md:grid-cols-2">
-          <input v-model="revokeGranter" class="input w-full" placeholder="granter address" />
-          <input v-model="revokeGrantee" class="input w-full" placeholder="grantee address" />
+          <Input v-model="revokeGranter" class="w-full" placeholder="granter address" />
+          <Input v-model="revokeGrantee" class="w-full" placeholder="grantee address" />
         </div>
-        <input v-model="revokeMsgTypeUrl" class="input w-full" placeholder="msg_type_url" />
+        <Input v-model="revokeMsgTypeUrl" class="w-full" placeholder="msg_type_url" />
         <div class="flex gap-2">
-          <button class="btn btn-primary" @click="submitRevoke">Revoke</button>
+          <Button @click="submitRevoke">Revoke</Button>
         </div>
         <div v-if="revokeError" class="text-sm text-red-600">
           {{ revokeError }}
@@ -153,19 +149,15 @@
 
       <div class="space-y-2 p-4 border rounded">
         <h3 class="font-semibold">Exec</h3>
-        <textarea
-          v-model="execMsgsJson"
-          class="input w-full h-24"
-          placeholder="exec msgs JSON array"
-        />
-        <input v-model="execGrantee" class="input w-full" placeholder="grantee address" />
-        <input v-model="execMemo" class="input w-full" placeholder="exec memo (optional)" />
-        <input
+        <Textarea v-model="execMsgsJson" class="w-full h-24" placeholder="exec msgs JSON array" />
+        <Input v-model="execGrantee" class="w-full" placeholder="grantee address" />
+        <Input v-model="execMemo" class="w-full" placeholder="exec memo (optional)" />
+        <Input
           v-model="execGranterForRefresh"
-          class="input w-full"
+          class="w-full"
           placeholder="granter for refresh (optional)"
         />
-        <button class="btn btn-primary" @click="submitExec">Exec</button>
+        <Button @click="submitExec">Exec</Button>
         <div v-if="execError" class="text-sm text-red-600">
           {{ execError }}
         </div>
@@ -180,6 +172,9 @@ import { useRepo } from 'pinia-orm'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import Grant from '@/orm/models/authz/Grant'
 import { useWallet } from '@/composables/useWallet'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 const props = defineProps<{ address: string }>()
 

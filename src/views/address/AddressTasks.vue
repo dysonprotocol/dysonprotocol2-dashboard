@@ -13,26 +13,26 @@
             <legend class="fieldset-legend">Task parameters</legend>
 
             <label class="label">scheduled_timestamp</label>
-            <input
+            <Input
               v-model.trim="form.scheduled"
               type="text"
-              class="input input-bordered input-sm"
+              class="w-full"
               placeholder="e.g. +1h30m or 1736467200"
             />
 
             <label class="label">expiry_timestamp</label>
-            <input
+            <Input
               v-model.trim="form.expiry"
               type="text"
-              class="input input-bordered input-sm"
+              class="w-full"
               placeholder="optional, e.g. +2h"
             />
 
             <label class="label">task_gas_limit</label>
-            <input
+            <Input
               v-model.trim="form.gasLimit"
               type="text"
-              class="input input-bordered input-sm"
+              class="w-full"
               placeholder="e.g. 500000"
             />
 
@@ -46,17 +46,12 @@
             </div>
 
             <label class="label">tx memo (optional)</label>
-            <input
-              v-model.trim="form.memo"
-              type="text"
-              class="input input-bordered input-sm"
-              placeholder=""
-            />
+            <Input v-model.trim="form.memo" type="text" class="w-full" placeholder="" />
 
             <div class="flex items-center gap-2 pt-2">
-              <button class="btn btn-primary btn-sm" type="submit" :disabled="isCreating">
-                {{ isCreating ? 'Creating…' : 'Create Task' }}
-              </button>
+              <Button size="sm" type="submit" :disabled="isCreating">{{
+                isCreating ? 'Creating…' : 'Create Task'
+              }}</Button>
               <span v-if="createError" class="text-error text-sm">{{ createError }}</span>
               <span v-if="createOk" class="text-success text-sm">Created</span>
             </div>
@@ -65,10 +60,10 @@
           <!-- Right column: textarea -->
           <div class="">
             <span class="font-medium">Message(s) (raw JSON including @type)</span>
-            <textarea
+            <Textarea
               ref="msgTextarea"
               v-model="form.rawMsg"
-              class="textarea textarea-bordered textarea-sm w-full font-mono"
+              class="w-full font-mono"
               rows="10"
               placeholder='{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"...","to_address":"...","amount":[{"denom":"udys","amount":"1"}]}'
             />
@@ -84,7 +79,7 @@
     <div class="bg-base-200 p-4 rounded">
       <div class="flex items-center justify-between mb-3">
         <div class="flex gap-2 items-end">
-          <button class="btn btn-sm" :disabled="isLoading" @click="refreshAll">Reload</button>
+          <Button size="sm" :disabled="isLoading" @click="refreshAll">Reload</Button>
         </div>
         <div class="text-sm opacity-70">{{ tasks.length }} task(s)</div>
       </div>
@@ -95,53 +90,53 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table class="table table-zebra table-sm w-full">
-          <thead>
-            <tr>
-              <th class="">id</th>
-              <th class="">status</th>
-              <th class="">scheduled</th>
-              <th class="">expiry</th>
-              <th class="">gas_limit</th>
-              <th class="">gas_fee</th>
-              <th class="">gas_price</th>
-              <th class="">created</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="t in tasks" :key="t.task_id">
-              <td class="font-mono">
-                <RouterLink
-                  class="link"
-                  :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
-                  >{{ t.task_id }}</RouterLink
-                >
-              </td>
-              <td>{{ t.status }}</td>
-              <td class="font-mono">{{ formatTimestamp(t.scheduled_timestamp) }}</td>
-              <td class="font-mono">{{ formatTimestamp(t.expiry_timestamp) }}</td>
-              <td class="font-mono">{{ t.task_gas_limit }}</td>
-              <td class="font-mono">
-                <span v-if="t.task_gas_fee">{{ formatCoin(t.task_gas_fee) }}</span>
-              </td>
-              <td class="font-mono">{{ formatGasPrice(t) }}</td>
-              <td class="font-mono">{{ formatTimestamp(t.creation_time) }}</td>
-            </tr>
-            <tr v-if="!isLoading && !error && tasks.length === 0">
-              <td colspan="8" class="text-center opacity-70">No tasks</td>
-            </tr>
-          </tbody>
-        </table>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>id</TableHead>
+              <TableHead>status</TableHead>
+              <TableHead>scheduled</TableHead>
+              <TableHead>expiry</TableHead>
+              <TableHead>gas_limit</TableHead>
+              <TableHead>gas_fee</TableHead>
+              <TableHead>gas_price</TableHead>
+              <TableHead>created</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="t in tasks" :key="t.task_id">
+              <TableCell class="font-mono">
+                <Button as-child variant="link" class="px-0">
+                  <RouterLink :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }">
+                    {{ t.task_id }}
+                  </RouterLink>
+                </Button>
+              </TableCell>
+              <TableCell>{{ t.status }}</TableCell>
+              <TableCell class="font-mono">{{ formatTimestamp(t.scheduled_timestamp) }}</TableCell>
+              <TableCell class="font-mono">{{ formatTimestamp(t.expiry_timestamp) }}</TableCell>
+              <TableCell class="font-mono">{{ t.task_gas_limit }}</TableCell>
+              <TableCell class="font-mono"
+                ><span v-if="t.task_gas_fee">{{ formatCoin(t.task_gas_fee) }}</span></TableCell
+              >
+              <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
+              <TableCell class="font-mono">{{ formatTimestamp(t.creation_time) }}</TableCell>
+            </TableRow>
+            <TableRow v-if="!isLoading && !error && tasks.length === 0">
+              <TableCell colspan="8" class="text-center opacity-70">No tasks</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
       <div class="mt-3 flex justify-center">
-        <button
+        <Button
           v-if="nextKey && !error"
-          class="btn btn-sm"
+          size="sm"
           :disabled="isLoading || isLoadingMore"
           @click="loadMore"
         >
           {{ isLoadingMore ? 'Loading…' : 'Load more' }}
-        </button>
+        </Button>
       </div>
     </div>
   </div>
@@ -156,6 +151,18 @@ import CrontaskTask from '@/orm/models/crontask/Task'
 import { useWallet } from '@/composables/useWallet'
 import DenomMetadata from '@/orm/models/bank/DenomMetadata'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
+import { formatGasPrice } from '@/utils/format'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
 
 const props = defineProps<{ address: string }>()
 
@@ -306,21 +313,6 @@ function formatCoin(c?: { amount?: string; denom?: string } | null): string {
   const denom = String(c?.denom || 'udys')
   const norm = DenomMetadata.normalize({ amount, denom })
   return `${norm.display.amount} ${norm.display.denom}`
-}
-
-function formatGasPrice(t: any): string {
-  const limit = Number(t?.task_gas_limit || '0')
-  if (!Number.isFinite(limit) || limit <= 0) return ''
-  const fee = t?.task_gas_fee || {}
-  const denom = String(fee?.denom || 'udys')
-  const amount = String(fee?.amount || '0')
-  const norm = DenomMetadata.normalize({ amount, denom })
-  const disp = Number(norm.display.amount || '0')
-  const price = disp / limit
-  const pretty = Number.isFinite(price)
-    ? price.toLocaleString(undefined, { maximumFractionDigits: 8 })
-    : '0'
-  return `${pretty} ${norm.display.denom}/gas`
 }
 
 // Ensure denom metadata is available for normalization

@@ -2,146 +2,167 @@
   <div class="space-y-4 max-w-xl mx-auto">
     <h2 class="text-lg font-medium">Names: {{ address }}</h2>
 
-    <div>
-      <h3 class="font-semibold">Names owned by this address and resolve to this address</h3>
-      <div class="text-sm opacity-70">
-        count: <code>{{ ownedAndResolvingHere.length }}</code>
-      </div>
-      <div v-if="ownedAndResolvingHereView.length === 0" class="opacity-70">No names</div>
-      <div v-else class="overflow-x-auto mt-2">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Valuation</th>
-              <th>View details</th>
-              <th>Go to dwapp</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="nft in ownedAndResolvingHereView" :key="nft.id">
-              <td class="font-mono">{{ nft.id }}</td>
-              <td>
-                <span v-if="formatValuation(nft).label"
-                  >{{ formatValuation(nft).amount }} {{ formatValuation(nft).label }}</span
-                >
-                <span v-else>—</span>
-              </td>
-              <td>
-                <RouterLink :to="{ name: 'NameDetails', params: { name: nft.id } }" class="link"
-                  >View details</RouterLink
-                >
-              </td>
-              <td>
-                <a
-                  :href="`/redirect-to-dwapp/${nft.id}`"
-                  class="link inline-flex items-center"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {{ nft.id }}
-                  <ArrowTopRightOnSquareIcon class="w-4 h-4 inline-block ml-1" />
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Names owned by this address and resolve to this address</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="text-sm opacity-70 mb-2">
+          count: <code>{{ ownedAndResolvingHere.length }}</code>
+        </div>
+        <div v-if="ownedAndResolvingHereView.length === 0" class="opacity-70">No names</div>
+        <div v-else class="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Valuation</TableHead>
+                <TableHead>View details</TableHead>
+                <TableHead>Go to dwapp</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="nft in ownedAndResolvingHereView" :key="nft.id">
+                <TableCell class="font-mono">{{ nft.id }}</TableCell>
+                <TableCell>
+                  <span v-if="formatValuation(nft).label"
+                    >{{ formatValuation(nft).amount }} {{ formatValuation(nft).label }}</span
+                  >
+                  <span v-else>—</span>
+                </TableCell>
+                <TableCell>
+                  <Button as-child variant="link" class="px-0">
+                    <RouterLink :to="{ name: 'NameDetails', params: { name: nft.id } }"
+                      >View details</RouterLink
+                    >
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button as-child variant="link" class="px-0 inline-flex items-center">
+                    <a
+                      :href="`/redirect-to-dwapp/${nft.id}`"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {{ nft.id }}
+                      <ArrowTopRightOnSquareIcon class="w-4 h-4 inline-block ml-1" />
+                    </a>
+                  </Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
 
-    <div>
-      <h3 class="font-semibold">Names owned by other addresses and resolving to this address</h3>
-      <div class="text-sm opacity-70">
-        count: <code>{{ notOwnedResolvingHere.length }}</code>
-      </div>
-      <div v-if="notOwnedResolvingHereView.length === 0" class="opacity-70">No names</div>
-      <div v-else class="overflow-x-auto mt-2">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Valuation</th>
-              <th>View details</th>
-              <th>Go to dwapp</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="nft in notOwnedResolvingHereView" :key="nft.id">
-              <td class="font-mono">{{ nft.id }}</td>
-              <td>
-                <span v-if="formatValuation(nft).label"
-                  >{{ formatValuation(nft).amount }} {{ formatValuation(nft).label }}</span
-                >
-                <span v-else>—</span>
-              </td>
-              <td>
-                <RouterLink :to="{ name: 'NameDetails', params: { name: nft.id } }" class="link"
-                  >View details</RouterLink
-                >
-              </td>
-              <td>
-                <a
-                  :href="`/redirect-to-dwapp/${nft.id}`"
-                  class="link inline-flex items-center"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {{ nft.id }}
-                  <ArrowTopRightOnSquareIcon class="w-4 h-4 inline-block ml-1" />
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Names owned by other addresses and resolving to this address</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="text-sm opacity-70 mb-2">
+          count: <code>{{ notOwnedResolvingHere.length }}</code>
+        </div>
+        <div v-if="notOwnedResolvingHereView.length === 0" class="opacity-70">No names</div>
+        <div v-else class="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Valuation</TableHead>
+                <TableHead>View details</TableHead>
+                <TableHead>Go to dwapp</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="nft in notOwnedResolvingHereView" :key="nft.id">
+                <TableCell class="font-mono">{{ nft.id }}</TableCell>
+                <TableCell>
+                  <span v-if="formatValuation(nft).label"
+                    >{{ formatValuation(nft).amount }} {{ formatValuation(nft).label }}</span
+                  >
+                  <span v-else>—</span>
+                </TableCell>
+                <TableCell>
+                  <Button as-child variant="link" class="px-0">
+                    <RouterLink :to="{ name: 'NameDetails', params: { name: nft.id } }"
+                      >View details</RouterLink
+                    >
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button as-child variant="link" class="px-0 inline-flex items-center">
+                    <a
+                      :href="`/redirect-to-dwapp/${nft.id}`"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {{ nft.id }}
+                      <ArrowTopRightOnSquareIcon class="w-4 h-4 inline-block ml-1" />
+                    </a>
+                  </Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
 
-    <div>
-      <h3 class="font-semibold">Names owned by this address resolving to other addresses</h3>
-      <div class="text-sm opacity-70">
-        count: <code>{{ ownedResolvingElsewhere.length }}</code>
-      </div>
-      <div v-if="ownedResolvingElsewhereView.length === 0" class="opacity-70">No names</div>
-      <div v-else class="overflow-x-auto mt-2">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Valuation</th>
-              <th>View details</th>
-              <th>Go to dwapp</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="nft in ownedResolvingElsewhereView" :key="nft.id">
-              <td class="font-mono">{{ nft.id }}</td>
-              <td>
-                <span v-if="formatValuation(nft).label"
-                  >{{ formatValuation(nft).amount }} {{ formatValuation(nft).label }}</span
-                >
-                <span v-else>—</span>
-              </td>
-              <td>
-                <RouterLink :to="{ name: 'NameDetails', params: { name: nft.id } }" class="link"
-                  >View details</RouterLink
-                >
-              </td>
-              <td>
-                <a
-                  :href="`/redirect-to-dwapp/${nft.id}`"
-                  class="link inline-flex items-center"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {{ nft.id }}
-                  <ArrowTopRightOnSquareIcon class="w-4 h-4 inline-block ml-1" />
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Names owned by this address resolving to other addresses</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="text-sm opacity-70 mb-2">
+          count: <code>{{ ownedResolvingElsewhere.length }}</code>
+        </div>
+        <div v-if="ownedResolvingElsewhereView.length === 0" class="opacity-70">No names</div>
+        <div v-else class="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Valuation</TableHead>
+                <TableHead>View details</TableHead>
+                <TableHead>Go to dwapp</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="nft in ownedResolvingElsewhereView" :key="nft.id">
+                <TableCell class="font-mono">{{ nft.id }}</TableCell>
+                <TableCell>
+                  <span v-if="formatValuation(nft).label"
+                    >{{ formatValuation(nft).amount }} {{ formatValuation(nft).label }}</span
+                  >
+                  <span v-else>—</span>
+                </TableCell>
+                <TableCell>
+                  <Button as-child variant="link" class="px-0">
+                    <RouterLink :to="{ name: 'NameDetails', params: { name: nft.id } }"
+                      >View details</RouterLink
+                    >
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button as-child variant="link" class="px-0 inline-flex items-center">
+                    <a
+                      :href="`/redirect-to-dwapp/${nft.id}`"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {{ nft.id }}
+                      <ArrowTopRightOnSquareIcon class="w-4 h-4 inline-block ml-1" />
+                    </a>
+                  </Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   </div>
 </template>
 
@@ -152,6 +173,16 @@ import { useAxiosRepo } from '@pinia-orm/axios'
 import NamesByDestination from '@/orm/models/nameservice/NamesByDestination'
 import NftItem from '@/orm/models/nft/NftItem'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/outline'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
 
 const props = defineProps<{ address: string }>()
 

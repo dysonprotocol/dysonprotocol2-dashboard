@@ -36,9 +36,7 @@
             </div>
           </div>
 
-          <button class="btn btn-primary w-full" type="submit" :disabled="!canDelegateTop">
-            Delegate
-          </button>
+          <Button class="w-full" type="submit" :disabled="!canDelegateTop">Delegate</Button>
           <div v-if="topDelegateError" class="alert alert-error">
             <span>{{ topDelegateError }}</span>
           </div>
@@ -54,9 +52,9 @@
             <code class="font-mono">{{ totalRewardsDisplay }}</code>
           </div>
 
-          <button class="btn btn-success w-full" :disabled="!canWithdrawAll" @click="withdrawAll">
-            Withdraw All
-          </button>
+          <Button class="w-full" :disabled="!canWithdrawAll" @click="withdrawAll"
+            >Withdraw All</Button
+          >
           <div v-if="withdrawAllError" class="alert alert-error">
             <span>{{ withdrawAllError }}</span>
           </div>
@@ -131,9 +129,7 @@
           Rewards:
           <code>{{ rewardDisplayByVal(d.validator_address).amount }}</code>
           <span class="opacity-70">{{ rewardDisplayByVal(d.validator_address).denom }}</span>
-          <button class="btn btn-xlg btn-success ml-2" @click="withdraw(d.validator_address)">
-            Withdraw
-          </button>
+          <Button class="ml-2" @click="withdraw(d.validator_address)">Withdraw</Button>
         </div>
 
         <form class="" @submit.prevent="submitDelegatePer(d.validator_address)">
@@ -148,21 +144,15 @@
                 {{ spendableDisplayFor('udys').amount }} {{ spendableDisplayFor('udys').denom }}
               </div>
               <div class="join w-full">
-                <input
+                <Input
                   v-model="delAmount[d.validator_address]"
-                  class="input input-bordered w-full join-item"
+                  class="w-full join-item"
                   placeholder="amount"
                 />
                 <div class="join-item input bg-base-300" style="width: 3.5rem">dys</div>
               </div>
             </div>
-            <button
-              class="btn btn-primary"
-              type="submit"
-              :disabled="!canDelegatePer(d.validator_address)"
-            >
-              Delegate
-            </button>
+            <Button type="submit" :disabled="!canDelegatePer(d.validator_address)">Delegate</Button>
             <div v-if="delegateErrorByVal[d.validator_address]" class="text-red-600 col-span-3">
               {{ delegateErrorByVal[d.validator_address] }}
             </div>
@@ -190,21 +180,20 @@
             <div class="col-span-2">
               <label class="">Amount</label>
               <div class="join w-full">
-                <input
+                <Input
                   v-model="redAmountMap[d.validator_address]"
-                  class="input input-bordered w-full join-item"
+                  class="w-full join-item"
                   placeholder="amount"
                 />
                 <div class="join-item input bg-base-300" style="width: 3.5rem">dys</div>
               </div>
             </div>
-            <button
-              class="btn btn-primary col-span-4 md:col-span-1"
+            <Button
+              class="col-span-4 md:col-span-1"
               type="submit"
               :disabled="!canRedelegatePer(d.validator_address)"
+              >Redelegate</Button
             >
-              Redelegate
-            </button>
             <div v-if="redelegateErrorByVal[d.validator_address]" class="text-red-600 col-span-4">
               {{ redelegateErrorByVal[d.validator_address] }}
             </div>
@@ -219,21 +208,17 @@
             <div class="col-span-2">
               <label class="">Undelegate Amount</label>
               <div class="join w-full">
-                <input
+                <Input
                   v-model="undelegateAmount[d.validator_address]"
-                  class="input input-bordered w-full join-item"
+                  class="w-full join-item"
                   placeholder="amount"
                 />
                 <div class="join-item input bg-base-300" style="width: 3.5rem">dys</div>
               </div>
             </div>
-            <button
-              class="btn btn-warning"
-              type="submit"
-              :disabled="!canUndelegatePer(d.validator_address)"
+            <Button type="submit" :disabled="!canUndelegatePer(d.validator_address)"
+              >Undelegate</Button
             >
-              Undelegate
-            </button>
             <div v-if="undelegateErrorByVal[d.validator_address]" class="text-red-600 col-span-3">
               {{ undelegateErrorByVal[d.validator_address] }}
             </div>
@@ -285,16 +270,16 @@
                   >
                     <legend>Cancel</legend>
                     <div class="join">
-                      <input
+                      <Input
                         v-model="cancelAmount[u.validator_address + ':' + u.creation_height]"
-                        class="input input-bordered input-xs w-28 join-item"
+                        class="input-xs w-28 join-item"
                         placeholder="amount"
                       />
                       <div class="join-item input input-xs bg-base-300" style="width: 3.5rem">
                         dys
                       </div>
                     </div>
-                    <button class="btn btn-error btn-xs" type="submit">Cancel</button>
+                    <Button class="btn-xs" type="submit">Cancel</Button>
                   </fieldset>
                 </form>
                 <div
@@ -383,6 +368,8 @@ import DelegatorUnbonding from '@/orm/models/staking/Unbonding'
 import ResolveNameOrAddresInput from '@/components/ResolveNameOrAddresInput.vue'
 import DelegatorWithdrawAddress from '@/orm/models/distribution/DelegatorWithdrawAddress'
 import AddressDisplay from '@/components/AddressDisplay.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const props = defineProps<{ address: string }>()
 
