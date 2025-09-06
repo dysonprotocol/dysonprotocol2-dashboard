@@ -132,7 +132,7 @@ function linkClass(isActive) {
 const latestBlockRepo = useRepo(LatestBlock)
 const nodeInfoRepo = useRepo(NodeInfo)
 
-const latest = computed(() => latestBlockRepo.query().orderBy('height', 'desc').first() || {})
+const latest = computed(() => latestBlockRepo.find('default') || {})
 const node = computed(() => nodeInfoRepo.find('default') || {})
 
 const chainIdDisplay = computed(() => String(node.value.network || latest.value.chain_id || ''))

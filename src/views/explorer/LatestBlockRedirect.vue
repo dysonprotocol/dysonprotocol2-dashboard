@@ -2,7 +2,7 @@
   <div v-if="isLoading" class="flex justify-center items-center py-12">
     <span class="loading loading-spinner loading-lg" />
   </div>
-  
+
   <div v-else-if="error" class="alert alert-error">
     <span>{{ error }}</span>
   </div>
@@ -25,10 +25,10 @@ const error = ref<string | null>(null)
 async function redirectToLatest() {
   try {
     await blockApi.fetch()
-    
-    // Get the latest block from the repo
-    const latestBlock = blockRepo.all()[0] as any
-    
+
+    // Get the latest block from the repo (singleton)
+    const latestBlock = blockRepo.find('default') as any
+
     if (latestBlock?.height) {
       await router.replace(`/block/${latestBlock.height}`)
     } else {

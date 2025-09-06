@@ -1,22 +1,10 @@
 <template>
-  <h2
-    id="base"
-    class="text-xl font-semibold"
-  >
-    Base
-  </h2>
+  <h2 id="base" class="text-xl font-semibold">Base</h2>
   <section class="grid gap-6 md:grid-cols-3">
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">
-        Base: Node Service
-      </h3>
+      <h3 class="font-semibold">Base: Node Service</h3>
       <div class="flex gap-2">
-        <button
-          class="btn btn-primary"
-          @click="loadNodeConfig"
-        >
-          Load Config
-        </button>
+        <button class="btn btn-primary" @click="loadNodeConfig">Load Config</button>
       </div>
       <div class="text-sm">
         <div>
@@ -32,12 +20,7 @@
           halt_height: <code>{{ nodeConfig?.halt_height }}</code>
         </div>
       </div>
-      <button
-        class="btn btn-primary"
-        @click="loadNodeStatus"
-      >
-        Load Status
-      </button>
+      <button class="btn btn-primary" @click="loadNodeStatus">Load Status</button>
 
       <div class="text-sm">
         <div>
@@ -53,122 +36,60 @@
           validator_hash: <code>{{ nodeStatus?.validator_hash }}</code>
         </div>
       </div>
-      <div
-        v-if="nodeError"
-        class="text-sm text-red-600"
-      >
+      <div v-if="nodeError" class="text-sm text-red-600">
         {{ nodeError }}
       </div>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">
-        Base: Tendermint Advanced
-      </h3>
-      <form
-        class="space-y-2"
-        @submit.prevent="loadBlockByHeight"
-      >
+      <h3 class="font-semibold">Base: Tendermint Advanced</h3>
+      <form class="space-y-2" @submit.prevent="loadBlockByHeight">
         <fieldset class="space-y-2">
-          <legend class="text-sm font-semibold opacity-70">
-            blocks/{height}
-          </legend>
+          <legend class="text-sm font-semibold opacity-70">blocks/{height}</legend>
           <div class="flex gap-2">
-            <input
-              v-model="tmHeight"
-              class="input w-full"
-              placeholder="height"
-            >
-            <button
-              class="btn btn-primary"
-              type="submit"
-            >
-              Load Block
-            </button>
-            <button
-              class="btn btn-secondary"
-              type="button"
-              @click="loadLatestBlock"
-            >
+            <input v-model="tmHeight" class="input w-full" placeholder="height" />
+            <button class="btn btn-primary" type="submit">Load Block</button>
+            <button class="btn btn-secondary" type="button" @click="loadLatestBlock">
               Load Latest
             </button>
           </div>
           <div class="text-sm">
             h=<code>{{ latestBlock?.height }}</code> hash=<code>{{ latestBlock?.hash }}</code>
           </div>
-          <div
-            v-if="tmBlockError"
-            class="text-sm text-red-600"
-          >
+          <div v-if="tmBlockError" class="text-sm text-red-600">
             {{ tmBlockError }}
           </div>
         </fieldset>
       </form>
-      <form
-        class="space-y-2"
-        @submit.prevent="loadValsetByHeight"
-      >
+      <form class="space-y-2" @submit.prevent="loadValsetByHeight">
         <fieldset class="space-y-2">
-          <legend class="text-sm font-semibold opacity-70">
-            validatorsets/{height}
-          </legend>
+          <legend class="text-sm font-semibold opacity-70">validatorsets/{height}</legend>
           <div class="flex gap-2">
-            <input
-              v-model="tmValsetHeight"
-              class="input w-full"
-              placeholder="height"
-            >
-            <button
-              class="btn btn-primary"
-              type="submit"
-            >
-              Load Valset
-            </button>
-            <button
-              class="btn btn-secondary"
-              type="button"
-              @click="loadLatestValset"
-            >
+            <input v-model="tmValsetHeight" class="input w-full" placeholder="height" />
+            <button class="btn btn-primary" type="submit">Load Valset</button>
+            <button class="btn btn-secondary" type="button" @click="loadLatestValset">
               Load Latest
             </button>
           </div>
           <div class="text-sm">
             height=<code>{{ valsetHeight }}</code> count=<code>{{ valsetByHeight.length }}</code>
           </div>
-          <div
-            v-if="tmValsetError"
-            class="text-sm text-red-600"
-          >
+          <div v-if="tmValsetError" class="text-sm text-red-600">
             {{ tmValsetError }}
           </div>
         </fieldset>
       </form>
       <ul class="list-disc pl-6 text-sm max-h-40 overflow-auto mt-2">
-        <li
-          v-for="v in valsetByHeight"
-          :key="v.height + ':' + v.address"
-        >
+        <li v-for="v in valsetByHeight" :key="v.height + ':' + v.address">
           <span class="font-mono">{{ v.address }}</span> — power:
           <code>{{ v.voting_power }}</code>
         </li>
       </ul>
       <fieldset class="space-y-2">
-        <legend class="text-sm font-semibold opacity-70">
-          syncing, node_info
-        </legend>
+        <legend class="text-sm font-semibold opacity-70">syncing, node_info</legend>
         <div class="flex gap-2">
-          <button
-            class="btn btn-primary"
-            @click="loadSyncing"
-          >
-            Syncing
-          </button>
-          <button
-            class="btn btn-primary"
-            @click="loadTmNodeInfo"
-          >
-            Node Info
-          </button>
+          <button class="btn btn-primary" @click="loadSyncing">Syncing</button>
+          <button class="btn btn-primary" @click="loadTmNodeInfo">Node Info</button>
         </div>
         <div class="text-sm">
           syncing=<code>{{ syncing?.syncing }}</code>
@@ -178,70 +99,38 @@
             tmNodeInfo?.cosmos_sdk_version
           }}</code>
         </div>
-        <div
-          v-if="tmMiscError"
-          class="text-sm text-red-600"
-        >
+        <div v-if="tmMiscError" class="text-sm text-red-600">
           {{ tmMiscError }}
         </div>
       </fieldset>
     </div>
 
     <div class="space-y-2 p-4 border rounded">
-      <h3 class="font-semibold">
-        Base: Reflection
-      </h3>
+      <h3 class="font-semibold">Base: Reflection</h3>
       <div class="flex gap-2">
-        <button
-          class="btn btn-primary"
-          @click="loadInterfaces"
-        >
-          List Interfaces
-        </button>
-        <input
-          v-model="ifaceName"
-          class="input w-full"
-          placeholder="interface fullname"
-        >
-        <button
-          class="btn btn-primary"
-          @click="loadImplementations"
-        >
-          List Implementations
-        </button>
+        <button class="btn btn-primary" @click="loadInterfaces">List Interfaces</button>
+        <input v-model="ifaceName" class="input w-full" placeholder="interface fullname" />
+        <button class="btn btn-primary" @click="loadImplementations">List Implementations</button>
       </div>
 
       <div>
-        <h4 class="font-semibold">
-          Interfaces
-        </h4>
+        <h4 class="font-semibold">Interfaces</h4>
         <ul class="list-disc pl-6 text-sm max-h-40 overflow-auto">
-          <li
-            v-for="i in interfaces"
-            :key="i.name"
-          >
+          <li v-for="i in interfaces" :key="i.name">
             <code>{{ i.name }}</code>
           </li>
         </ul>
       </div>
       <div>
-        <h4 class="font-semibold">
-          Implementations
-        </h4>
+        <h4 class="font-semibold">Implementations</h4>
         <ul class="list-disc pl-6 text-sm max-h-40 overflow-auto">
-          <li
-            v-for="t in implementations"
-            :key="t.type_url"
-          >
+          <li v-for="t in implementations" :key="t.type_url">
             <code>{{ t.type_url }}</code>
           </li>
         </ul>
       </div>
 
-      <div
-        v-if="reflError"
-        class="text-sm text-red-600"
-      >
+      <div v-if="reflError" class="text-sm text-red-600">
         {{ reflError }}
       </div>
     </div>
@@ -274,10 +163,7 @@ const tmNodeInfoRepo = useRepo(TmNodeInfo)
 
 const nodeConfig = computed(() => nodeConfigRepo.first())
 const nodeStatus = computed(() => nodeStatusRepo.first())
-const latestBlock = computed(() => {
-  const list = latestBlockRepo.all()
-  return list.length ? list[list.length - 1] : undefined
-})
+const latestBlock = computed(() => latestBlockRepo.find('default'))
 const valsetByHeight = computed(() => {
   const list = valsetByHeightRepo.all()
   if (!list.length) return []

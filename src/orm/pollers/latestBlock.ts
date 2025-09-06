@@ -146,6 +146,7 @@ export function startLatestBlockPoller() {
                 const height = String((header?.height as string | number | undefined) || '')
                 if (height) {
                   lrepo.save({
+                    singleton: 'default',
                     height,
                     time: String((header?.time as string | undefined) || ''),
                     proposer_address: String(

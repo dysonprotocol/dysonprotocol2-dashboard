@@ -81,9 +81,9 @@ const blocks = computed(() => {
 })
 
 function getLatestHeightFromRepo(): number {
-  const list = blockRepo.all() as unknown as Array<{ height: string }>
-  if (list.length === 0) return 0
-  return list.reduce((m, r) => Math.max(m, Number(r.height || '0')), 0)
+  const one = blockRepo.find('default') as unknown as { height?: string } | undefined
+  if (!one?.height) return 0
+  return Number(one.height)
 }
 
 async function loadPage() {
@@ -131,10 +131,6 @@ const prevTo = computed(() => ({
 
 const nextTo = computed(() => ({
   query: { ...route.query, page: String(Math.min(maxPage.value, currentPage.value + 1)) },
-}))
-
-const currentTo = computed(() => ({
-  query: { ...route.query, page: String(maxPage.value) },
 }))
 
 // When no page is provided in the query, we default to the latest page in-memory

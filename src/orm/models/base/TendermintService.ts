@@ -3,10 +3,11 @@ import type { Request } from '@pinia-orm/axios'
 
 export class LatestBlock extends Model {
   static entity = 'base_tm_latest_block'
-  static primaryKey = 'height'
+  static primaryKey = 'singleton'
 
   static fields() {
     return {
+      singleton: this.string('default'),
       height: this.string('0'),
       time: this.string(''),
       proposer_address: this.string(''),
@@ -40,6 +41,7 @@ export class LatestBlock extends Model {
               if (!h?.height) return []
               return [
                 {
+                  singleton: 'default',
                   height: String(h.height),
                   time: String(h.time || ''),
                   proposer_address: String(h.proposer_address || ''),
@@ -72,6 +74,7 @@ export class LatestBlock extends Model {
               if (!h?.height) return []
               return [
                 {
+                  singleton: 'default',
                   height: String(h.height),
                   time: String(h.time || ''),
                   proposer_address: String(h.proposer_address || ''),

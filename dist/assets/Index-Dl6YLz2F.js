@@ -1,1 +1,0 @@
-import{_ as t,c as o,a as s,o as a}from"./index-BXipJRd9.js";const n={},r={class:"p-4"};function c(l,e){return a(),o("div",r,e[0]||(e[0]=[s("h1",{class:"text-lg font-semibold"}," Dyson Protocol 2 ",-1),s("p",{class:"mt-2 text-sm text-gray-500"}," Welcome. Use the navigation to explore names, addresses, and explorer. ",-1)]))}const m=t(n,[["render",c]]);export{m as default};
