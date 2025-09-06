@@ -33,12 +33,13 @@ export function formatGasPrice(task: {
   const amount = String(fee?.amount || '0')
   if (!denom) return ''
   const norm = DenomMetadata.normalize({ amount, denom })
-  const displayAmount = Number(norm.display.amount || '0')
-  const price = displayAmount / limitNum
+  // Use base units to avoid tiny values rounding to zero in display units
+  const baseAmountNum = Number(norm.base.amount || '0')
+  const price = baseAmountNum / limitNum
   const pretty = Number.isFinite(price)
     ? price.toLocaleString(undefined, { maximumFractionDigits: 8 })
     : '0'
-  return `${pretty} ${norm.display.denom}/gas`
+  return `${pretty} ${norm.base.denom}/gas`
 }
 
 function toMs(value: string): number | null {

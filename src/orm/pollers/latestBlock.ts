@@ -4,6 +4,7 @@ import LatestBlock from '@/orm/models/base/TendermintService'
 import TendermintBlock from '@/orm/models/tendermint/Block'
 import TxBlock from '@/orm/models/tx/TxBlock'
 import { ensureGlobalCrontaskEventSync } from '@/orm/subscriptions/crontaskEvents'
+import { ensureGlobalBankTransferSync } from '@/orm/subscriptions/bankTransferEvents'
 import { useWallet } from '@/composables/useWallet'
 
 let started = false
@@ -36,6 +37,19 @@ export function startLatestBlockPoller() {
       }
     }
     ensureGlobalCrontaskEventSync({ isKnownCreator })
+    const isKnownAddress = (address: string) => {
+      const a = String(address || '').trim()
+      if (!a) return false
+      try {
+        const list =
+          (unlockedWallets as { value?: Array<{ address?: string }> } | undefined)?.value || []
+        return list.some((w) => String(w?.address || '') === a)
+      } catch (e) {
+        console.error('[tm.ws] known-address check error', e)
+        return false
+      }
+    }
+    ensureGlobalBankTransferSync({ isKnownAddress })
   } catch (e) {
     console.error('[tm.ws] init crontask sync error', e)
   }

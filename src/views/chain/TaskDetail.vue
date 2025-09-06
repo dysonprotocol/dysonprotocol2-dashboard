@@ -148,9 +148,6 @@ const parsedErrorDeep = computed(() => decodeJsonRecursively(parsedError.value))
         <div class="text-sm">
           <span class="opacity-70">Gas price:</span>
           <span class="font-mono">{{ formatGasPrice(t) }}</span>
-          <span v-if="t.task_gas_price" class="opacity-70"
-            >(raw: {{ formatCoin(t.task_gas_price) }})</span
-          >
         </div>
       </div>
     </div>

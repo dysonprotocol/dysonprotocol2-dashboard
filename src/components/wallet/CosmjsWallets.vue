@@ -11,36 +11,41 @@
       :data-test-id="`wallet-item-${wallet.name}`"
     >
       <template #default>
-        <div class="flex items-center justify-between gap-2 mt-2">
-          <div class="">
-            <button
-              v-if="isWalletUnlocked(wallet)"
-              class="btn btn-outline btn-xs"
-              @click="lockWallet(wallet.name)"
-            >
-              Lock
-            </button>
+        <div class="pt-3 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <Button
+                v-if="isWalletUnlocked(wallet)"
+                variant="outline"
+                size="sm"
+                @click="lockWallet(wallet.name)"
+              >
+                Lock
+              </Button>
 
-            <div v-else class="flex items-center gap-1">
-              <Input
-                v-model="unlockPassword[wallet.name]"
-                type="password"
-                placeholder="Password"
-                :class="['h-8 w-24', { 'border-destructive': unlockErrors[wallet.name] }]"
-              />
-              <button class="btn btn-primary btn-xs" @click="doUnlock(wallet.name)">Unlock</button>
+              <div v-else class="flex items-center gap-2">
+                <Input
+                  v-model="unlockPassword[wallet.name]"
+                  type="password"
+                  placeholder="Password"
+                  :class="[{ 'border-destructive': unlockErrors[wallet.name] }]"
+                />
+                <Button size="sm" @click="doUnlock(wallet.name)">Unlock</Button>
+              </div>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Remove wallet"
+              @click="openRemoveDialog(wallet.name)"
+              :data-test-id="`remove-wallet-${wallet.name}`"
+            >
+              <X class="h-4 w-4" />
+            </Button>
           </div>
-          <button
-            class="btn btn-ghost btn-xs text-error"
-            aria-label="Remove wallet"
-            @click="handleRemoveWallet(wallet.name)"
-          >
-            X
-          </button>
-        </div>
-        <div v-if="unlockErrors[wallet.name]" class="text-error mt-1">
-          {{ unlockErrors[wallet.name] }}
+          <p v-if="unlockErrors[wallet.name]" class="text-destructive text-sm">
+            {{ unlockErrors[wallet.name] }}
+          </p>
         </div>
       </template>
     </WalletAccordian>
@@ -56,64 +61,78 @@
       :trigger-test-id="'cosmjs-add-toggle'"
     >
       <template #default>
-        <div class="flex flex-col gap-2">
-          <Input
-            v-model="newWalletName"
-            placeholder="Wallet name"
-            class="h-8 w-full"
-            data-testid="cosmjs-name-input"
-          />
-          <Textarea
-            v-model="mnemonic"
-            placeholder="Enter recovery phrase..."
-            class="w-full resize-none min-h-24"
-            data-testid="cosmjs-mnemonic-input"
-          />
-
-          <button type="button" class="btn btn-outline btn-xs" @click="generateSeed(24)">
-            Generate Seed
-          </button>
-          <label class="flex items-start gap-2">
-            <input
-              type="checkbox"
-              v-model="seedBackedUp"
-              class="mt-0.5"
-              data-testid="cosmjs-seed-confirm"
-              aria-label="Confirm seed backup"
+        <div class="space-y-3">
+          <div class="space-y-2">
+            <Input
+              v-model="newWalletName"
+              placeholder="Wallet name"
+              class="w-full"
+              data-testid="cosmjs-name-input"
             />
-            <span class="opacity-80">
-              I have backed up my seed phrase and understand the risks. I take full responsibility
-              for my actions.
-            </span>
-          </label>
-
-          <Input
-            v-model="newWalletPassword"
-            type="password"
-            placeholder="Password"
-            class="h-8 w-full"
-            :disabled="!seedBackedUp"
-            data-testid="cosmjs-password-input"
-          />
-          <div v-if="importError" class="text-error">
-            {{ importError }}
+            <Textarea
+              v-model="mnemonic"
+              placeholder="Enter recovery phrase..."
+              class="w-full resize-none min-h-24"
+              data-testid="cosmjs-mnemonic-input"
+            />
+            <Button type="button" variant="outline" size="sm" @click="generateSeed(24)">
+              Generate Seed
+            </Button>
+            <label class="flex items-start gap-2">
+              <input
+                type="checkbox"
+                v-model="seedBackedUp"
+                class="mt-0.5"
+                data-testid="cosmjs-seed-confirm"
+                aria-label="Confirm seed backup"
+              />
+              <span class="opacity-80">
+                I have backed up my seed phrase and understand the risks. I take full responsibility
+                for my actions.
+              </span>
+            </label>
+            <Input
+              v-model="newWalletPassword"
+              type="password"
+              placeholder="Password"
+              class="w-full"
+              :disabled="!seedBackedUp"
+              data-testid="cosmjs-password-input"
+            />
           </div>
+          <p v-if="importError" class="text-destructive text-sm">
+            {{ importError }}
+          </p>
           <Button
-            class="w-full h-8"
+            class="w-full"
+            size="sm"
             :disabled="!canImport || importLoading"
             data-testid="cosmjs-add-button"
             @click="handleImport"
           >
-            <span
-              v-if="importLoading"
-              class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-current"
-            />
+            <Loader2 v-if="importLoading" class="mr-2 h-4 w-4 animate-spin" />
             Add Wallet
           </Button>
         </div>
       </template>
     </WalletAccordian>
   </Accordion>
+
+  <AlertDialog v-model:open="removeDialogOpen">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Remove wallet</AlertDialogTitle>
+        <AlertDialogDescription>
+          This action is destructive and cannot be undone. The wallet "{{ walletNameToRemove }}"
+          will be removed from this browser.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogAction variant="destructive" @click="confirmRemove">Remove</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 </template>
 
 <script setup>
@@ -125,6 +144,17 @@ import { Accordion } from '@/components/ui/accordion'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog'
+import { Loader2, X } from 'lucide-vue-next'
 import WalletAccordian from '@/components/wallet/WalletAccordian.vue'
 
 const {
@@ -146,6 +176,9 @@ const openValues = useStorage('accordion:cosmjs-open', [])
 const unlockPassword = reactive({})
 const unlockErrors = reactive({})
 
+const removeDialogOpen = ref(false)
+const walletNameToRemove = ref('')
+
 function isWalletUnlocked(wallet) {
   return unlockedWallets.value.some((w) => w.address === wallet.address)
 }
@@ -160,9 +193,16 @@ async function doUnlock(name) {
   }
 }
 
-function handleRemoveWallet(walletName) {
-  const confirmed = window.confirm(`Remove wallet "${walletName}"?`)
-  if (confirmed) removeNamedCosmJsWallet(walletName)
+function openRemoveDialog(walletName) {
+  walletNameToRemove.value = walletName
+  removeDialogOpen.value = true
+}
+
+function confirmRemove() {
+  if (!walletNameToRemove.value) return
+  removeNamedCosmJsWallet(walletNameToRemove.value)
+  removeDialogOpen.value = false
+  walletNameToRemove.value = ''
 }
 
 const newWalletName = ref('')

@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-xl mx-auto">
+  <div class="max-w-lg mx-auto">
     <form class="" @submit.prevent="submitSend">
       <Card>
         <CardHeader>
@@ -12,6 +12,7 @@
             Signer:
 
             <WalletSelector
+              :key="address"
               v-model="selectedExecutor"
               :show-locked="true"
               :allowed-addresses="[address]"
@@ -138,27 +139,27 @@
       </Card>
     </form>
 
-    <Table class="mt-4 max-w-full">
+    <Table class="mt-4 w-full">
       <template v-for="section in grouped" :key="section.group">
         <TableHeader>
           <TableRow>
-            <TableHead colspan="3" class="text-left text-base font-semibold">
+            <TableHead colspan="4" class="text-left text-base font-semibold">
               {{ section.group }}
             </TableHead>
           </TableRow>
           <TableRow>
             <TableHead class="text-left">denom</TableHead>
-            <TableHead class="text-left">spendable</TableHead>
+            <TableHead class="text-left">available</TableHead>
             <TableHead class="text-left">total</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-for="row in section.items" :key="row.key">
-            <TableCell class="font-mono overflow-x-auto">
-              {{ row.denom }}
-              <div class="text-xs opacity-70 break-all">{{ row.description }}</div>
-            </TableCell>
+            <TableCell class="align-top break-words whitespace-normal line-clamp-3">
+              <div class="font-semibold">{{ row.denom }}</div>
 
+              {{ row.description }}
+            </TableCell>
             <TableCell>
               <code>{{ row.spend }}</code>
             </TableCell>
@@ -171,7 +172,7 @@
       </template>
       <TableBody v-if="grouped.length === 0">
         <TableRow>
-          <TableCell colspan="3" class="opacity-70">No balances</TableCell>
+          <TableCell colspan="4" class="opacity-70">No balances</TableCell>
         </TableRow>
       </TableBody>
     </Table>
@@ -314,7 +315,9 @@ const authzWarnings = computed(() => {
         const need = BigInt(amtStr)
         if (need > limit)
           warnings.push('SendAuthorization spend_limit insufficient for this amount')
-      } catch {}
+      } catch (e) {
+        console.error('Authz spend_limit check failed', e)
+      }
     }
   }
   return warnings
@@ -356,7 +359,7 @@ function onUpdateBase(payload: { amount: string; denom: string }) {
   selectorBaseAmount.value = payload.amount || ''
   selectorBaseDenom.value = payload.denom || ''
 }
-function onUpdateDisplay(_: { amount: string; denom: string }) {
+function onUpdateDisplay() {
   // no-op for now; could show preview
 }
 
@@ -377,7 +380,9 @@ function runValidation() {
       const balBase = BigInt(String(bal?.amount || '0'))
       const sendBase = BigInt(amtStr)
       if (sendBase > balBase) msgs.push('Insufficient balance')
-    } catch {}
+    } catch (e) {
+      console.error('Balance validation failed', e)
+    }
   }
   sendValidation.value = msgs
 }
@@ -555,4 +560,23 @@ async function refresh() {
 watchEffect(() => {
   if (props.address) void refresh()
 })
+
+// Reset form and authz-related state when the address changes to avoid stale selections
+watch(
+  () => props.address,
+  () => {
+    selectedExecutor.value = ''
+    selectedGranteeAddress.value = ''
+    isAuthz.value = false
+    authzNotes.value = ''
+    selectedGrant.value = null
+    sendTo.value = ''
+    sendAmount.value = ''
+    selectorBaseAmount.value = ''
+    selectorBaseDenom.value = ''
+    confirm.value = false
+    sendError.value = ''
+    sendValidation.value = []
+  }
+)
 </script>

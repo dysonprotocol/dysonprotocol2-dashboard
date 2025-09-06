@@ -8,26 +8,32 @@
       :address="address"
     >
       <template #default>
-        <div class="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            :disabled="isBusy || isKeplrConnected || !isKeplrAvailable"
-            @click="connectKeplr"
-          >
-            Connect
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            :disabled="isBusy || !isKeplrConnected"
-            @click="disconnect"
-          >
-            Disconnect
-          </Button>
-          <div v-if="errorMessage" class="text-destructive">
-            {{ errorMessage }}
+        <div class="pt-3 space-y-3">
+          <div class="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              :disabled="isBusy || isKeplrConnected || !isKeplrAvailable"
+              @click="connectKeplr"
+            >
+              <Loader2 v-if="isBusy" class="mr-2 h-4 w-4 animate-spin" />
+              Connect
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              :disabled="isBusy || !isKeplrConnected"
+              @click="disconnect"
+            >
+              Disconnect
+            </Button>
           </div>
+          <p v-if="!isKeplrAvailable" class="text-destructive text-sm">
+            keplr is not available, please install and enable it
+          </p>
+          <p v-if="errorMessage" class="text-destructive text-sm">
+            {{ errorMessage }}
+          </p>
         </div>
       </template>
     </WalletAccordian>
@@ -41,6 +47,7 @@ import { useWallet } from '@/composables/useWallet'
 import { useRoute } from 'vue-router'
 import { Accordion } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-vue-next'
 import WalletAccordian from '@/components/wallet/WalletAccordian.vue'
 
 const { unlockedWallets, connectExtension, lockWallet } = useWallet()
