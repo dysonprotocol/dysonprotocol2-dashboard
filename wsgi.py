@@ -1,7 +1,7 @@
 import re, json
 from urllib.parse import parse_qs
 
-DEFAULT_VERSION = "030e8ca"
+DEFAULT_VERSION = "22a946f"
 DEFAULT_CDN_TEMPLATE = "https://cdn.jsdelivr.net/gh/{owner}/{repo}@{version}/dist/"
 OWNER = "dysonprotocol"
 REPO = "dysonprotocol2-dashboard"

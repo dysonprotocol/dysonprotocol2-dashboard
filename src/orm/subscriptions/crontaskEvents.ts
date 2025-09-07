@@ -12,8 +12,19 @@ const EVENTS = [
   'dysonprotocol.crontask.v1.EventTaskDeleted',
 ] as const
 
+export type CrontaskEventName = (typeof EVENTS)[number]
+
+interface CrontaskEventLike {
+  type: CrontaskEventName
+  detail?: Record<string, unknown>
+}
+
+interface GlobalWithEventListeners {
+  addEventListener: (name: CrontaskEventName, handler: (ev: CrontaskEventLike) => void) => void
+  removeEventListener: (name: CrontaskEventName, handler: (ev: CrontaskEventLike) => void) => void
+}
+
 let globalInitialized = false
-const inflightTaskIds = new Set<string>()
 
 export function unwrap(val: unknown): string {
   if (val == null) return ''
@@ -23,6 +34,7 @@ export function unwrap(val: unknown): string {
       return JSON.parse(s)
     } catch {
       // fall through
+      console.error('[crontask.sync] unwrap error', s)
     }
   }
   return s.replace(/^"|"$/g, '')
@@ -30,7 +42,8 @@ export function unwrap(val: unknown): string {
 
 function fetchTaskById(taskId: string) {
   const api = useAxiosRepo(CrontaskTask).api()
-  return api.fetchByID(taskId)
+  // add cache-busting query to always fetch fresh data on event
+  return api.fetchByID(`${taskId}?_cb=${Date.now()}`)
 }
 
 function hasTaskInRepo(taskId: string): boolean {
@@ -45,44 +58,45 @@ export function ensureGlobalCrontaskEventSync(args: {
   globalInitialized = true
   const { isKnownCreator } = args
 
-  const handler = (ev: Event) => {
+  const handler = (ev: CrontaskEventLike) => {
     try {
-      const detail = (ev as CustomEvent)?.detail as Record<string, unknown> | undefined
+      const detail = ev.detail || undefined
       const taskId = unwrap(detail?.task_id)
       if (!taskId) return
       const creator = unwrap(detail?.creator)
 
       if (!hasTaskInRepo(taskId) && !isKnownCreator(creator)) return
 
-      if (inflightTaskIds.has(taskId)) return
-      inflightTaskIds.add(taskId)
-      fetchTaskById(taskId)
-        .catch((e: unknown) => {
-          console.error('[crontask.sync] fetch error', { taskId, error: e })
-        })
-        .finally(() => inflightTaskIds.delete(taskId))
+      // log the task id and event for debugging
+      console.log('[crontask.sync] task id event', { taskId, creator, event: ev.type })
+
+      fetchTaskById(taskId).catch((e: unknown) => {
+        console.error('[crontask.sync] fetch error', { taskId, error: e })
+      })
     } catch (e) {
       console.error('[crontask.sync] handler error', e)
     }
   }
 
-  for (const name of EVENTS) globalThis.addEventListener(name, handler as EventListener)
+  const g = globalThis as unknown as GlobalWithEventListeners
+  for (const name of EVENTS) g.addEventListener(name, handler)
 }
 
 export function subscribeAllCrontaskEvents(
-  onEvent: (detail: Record<string, unknown>) => void
+  onEvent: (name: CrontaskEventName, detail: Record<string, unknown>) => void
 ): () => void {
-  const handler = (ev: Event) => {
+  const handler = (ev: CrontaskEventLike) => {
     try {
-      const detail = (ev as CustomEvent)?.detail as Record<string, unknown> | undefined
+      const detail = ev.detail || undefined
       if (!detail) return
-      onEvent(detail)
+      onEvent(ev.type, detail)
     } catch (e) {
       console.error('[crontask.view] handler error', e)
     }
   }
-  for (const name of EVENTS) globalThis.addEventListener(name, handler as EventListener)
+  const g = globalThis as unknown as GlobalWithEventListeners
+  for (const name of EVENTS) g.addEventListener(name, handler)
   return () => {
-    for (const name of EVENTS) globalThis.removeEventListener(name, handler as EventListener)
+    for (const name of EVENTS) g.removeEventListener(name, handler)
   }
 }

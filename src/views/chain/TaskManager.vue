@@ -16,9 +16,11 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { subscribeAllCrontaskEvents, unwrap } from '@/orm/subscriptions/crontaskEvents'
+import LatestBlock from '@/orm/models/base/TendermintService'
 
 const api = useAxiosRepo(CrontaskTask).api()
 const repo = useRepo(CrontaskTask)
+const latestRepo = useRepo(LatestBlock)
 
 const LIST_LIMIT = 100
 
@@ -26,8 +28,20 @@ const LIST_LIMIT = 100
 
 const state = reactive({ loading: false, error: '' })
 const isLoadingAll = ref(false)
-const nowMs = ref<number>(Date.now())
-let tick: ReturnType<typeof globalThis.setInterval> | null = null
+const latestBlockTimeMs = computed<number | null>(() => {
+  try {
+    const lb = latestRepo.find('default') as { time?: string } | null
+    const t = lb?.time ? toMsLocal(lb.time) : null
+    return t
+  } catch (e) {
+    console.error('[TaskManager] latest block lookup error', e)
+    return null
+  }
+})
+const chainNowMs = computed<number>(() => {
+  const lb = latestBlockTimeMs.value
+  return lb != null ? lb : Number.NaN
+})
 
 // no global list needed; derive per-column lists below
 
@@ -51,6 +65,7 @@ function toMsLocal(value: string): number | null {
 }
 
 function formatSignedShortDelta(value: string, now: number): string {
+  if (!Number.isFinite(now)) return ''
   const target = toMsLocal(value)
   if (target == null) return ''
   if (target >= now) return formatShortDelta(value, now)
@@ -61,7 +76,7 @@ function formatDeltaBetween(a: string, b: string): string {
   const am = toMsLocal(a)
   const bm = toMsLocal(b)
   if (am == null || bm == null) return ''
-  let diff = Math.abs(bm - am)
+  let diff = Math.abs(bm - am) + 1000
   if (!Number.isFinite(diff)) return ''
   if (diff === 0) return '0s'
 
@@ -90,6 +105,18 @@ function formatDeltaBetween(a: string, b: string): string {
   if (parts.length < 2) parts.push(`${sec}s`)
 
   return parts.slice(0, 2).join(' ')
+}
+
+function hueFromScheduled(value: unknown): number {
+  const ms = toMsLocal(String(value ?? ''))
+  if (ms == null) return 0
+  const bucket = Math.floor(ms / (60 * 1000)) // per-minute bucket for stability
+  return bucket % 360
+}
+
+function rowBg(value: unknown): Record<string, string> {
+  const h = hueFromScheduled(value)
+  return { backgroundColor: `hsla(${h}, 80%, 50%, 0.06)` }
 }
 
 const scheduledList = computed(() =>
@@ -169,7 +196,7 @@ async function loadAll() {
       useRepo(CrontaskTask)
         .query()
         .where('status', (s: string) =>
-          ['SCHEDULED', 'PENDING', 'DONE'].includes(
+          ['SCHEDULED', 'PENDING', 'DONE', 'FAILED', 'EXPIRED'].includes(
             String(s || '')
               .trim()
               .toUpperCase()
@@ -197,12 +224,20 @@ async function loadAll() {
 let unsubscribe: (() => void) | null = null
 let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null
 onMounted(() => {
-  tick = globalThis.setInterval(() => {
-    nowMs.value = Date.now()
-  }, 200)
-  unsubscribe = subscribeAllCrontaskEvents((d: Record<string, unknown>) => {
+  unsubscribe = subscribeAllCrontaskEvents((name, d) => {
     const id = unwrap((d as { task_id?: unknown })?.task_id)
     if (!id) return
+    if (
+      name === 'dysonprotocol.crontask.v1.EventTaskDeleted' ||
+      name === 'dysonprotocol.crontask.v1.EventTaskPurged'
+    ) {
+      try {
+        repo.delete(id)
+      } catch (e) {
+        console.error('[TaskManager] delete error', e)
+      }
+      return
+    }
     api.fetchByID(id).catch((e: unknown) => {
       console.error('[TaskManager] refresh error', e)
     })
@@ -215,9 +250,7 @@ onUnmounted(() => {
     console.error('[TaskManager] unsubscribe error', e)
   }
   if (pendingRefreshTimer) globalThis.clearTimeout(pendingRefreshTimer)
-  if (tick) globalThis.clearInterval(tick)
   pendingRefreshTimer = null
-  tick = null
   unsubscribe = null
 })
 
@@ -253,7 +286,7 @@ loadAll()
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="t in scheduledList" :key="t.task_id">
+            <TableRow v-for="t in scheduledList" :key="t.task_id" :style="rowBg(t.task_id)">
               <TableCell class="font-mono">
                 <RouterLink
                   class="underline"
@@ -271,7 +304,7 @@ loadAll()
               >
               <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
               <TableCell class="font-mono">{{
-                formatShortDelta(t.scheduled_timestamp, nowMs)
+                formatShortDelta(t.scheduled_timestamp, chainNowMs)
               }}</TableCell>
             </TableRow>
             <TableRow v-if="!state.loading && scheduledList.length === 0">
@@ -295,7 +328,7 @@ loadAll()
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="(t, i) in pendingList" :key="t.task_id">
+            <TableRow v-for="(t, i) in pendingList" :key="t.task_id" :style="rowBg(t.task_id)">
               <TableCell class="font-mono">
                 <RouterLink
                   class="underline"
@@ -313,7 +346,7 @@ loadAll()
               <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
               <TableCell class="font-mono">{{ i }}</TableCell>
               <TableCell class="font-mono">{{
-                formatSignedShortDelta(t.scheduled_timestamp, nowMs)
+                formatSignedShortDelta(t.scheduled_timestamp, chainNowMs)
               }}</TableCell>
             </TableRow>
             <TableRow v-if="!state.loading && pendingList.length === 0">
@@ -337,7 +370,7 @@ loadAll()
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="t in doneList" :key="t.task_id">
+            <TableRow v-for="t in doneList" :key="t.task_id" :style="rowBg(t.task_id)">
               <TableCell class="font-mono">
                 <RouterLink
                   class="underline"
