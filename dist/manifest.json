@@ -1,19 +1,19 @@
 {
-  "_AddressScript-Bo2qQjbN.js": {
-    "file": "assets/AddressScript-Bo2qQjbN.js",
+  "_AddressScript-C8ZURcxd.js": {
+    "file": "assets/AddressScript-C8ZURcxd.js",
     "name": "AddressScript",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Script-DQy25cXh.js",
-      "_TxHashDisplay-BVssufxV.js",
-      "_index--uvhtM7P.js",
-      "_AmountDenomSelector-CYPqX5lq.js",
-      "_WalletSelector-C8WJvxp8.js",
-      "_ResizablePanelGroup.vue_vue_type_script_setup_true_lang-WRDPcZ_a.js"
+      "_Script-DuWKVXe3.js",
+      "_TxHashDisplay-DbcMgKdT.js",
+      "_index-D6P_LoUt.js",
+      "_AmountDenomSelector-BP97rC7Q.js",
+      "_WalletSelector-Bvxq5DWO.js",
+      "_ResizablePanelGroup.vue_vue_type_script_setup_true_lang-CLR6mO1I.js"
     ],
     "dynamicImports": [
-      "_editor.api-CRgAS4gN.js",
+      "_editor.api-CpAl9dLf.js",
       "node_modules/monaco-editor/esm/vs/basic-languages/python/python.contribution.js",
       "src/components/scripts/ScriptEditor.vue"
     ],
@@ -25,182 +25,182 @@
     "file": "assets/AddressScript-CqR-xwB8.css",
     "src": "_AddressScript-CqR-xwB8.css"
   },
-  "_AmountDenomSelector-CYPqX5lq.js": {
-    "file": "assets/AmountDenomSelector-CYPqX5lq.js",
+  "_AmountDenomSelector-BP97rC7Q.js": {
+    "file": "assets/AmountDenomSelector-BP97rC7Q.js",
     "name": "AmountDenomSelector",
     "imports": [
       "index.html",
-      "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js"
+      "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js"
     ]
   },
-  "_ArrowTopRightOnSquareIcon-CPC3s1eC.js": {
-    "file": "assets/ArrowTopRightOnSquareIcon-CPC3s1eC.js",
+  "_ArrowTopRightOnSquareIcon-C1LAIUbv.js": {
+    "file": "assets/ArrowTopRightOnSquareIcon-C1LAIUbv.js",
     "name": "ArrowTopRightOnSquareIcon",
     "imports": [
       "index.html"
     ]
   },
-  "_CardDescription.vue_vue_type_script_setup_true_lang-DgrWVfrJ.js": {
-    "file": "assets/CardDescription.vue_vue_type_script_setup_true_lang-DgrWVfrJ.js",
+  "_CardDescription.vue_vue_type_script_setup_true_lang-DmxSaoc3.js": {
+    "file": "assets/CardDescription.vue_vue_type_script_setup_true_lang-DmxSaoc3.js",
     "name": "CardDescription.vue_vue_type_script_setup_true_lang",
     "imports": [
       "index.html"
     ]
   },
-  "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js": {
-    "file": "assets/CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
+  "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js": {
+    "file": "assets/CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
     "name": "CardTitle.vue_vue_type_script_setup_true_lang",
     "imports": [
       "index.html"
     ]
   },
-  "_Checkbox.vue_vue_type_script_setup_true_lang-NMzaJGMn.js": {
-    "file": "assets/Checkbox.vue_vue_type_script_setup_true_lang-NMzaJGMn.js",
+  "_Checkbox.vue_vue_type_script_setup_true_lang-CaN_5ztB.js": {
+    "file": "assets/Checkbox.vue_vue_type_script_setup_true_lang-CaN_5ztB.js",
     "name": "Checkbox.vue_vue_type_script_setup_true_lang",
     "imports": [
       "index.html",
-      "_check-Cv0Bnt3T.js"
+      "_check-CZ0GPL3Y.js"
     ]
   },
-  "_Delegation-XHCqZfZj.js": {
-    "file": "assets/Delegation-XHCqZfZj.js",
+  "_Delegation-D-PekFoO.js": {
+    "file": "assets/Delegation-D-PekFoO.js",
     "name": "Delegation",
     "imports": [
       "index.html"
     ]
   },
-  "_DelegatorTotalReward-CiS27q28.js": {
-    "file": "assets/DelegatorTotalReward-CiS27q28.js",
+  "_DelegatorTotalReward-B6Smib1W.js": {
+    "file": "assets/DelegatorTotalReward-B6Smib1W.js",
     "name": "DelegatorTotalReward",
     "imports": [
       "index.html"
     ]
   },
-  "_DelegatorWithdrawAddress-DV2H-EE4.js": {
-    "file": "assets/DelegatorWithdrawAddress-DV2H-EE4.js",
+  "_DelegatorWithdrawAddress-wZtjNdtP.js": {
+    "file": "assets/DelegatorWithdrawAddress-wZtjNdtP.js",
     "name": "DelegatorWithdrawAddress",
     "imports": [
       "index.html"
     ]
   },
-  "_DenomOwner-B34euNuX.js": {
-    "file": "assets/DenomOwner-B34euNuX.js",
+  "_DenomOwner-B6QzrHcN.js": {
+    "file": "assets/DenomOwner-B6QzrHcN.js",
     "name": "DenomOwner",
     "imports": [
       "index.html"
     ]
   },
-  "_DenomsByName-B1zeFASa.js": {
-    "file": "assets/DenomsByName-B1zeFASa.js",
+  "_DenomsByName-BIILU936.js": {
+    "file": "assets/DenomsByName-BIILU936.js",
     "name": "DenomsByName",
     "imports": [
       "index.html"
     ]
   },
-  "_Deposit-D3Jy7jpc.js": {
-    "file": "assets/Deposit-D3Jy7jpc.js",
+  "_Deposit-Bko9v9Lb.js": {
+    "file": "assets/Deposit-Bko9v9Lb.js",
     "name": "Deposit",
     "imports": [
       "index.html"
     ]
   },
-  "_Grant-DSAgLJ2O.js": {
-    "file": "assets/Grant-DSAgLJ2O.js",
+  "_Grant-ZNwktSCF.js": {
+    "file": "assets/Grant-ZNwktSCF.js",
     "name": "Grant",
     "imports": [
       "index.html"
     ]
   },
-  "_NameResolution-B6N7Mvvc.js": {
-    "file": "assets/NameResolution-B6N7Mvvc.js",
+  "_NameResolution-HV8SXxhW.js": {
+    "file": "assets/NameResolution-HV8SXxhW.js",
     "name": "NameResolution",
     "imports": [
       "index.html",
-      "_Supply-Df-hA3bb.js",
-      "_NftItem-CZoRwm7r.js"
+      "_Supply-Bcv5-brp.js",
+      "_NftItem-Daktsp4k.js"
     ]
   },
-  "_NamesByDestination-Bdosouos.js": {
-    "file": "assets/NamesByDestination-Bdosouos.js",
+  "_NamesByDestination-CJ3MG_WK.js": {
+    "file": "assets/NamesByDestination-CJ3MG_WK.js",
     "name": "NamesByDestination",
     "imports": [
       "index.html",
-      "_NftItem-CZoRwm7r.js"
+      "_NftItem-Daktsp4k.js"
     ]
   },
-  "_NameserviceParams-C7Yy4R0b.js": {
-    "file": "assets/NameserviceParams-C7Yy4R0b.js",
+  "_NameserviceParams-CwNA3Ogd.js": {
+    "file": "assets/NameserviceParams-CwNA3Ogd.js",
     "name": "NameserviceParams",
     "imports": [
       "index.html"
     ]
   },
-  "_NftClass-BqxvNVJB.js": {
-    "file": "assets/NftClass-BqxvNVJB.js",
+  "_NftClass-DAtjMxPA.js": {
+    "file": "assets/NftClass-DAtjMxPA.js",
     "name": "NftClass",
     "imports": [
       "index.html"
     ]
   },
-  "_NftItem-CZoRwm7r.js": {
-    "file": "assets/NftItem-CZoRwm7r.js",
+  "_NftItem-Daktsp4k.js": {
+    "file": "assets/NftItem-Daktsp4k.js",
     "name": "NftItem",
     "imports": [
       "index.html"
     ]
   },
-  "_Params-CZO-mpyI.js": {
-    "file": "assets/Params-CZO-mpyI.js",
+  "_Params-BdPsEsgA.js": {
+    "file": "assets/Params-BdPsEsgA.js",
     "name": "Params",
     "imports": [
       "index.html"
     ]
   },
-  "_Proposal-CXdSfBWL.js": {
-    "file": "assets/Proposal-CXdSfBWL.js",
+  "_Proposal-CWl3LYAr.js": {
+    "file": "assets/Proposal-CWl3LYAr.js",
     "name": "Proposal",
     "imports": [
       "index.html"
     ]
   },
-  "_RegisterName-CCY2Y5-k.js": {
-    "file": "assets/RegisterName-CCY2Y5-k.js",
+  "_RegisterName-BcrdgTAE.js": {
+    "file": "assets/RegisterName-BcrdgTAE.js",
     "name": "RegisterName",
     "imports": [
       "index.html",
-      "_Registration-BCNQBX80.js",
-      "_NftItem-CZoRwm7r.js",
-      "_NftClass-BqxvNVJB.js",
-      "_WalletSelector-C8WJvxp8.js",
-      "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js"
+      "_Registration-D66XQIGE.js",
+      "_NftItem-Daktsp4k.js",
+      "_NftClass-DAtjMxPA.js",
+      "_WalletSelector-Bvxq5DWO.js",
+      "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js"
     ]
   },
-  "_Registration-BCNQBX80.js": {
-    "file": "assets/Registration-BCNQBX80.js",
+  "_Registration-D66XQIGE.js": {
+    "file": "assets/Registration-D66XQIGE.js",
     "name": "Registration",
     "imports": [
       "index.html",
-      "_NftItem-CZoRwm7r.js"
+      "_NftItem-Daktsp4k.js"
     ]
   },
-  "_ResizablePanelGroup.vue_vue_type_script_setup_true_lang-WRDPcZ_a.js": {
-    "file": "assets/ResizablePanelGroup.vue_vue_type_script_setup_true_lang-WRDPcZ_a.js",
+  "_ResizablePanelGroup.vue_vue_type_script_setup_true_lang-CLR6mO1I.js": {
+    "file": "assets/ResizablePanelGroup.vue_vue_type_script_setup_true_lang-CLR6mO1I.js",
     "name": "ResizablePanelGroup.vue_vue_type_script_setup_true_lang",
     "imports": [
       "index.html",
-      "_useNonce-CSJAV2Ip.js"
+      "_useNonce-DlU48kQ5.js"
     ]
   },
-  "_ResolveNameOrAddresInput-Bll9BkT1.js": {
-    "file": "assets/ResolveNameOrAddresInput-Bll9BkT1.js",
+  "_ResolveNameOrAddresInput-WHfjetyx.js": {
+    "file": "assets/ResolveNameOrAddresInput-WHfjetyx.js",
     "name": "ResolveNameOrAddresInput",
     "imports": [
       "index.html"
     ]
   },
-  "_Script-DQy25cXh.js": {
-    "file": "assets/Script-DQy25cXh.js",
+  "_Script-DuWKVXe3.js": {
+    "file": "assets/Script-DuWKVXe3.js",
     "name": "Script",
     "imports": [
       "index.html"
@@ -209,67 +209,67 @@
       "index.html"
     ]
   },
-  "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js": {
-    "file": "assets/SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js",
+  "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js": {
+    "file": "assets/SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js",
     "name": "SelectValue.vue_vue_type_script_setup_true_lang",
     "imports": [
       "index.html",
-      "_useNonce-CSJAV2Ip.js",
-      "_check-Cv0Bnt3T.js"
+      "_useNonce-DlU48kQ5.js",
+      "_check-CZ0GPL3Y.js"
     ]
   },
-  "_Storage-a6Q1gg3r.js": {
-    "file": "assets/Storage-a6Q1gg3r.js",
+  "_Storage-BYefNiR3.js": {
+    "file": "assets/Storage-BYefNiR3.js",
     "name": "Storage",
     "imports": [
       "index.html"
     ]
   },
-  "_Supply-Df-hA3bb.js": {
-    "file": "assets/Supply-Df-hA3bb.js",
+  "_Supply-Bcv5-brp.js": {
+    "file": "assets/Supply-Bcv5-brp.js",
     "name": "Supply",
     "imports": [
       "index.html"
     ]
   },
-  "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js": {
-    "file": "assets/TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
+  "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js": {
+    "file": "assets/TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
     "name": "TableHeader.vue_vue_type_script_setup_true_lang",
     "imports": [
       "index.html"
     ]
   },
-  "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js": {
-    "file": "assets/TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
+  "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js": {
+    "file": "assets/TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
     "name": "TableRow.vue_vue_type_script_setup_true_lang",
     "imports": [
       "index.html"
     ]
   },
-  "_TxHashDisplay-BVssufxV.js": {
-    "file": "assets/TxHashDisplay-BVssufxV.js",
+  "_TxHashDisplay-DbcMgKdT.js": {
+    "file": "assets/TxHashDisplay-DbcMgKdT.js",
     "name": "TxHashDisplay",
     "imports": [
       "index.html"
     ]
   },
-  "_TxRecord-Cqb0RImB.js": {
-    "file": "assets/TxRecord-Cqb0RImB.js",
+  "_TxRecord-DXlwKrWc.js": {
+    "file": "assets/TxRecord-DXlwKrWc.js",
     "name": "TxRecord",
     "imports": [
       "index.html"
     ]
   },
-  "_WalletSelector-C8WJvxp8.js": {
-    "file": "assets/WalletSelector-C8WJvxp8.js",
+  "_WalletSelector-Bvxq5DWO.js": {
+    "file": "assets/WalletSelector-Bvxq5DWO.js",
     "name": "WalletSelector",
     "imports": [
       "index.html",
-      "_Grant-DSAgLJ2O.js"
+      "_Grant-ZNwktSCF.js"
     ]
   },
-  "_check-Cv0Bnt3T.js": {
-    "file": "assets/check-Cv0Bnt3T.js",
+  "_check-CZ0GPL3Y.js": {
+    "file": "assets/check-CZ0GPL3Y.js",
     "name": "check",
     "imports": [
       "index.html"
@@ -283,8 +283,8 @@
     "file": "assets/editor-DyX1CsEw.css",
     "src": "_editor-DyX1CsEw.css"
   },
-  "_editor.api-CRgAS4gN.js": {
-    "file": "assets/editor.api-CRgAS4gN.js",
+  "_editor.api-CpAl9dLf.js": {
+    "file": "assets/editor.api-CpAl9dLf.js",
     "name": "editor.api",
     "isDynamicEntry": true,
     "imports": [
@@ -294,36 +294,36 @@
       "assets/editor-DyX1CsEw.css"
     ]
   },
-  "_format-sJ3JKs21.js": {
-    "file": "assets/format-sJ3JKs21.js",
+  "_format-D9g8jzak.js": {
+    "file": "assets/format-D9g8jzak.js",
     "name": "format",
     "imports": [
       "index.html"
     ]
   },
-  "_index--uvhtM7P.js": {
-    "file": "assets/index--uvhtM7P.js",
+  "_index-BF8grq5K.js": {
+    "file": "assets/index-BF8grq5K.js",
     "name": "index",
     "imports": [
       "index.html"
     ]
   },
-  "_index-ChpT1Fm_.js": {
-    "file": "assets/index-ChpT1Fm_.js",
+  "_index-D6P_LoUt.js": {
+    "file": "assets/index-D6P_LoUt.js",
     "name": "index",
     "imports": [
       "index.html"
     ]
   },
-  "_useNonce-CSJAV2Ip.js": {
-    "file": "assets/useNonce-CSJAV2Ip.js",
+  "_useNonce-DlU48kQ5.js": {
+    "file": "assets/useNonce-DlU48kQ5.js",
     "name": "useNonce",
     "imports": [
       "index.html"
     ]
   },
   "index.html": {
-    "file": "assets/index-C4dLjnFJ.js",
+    "file": "assets/index-C1YU7gC-.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -336,7 +336,7 @@
       "src/views/chain/NftDetails.vue",
       "src/views/chain/NftClassDetails.vue",
       "src/views/address/AddressLayout.vue",
-      "_AddressScript-Bo2qQjbN.js",
+      "_AddressScript-C8ZURcxd.js",
       "src/views/address/AddressFunction.vue",
       "src/views/address/AddressNames.vue",
       "src/views/address/AddressCoins.vue",
@@ -363,53 +363,53 @@
       "src/views/DemoPiniaOrm.vue"
     ],
     "css": [
-      "assets/index-DuElaXuE.css"
+      "assets/index-DbC5WxQA.css"
     ]
   },
   "node_modules/monaco-editor/esm/vs/basic-languages/python/python.contribution.js": {
-    "file": "assets/python.contribution-D5zfQ5NV.js",
+    "file": "assets/python.contribution-jVDOXfIG.js",
     "name": "python.contribution",
     "src": "node_modules/monaco-editor/esm/vs/basic-languages/python/python.contribution.js",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_editor.api-CRgAS4gN.js"
+      "_editor.api-CpAl9dLf.js"
     ],
     "dynamicImports": [
       "node_modules/monaco-editor/esm/vs/basic-languages/python/python.js"
     ]
   },
   "node_modules/monaco-editor/esm/vs/basic-languages/python/python.js": {
-    "file": "assets/python-Cdz9SFak.js",
+    "file": "assets/python-llL2QMyt.js",
     "name": "python",
     "src": "node_modules/monaco-editor/esm/vs/basic-languages/python/python.js",
     "isDynamicEntry": true,
     "imports": [
-      "_editor.api-CRgAS4gN.js",
+      "_editor.api-CpAl9dLf.js",
       "index.html"
     ]
   },
   "src/components/scripts/ScriptEditor.vue": {
-    "file": "assets/ScriptEditor-DQBJ0A6n.js",
+    "file": "assets/ScriptEditor-BF7ojVUB.js",
     "name": "ScriptEditor",
     "src": "src/components/scripts/ScriptEditor.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_AddressScript-Bo2qQjbN.js",
-      "_Script-DQy25cXh.js",
-      "_WalletSelector-C8WJvxp8.js",
-      "_TxHashDisplay-BVssufxV.js",
-      "_index--uvhtM7P.js",
-      "_AmountDenomSelector-CYPqX5lq.js",
-      "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js",
-      "_useNonce-CSJAV2Ip.js",
-      "_check-Cv0Bnt3T.js",
-      "_ResizablePanelGroup.vue_vue_type_script_setup_true_lang-WRDPcZ_a.js",
-      "_Grant-DSAgLJ2O.js"
+      "_AddressScript-C8ZURcxd.js",
+      "_Script-DuWKVXe3.js",
+      "_WalletSelector-Bvxq5DWO.js",
+      "_TxHashDisplay-DbcMgKdT.js",
+      "_index-D6P_LoUt.js",
+      "_AmountDenomSelector-BP97rC7Q.js",
+      "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js",
+      "_useNonce-DlU48kQ5.js",
+      "_check-CZ0GPL3Y.js",
+      "_ResizablePanelGroup.vue_vue_type_script_setup_true_lang-CLR6mO1I.js",
+      "_Grant-ZNwktSCF.js"
     ],
     "dynamicImports": [
-      "_editor.api-CRgAS4gN.js",
+      "_editor.api-CpAl9dLf.js",
       "node_modules/monaco-editor/esm/vs/basic-languages/python/python.contribution.js"
     ],
     "css": [
@@ -417,35 +417,35 @@
     ]
   },
   "src/views/DemoPiniaOrm.vue": {
-    "file": "assets/DemoPiniaOrm-CY5o5fjb.js",
+    "file": "assets/DemoPiniaOrm-DMlruEZG.js",
     "name": "DemoPiniaOrm",
     "src": "src/views/DemoPiniaOrm.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Delegation-XHCqZfZj.js",
-      "_DelegatorWithdrawAddress-DV2H-EE4.js",
-      "_DelegatorTotalReward-CiS27q28.js",
-      "_Grant-DSAgLJ2O.js",
-      "_Supply-Df-hA3bb.js",
-      "_DenomOwner-B34euNuX.js",
-      "_Proposal-CXdSfBWL.js",
-      "_Params-CZO-mpyI.js",
-      "_Deposit-D3Jy7jpc.js",
-      "_TxRecord-Cqb0RImB.js",
-      "_NftItem-CZoRwm7r.js",
-      "_NftClass-BqxvNVJB.js",
-      "_NameserviceParams-C7Yy4R0b.js",
-      "_NameResolution-B6N7Mvvc.js",
-      "_DenomsByName-B1zeFASa.js",
-      "_NamesByDestination-Bdosouos.js",
-      "_Registration-BCNQBX80.js",
-      "_Storage-a6Q1gg3r.js",
-      "_Script-DQy25cXh.js"
+      "_Delegation-D-PekFoO.js",
+      "_DelegatorWithdrawAddress-wZtjNdtP.js",
+      "_DelegatorTotalReward-B6Smib1W.js",
+      "_Grant-ZNwktSCF.js",
+      "_Supply-Bcv5-brp.js",
+      "_DenomOwner-B6QzrHcN.js",
+      "_Proposal-CWl3LYAr.js",
+      "_Params-BdPsEsgA.js",
+      "_Deposit-Bko9v9Lb.js",
+      "_TxRecord-DXlwKrWc.js",
+      "_NftItem-Daktsp4k.js",
+      "_NftClass-DAtjMxPA.js",
+      "_NameserviceParams-CwNA3Ogd.js",
+      "_NameResolution-HV8SXxhW.js",
+      "_DenomsByName-BIILU936.js",
+      "_NamesByDestination-CJ3MG_WK.js",
+      "_Registration-D66XQIGE.js",
+      "_Storage-BYefNiR3.js",
+      "_Script-DuWKVXe3.js"
     ]
   },
   "src/views/DemoWsBlock.vue": {
-    "file": "assets/DemoWsBlock-DmA-ITSz.js",
+    "file": "assets/DemoWsBlock-DBjFfwA8.js",
     "name": "DemoWsBlock",
     "src": "src/views/DemoWsBlock.vue",
     "isDynamicEntry": true,
@@ -454,7 +454,7 @@
     ]
   },
   "src/views/Index.vue": {
-    "file": "assets/Index-CYh93lJn.js",
+    "file": "assets/Index-4CX4YixV.js",
     "name": "Index",
     "src": "src/views/Index.vue",
     "isDynamicEntry": true,
@@ -463,7 +463,7 @@
     ]
   },
   "src/views/Placeholder.vue": {
-    "file": "assets/Placeholder-DZyslmes.js",
+    "file": "assets/Placeholder-DAePyovH.js",
     "name": "Placeholder",
     "src": "src/views/Placeholder.vue",
     "isDynamicEntry": true,
@@ -472,48 +472,48 @@
     ]
   },
   "src/views/address/AddressAuthz.vue": {
-    "file": "assets/AddressAuthz-T_RnGsIc.js",
+    "file": "assets/AddressAuthz-Dmb5qqxM.js",
     "name": "AddressAuthz",
     "src": "src/views/address/AddressAuthz.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Grant-DSAgLJ2O.js"
+      "_Grant-ZNwktSCF.js"
     ]
   },
   "src/views/address/AddressCoins.vue": {
-    "file": "assets/AddressCoins-CVmV4prI.js",
+    "file": "assets/AddressCoins--jsVbRGJ.js",
     "name": "AddressCoins",
     "src": "src/views/address/AddressCoins.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_AmountDenomSelector-CYPqX5lq.js",
-      "_ResolveNameOrAddresInput-Bll9BkT1.js",
-      "_WalletSelector-C8WJvxp8.js",
-      "_Grant-DSAgLJ2O.js",
-      "_Checkbox.vue_vue_type_script_setup_true_lang-NMzaJGMn.js",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
-      "_index--uvhtM7P.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
-      "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js",
-      "_useNonce-CSJAV2Ip.js",
-      "_check-Cv0Bnt3T.js"
+      "_AmountDenomSelector-BP97rC7Q.js",
+      "_ResolveNameOrAddresInput-WHfjetyx.js",
+      "_WalletSelector-Bvxq5DWO.js",
+      "_Grant-ZNwktSCF.js",
+      "_Checkbox.vue_vue_type_script_setup_true_lang-CaN_5ztB.js",
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
+      "_index-D6P_LoUt.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
+      "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js",
+      "_useNonce-DlU48kQ5.js",
+      "_check-CZ0GPL3Y.js"
     ]
   },
   "src/views/address/AddressFunction.vue": {
-    "file": "assets/AddressFunction-hwX_f8Vh.js",
+    "file": "assets/AddressFunction-DvsE242I.js",
     "name": "AddressFunction",
     "src": "src/views/address/AddressFunction.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Script-DQy25cXh.js"
+      "_Script-DuWKVXe3.js"
     ]
   },
   "src/views/address/AddressLayout.vue": {
-    "file": "assets/AddressLayout-BUwkCBKl.js",
+    "file": "assets/AddressLayout-ASLtqp6D.js",
     "name": "AddressLayout",
     "src": "src/views/address/AddressLayout.vue",
     "isDynamicEntry": true,
@@ -522,355 +522,355 @@
     ]
   },
   "src/views/address/AddressNFTs.vue": {
-    "file": "assets/AddressNFTs-O0Ze3K8E.js",
+    "file": "assets/AddressNFTs-DTUJBslY.js",
     "name": "AddressNFTs",
     "src": "src/views/address/AddressNFTs.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_NftItem-CZoRwm7r.js",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js"
+      "_NftItem-Daktsp4k.js",
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js"
     ]
   },
   "src/views/address/AddressNames.vue": {
-    "file": "assets/AddressNames-DcqD_743.js",
+    "file": "assets/AddressNames-CPSthIMV.js",
     "name": "AddressNames",
     "src": "src/views/address/AddressNames.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_NamesByDestination-Bdosouos.js",
-      "_NftItem-CZoRwm7r.js",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
-      "_ArrowTopRightOnSquareIcon-CPC3s1eC.js"
+      "_NamesByDestination-CJ3MG_WK.js",
+      "_NftItem-Daktsp4k.js",
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
+      "_ArrowTopRightOnSquareIcon-C1LAIUbv.js"
     ]
   },
   "src/views/address/AddressStaking.vue": {
-    "file": "assets/AddressStaking-CyCYpkaD.js",
+    "file": "assets/AddressStaking-CQsaomJ2.js",
     "name": "AddressStaking",
     "src": "src/views/address/AddressStaking.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Delegation-XHCqZfZj.js",
-      "_DelegatorWithdrawAddress-DV2H-EE4.js",
-      "_ResolveNameOrAddresInput-Bll9BkT1.js",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
-      "_CardDescription.vue_vue_type_script_setup_true_lang-DgrWVfrJ.js",
-      "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js",
-      "_index--uvhtM7P.js",
-      "_index-ChpT1Fm_.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
-      "_useNonce-CSJAV2Ip.js",
-      "_check-Cv0Bnt3T.js"
+      "_Delegation-D-PekFoO.js",
+      "_DelegatorWithdrawAddress-wZtjNdtP.js",
+      "_ResolveNameOrAddresInput-WHfjetyx.js",
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
+      "_CardDescription.vue_vue_type_script_setup_true_lang-DmxSaoc3.js",
+      "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js",
+      "_index-D6P_LoUt.js",
+      "_index-BF8grq5K.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
+      "_useNonce-DlU48kQ5.js",
+      "_check-CZ0GPL3Y.js"
     ]
   },
   "src/views/address/AddressStorage.vue": {
-    "file": "assets/AddressStorage-BSehlJg_.js",
+    "file": "assets/AddressStorage-ByOqEXxK.js",
     "name": "AddressStorage",
     "src": "src/views/address/AddressStorage.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Storage-a6Q1gg3r.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
-      "_CardDescription.vue_vue_type_script_setup_true_lang-DgrWVfrJ.js",
-      "_WalletSelector-C8WJvxp8.js",
-      "_Checkbox.vue_vue_type_script_setup_true_lang-NMzaJGMn.js",
-      "_index--uvhtM7P.js",
-      "_Grant-DSAgLJ2O.js",
-      "_check-Cv0Bnt3T.js"
+      "_Storage-BYefNiR3.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
+      "_CardDescription.vue_vue_type_script_setup_true_lang-DmxSaoc3.js",
+      "_WalletSelector-Bvxq5DWO.js",
+      "_Checkbox.vue_vue_type_script_setup_true_lang-CaN_5ztB.js",
+      "_index-D6P_LoUt.js",
+      "_Grant-ZNwktSCF.js",
+      "_check-CZ0GPL3Y.js"
     ],
     "css": [
       "assets/AddressStorage-DnGN9fme.css"
     ]
   },
   "src/views/address/AddressStoragePath.vue": {
-    "file": "assets/AddressStoragePath-CsYQdTis.js",
+    "file": "assets/AddressStoragePath-BaNAP_JU.js",
     "name": "AddressStoragePath",
     "src": "src/views/address/AddressStoragePath.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Storage-a6Q1gg3r.js"
+      "_Storage-BYefNiR3.js"
     ]
   },
   "src/views/address/AddressSummary.vue": {
-    "file": "assets/AddressSummary-fl3oS81U.js",
+    "file": "assets/AddressSummary-sE9EyXtq.js",
     "name": "AddressSummary",
     "src": "src/views/address/AddressSummary.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Delegation-XHCqZfZj.js",
-      "_NamesByDestination-Bdosouos.js",
-      "_NftItem-CZoRwm7r.js",
-      "_Script-DQy25cXh.js",
-      "_DelegatorTotalReward-CiS27q28.js",
-      "_Grant-DSAgLJ2O.js",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
-      "_ArrowTopRightOnSquareIcon-CPC3s1eC.js"
+      "_Delegation-D-PekFoO.js",
+      "_NamesByDestination-CJ3MG_WK.js",
+      "_NftItem-Daktsp4k.js",
+      "_Script-DuWKVXe3.js",
+      "_DelegatorTotalReward-B6Smib1W.js",
+      "_Grant-ZNwktSCF.js",
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
+      "_ArrowTopRightOnSquareIcon-C1LAIUbv.js"
     ]
   },
   "src/views/address/AddressTasks.vue": {
-    "file": "assets/AddressTasks-CbDkkRAy.js",
+    "file": "assets/AddressTasks-CtRycKDK.js",
     "name": "AddressTasks",
     "src": "src/views/address/AddressTasks.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_AmountDenomSelector-CYPqX5lq.js",
-      "_format-sJ3JKs21.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
-      "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js",
-      "_useNonce-CSJAV2Ip.js",
-      "_check-Cv0Bnt3T.js"
+      "_AmountDenomSelector-BP97rC7Q.js",
+      "_format-D9g8jzak.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
+      "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js",
+      "_useNonce-DlU48kQ5.js",
+      "_check-CZ0GPL3Y.js"
     ]
   },
   "src/views/chain/GovernanceProposal.vue": {
-    "file": "assets/GovernanceProposal-ClRFQnR3.js",
+    "file": "assets/GovernanceProposal-cnnZS-5y.js",
     "name": "GovernanceProposal",
     "src": "src/views/chain/GovernanceProposal.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Proposal-CXdSfBWL.js",
-      "_Deposit-D3Jy7jpc.js",
-      "_Delegation-XHCqZfZj.js",
-      "_WalletSelector-C8WJvxp8.js",
-      "_AmountDenomSelector-CYPqX5lq.js",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
-      "_Grant-DSAgLJ2O.js",
-      "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js",
-      "_useNonce-CSJAV2Ip.js",
-      "_check-Cv0Bnt3T.js"
+      "_Proposal-CWl3LYAr.js",
+      "_Deposit-Bko9v9Lb.js",
+      "_Delegation-D-PekFoO.js",
+      "_WalletSelector-Bvxq5DWO.js",
+      "_AmountDenomSelector-BP97rC7Q.js",
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
+      "_Grant-ZNwktSCF.js",
+      "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js",
+      "_useNonce-DlU48kQ5.js",
+      "_check-CZ0GPL3Y.js"
     ]
   },
   "src/views/chain/GovernanceProposals.vue": {
-    "file": "assets/GovernanceProposals-DTsm1X5i.js",
+    "file": "assets/GovernanceProposals-Cav8zel7.js",
     "name": "GovernanceProposals",
     "src": "src/views/chain/GovernanceProposals.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Proposal-CXdSfBWL.js",
-      "_Params-CZO-mpyI.js",
-      "_WalletSelector-C8WJvxp8.js",
-      "_index-ChpT1Fm_.js",
-      "_Checkbox.vue_vue_type_script_setup_true_lang-NMzaJGMn.js",
-      "_Grant-DSAgLJ2O.js",
-      "_check-Cv0Bnt3T.js"
+      "_Proposal-CWl3LYAr.js",
+      "_Params-BdPsEsgA.js",
+      "_WalletSelector-Bvxq5DWO.js",
+      "_index-BF8grq5K.js",
+      "_Checkbox.vue_vue_type_script_setup_true_lang-CaN_5ztB.js",
+      "_Grant-ZNwktSCF.js",
+      "_check-CZ0GPL3Y.js"
     ]
   },
   "src/views/chain/NameDenomDetail.vue": {
-    "file": "assets/NameDenomDetail-DIFfMfxk.js",
+    "file": "assets/NameDenomDetail-DzeWtOni.js",
     "name": "NameDenomDetail",
     "src": "src/views/chain/NameDenomDetail.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Supply-Df-hA3bb.js",
-      "_DenomOwner-B34euNuX.js",
-      "_WalletSelector-C8WJvxp8.js",
-      "_NameResolution-B6N7Mvvc.js",
-      "_Grant-DSAgLJ2O.js",
-      "_NftItem-CZoRwm7r.js"
+      "_Supply-Bcv5-brp.js",
+      "_DenomOwner-B6QzrHcN.js",
+      "_WalletSelector-Bvxq5DWO.js",
+      "_NameResolution-HV8SXxhW.js",
+      "_Grant-ZNwktSCF.js",
+      "_NftItem-Daktsp4k.js"
     ]
   },
   "src/views/chain/NameDenoms.vue": {
-    "file": "assets/NameDenoms-HsODhMhi.js",
+    "file": "assets/NameDenoms-B5-vLHis.js",
     "name": "NameDenoms",
     "src": "src/views/chain/NameDenoms.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_DenomsByName-B1zeFASa.js",
-      "_Supply-Df-hA3bb.js"
+      "_DenomsByName-BIILU936.js",
+      "_Supply-Bcv5-brp.js"
     ]
   },
   "src/views/chain/NameDetails.vue": {
-    "file": "assets/NameDetails-BD49YKl_.js",
+    "file": "assets/NameDetails-Cq8BGCpp.js",
     "name": "NameDetails",
     "src": "src/views/chain/NameDetails.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_RegisterName-CCY2Y5-k.js",
-      "_WalletSelector-C8WJvxp8.js",
-      "_NameResolution-B6N7Mvvc.js",
-      "_NftItem-CZoRwm7r.js",
-      "_DenomsByName-B1zeFASa.js",
-      "_NameserviceParams-C7Yy4R0b.js",
-      "_AmountDenomSelector-CYPqX5lq.js",
-      "_Supply-Df-hA3bb.js",
-      "_Registration-BCNQBX80.js",
-      "_NftClass-BqxvNVJB.js",
-      "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js",
-      "_useNonce-CSJAV2Ip.js",
-      "_check-Cv0Bnt3T.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_Grant-DSAgLJ2O.js"
+      "_RegisterName-BcrdgTAE.js",
+      "_WalletSelector-Bvxq5DWO.js",
+      "_NameResolution-HV8SXxhW.js",
+      "_NftItem-Daktsp4k.js",
+      "_DenomsByName-BIILU936.js",
+      "_NameserviceParams-CwNA3Ogd.js",
+      "_AmountDenomSelector-BP97rC7Q.js",
+      "_Supply-Bcv5-brp.js",
+      "_Registration-D66XQIGE.js",
+      "_NftClass-DAtjMxPA.js",
+      "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js",
+      "_useNonce-DlU48kQ5.js",
+      "_check-CZ0GPL3Y.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_Grant-ZNwktSCF.js"
     ]
   },
   "src/views/chain/NameList.vue": {
-    "file": "assets/NameList-DaiU-jDl.js",
+    "file": "assets/NameList-Bajmzm4y.js",
     "name": "NameList",
     "src": "src/views/chain/NameList.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_RegisterName-CCY2Y5-k.js",
-      "_NftItem-CZoRwm7r.js",
-      "_ArrowTopRightOnSquareIcon-CPC3s1eC.js",
-      "_Registration-BCNQBX80.js",
-      "_NftClass-BqxvNVJB.js",
-      "_WalletSelector-C8WJvxp8.js",
-      "_Grant-DSAgLJ2O.js",
-      "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js",
-      "_useNonce-CSJAV2Ip.js",
-      "_check-Cv0Bnt3T.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js"
+      "_RegisterName-BcrdgTAE.js",
+      "_NftItem-Daktsp4k.js",
+      "_ArrowTopRightOnSquareIcon-C1LAIUbv.js",
+      "_Registration-D66XQIGE.js",
+      "_NftClass-DAtjMxPA.js",
+      "_WalletSelector-Bvxq5DWO.js",
+      "_Grant-ZNwktSCF.js",
+      "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js",
+      "_useNonce-DlU48kQ5.js",
+      "_check-CZ0GPL3Y.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js"
     ]
   },
   "src/views/chain/NftClassDetails.vue": {
-    "file": "assets/NftClassDetails-D1TdViLu.js",
+    "file": "assets/NftClassDetails-DJC8M0I8.js",
     "name": "NftClassDetails",
     "src": "src/views/chain/NftClassDetails.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_NftClass-BqxvNVJB.js",
-      "_NftItem-CZoRwm7r.js",
-      "_NameResolution-B6N7Mvvc.js",
-      "_Supply-Df-hA3bb.js"
+      "_NftClass-DAtjMxPA.js",
+      "_NftItem-Daktsp4k.js",
+      "_NameResolution-HV8SXxhW.js",
+      "_Supply-Bcv5-brp.js"
     ]
   },
   "src/views/chain/NftDetails.vue": {
-    "file": "assets/NftDetails-flzpdj9U.js",
+    "file": "assets/NftDetails-DIh0lO_O.js",
     "name": "NftDetails",
     "src": "src/views/chain/NftDetails.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_NftItem-CZoRwm7r.js",
-      "_NameResolution-B6N7Mvvc.js",
-      "_Supply-Df-hA3bb.js"
+      "_NftItem-Daktsp4k.js",
+      "_NameResolution-HV8SXxhW.js",
+      "_Supply-Bcv5-brp.js"
     ]
   },
   "src/views/chain/TaskDetail.vue": {
-    "file": "assets/TaskDetail-DfJZ_-Hx.js",
+    "file": "assets/TaskDetail-CdgH7BaZ.js",
     "name": "TaskDetail",
     "src": "src/views/chain/TaskDetail.vue",
     "isDynamicEntry": true,
     "imports": [
       "_decodeJsonRecursively-B_HgkQSV.js",
       "index.html",
-      "_format-sJ3JKs21.js"
+      "_format-D9g8jzak.js"
     ]
   },
   "src/views/chain/TaskManager.vue": {
-    "file": "assets/TaskManager-D9EdVkKg.js",
+    "file": "assets/TaskManager-C1FqlVch.js",
     "name": "TaskManager",
     "src": "src/views/chain/TaskManager.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_format-sJ3JKs21.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
-      "_ResizablePanelGroup.vue_vue_type_script_setup_true_lang-WRDPcZ_a.js",
-      "_useNonce-CSJAV2Ip.js"
+      "_format-D9g8jzak.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
+      "_ResizablePanelGroup.vue_vue_type_script_setup_true_lang-CLR6mO1I.js",
+      "_useNonce-DlU48kQ5.js"
     ]
   },
   "src/views/chain/ValidatorDetails.vue": {
-    "file": "assets/ValidatorDetails-BQx_4A8C.js",
+    "file": "assets/ValidatorDetails-DG4YRWuV.js",
     "name": "ValidatorDetails",
     "src": "src/views/chain/ValidatorDetails.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Delegation-XHCqZfZj.js"
+      "_Delegation-D-PekFoO.js"
     ]
   },
   "src/views/chain/ValidatorsList.vue": {
-    "file": "assets/ValidatorsList-BjFOmurO.js",
+    "file": "assets/ValidatorsList-BNiP-Fkq.js",
     "name": "ValidatorsList",
     "src": "src/views/chain/ValidatorsList.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_Delegation-XHCqZfZj.js"
+      "_Delegation-D-PekFoO.js"
     ]
   },
   "src/views/explorer/BlockDetail.vue": {
-    "file": "assets/BlockDetail-C8k5_FxH.js",
+    "file": "assets/BlockDetail-BE3qa5L7.js",
     "name": "BlockDetail",
     "src": "src/views/explorer/BlockDetail.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_TxRecord-Cqb0RImB.js",
-      "_TxHashDisplay-BVssufxV.js",
-      "_Delegation-XHCqZfZj.js",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js"
+      "_TxRecord-DXlwKrWc.js",
+      "_TxHashDisplay-DbcMgKdT.js",
+      "_Delegation-D-PekFoO.js",
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js"
     ]
   },
   "src/views/explorer/BlocksList.vue": {
-    "file": "assets/BlocksList-BmyJsB_z.js",
+    "file": "assets/BlocksList--B-47xi7.js",
     "name": "BlocksList",
     "src": "src/views/explorer/BlocksList.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js"
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js"
     ],
     "css": [
       "assets/BlocksList-DxuMlwsZ.css"
     ]
   },
   "src/views/explorer/TxDetail.vue": {
-    "file": "assets/TxDetail-Bg7ONt-5.js",
+    "file": "assets/TxDetail-ov3-lAIS.js",
     "name": "TxDetail",
     "src": "src/views/explorer/TxDetail.vue",
     "isDynamicEntry": true,
     "imports": [
       "_decodeJsonRecursively-B_HgkQSV.js",
       "index.html",
-      "_TxRecord-Cqb0RImB.js",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
-      "_index-ChpT1Fm_.js"
+      "_TxRecord-DXlwKrWc.js",
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
+      "_index-BF8grq5K.js"
     ]
   },
   "src/views/explorer/TxsList.vue": {
-    "file": "assets/TxsList-Cf5i1BjB.js",
+    "file": "assets/TxsList-CMnoEvEA.js",
     "name": "TxsList",
     "src": "src/views/explorer/TxsList.vue",
     "isDynamicEntry": true,
     "imports": [
       "index.html",
-      "_CardTitle.vue_vue_type_script_setup_true_lang-BkyH_RWJ.js",
-      "_index-ChpT1Fm_.js",
-      "_TableRow.vue_vue_type_script_setup_true_lang-DZSsCSHM.js",
-      "_TableHeader.vue_vue_type_script_setup_true_lang-MstXR3Jd.js",
-      "_SelectValue.vue_vue_type_script_setup_true_lang-DucybpIX.js",
-      "_useNonce-CSJAV2Ip.js",
-      "_check-Cv0Bnt3T.js"
+      "_CardTitle.vue_vue_type_script_setup_true_lang-XRxKlbw5.js",
+      "_index-BF8grq5K.js",
+      "_TableRow.vue_vue_type_script_setup_true_lang-BNZrE1ri.js",
+      "_TableHeader.vue_vue_type_script_setup_true_lang-W-lTf22g.js",
+      "_SelectValue.vue_vue_type_script_setup_true_lang-D8LwBt0j.js",
+      "_useNonce-DlU48kQ5.js",
+      "_check-CZ0GPL3Y.js"
     ]
   }
 }
