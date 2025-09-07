@@ -102,16 +102,6 @@ function formatDeltaShort(a: unknown, b: unknown): string {
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-function bgPending(scheduled: unknown, now: number): Record<string, string> {
-  if (!Number.isFinite(now)) return {}
-  const ms = toMsLocal(String(scheduled ?? ''))
-  if (ms == null) return {}
-  const waiting = Math.max(0, now - ms)
-  const ratio = Math.min(1, Math.max(0, waiting / DAY_MS))
-  const a = (ratio * 0.25).toFixed(3)
-  return { backgroundColor: `rgba(255, 255, 0, ${a})` }
-}
-
 function bgDone(scheduled: unknown, executed: unknown): Record<string, string> {
   const sm = toMsLocal(String(scheduled ?? ''))
   const em = toMsLocal(String(executed ?? ''))
@@ -122,17 +112,18 @@ function bgDone(scheduled: unknown, executed: unknown): Record<string, string> {
   return { backgroundColor: `rgba(255, 255, 0, ${a})` }
 }
 
-function udysPerHourText(task: any): string {
-  const sm = toMsLocal(String(task?.scheduled_timestamp ?? ''))
-  const em = toMsLocal(String(task?.execution_timestamp ?? ''))
-  if (task?.status !== 'DONE') return ''
-  if (sm == null || em == null) return ''
-  const delayHours = (em - sm) / (1000 * 60 * 60)
-  if (delayHours < 0) return ''
-  if (delayHours === 0) return `${Number(task?.task_gas_price?.amount ?? 0).toFixed(8)}`
-  const price = Number(task?.task_gas_price?.amount ?? 0)
-  const valuePerHour = price / delayHours
-  return `${valuePerHour.toFixed(8)}`
+function bgExpiry(scheduled: unknown, expiry: unknown, now: number): Record<string, string> {
+  if (!Number.isFinite(now)) return {}
+  const sm = toMsLocal(String(scheduled ?? ''))
+  const xm = toMsLocal(String(expiry ?? ''))
+  if (sm == null || xm == null) return {}
+  const total = Math.max(0, xm - sm)
+  const remaining = Math.max(0, xm - now)
+  if (total <= 0) return { backgroundColor: 'rgba(255, 192, 203, 0.250)' }
+  const ratioLeft = Math.min(1, Math.max(0, remaining / total))
+  const intensity = 1 - ratioLeft
+  const a = (intensity * 0.5).toFixed(3)
+  return { backgroundColor: `rgba(255, 192, 203, ${a})` }
 }
 
 // selection shared across sections (multi-select)
@@ -314,7 +305,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="p-4 space-y-4">
+  <div class="space-y-4">
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold">Crontasks</h2>
       <div class="flex items-center gap-2">
@@ -335,7 +326,7 @@ onUnmounted(() => {
       >
         <!-- Scheduled -->
         <ResizablePanel :default-size="33" :min-size="20" :max-size="80">
-          <div class="h-full overflow-x-auto overflow-y-auto border rounded">
+          <div class="h-full overflow-x-scroll overflow-y-scroll border rounded">
             <div class="px-3 py-2 text-sm font-medium">
               Scheduled (by timestamp) ({{ LIST_LIMIT }})
             </div>
@@ -344,7 +335,7 @@ onUnmounted(() => {
                 <TableRow>
                   <TableHead>id</TableHead>
                   <TableHead>created </TableHead>
-                  <TableHead>gas_price</TableHead>
+                  <TableHead>udys/gas</TableHead>
                   <TableHead>scheduled</TableHead>
                 </TableRow>
               </TableHeader>
@@ -387,7 +378,7 @@ onUnmounted(() => {
 
         <!-- Pending -->
         <ResizablePanel :default-size="33" :min-size="20" :max-size="80">
-          <div class="h-full overflow-x-auto overflow-y-auto border rounded">
+          <div class="h-full overflow-x-scroll overflow-y-scroll border rounded">
             <div class="px-3 py-2 text-sm font-medium">
               Pending (by gas price) ({{ LIST_LIMIT }})
             </div>
@@ -397,8 +388,8 @@ onUnmounted(() => {
                   <TableHead>id</TableHead>
                   <TableHead>created</TableHead>
                   <TableHead>udys/gas</TableHead>
-
-                  <TableHead>waiting</TableHead>
+                  <TableHead>remaining</TableHead>
+                  <TableHead>expiry</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -408,7 +399,7 @@ onUnmounted(() => {
                   :style="
                     isSelectedId(t.task_id)
                       ? selectedRowStyle
-                      : bgPending(t.scheduled_timestamp, chainNowMs)
+                      : bgExpiry(t.scheduled_timestamp, t.expiry_timestamp, chainNowMs)
                   "
                   @click="selectTask(t.task_id)"
                 >
@@ -428,7 +419,10 @@ onUnmounted(() => {
                   >
                   <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
                   <TableCell class="font-mono">{{
-                    formatDeltaShort(t.scheduled_timestamp, chainNowMs)
+                    formatDeltaShort(chainNowMs, t.expiry_timestamp)
+                  }}</TableCell>
+                  <TableCell class="font-mono">{{
+                    formatDeltaShort(t.scheduled_timestamp, t.expiry_timestamp)
                   }}</TableCell>
                 </TableRow>
                 <TableRow v-if="!state.loading && pendingList.length === 0">
@@ -443,7 +437,7 @@ onUnmounted(() => {
 
         <!-- Done -->
         <ResizablePanel :default-size="34" :min-size="20" :max-size="80">
-          <div class="h-full overflow-x-auto overflow-y-auto border rounded">
+          <div class="h-full overflow-x-scroll overflow-y-scroll border rounded">
             <div class="px-3 py-2 text-sm font-medium">
               Done (by block height) ({{ LIST_LIMIT }})
             </div>
@@ -452,10 +446,9 @@ onUnmounted(() => {
                 <TableRow>
                   <TableHead>id</TableHead>
                   <TableHead>done</TableHead>
-                  <TableHead>gas_price</TableHead>
+                  <TableHead>udys/gas</TableHead>
                   <TableHead>status</TableHead>
                   <TableHead>delay</TableHead>
-                  <TableHead>gas_price/sec</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -488,7 +481,6 @@ onUnmounted(() => {
                   <TableCell class="font-mono">{{
                     formatDeltaShort(t.scheduled_timestamp, t.execution_timestamp)
                   }}</TableCell>
-                  <TableCell class="font-mono">{{ udysPerHourText(t) }}</TableCell>
                 </TableRow>
                 <TableRow v-if="!state.loading && doneList.length === 0">
                   <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
