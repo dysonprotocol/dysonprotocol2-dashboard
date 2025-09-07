@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, onMounted, onUnmounted } from 'vue'
+import { computed, reactive, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import CrontaskTask from '@/orm/models/crontask/Task'
@@ -17,10 +17,13 @@ import { Button } from '@/components/ui/button'
 import { subscribeAllCrontaskEvents, unwrap } from '@/orm/subscriptions/crontaskEvents'
 import LatestBlock from '@/orm/models/base/TendermintService'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import CrontaskMetrics from '@/orm/models/crontask/Metrics'
 
 const api = useAxiosRepo(CrontaskTask).api()
 const repo = useRepo(CrontaskTask)
 const latestRepo = useRepo(LatestBlock)
+const metricsApi = useAxiosRepo(CrontaskMetrics).api()
+const metricsRepo = useRepo(CrontaskMetrics)
 
 const LIST_LIMIT = 100
 
@@ -62,6 +65,84 @@ function toMsLocal(value: string): number | null {
   const d = new Date(s)
   if (isNaN(d.getTime())) return null
   return d.getTime()
+}
+
+const metrics = computed(() => metricsRepo.find('default') as MetricsView | null)
+
+// removed: formatCoinsShort
+
+const lastPendingUdysPerGas = ref<number | null>(null)
+const lastExecutedUdysPerGas = ref<number | null>(null)
+const lastPendingFees = ref<Array<{ denom: string; amount: string }>>([])
+const lastExecutedFees = ref<Array<{ denom: string; amount: string }>>([])
+
+watch(
+  () => {
+    const m = metrics.value
+    if (!m) return null
+    const pendingFees = Array.isArray(m.pending_total_gas_fees)
+      ? m.pending_total_gas_fees.map((c) => `${c.denom}:${c.amount}`).join(',')
+      : ''
+    const executedFees = Array.isArray(m.executed_total_fees)
+      ? m.executed_total_fees.map((c) => `${c.denom}:${c.amount}`).join(',')
+      : ''
+    return [m.pending_gas_requested, pendingFees, m.executed_total_gas, executedFees].join('|')
+  },
+  () => {
+    const m = metrics.value
+    if (!m) return
+    const gasRequested = Number(m.pending_gas_requested || 0)
+    if (Number.isFinite(gasRequested) && gasRequested > 0) {
+      const list = Array.isArray(m.pending_total_gas_fees) ? m.pending_total_gas_fees : []
+      if (list.length) lastPendingFees.value = list
+      const udys = list.find((c) => String(c?.denom || '') === 'udys')
+      if (udys) {
+        const amount = Number(udys.amount || 0)
+        if (Number.isFinite(amount)) lastPendingUdysPerGas.value = amount / gasRequested
+      }
+    }
+
+    const gasUsed = Number(m.executed_total_gas || 0)
+    if (Number.isFinite(gasUsed) && gasUsed > 0) {
+      const list = Array.isArray(m.executed_total_fees) ? m.executed_total_fees : []
+      if (list.length) lastExecutedFees.value = list
+      const udys = list.find((c) => String(c?.denom || '') === 'udys')
+      if (udys) {
+        const amount = Number(udys.amount || 0)
+        if (Number.isFinite(amount)) lastExecutedUdysPerGas.value = amount / gasUsed
+      }
+    }
+  },
+  { immediate: true }
+)
+
+//
+
+const executedTaskCount = computed<number>(() => Number(metrics.value?.executed_task_count ?? 0))
+const executedFees = computed(
+  () => (metrics.value?.executed_total_fees ?? []) as Array<{ denom: string; amount: string }>
+)
+const executedGasUsed = computed<number>(() => Number(metrics.value?.executed_total_gas ?? 0))
+const pendingTaskCount = computed<number>(() => Number(metrics.value?.pending_task_count ?? 0))
+const pendingOldestText = computed<string>(
+  () => formatDeltaShort(metrics.value?.pending_oldest_scheduled_ts ?? '', chainNowMs.value) || ''
+)
+const pendingFees = computed(
+  () => (metrics.value?.pending_total_gas_fees ?? []) as Array<{ denom: string; amount: string }>
+)
+const pendingGasRequested = computed<number>(() =>
+  Number(metrics.value?.pending_gas_requested ?? 0)
+)
+
+interface MetricsView {
+  executed_total_gas: string
+  executed_total_fees: Array<{ denom: string; amount: string }>
+  executed_task_count: string
+  pending_task_count: string
+  pending_gas_requested: string
+  pending_oldest_scheduled_ts: string
+  pending_total_gas_fees: Array<{ denom: string; amount: string }>
+  mode: string
 }
 
 function formatDeltaShort(a: unknown, b: unknown): string {
@@ -140,70 +221,62 @@ function isSelectedId(id: unknown): boolean {
   return selectedIds.value.has(String(id ?? ''))
 }
 
-const scheduledList = computed(() =>
-  (
-    repo
-      .query()
-      .where(
-        'status',
-        (s: string) =>
-          String(s || '')
-            .trim()
-            .toUpperCase() === 'SCHEDULED'
-      )
-      .get() as Array<any>
-  )
-    .slice()
-    .sort((a, b) => {
-      return a.scheduled_timestamp - b.scheduled_timestamp
-    })
-    .slice(0, LIST_LIMIT)
-)
+const lists = reactive<{ scheduled: Array<any>; pending: Array<any>; done: Array<any> }>({
+  scheduled: [],
+  pending: [],
+  done: [],
+})
 
-const pendingList = computed(() =>
-  (
-    repo
-      .query()
-      .where(
-        'status',
-        (s: string) =>
-          String(s || '')
-            .trim()
-            .toUpperCase() === 'PENDING'
-      )
-      .get() as Array<any>
-  )
-    .slice()
-    .sort((a, b) => {
-      const limA = Number(a?.task_gas_limit || '0')
-      const limB = Number(b?.task_gas_limit || '0')
-      const feeA = Number(a?.task_gas_fee?.amount || '0')
-      const feeB = Number(b?.task_gas_fee?.amount || '0')
-      const pa = limA > 0 ? feeA / limA : -Infinity
-      const pb = limB > 0 ? feeB / limB : -Infinity
-      return pb - pa
-    })
-    .slice(0, LIST_LIMIT)
-)
-
-const doneList = computed(() =>
-  (
+const allTasks = computed<Array<any>>(
+  () =>
     repo
       .query()
       .where('status', (s: string) =>
-        ['DONE', 'FAILED', 'EXPIRED'].includes(
+        ['SCHEDULED', 'PENDING', 'DONE', 'FAILED', 'EXPIRED'].includes(
           String(s || '')
             .trim()
             .toUpperCase()
         )
       )
       .get() as Array<any>
-  )
-    .slice()
-    .sort(
-      (a, b) => Number(b?.execution_block_height || '0') - Number(a?.execution_block_height || '0')
-    )
-    .slice(0, LIST_LIMIT)
+)
+
+watch(
+  allTasks,
+  (rows) => {
+    const scheduled = rows
+      .filter((t) => String(t?.status || '').toUpperCase() === 'SCHEDULED')
+      .slice()
+      .sort((a, b) => Number(a?.scheduled_timestamp || 0) - Number(b?.scheduled_timestamp || 0))
+      .slice(0, LIST_LIMIT)
+
+    const pending = rows
+      .filter((t) => String(t?.status || '').toUpperCase() === 'PENDING')
+      .slice()
+      .sort((a, b) => {
+        const limA = Number(a?.task_gas_limit || 0)
+        const limB = Number(b?.task_gas_limit || 0)
+        const feeA = Number(a?.task_gas_fee?.amount || 0)
+        const feeB = Number(b?.task_gas_fee?.amount || 0)
+        const pa = limA > 0 ? feeA / limA : -Infinity
+        const pb = limB > 0 ? feeB / limB : -Infinity
+        return pb - pa
+      })
+      .slice(0, LIST_LIMIT)
+
+    const done = rows
+      .filter((t) => ['DONE', 'FAILED', 'EXPIRED'].includes(String(t?.status || '').toUpperCase()))
+      .slice()
+      .sort(
+        (a, b) => Number(b?.execution_block_height || 0) - Number(a?.execution_block_height || 0)
+      )
+      .slice(0, LIST_LIMIT)
+
+    lists.scheduled = scheduled
+    lists.pending = pending
+    lists.done = done
+  },
+  { immediate: true }
 )
 
 // Loader: fetch each segment from dedicated endpoints (limit 50)
@@ -234,6 +307,7 @@ async function loadAll() {
       api.fetchByStatusTimestampInit({ status: 'FAILED', limit: String(LIST_LIMIT) }),
       api.fetchByStatusTimestampInit({ status: 'EXPIRED', limit: String(LIST_LIMIT) }),
     ])
+    scheduleMetricsRefresh()
   } catch (e: any) {
     state.error = e?.message || String(e)
   } finally {
@@ -244,7 +318,18 @@ async function loadAll() {
 
 let unsubscribe: (() => void) | null = null
 let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleMetricsRefresh() {
+  if (pendingRefreshTimer) return
+  pendingRefreshTimer = setTimeout(() => {
+    pendingRefreshTimer = null
+    metricsApi
+      .fetch()
+      .catch((e: unknown) => console.error('[TaskManager] metrics refresh error', e))
+  }, 250)
+}
 onMounted(() => {
+  // best-effort prime metrics
+  metricsApi.fetch().catch((e: unknown) => console.error('[TaskManager] metrics fetch error', e))
   unsubscribe = subscribeAllCrontaskEvents((name, d) => {
     const id = unwrap((d as { task_id?: unknown })?.task_id)
     if (!id) return
@@ -257,11 +342,13 @@ onMounted(() => {
       } catch (e) {
         console.error('[TaskManager] delete error', e)
       }
+      scheduleMetricsRefresh()
       return
     }
     api.fetchByID(id).catch((e: unknown) => {
       console.error('[TaskManager] refresh error', e)
     })
+    scheduleMetricsRefresh()
   })
 })
 onUnmounted(() => {
@@ -283,24 +370,33 @@ const groupEl = ref<any>(null)
 const groupHeightPx = ref(0)
 const groupRaf = ref(0)
 function updateGroupHeight() {
-  if (!groupEl.value) return
-  const rect = groupEl.value.getBoundingClientRect()
+  const w = globalThis.window as any
+  if (!w) return
+  const el = groupEl.value as any
+  if (!el) return
+  const rect = el.getBoundingClientRect()
   const bottomGapPx = 16
-  const desired = Math.max(200, Math.floor(window.innerHeight - rect.top - bottomGapPx))
+  const desired = Math.max(200, Math.floor(w.innerHeight - rect.top - bottomGapPx))
   if (Math.abs(desired - groupHeightPx.value) < 2) return
-  if (groupRaf.value) window.cancelAnimationFrame(groupRaf.value)
-  groupRaf.value = window.requestAnimationFrame(() => {
+  const raf = groupRaf.value
+  if (raf) w.cancelAnimationFrame(raf)
+  groupRaf.value = w.requestAnimationFrame(() => {
     groupHeightPx.value = desired
     groupRaf.value = 0
   })
 }
 onMounted(() => {
+  const w = globalThis.window as any
+  if (!w) return
   updateGroupHeight()
-  window.addEventListener('resize', updateGroupHeight)
+  w.addEventListener('resize', updateGroupHeight)
 })
 onUnmounted(() => {
-  if (groupRaf.value) window.cancelAnimationFrame(groupRaf.value)
-  window.removeEventListener('resize', updateGroupHeight)
+  const w = globalThis.window as any
+  if (!w) return
+  const raf = groupRaf.value
+  if (raf) w.cancelAnimationFrame(raf)
+  w.removeEventListener('resize', updateGroupHeight)
 })
 </script>
 
@@ -310,6 +406,127 @@ onUnmounted(() => {
       <h2 class="text-xl font-semibold">Crontasks</h2>
       <div class="flex items-center gap-2">
         <Button :disabled="isLoadingAll" class="h-9" @click="loadAll">Reload</Button>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-xl border bg-card text-card-foreground shadow">
+        <div class="gap-y-1.5 p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+          <h3 class="tracking-tight text-sm font-medium">Pending Tasks</h3>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            class="h-4 w-4 text-muted-foreground"
+          >
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div class="p-6 pt-0">
+          <div class="text-2xl font-bold">{{ pendingTaskCount }}</div>
+          <p class="text-xs text-muted-foreground">oldest: {{ pendingOldestText }}</p>
+        </div>
+      </div>
+      <div class="rounded-xl border bg-card text-card-foreground shadow">
+        <div class="gap-y-1.5 p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+          <h3 class="tracking-tight text-sm font-medium">udys/gas requested</h3>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            class="h-4 w-4 text-muted-foreground"
+          >
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+          </svg>
+        </div>
+        <div class="p-6 pt-0">
+          <div class="text-2xl font-bold">
+            {{ lastPendingUdysPerGas != null ? lastPendingUdysPerGas.toFixed(8) : '0' }}
+          </div>
+          <p class="text-xs text-muted-foreground">
+            <template
+              v-if="lastPendingFees.length || (Array.isArray(pendingFees) && pendingFees.length)"
+            >
+              <template
+                v-for="(c, i) in lastPendingFees.length ? lastPendingFees : pendingFees"
+                :key="i"
+              >
+                <span class="font-mono mr-1">{{ c.amount }}{{ c.denom }}</span>
+              </template>
+              <span class="font-mono">/ {{ pendingGasRequested }} (gas)</span>
+            </template>
+            <span v-else>—</span>
+          </p>
+        </div>
+      </div>
+      <div class="rounded-xl border bg-card text-card-foreground shadow">
+        <div class="gap-y-1.5 p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+          <h3 class="tracking-tight text-sm font-medium">Executed Tasks</h3>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            class="h-4 w-4 text-muted-foreground"
+          >
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="p-6 pt-0">
+          <div class="text-2xl font-bold">{{ executedTaskCount }}</div>
+          <p class="text-xs text-muted-foreground">Total executed</p>
+        </div>
+      </div>
+      <div class="rounded-xl border bg-card text-card-foreground shadow">
+        <div class="gap-y-1.5 p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+          <h3 class="tracking-tight text-sm font-medium">udys/gas executed</h3>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            class="h-4 w-4 text-muted-foreground"
+          >
+            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+            <path d="M2 10h20"></path>
+          </svg>
+        </div>
+        <div class="p-6 pt-0">
+          <div class="text-2xl font-bold">
+            {{ lastExecutedUdysPerGas != null ? lastExecutedUdysPerGas.toFixed(8) : '0' }}
+          </div>
+          <p class="text-xs text-muted-foreground">
+            <template
+              v-if="lastExecutedFees.length || (Array.isArray(executedFees) && executedFees.length)"
+            >
+              <template
+                v-for="(c, i) in lastExecutedFees.length ? lastExecutedFees : executedFees"
+                :key="i"
+              >
+                <span class="font-mono mr-1">{{ c.amount }}{{ c.denom }}</span>
+              </template>
+              <span class="font-mono">/ {{ executedGasUsed }} (gas)</span>
+            </template>
+            <span v-else>—</span>
+          </p>
+        </div>
       </div>
     </div>
 
@@ -341,7 +558,7 @@ onUnmounted(() => {
               </TableHeader>
               <TableBody>
                 <TableRow
-                  v-for="t in scheduledList"
+                  v-for="t in lists.scheduled"
                   :key="t.task_id"
                   :style="isSelectedId(t.task_id) ? selectedRowStyle : {}"
                   @click="selectTask(t.task_id)"
@@ -366,7 +583,7 @@ onUnmounted(() => {
                     formatDeltaShort(chainNowMs, t.scheduled_timestamp)
                   }}</TableCell>
                 </TableRow>
-                <TableRow v-if="!state.loading && scheduledList.length === 0">
+                <TableRow v-if="!state.loading && lists.scheduled.length === 0">
                   <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
                 </TableRow>
               </TableBody>
@@ -394,7 +611,7 @@ onUnmounted(() => {
               </TableHeader>
               <TableBody>
                 <TableRow
-                  v-for="t in pendingList"
+                  v-for="t in lists.pending"
                   :key="t.task_id"
                   :style="
                     isSelectedId(t.task_id)
@@ -425,7 +642,7 @@ onUnmounted(() => {
                     formatDeltaShort(t.scheduled_timestamp, t.expiry_timestamp)
                   }}</TableCell>
                 </TableRow>
-                <TableRow v-if="!state.loading && pendingList.length === 0">
+                <TableRow v-if="!state.loading && lists.pending.length === 0">
                   <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
                 </TableRow>
               </TableBody>
@@ -453,7 +670,7 @@ onUnmounted(() => {
               </TableHeader>
               <TableBody>
                 <TableRow
-                  v-for="t in doneList"
+                  v-for="t in lists.done"
                   :key="t.task_id"
                   :style="
                     isSelectedId(t.task_id)
@@ -482,7 +699,7 @@ onUnmounted(() => {
                     formatDeltaShort(t.scheduled_timestamp, t.execution_timestamp)
                   }}</TableCell>
                 </TableRow>
-                <TableRow v-if="!state.loading && doneList.length === 0">
+                <TableRow v-if="!state.loading && lists.done.length === 0">
                   <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
                 </TableRow>
               </TableBody>

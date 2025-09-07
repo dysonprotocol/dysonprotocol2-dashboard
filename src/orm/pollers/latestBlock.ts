@@ -253,7 +253,7 @@ export function startLatestBlockPoller() {
                       const evtType = String(ev?.type || '').trim()
                       const attrs = Array.isArray(ev?.attributes) ? ev.attributes : []
                       if (!evtType || attrs.length === 0) continue
-                      const detail: Record<string, unknown> = { orignalBlock: msg }
+                      const detail: Record<string, unknown> = {}
                       for (const a of attrs) {
                         const k = String((a?.key as string | undefined) || '').trim()
                         if (!k) continue
