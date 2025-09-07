@@ -39,7 +39,7 @@ export function formatGasPrice(task: {
   const pretty = Number.isFinite(price)
     ? price.toLocaleString(undefined, { maximumFractionDigits: 8 })
     : '0'
-  return `${pretty} ${norm.base.denom}/gas`
+  return `${pretty}`
 }
 
 function toMs(value: string): number | null {

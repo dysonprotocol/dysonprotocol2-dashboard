@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { subscribeAllCrontaskEvents, unwrap } from '@/orm/subscriptions/crontaskEvents'
 import LatestBlock from '@/orm/models/base/TendermintService'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 
 const api = useAxiosRepo(CrontaskTask).api()
 const repo = useRepo(CrontaskTask)
@@ -67,9 +68,10 @@ function formatDeltaShort(a: unknown, b: unknown): string {
   const am = toMsLocal(String(a ?? ''))
   const bm = toMsLocal(String(b ?? ''))
   if (am == null || bm == null) return ''
-  let diff = Math.abs(bm - am)
+  let diff = bm - am
   if (!Number.isFinite(diff)) return ''
   if (diff === 0) return '0s'
+  if (diff < 0) return 'now'
 
   const SEC = 1000
   const MIN = 60 * SEC
@@ -118,6 +120,33 @@ function bgDone(scheduled: unknown, executed: unknown): Record<string, string> {
   const ratio = Math.min(1, Math.max(0, delay / DAY_MS))
   const a = (ratio * 0.25).toFixed(3)
   return { backgroundColor: `rgba(255, 255, 0, ${a})` }
+}
+
+function udysPerHourText(task: any): string {
+  const sm = toMsLocal(String(task?.scheduled_timestamp ?? ''))
+  const em = toMsLocal(String(task?.execution_timestamp ?? ''))
+  if (task?.status !== 'DONE') return ''
+  if (sm == null || em == null) return ''
+  const delayHours = (em - sm) / (1000 * 60 * 60)
+  if (delayHours < 0) return ''
+  if (delayHours === 0) return `${Number(task?.task_gas_price?.amount ?? 0).toFixed(8)}`
+  const price = Number(task?.task_gas_price?.amount ?? 0)
+  const valuePerHour = price / delayHours
+  return `${valuePerHour.toFixed(8)}`
+}
+
+// selection shared across sections (multi-select)
+const selectedIds = ref<Set<string>>(new Set())
+const selectedRowStyle = { backgroundColor: 'rgba(59, 130, 246, 0.18)' }
+function selectTask(id: unknown) {
+  const key = String(id ?? '')
+  const next = new Set(selectedIds.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  selectedIds.value = next
+}
+function isSelectedId(id: unknown): boolean {
+  return selectedIds.value.has(String(id ?? ''))
 }
 
 const scheduledList = computed(() =>
@@ -257,6 +286,31 @@ onUnmounted(() => {
 
 // initial load
 loadAll()
+
+// viewport-fit height for resizable group
+const groupEl = ref<any>(null)
+const groupHeightPx = ref(0)
+const groupRaf = ref(0)
+function updateGroupHeight() {
+  if (!groupEl.value) return
+  const rect = groupEl.value.getBoundingClientRect()
+  const bottomGapPx = 16
+  const desired = Math.max(200, Math.floor(window.innerHeight - rect.top - bottomGapPx))
+  if (Math.abs(desired - groupHeightPx.value) < 2) return
+  if (groupRaf.value) window.cancelAnimationFrame(groupRaf.value)
+  groupRaf.value = window.requestAnimationFrame(() => {
+    groupHeightPx.value = desired
+    groupRaf.value = 0
+  })
+}
+onMounted(() => {
+  updateGroupHeight()
+  window.addEventListener('resize', updateGroupHeight)
+})
+onUnmounted(() => {
+  if (groupRaf.value) window.cancelAnimationFrame(groupRaf.value)
+  window.removeEventListener('resize', updateGroupHeight)
+})
 </script>
 
 <template>
@@ -273,139 +327,177 @@ loadAll()
       <span v-else-if="state.loading">Loading…</span>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <!-- Scheduled -->
-      <div class="overflow-x-auto border rounded">
-        <div class="px-3 py-2 text-sm font-medium">Scheduled (by timestamp) ({{ LIST_LIMIT }})</div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>id</TableHead>
-              <TableHead>created </TableHead>
-              <TableHead>gas_price</TableHead>
-              <TableHead>scheduled</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="t in scheduledList" :key="t.task_id">
-              <TableCell class="font-mono">
-                <RouterLink
-                  class="underline"
-                  :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
-                  >{{ t.task_id }}</RouterLink
+    <div ref="groupEl" class="min-h-0" :style="{ height: groupHeightPx + 'px' }">
+      <ResizablePanelGroup
+        direction="horizontal"
+        class="gap-3 h-full"
+        :auto-save-id="`task-manager:columns`"
+      >
+        <!-- Scheduled -->
+        <ResizablePanel :default-size="33" :min-size="20" :max-size="80">
+          <div class="h-full overflow-x-auto overflow-y-auto border rounded">
+            <div class="px-3 py-2 text-sm font-medium">
+              Scheduled (by timestamp) ({{ LIST_LIMIT }})
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>id</TableHead>
+                  <TableHead>created </TableHead>
+                  <TableHead>gas_price</TableHead>
+                  <TableHead>scheduled</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow
+                  v-for="t in scheduledList"
+                  :key="t.task_id"
+                  :style="isSelectedId(t.task_id) ? selectedRowStyle : {}"
+                  @click="selectTask(t.task_id)"
                 >
-              </TableCell>
+                  <TableCell class="font-mono">
+                    <RouterLink
+                      class="underline"
+                      :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
+                      >{{ t.task_id }}</RouterLink
+                    >
+                  </TableCell>
 
-              <TableCell class="font-mono"
-                ><RouterLink
-                  class="underline"
-                  :to="{ name: 'BlockDetail', params: { height: t.creation_block_height } }"
-                  >{{ t.creation_block_height }}</RouterLink
-                ></TableCell
-              >
-              <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
-              <TableCell class="font-mono">{{
-                formatDeltaShort(t.scheduled_timestamp, chainNowMs)
-              }}</TableCell>
-            </TableRow>
-            <TableRow v-if="!state.loading && scheduledList.length === 0">
-              <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+                  <TableCell class="font-mono"
+                    ><RouterLink
+                      class="underline"
+                      :to="{ name: 'BlockDetail', params: { height: t.creation_block_height } }"
+                      >{{ t.creation_block_height }}</RouterLink
+                    ></TableCell
+                  >
+                  <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
+                  <TableCell class="font-mono">{{
+                    formatDeltaShort(chainNowMs, t.scheduled_timestamp)
+                  }}</TableCell>
+                </TableRow>
+                <TableRow v-if="!state.loading && scheduledList.length === 0">
+                  <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </ResizablePanel>
 
-      <!-- Pending -->
-      <div class="overflow-x-auto border rounded">
-        <div class="px-3 py-2 text-sm font-medium">Pending (by gas price) ({{ LIST_LIMIT }})</div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>id</TableHead>
-              <TableHead>created</TableHead>
-              <TableHead>gas_price</TableHead>
-              <TableHead>priority</TableHead>
-              <TableHead>waiting</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow
-              v-for="(t, i) in pendingList"
-              :key="t.task_id"
-              :style="bgPending(t.scheduled_timestamp, chainNowMs)"
-            >
-              <TableCell class="font-mono">
-                <RouterLink
-                  class="underline"
-                  :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
-                  >{{ t.task_id }}</RouterLink
+        <ResizableHandle with-handle class="hover:bg-green-500" />
+
+        <!-- Pending -->
+        <ResizablePanel :default-size="33" :min-size="20" :max-size="80">
+          <div class="h-full overflow-x-auto overflow-y-auto border rounded">
+            <div class="px-3 py-2 text-sm font-medium">
+              Pending (by gas price) ({{ LIST_LIMIT }})
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>id</TableHead>
+                  <TableHead>created</TableHead>
+                  <TableHead>udys/gas</TableHead>
+
+                  <TableHead>waiting</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow
+                  v-for="t in pendingList"
+                  :key="t.task_id"
+                  :style="
+                    isSelectedId(t.task_id)
+                      ? selectedRowStyle
+                      : bgPending(t.scheduled_timestamp, chainNowMs)
+                  "
+                  @click="selectTask(t.task_id)"
                 >
-              </TableCell>
-              <TableCell class="font-mono"
-                ><RouterLink
-                  class="underline"
-                  :to="{ name: 'BlockDetail', params: { height: t.creation_block_height } }"
-                  >{{ t.creation_block_height }}</RouterLink
-                ></TableCell
-              >
-              <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
-              <TableCell class="font-mono">{{ i }}</TableCell>
-              <TableCell class="font-mono">{{
-                formatDeltaShort(t.scheduled_timestamp, chainNowMs)
-              }}</TableCell>
-            </TableRow>
-            <TableRow v-if="!state.loading && pendingList.length === 0">
-              <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+                  <TableCell class="font-mono">
+                    <RouterLink
+                      class="underline"
+                      :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
+                      >{{ t.task_id }}</RouterLink
+                    >
+                  </TableCell>
+                  <TableCell class="font-mono"
+                    ><RouterLink
+                      class="underline"
+                      :to="{ name: 'BlockDetail', params: { height: t.creation_block_height } }"
+                      >{{ t.creation_block_height }}</RouterLink
+                    ></TableCell
+                  >
+                  <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
+                  <TableCell class="font-mono">{{
+                    formatDeltaShort(t.scheduled_timestamp, chainNowMs)
+                  }}</TableCell>
+                </TableRow>
+                <TableRow v-if="!state.loading && pendingList.length === 0">
+                  <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </ResizablePanel>
 
-      <!-- Done -->
-      <div class="overflow-x-auto border rounded">
-        <div class="px-3 py-2 text-sm font-medium">Done (by block height) ({{ LIST_LIMIT }})</div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>id</TableHead>
-              <TableHead>executed</TableHead>
-              <TableHead>gas_price</TableHead>
-              <TableHead>status</TableHead>
-              <TableHead>delay</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow
-              v-for="t in doneList"
-              :key="t.task_id"
-              :style="bgDone(t.scheduled_timestamp, t.execution_timestamp)"
-            >
-              <TableCell class="font-mono">
-                <RouterLink
-                  class="underline"
-                  :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
-                  >{{ t.task_id }}</RouterLink
+        <ResizableHandle with-handle class="hover:bg-green-500" />
+
+        <!-- Done -->
+        <ResizablePanel :default-size="34" :min-size="20" :max-size="80">
+          <div class="h-full overflow-x-auto overflow-y-auto border rounded">
+            <div class="px-3 py-2 text-sm font-medium">
+              Done (by block height) ({{ LIST_LIMIT }})
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>id</TableHead>
+                  <TableHead>done</TableHead>
+                  <TableHead>gas_price</TableHead>
+                  <TableHead>status</TableHead>
+                  <TableHead>delay</TableHead>
+                  <TableHead>gas_price/sec</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow
+                  v-for="t in doneList"
+                  :key="t.task_id"
+                  :style="
+                    isSelectedId(t.task_id)
+                      ? selectedRowStyle
+                      : bgDone(t.scheduled_timestamp, t.execution_timestamp)
+                  "
+                  @click="selectTask(t.task_id)"
                 >
-              </TableCell>
-              <TableCell class="font-mono"
-                ><RouterLink
-                  class="underline"
-                  :to="{ name: 'BlockDetail', params: { height: t.execution_block_height } }"
-                  >{{ t.execution_block_height }}</RouterLink
-                ></TableCell
-              >
-              <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
-              <TableCell class="font-mono">{{ t.status }}</TableCell>
-              <TableCell class="font-mono">{{
-                formatDeltaShort(t.scheduled_timestamp, t.execution_timestamp)
-              }}</TableCell>
-            </TableRow>
-            <TableRow v-if="!state.loading && doneList.length === 0">
-              <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+                  <TableCell class="font-mono">
+                    <RouterLink
+                      class="underline"
+                      :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }"
+                      >{{ t.task_id }}</RouterLink
+                    >
+                  </TableCell>
+                  <TableCell class="font-mono"
+                    ><RouterLink
+                      class="underline"
+                      :to="{ name: 'BlockDetail', params: { height: t.execution_block_height } }"
+                      >{{ t.execution_block_height }}</RouterLink
+                    ></TableCell
+                  >
+                  <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
+                  <TableCell class="font-mono">{{ t.status }}</TableCell>
+                  <TableCell class="font-mono">{{
+                    formatDeltaShort(t.scheduled_timestamp, t.execution_timestamp)
+                  }}</TableCell>
+                  <TableCell class="font-mono">{{ udysPerHourText(t) }}</TableCell>
+                </TableRow>
+                <TableRow v-if="!state.loading && doneList.length === 0">
+                  <TableCell colspan="9" class="text-center opacity-70">No tasks</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   </div>
 </template>
