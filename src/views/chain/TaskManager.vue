@@ -4,7 +4,6 @@ import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import CrontaskTask from '@/orm/models/crontask/Task'
 import { formatGasPrice } from '@/utils/format'
-import { formatShortDelta } from '@/utils/format'
 
 import {
   Table,
@@ -64,19 +63,11 @@ function toMsLocal(value: string): number | null {
   return d.getTime()
 }
 
-function formatSignedShortDelta(value: string, now: number): string {
-  if (!Number.isFinite(now)) return ''
-  const target = toMsLocal(value)
-  if (target == null) return ''
-  if (target >= now) return formatShortDelta(value, now)
-  return '-' + formatShortDelta(String(now), target)
-}
-
-function formatDeltaBetween(a: string, b: string): string {
-  const am = toMsLocal(a)
-  const bm = toMsLocal(b)
+function formatDeltaShort(a: unknown, b: unknown): string {
+  const am = toMsLocal(String(a ?? ''))
+  const bm = toMsLocal(String(b ?? ''))
   if (am == null || bm == null) return ''
-  let diff = Math.abs(bm - am) + 1000
+  let diff = Math.abs(bm - am)
   if (!Number.isFinite(diff)) return ''
   if (diff === 0) return '0s'
 
@@ -107,16 +98,26 @@ function formatDeltaBetween(a: string, b: string): string {
   return parts.slice(0, 2).join(' ')
 }
 
-function hueFromScheduled(value: unknown): number {
-  const ms = toMsLocal(String(value ?? ''))
-  if (ms == null) return 0
-  const bucket = Math.floor(ms / (60 * 1000)) // per-minute bucket for stability
-  return bucket % 360
+const DAY_MS = 24 * 60 * 60 * 1000
+
+function bgPending(scheduled: unknown, now: number): Record<string, string> {
+  if (!Number.isFinite(now)) return {}
+  const ms = toMsLocal(String(scheduled ?? ''))
+  if (ms == null) return {}
+  const waiting = Math.max(0, now - ms)
+  const ratio = Math.min(1, Math.max(0, waiting / DAY_MS))
+  const a = (ratio * 0.25).toFixed(3)
+  return { backgroundColor: `rgba(255, 255, 0, ${a})` }
 }
 
-function rowBg(value: unknown): Record<string, string> {
-  const h = hueFromScheduled(value)
-  return { backgroundColor: `hsla(${h}, 80%, 50%, 0.06)` }
+function bgDone(scheduled: unknown, executed: unknown): Record<string, string> {
+  const sm = toMsLocal(String(scheduled ?? ''))
+  const em = toMsLocal(String(executed ?? ''))
+  if (sm == null || em == null) return {}
+  const delay = Math.abs(em - sm)
+  const ratio = Math.min(1, Math.max(0, delay / DAY_MS))
+  const a = (ratio * 0.25).toFixed(3)
+  return { backgroundColor: `rgba(255, 255, 0, ${a})` }
 }
 
 const scheduledList = computed(() =>
@@ -286,7 +287,7 @@ loadAll()
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="t in scheduledList" :key="t.task_id" :style="rowBg(t.task_id)">
+            <TableRow v-for="t in scheduledList" :key="t.task_id">
               <TableCell class="font-mono">
                 <RouterLink
                   class="underline"
@@ -304,7 +305,7 @@ loadAll()
               >
               <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
               <TableCell class="font-mono">{{
-                formatShortDelta(t.scheduled_timestamp, chainNowMs)
+                formatDeltaShort(t.scheduled_timestamp, chainNowMs)
               }}</TableCell>
             </TableRow>
             <TableRow v-if="!state.loading && scheduledList.length === 0">
@@ -328,7 +329,11 @@ loadAll()
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="(t, i) in pendingList" :key="t.task_id" :style="rowBg(t.task_id)">
+            <TableRow
+              v-for="(t, i) in pendingList"
+              :key="t.task_id"
+              :style="bgPending(t.scheduled_timestamp, chainNowMs)"
+            >
               <TableCell class="font-mono">
                 <RouterLink
                   class="underline"
@@ -346,7 +351,7 @@ loadAll()
               <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
               <TableCell class="font-mono">{{ i }}</TableCell>
               <TableCell class="font-mono">{{
-                formatSignedShortDelta(t.scheduled_timestamp, chainNowMs)
+                formatDeltaShort(t.scheduled_timestamp, chainNowMs)
               }}</TableCell>
             </TableRow>
             <TableRow v-if="!state.loading && pendingList.length === 0">
@@ -370,7 +375,11 @@ loadAll()
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="t in doneList" :key="t.task_id" :style="rowBg(t.task_id)">
+            <TableRow
+              v-for="t in doneList"
+              :key="t.task_id"
+              :style="bgDone(t.scheduled_timestamp, t.execution_timestamp)"
+            >
               <TableCell class="font-mono">
                 <RouterLink
                   class="underline"
@@ -388,7 +397,7 @@ loadAll()
               <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
               <TableCell class="font-mono">{{ t.status }}</TableCell>
               <TableCell class="font-mono">{{
-                formatDeltaBetween(t.scheduled_timestamp, t.execution_timestamp)
+                formatDeltaShort(t.scheduled_timestamp, t.execution_timestamp)
               }}</TableCell>
             </TableRow>
             <TableRow v-if="!state.loading && doneList.length === 0">
