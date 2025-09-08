@@ -536,36 +536,41 @@ onMounted(async () => {
     <div v-if="error" class="text-sm text-red-600">{{ error }}</div>
 
     <div class="border rounded">
-      <div v-if="proposals.length === 0" class="p-3 text-sm opacity-70">No proposals found.</div>
-      <div
-        v-for="p in proposals"
-        :key="p.id"
-        class="p-3 flex items-center justify-between hover:bg-base-200/50"
-      >
-        <div class="min-w-0">
-          <RouterLink
-            :to="{ name: 'GovernanceProposal', params: { proposalId: p.id } }"
-            class="font-medium"
-          >
-            #{{ p.id }} — {{ p.title || 'Untitled' }}
-          </RouterLink>
-          <div class="text-xs opacity-70 truncate" v-if="p.summary">{{ p.summary }}</div>
-          <div class="">
-            <Badge
-              v-for="w in unlockedWallets"
-              :key="w.address"
-              :variant="voteBadgeVariant(p.id, w.address)"
-              :title="w.address"
-              class="text-xs"
+      <div v-if="isLoading" class="p-3 text-sm opacity-70">Loading…</div>
+      <div v-else-if="proposals.length === 0" class="p-3 text-sm opacity-70">
+        No proposals found.
+      </div>
+      <template v-else>
+        <div
+          v-for="p in proposals"
+          :key="p.id"
+          class="p-3 flex items-center justify-between hover:bg-base-200/50"
+        >
+          <div class="min-w-0">
+            <RouterLink
+              :to="{ name: 'GovernanceProposal', params: { proposalId: p.id } }"
+              class="font-medium"
             >
-              {{ voteBadgeLabel(p.id, w.address) }}
-            </Badge>
+              #{{ p.id }} — {{ p.title || 'Untitled' }}
+            </RouterLink>
+            <div class="text-xs opacity-70 truncate" v-if="p.summary">{{ p.summary }}</div>
+            <div class="">
+              <Badge
+                v-for="w in unlockedWallets"
+                :key="w.address"
+                :variant="voteBadgeVariant(p.id, w.address)"
+                :title="w.address"
+                class="text-xs"
+              >
+                {{ voteBadgeLabel(p.id, w.address) }}
+              </Badge>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <Badge variant="outline" class="text-xs">{{ p.status }}</Badge>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <Badge variant="outline" class="text-xs">{{ p.status }}</Badge>
-        </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>

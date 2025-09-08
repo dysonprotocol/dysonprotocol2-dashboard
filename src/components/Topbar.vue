@@ -14,6 +14,11 @@
         <span class="iconify lucide--panel-left size-5" />
       </label>
     </div>
+    <div class="flex min-h-16 items-center justify-between gap-3 ps-5 pe-4">
+      <img :src="dysLogoInverted" alt="Dyson logo" class="h-6 w-auto block dark:hidden" />
+      <img :src="dysLogo" alt="Dyson logo inverted" class="h-6 w-auto hidden dark:block" />
+      <a href="/" class="font-semibold">Dyson Protocol 2</a>
+    </div>
     <div class="inline-flex items-center gap-1">
       <Button variant="outline" size="icon" aria-label="Toggle theme" @click="cycleTheme">
         <span class="iconify size-4.5" :class="icon" />
@@ -26,6 +31,8 @@
 import { computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useColorMode } from '@vueuse/core'
 import { Button } from '@/components/ui/button'
+import dysLogo from '@/assets/images/dys.svg'
+import dysLogoInverted from '@/assets/images/dys-inverted.svg'
 
 defineOptions({ name: 'AppTopbar' })
 

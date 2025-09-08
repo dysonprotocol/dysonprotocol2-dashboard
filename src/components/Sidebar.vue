@@ -4,9 +4,6 @@
     id="layout-sidebar"
     class="sidebar-menu sidebar-menu-activation transition-[margin,top,max-height,border-radius] duration-300 ease-in-out motion-reduce:transition-none bg-background/95"
   >
-    <div class="flex min-h-16 items-center justify-between gap-3 ps-5 pe-4">
-      <a href="/" class="font-semibold">Dyson Protocol 2</a>
-    </div>
     <div class="relative min-h-0 grow">
       <div data-simplebar class="size-full overflow-y-auto">
         <div class="mt-4 px-2.5 pb-4 space-y-2">
