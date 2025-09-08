@@ -63,9 +63,13 @@
                   </div>
                 </div>
                 <div class="mt-2 text-xs opacity-80">
-                  <div>gas limit: {{ result.txGasWanted }}</div>
-                  <div>gas used: {{ result.txGasUsed }}</div>
-                  <div>efficiency: {{ formatPercent(result.txGasUsed, result.txGasWanted) }}</div>
+                  <template v-if="result.simulate">
+                    <div>gas used: {{ result.txGasUsed }}</div>
+                  </template>
+                  <template v-else>
+                    <div>gas limit: {{ result.txGasWanted }}</div>
+                    <div>efficiency: {{ formatPercent(result.txGasUsed, result.txGasWanted) }}</div>
+                  </template>
                 </div>
                 <div
                   v-if="!result.simulate && result.txHash"
@@ -87,16 +91,12 @@
               <div class="flex items-center gap-2">
                 <Button
                   variant="secondary"
-                  :disabled="
-                    isSimulating || !extraCode.trim() || hasUnsavedChanges || !!validationError
-                  "
+                  :disabled="isSimulating || hasUnsavedChanges || !!validationError"
                   @click="simulate"
                   >{{ isSimulating ? 'Simulating...' : 'Simulate' }}</Button
                 >
                 <Button
-                  :disabled="
-                    isExecuting || !extraCode.trim() || hasUnsavedChanges || !!validationError
-                  "
+                  :disabled="isExecuting || hasUnsavedChanges || !!validationError"
                   @click="execute"
                   >{{ isExecuting ? 'Sending...' : 'Tx' }}</Button
                 >
@@ -197,9 +197,11 @@ const monacoRef = ref<any>(null)
 const { isDark } = useAppColorMode()
 const editorTheme = computed(() => (isDark.value ? 'vs-dark' : 'vs'))
 
+const externalLineOffset = ref<number | null>(null)
 const scriptLineCount = computed(() => {
+  if (externalLineOffset.value != null) return externalLineOffset.value
   const content = props.currentScriptContent || ''
-  if (!content) return 0
+  if (!content) return 1
   return content.split('\n').length
 })
 
@@ -259,7 +261,6 @@ function formatPercent(used: any, wanted: any) {
 }
 
 async function call(simulate: boolean) {
-  if (!extraCode.value.trim()) return
   result.value = null
   errorText.value = ''
   errorContext.value = null
@@ -434,6 +435,14 @@ async function refreshSpendables(addr: string) {
 
 onMounted(() => {
   if (props.address) void refreshSpendables(props.address)
+  const handler = (e: any) => {
+    const d = e?.detail
+    if (!d || d.address !== props.address) return
+    // If editor reports 0 lines (empty), start extra code on line 2 => offset=1
+    externalLineOffset.value = Math.max(1, Number(d.lineCount || 0))
+  }
+  window.addEventListener('dyson:script-content-changed', handler)
+  ;(onUnmounted as any)(() => window.removeEventListener('dyson:script-content-changed', handler))
 })
 
 watch(isOpen, async () => {

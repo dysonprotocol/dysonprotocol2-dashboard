@@ -213,6 +213,20 @@ function onEditorSelectedGrant(g) {
   editorSelectedGrant.value = g || null
 }
 
+function dispatchScriptContentChanged() {
+  try {
+    const content = String(currentContent.value || '')
+    const lineCount = content ? content.split('\n').length : 0
+    window.dispatchEvent(
+      new CustomEvent('dyson:script-content-changed', {
+        detail: { address: props.address, lineCount },
+      })
+    )
+  } catch (e) {
+    // noop: do not block editor on dispatch errors
+  }
+}
+
 function restore() {
   const saved = props.script?.code ?? ''
   updateEditorContent(saved)
@@ -243,9 +257,11 @@ async function initEditor() {
     currentContent.value = editor.getValue()
     clearSuccessMessage()
     emit('content-changed', currentContent.value)
+    dispatchScriptContentChanged()
     if (editor.hasTextFocus() && errorDecorations) errorDecorations.set([])
   })
   currentContent.value = editor.getValue()
+  dispatchScriptContentChanged()
   updateEditorHeight()
 }
 

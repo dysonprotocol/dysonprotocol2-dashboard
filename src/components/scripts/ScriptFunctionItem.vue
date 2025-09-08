@@ -55,21 +55,30 @@
           <Alert v-if="result" class="mt-3 break-all">
             <AlertTitle>{{ result.simulate ? 'Simulation' : 'Execution' }} Successful</AlertTitle>
             <AlertDescription>
-              <div v-if="result.result !== null" class="mt-2 break-all whitespace-pre-wrap w-full">
+              <div v-if="result.result !== null" class="mt-2 w-full min-w-0">
                 <div class="font-medium text-xs opacity-80">Result:</div>
-                <pre class="text-xs p-2 mt-1 max-h-64 overflow-auto border rounded">{{
-                  formatResult(result.result)
-                }}</pre>
+                <div class="mt-1 max-h-32 w-full max-w-full overflow-x-auto overflow-y-auto">
+                  <pre class="text-xs p-2 border rounded inline-block min-w-full whitespace-pre">{{
+                    formatResult(result.result)
+                  }}</pre>
+                </div>
               </div>
-              <div v-if="result.stdout" class="mt-2 break-all whitespace-pre-wrap w-full">
+              <div v-if="result.stdout" class="mt-2 w-full min-w-0">
                 <div class="font-medium text-xs opacity-80">Output:</div>
-                <pre class="text-xs p-2 mt-1 max-h-32 overflow-auto border rounded">{{
-                  result.stdout
-                }}</pre>
+                <div class="mt-1 max-h-32 w-full max-w-full overflow-x-auto overflow-y-auto">
+                  <pre class="text-xs p-2 border rounded inline-block min-w-full whitespace-pre">{{
+                    result.stdout
+                  }}</pre>
+                </div>
               </div>
-              <div class="mt-2 text-xs opacity-80 flex gap-4">
-                <span>Gas: {{ formatNumber(result.gasConsumed) }}</span>
-                <span>Nodes: {{ formatNumber(result.nodesExecuted) }}</span>
+              <div class="mt-2 text-xs opacity-80">
+                <template v-if="result.simulate">
+                  <div>gas used: {{ result.txGasUsed }}</div>
+                </template>
+                <template v-else>
+                  <div>gas limit: {{ result.txGasWanted }}</div>
+                  <div>efficiency: {{ formatPercent(result.txGasUsed, result.txGasWanted) }}</div>
+                </template>
               </div>
               <div
                 v-if="!result.simulate && result.txHash"
@@ -167,6 +176,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
+
+function formatPercent(used, wanted) {
+  const u = Number(used)
+  const w = Number(wanted)
+  if (!Number.isFinite(u) || !Number.isFinite(w) || w <= 0) return '—'
+  return Math.round((u / w) * 100) + '%'
+}
 
 const props = defineProps({
   address: { type: String, required: true },
@@ -389,14 +405,25 @@ async function run(simulate) {
       context.value = { simulate }
       emit('function-executed', { func: props.func, error: errorText.value, simulate })
     } else if (res.scriptResponse) {
+      const txResp = res?.rawSendMsgsResponse?.raw?.tx_response
+      const txObj = res?.rawSendMsgsResponse?.raw?.tx
+      const simRaw = res?.rawSendMsgsResponse?.raw
+      const wanted = simulate
+        ? Number(simRaw?.gas_info?.gas_wanted ?? NaN)
+        : Number(txResp?.gas_wanted ?? txObj?.auth_info?.fee?.gas_limit ?? NaN)
+      const used = simulate
+        ? Number(simRaw?.gas_info?.gas_used ?? NaN)
+        : Number(txResp?.gas_used ?? NaN)
       const out = {
         result: res.scriptResponse.result,
         stdout: res.scriptResponse.stdout,
         gasConsumed: res.scriptResponse.script_gas_consumed,
         nodesExecuted: res.scriptResponse.nodes_called,
         simulate,
-        txHash: !simulate ? res.rawSendMsgsResponse?.raw?.tx_response?.txhash : null,
-        blockHeight: !simulate ? res.rawSendMsgsResponse?.raw?.tx_response?.height : null,
+        txGasWanted: Number.isFinite(wanted) ? wanted : undefined,
+        txGasUsed: Number.isFinite(used) ? used : undefined,
+        txHash: !simulate ? txResp?.txhash : null,
+        blockHeight: !simulate ? txResp?.height : null,
       }
       result.value = out
       emit('function-executed', {
@@ -407,14 +434,25 @@ async function run(simulate) {
       })
     } else {
       // Success but no scriptResponse payload
+      const txResp = res?.rawSendMsgsResponse?.raw?.tx_response
+      const txObj = res?.rawSendMsgsResponse?.raw?.tx
+      const simRaw = res?.rawSendMsgsResponse?.raw
+      const wanted = simulate
+        ? Number(simRaw?.gas_info?.gas_wanted ?? NaN)
+        : Number(txResp?.gas_wanted ?? txObj?.auth_info?.fee?.gas_limit ?? NaN)
+      const used = simulate
+        ? Number(simRaw?.gas_info?.gas_used ?? NaN)
+        : Number(txResp?.gas_used ?? NaN)
       result.value = {
         result: null,
         stdout: '',
         gasConsumed: 0,
         nodesExecuted: 0,
         simulate,
-        txHash: !simulate ? res.rawSendMsgsResponse?.raw?.tx_response?.txhash : null,
-        blockHeight: !simulate ? res.rawSendMsgsResponse?.raw?.tx_response?.height : null,
+        txGasWanted: Number.isFinite(wanted) ? wanted : undefined,
+        txGasUsed: Number.isFinite(used) ? used : undefined,
+        txHash: !simulate ? txResp?.txhash : null,
+        blockHeight: !simulate ? txResp?.height : null,
       }
       emit('function-executed', {
         func: props.func,
