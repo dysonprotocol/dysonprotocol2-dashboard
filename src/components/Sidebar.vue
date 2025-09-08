@@ -44,16 +44,28 @@
                 </span>
               </span>
             </div>
-            <div v-if="dashCommit" class="flex items-center justify-between gap-2">
+            <div v-if="dashCommit || dashBranch" class="flex items-center justify-between gap-2">
               <span class="truncate">Dashboard:</span>
               <span class="font-mono text-muted-foreground">
-                <a
-                  :href="dashboardCommitUrl"
-                  target="_blank"
-                  rel="noreferrer"
-                  class="hover:text-foreground"
-                  >{{ dashCommit }}</a
-                >
+                <span v-if="dashBranch">
+                  <a
+                    :href="dashboardBranchUrl"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="hover:text-foreground"
+                    >{{ dashBranch }}</a
+                  >
+                </span>
+                <span v-if="dashCommit">
+                  -
+                  <a
+                    :href="dashboardCommitUrl"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="hover:text-foreground"
+                    >{{ dashCommit }}</a
+                  >
+                </span>
               </span>
             </div>
           </div>
@@ -153,8 +165,10 @@ const nodeCommitUrl = computed(() =>
   nodeCommit.value ? `${nodeRepoUrl}/commit/${nodeCommit.value}` : '#'
 )
 
-/* global __GIT_COMMIT__ */
+/* global __GIT_COMMIT__, __GIT_BRANCH__ */
 const dashCommit = typeof __GIT_COMMIT__ !== 'undefined' ? __GIT_COMMIT__ : ''
+const dashBranch = typeof __GIT_BRANCH__ !== 'undefined' ? __GIT_BRANCH__ : ''
+const dashboardBranchUrl = computed(() => (dashBranch ? `${dashRepoUrl}/tree/${dashBranch}` : '#'))
 const dashboardCommitUrl = computed(() =>
   dashCommit ? `${dashRepoUrl}/commit/${dashCommit}` : '#'
 )
