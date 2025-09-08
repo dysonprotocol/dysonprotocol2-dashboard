@@ -2,7 +2,7 @@
  * Python script parsing utilities
  */
 
-const FUNCTION_REGEX = /def\s+(\w+)\s*\((.*?)\)\s*:(?:\s*"""(.*?)""")?/gs
+import { parse as parsePyAst, NodeVisitor as PyAstNodeVisitor } from 'py-ast'
 
 export class ScriptParseError extends Error {
   constructor(message, line = null) {
@@ -15,50 +15,213 @@ export class ScriptParseError extends Error {
 export function parseScriptFunctions(source) {
   if (!source?.trim()) return []
 
-  const functions = []
   const lines = source.split('\n')
-  let match
 
-  // Reset regex lastIndex for multiple uses
-  FUNCTION_REGEX.lastIndex = 0
+  const visitorResults = []
 
-  while ((match = FUNCTION_REGEX.exec(source))) {
-    const [, name, params, docstring] = match
+  class FuncVisitor extends PyAstNodeVisitor {
+    visitFunctionDef(node) {
+      const fn = buildFunctionRecord(node, source, lines)
+      if (fn) visitorResults.push(fn)
+      this.genericVisit(node)
+    }
 
-    // Skip private functions
-    if (name.startsWith('_')) continue
-    if (name === 'wsgi') continue
-
-    try {
-      const startLine = source.substring(0, match.index).split('\n').length
-      const endLine = findFunctionEnd(lines, startLine - 1)
-
-      const parameters = parseParameters(params)
-      const sigParams = parameters
-        .map((p) => (p.required ? p.name : `${p.name}=${String(p.default)}`))
-        .join(', ')
-      const signature = `${name}(${sigParams})`
-      functions.push({
-        function_name: name,
-        docstring: docstring?.trim() || '',
-        parameters,
-        kwargs: buildKwargSkeleton(parameters),
-        signature,
-        start_line: startLine,
-        end_line: endLine,
-      })
-    } catch (error) {
-      console.warn(`Failed to parse function ${name}:`, error)
+    visitAsyncFunctionDef(node) {
+      return this.visitFunctionDef(node)
     }
   }
 
-  return functions
+  const ast = parsePyAst(source)
+  const visitor = new FuncVisitor()
+  visitor.visit(ast)
+
+  // Filter out private helpers
+  return visitorResults.filter(
+    (f) => f.function_name && !f.function_name.startsWith('_') && f.function_name !== 'wsgi'
+  )
+}
+
+function buildFunctionRecord(node, source, lines) {
+  const name = node?.name
+  if (!name) return null
+
+  const startLine = node.lineno ?? 1
+  const endLine = node.end_lineno ?? findFunctionEnd(lines, startLine - 1)
+
+  const parameters = extractParametersFromAst(node, source)
+  const signature = `${name}(${parameters
+    .map((p) => (p.required ? p.name : `${p.name}=${formatDefaultForSignature(p.default)}`))
+    .join(', ')})`
+
+  const docstring = getDocstringFromAst(node)
+
+  const hasVariadicKwargs = Boolean(node?.args?.kwarg)
+  const kwargsSkeleton = hasVariadicKwargs ? {} : buildKwargSkeleton(parameters)
+
+  return {
+    function_name: name,
+    docstring,
+    parameters,
+    kwargs: kwargsSkeleton,
+    signature,
+    start_line: startLine,
+    end_line: endLine,
+  }
+}
+
+function getDocstringFromAst(node) {
+  if (!node?.body?.length) return ''
+  const first = node.body[0]
+  // Expr(Constant(str)) or legacy Str
+  if (first.nodeType === 'Expr') {
+    const val = first.value
+    if (!val) return ''
+    if (val.nodeType === 'Constant' && typeof val.value === 'string')
+      return normalizeDocstring(val.value)
+    if (val.nodeType === 'Str' && typeof val.s === 'string') return normalizeDocstring(val.s)
+  }
+  return ''
+}
+
+function extractParametersFromAst(node, source) {
+  const args = node.args || {}
+  const posonly = args.posonlyargs || []
+  const posOrKw = args.args || []
+  const kwonly = args.kwonlyargs || []
+  const posDefaults = args.defaults || []
+  const kwDefaults = args.kw_defaults || []
+
+  const params = []
+
+  const positional = [...posonly, ...posOrKw]
+  const numPos = positional.length
+  const numPosDefaults = posDefaults.length
+
+  for (let i = 0; i < numPos; i++) {
+    const argNode = positional[i]
+    const hasDefault = i >= numPos - numPosDefaults
+    const defaultIndex = i - (numPos - numPosDefaults)
+    const defaultNode = hasDefault ? posDefaults[defaultIndex] : undefined
+    const param = buildParamFromAstArg(argNode, hasDefault, defaultNode, source)
+    params.push(param)
+  }
+
+  for (let i = 0; i < kwonly.length; i++) {
+    const argNode = kwonly[i]
+    const defaultNode = kwDefaults[i]
+    const hasDefault = defaultNode != null
+    const param = buildParamFromAstArg(argNode, hasDefault, defaultNode, source)
+    params.push(param)
+  }
+
+  // Skip *args (args.vararg) and **kwargs (args.kwarg)
+  return params
+}
+
+function buildParamFromAstArg(argNode, hasDefault, defaultNode, source) {
+  const name = argNode.arg
+  const annotation = astAnnotationToString(argNode.annotation)
+
+  let defaultValue
+  if (hasDefault) {
+    const jsVal = astValueToJs(defaultNode)
+    if (jsVal !== undefined) defaultValue = jsVal
+    else defaultValue = extractSourceForNode(defaultNode, source) ?? null
+  }
+
+  const param = {
+    name,
+    required: !hasDefault,
+  }
+
+  if (hasDefault) param.default = defaultValue
+  if (annotation) param.annotation = annotation
+
+  return param
+}
+
+function astAnnotationToString(node) {
+  if (!node) return ''
+  switch (node.nodeType) {
+    case 'Name':
+      return node.id || ''
+    case 'Attribute': {
+      const value = astAnnotationToString(node.value)
+      const attr = node.attr || ''
+      return value ? `${value}.${attr}` : attr
+    }
+    case 'Subscript': {
+      const value = astAnnotationToString(node.value)
+      const slice = astAnnotationToString(node.slice)
+      return slice ? `${value}[${slice}]` : value
+    }
+    case 'Tuple':
+      return (node.elts || []).map(astAnnotationToString).join(', ')
+    case 'Constant':
+      return String(node.value)
+    case 'Str':
+      return String(node.s)
+    default:
+      return ''
+  }
+}
+
+function astValueToJs(node) {
+  if (!node) return undefined
+  switch (node.nodeType) {
+    case 'Constant':
+      return node.value
+    case 'Num':
+      return Number(node.n)
+    case 'Str':
+      return String(node.s)
+    case 'NameConstant':
+      return node.value
+    case 'List':
+    case 'Tuple':
+      return (node.elts || []).map(astValueToJs)
+    case 'Dict': {
+      const keys = node.keys || []
+      const values = node.values || []
+      const out = {}
+      for (let i = 0; i < keys.length; i++) {
+        out[String(astValueToJs(keys[i]))] = astValueToJs(values[i])
+      }
+      return out
+    }
+    default:
+      return undefined
+  }
+}
+
+function extractSourceForNode(node, source) {
+  if (!node || node.lineno == null || node.end_lineno == null) return null
+  const lines = source.split('\n')
+  const startLineIdx = Math.max(0, node.lineno - 1)
+  const endLineIdx = Math.max(0, node.end_lineno - 1)
+  const slice = lines.slice(startLineIdx, endLineIdx + 1)
+  if (!slice.length) return null
+  const first = slice[0]
+  const last = slice[slice.length - 1]
+  const startCol = node.col_offset ?? 0
+  const endCol = node.end_col_offset ?? last.length
+  if (slice.length === 1) return first.slice(startCol, endCol)
+  slice[0] = first.slice(startCol)
+  slice[slice.length - 1] = last.slice(0, endCol)
+  return slice.join('\n')
+}
+
+function formatDefaultForSignature(val) {
+  if (val === undefined) return '...'
+  if (typeof val === 'string') return `'${val}'`
+  if (val && typeof val === 'object') return JSON.stringify(val)
+  return String(val)
 }
 
 export function extractDocstring(source) {
   if (!source) return ''
-  const match = source.match(/^\s*"""(.*?)"""/s)
-  return match?.[1]?.trim() || ''
+  const match = source.match(/^\s*(?:[rRuUbBfF]{0,2})?("""|''')([\s\S]*?)\1/s)
+  return match?.[2] ? normalizeDocstring(match[2]) : ''
 }
 
 function findFunctionEnd(lines, startIndex) {
@@ -92,34 +255,36 @@ function findFunctionEnd(lines, startIndex) {
   return lines.length
 }
 
-function parseParameters(paramString) {
-  if (!paramString?.trim()) {
-    return []
+function normalizeDocstring(text) {
+  if (!text) return ''
+  const unix = String(text).replace(/\r\n?/g, '\n')
+  let lines = unix.split('\n')
+
+  // Trim leading/trailing empty lines
+  while (lines.length && lines[0].trim() === '') lines.shift()
+  while (lines.length && lines[lines.length - 1].trim() === '') lines.pop()
+  if (lines.length === 0) return ''
+
+  if (lines.length === 1) return lines[0].trim()
+
+  // Compute minimum indent from all non-empty lines except the first
+  let minIndent = Infinity
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i]
+    if (!line.trim()) continue
+    const indent = line.match(/^(\s*)/)[1].length
+    if (indent < minIndent) minIndent = indent
   }
+  if (!Number.isFinite(minIndent)) minIndent = 0
 
-  // Split parameters more carefully to handle nested structures
-  const params = splitParameters(paramString)
-    .map((p) => p.trim())
-    .filter((p) => p && !p.startsWith('*')) // Skip *args and **kwargs
-
-  return params.map((param) => {
-    const { name, defaultValue, annotation } = parseParameter(param)
-
-    const paramInfo = {
-      name,
-      required: defaultValue === null,
-    }
-
-    if (defaultValue !== null) {
-      paramInfo.default = defaultValue
-    }
-
-    if (annotation) {
-      paramInfo.annotation = annotation
-    }
-
-    return paramInfo
+  const first = lines[0].trim()
+  const rest = lines.slice(1).map((line) => {
+    if (!minIndent) return line
+    const currentIndent = line.match(/^(\s*)/)[1].length
+    const remove = Math.min(currentIndent, minIndent)
+    return line.slice(remove)
   })
+  return [first, ...rest].join('\n')
 }
 
 export function buildKwargSkeleton(parameters) {
@@ -152,108 +317,4 @@ export function buildFormDefaults(parameters) {
   return formData
 }
 
-function splitParameters(paramString) {
-  const params = []
-  let current = ''
-  let depth = 0
-  let inString = false
-  let stringChar = ''
-
-  for (let i = 0; i < paramString.length; i++) {
-    const char = paramString[i]
-    const prevChar = i > 0 ? paramString[i - 1] : ''
-
-    if (!inString && (char === '"' || char === "'")) {
-      inString = true
-      stringChar = char
-    } else if (inString && char === stringChar && prevChar !== '\\') {
-      inString = false
-      stringChar = ''
-    } else if (!inString) {
-      if (char === '(' || char === '[' || char === '{') {
-        depth++
-      } else if (char === ')' || char === ']' || char === '}') {
-        depth--
-      } else if (char === ',' && depth === 0) {
-        params.push(current.trim())
-        current = ''
-        continue
-      }
-    }
-
-    current += char
-  }
-
-  if (current.trim()) {
-    params.push(current.trim())
-  }
-
-  return params
-}
-
-function parseParameter(param) {
-  // Handle type annotations: name: type = value or name: type
-  let name = param
-  let defaultValue = null
-  let annotation = null
-
-  // Check for default value first
-  const equalIndex = findTopLevelChar(param, '=')
-  if (equalIndex !== -1) {
-    defaultValue = parseValue(param.substring(equalIndex + 1).trim())
-    name = param.substring(0, equalIndex).trim()
-  }
-
-  // Extract type annotation if present
-  const colonIndex = findTopLevelChar(name, ':')
-  if (colonIndex !== -1) {
-    annotation = name.substring(colonIndex + 1).trim()
-    name = name.substring(0, colonIndex).trim()
-  }
-
-  return { name, defaultValue, annotation }
-}
-
-function findTopLevelChar(str, char) {
-  let depth = 0
-  let inString = false
-  let stringChar = ''
-
-  for (let i = 0; i < str.length; i++) {
-    const c = str[i]
-    const prevChar = i > 0 ? str[i - 1] : ''
-
-    if (!inString && (c === '"' || c === "'")) {
-      inString = true
-      stringChar = c
-    } else if (inString && c === stringChar && prevChar !== '\\') {
-      inString = false
-      stringChar = ''
-    } else if (!inString) {
-      if (c === '(' || c === '[' || c === '{') {
-        depth++
-      } else if (c === ')' || c === ']' || c === '}') {
-        depth--
-      } else if (c === char && depth === 0) {
-        return i
-      }
-    }
-  }
-
-  return -1
-}
-
-function parseValue(value) {
-  if (value === 'None') return null
-  if (value === 'True') return true
-  if (value === 'False') return false
-  if (/^\d+$/.test(value)) return parseInt(value, 10)
-  if (/^\d*\.\d+$/.test(value)) return parseFloat(value)
-  if (/^["'].*["']$/.test(value)) return value.slice(1, -1)
-
-  // Handle empty containers
-  if (value === '[]' || value === '{}' || value === '()') return value
-
-  // For complex expressions, return as string
-  return value
-}
+// removed legacy regex-based parameter parsing in favor of AST-based parsing

@@ -47,6 +47,7 @@
     "pinia": "^3.0.3",
     "pinia-orm": "^2.0.0-alpha.2",
     "prismjs": "^1.30.0",
+    "py-ast": "^1.9.0",
     "reka-ui": "^2.5.0",
     "rollup-plugin-node-polyfills": "^0.2.1",
     "tailwind-merge": "^3.3.1",

@@ -11,14 +11,14 @@
           <span class="font-semibold font-mono text-sm">{{
             func.signature || func.function_name
           }}</span>
-          <pre class="text-sm whitespace-pre-wrap" :class="{ 'line-clamp-3': !isOpen }">{{
-            func.docstring
-          }}</pre>
         </div>
       </AccordionTrigger>
       <AccordionContent>
         <div class="">
-          <div v-if="hasParameters">
+          <div v-if="hasInputs">
+            <pre class="text-sm whitespace-pre-wrap mb-4" :class="{ 'line-clamp-3': !isOpen }">{{
+              func.docstring
+            }}</pre>
             <label class="block font-medium mb-2">Parameters:</label>
             <Textarea
               ref="textareaRef"
@@ -223,7 +223,11 @@ const jsonError = ref('')
 
 const textareaRef = ref(null)
 
-const hasParameters = computed(() => props.func.parameters && props.func.parameters.length > 0)
+const hasInputs = computed(() => {
+  const hasParams = props.func.parameters && props.func.parameters.length > 0
+  const acceptsKwargs = props.func.kwargs !== null
+  return hasParams || acceptsKwargs
+})
 const placeholder = computed(() => buildKwargsPlaceholder(props.func))
 const noParamsMessage = computed(() =>
   props.func.kwargs === null
