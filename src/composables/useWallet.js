@@ -593,7 +593,9 @@ export function useWallet() {
     if (success) {
       const events = kind === 'simulate' ? raw?.result?.events : raw?.tx_response?.events
       if (Array.isArray(events)) {
-        const scriptEvt = events.find((e) => e.type === 'dysonprotocol.script.v1.EventExecScript')
+        const scriptEvt = events
+          .reverse()
+          .find((e) => e.type === 'dysonprotocol.script.v1.EventExecScript')
         const responseAttr = scriptEvt?.attributes?.find((a) => a.key === 'response')
         const value = responseAttr?.value
         if (value) {

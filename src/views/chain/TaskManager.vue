@@ -4,6 +4,9 @@ import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import CrontaskTask from '@/orm/models/crontask/Task'
 import { formatGasPrice } from '@/utils/format'
+import { FuelIcon } from 'lucide-vue-next'
+import { ClockIcon } from 'lucide-vue-next'
+import { ListChecksIcon } from 'lucide-vue-next'
 
 import {
   Table,
@@ -94,23 +97,33 @@ watch(
     const gasRequested = Number(m.pending_gas_requested || 0)
     if (Number.isFinite(gasRequested) && gasRequested > 0) {
       const list = Array.isArray(m.pending_total_gas_fees) ? m.pending_total_gas_fees : []
-      if (list.length) lastPendingFees.value = list
+      lastPendingFees.value = list
       const udys = list.find((c) => String(c?.denom || '') === 'udys')
       if (udys) {
         const amount = Number(udys.amount || 0)
         if (Number.isFinite(amount)) lastPendingUdysPerGas.value = amount / gasRequested
+      } else {
+        lastPendingUdysPerGas.value = 0
       }
+    } else {
+      lastPendingUdysPerGas.value = 0
+      lastPendingFees.value = []
     }
 
     const gasUsed = Number(m.executed_total_gas || 0)
     if (Number.isFinite(gasUsed) && gasUsed > 0) {
       const list = Array.isArray(m.executed_total_fees) ? m.executed_total_fees : []
-      if (list.length) lastExecutedFees.value = list
+      lastExecutedFees.value = list
       const udys = list.find((c) => String(c?.denom || '') === 'udys')
       if (udys) {
         const amount = Number(udys.amount || 0)
         if (Number.isFinite(amount)) lastExecutedUdysPerGas.value = amount / gasUsed
+      } else {
+        lastExecutedUdysPerGas.value = 0
       }
+    } else {
+      lastExecutedUdysPerGas.value = 0
+      lastExecutedFees.value = []
     }
   },
   { immediate: true }
@@ -124,9 +137,11 @@ const executedFees = computed(
 )
 const executedGasUsed = computed<number>(() => Number(metrics.value?.executed_total_gas ?? 0))
 const pendingTaskCount = computed<number>(() => Number(metrics.value?.pending_task_count ?? 0))
-const pendingOldestText = computed<string>(
-  () => formatDeltaShort(metrics.value?.pending_oldest_scheduled_ts ?? '', chainNowMs.value) || ''
-)
+const pendingOldestText = computed<string>(() => {
+  const count = Number(metrics.value?.pending_task_count ?? 0)
+  if (!Number.isFinite(count) || count <= 0) return '-'
+  return formatDeltaShort(metrics.value?.pending_oldest_scheduled_ts ?? '', chainNowMs.value) || ''
+})
 const pendingFees = computed(
   () => (metrics.value?.pending_total_gas_fees ?? []) as Array<{ denom: string; amount: string }>
 )
@@ -195,16 +210,13 @@ function bgDone(scheduled: unknown, executed: unknown): Record<string, string> {
 
 function bgExpiry(scheduled: unknown, expiry: unknown, now: number): Record<string, string> {
   if (!Number.isFinite(now)) return {}
-  const sm = toMsLocal(String(scheduled ?? ''))
   const xm = toMsLocal(String(expiry ?? ''))
-  if (sm == null || xm == null) return {}
-  const total = Math.max(0, xm - sm)
+  if (xm == null) return {}
   const remaining = Math.max(0, xm - now)
-  if (total <= 0) return { backgroundColor: 'rgba(255, 192, 203, 0.250)' }
-  const ratioLeft = Math.min(1, Math.max(0, remaining / total))
-  const intensity = 1 - ratioLeft
-  const a = (intensity * 0.5).toFixed(3)
-  return { backgroundColor: `rgba(255, 192, 203, ${a})` }
+  const windowMs = 60000
+  if (remaining >= windowMs) return {}
+  const a = (((windowMs - remaining) / windowMs) * 0.5).toFixed(3)
+  return { backgroundColor: `rgba(255, 0, 0, ${a})` }
 }
 
 // selection shared across sections (multi-select)
@@ -414,20 +426,7 @@ onUnmounted(() => {
       <div class="rounded-xl border bg-card text-card-foreground shadow">
         <div class="gap-y-1.5 p-6 flex flex-row items-center justify-between space-y-0 pb-2">
           <h3 class="tracking-tight text-sm font-medium">Pending Tasks</h3>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            class="h-4 w-4 text-muted-foreground"
-          >
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
-          </svg>
+          <ClockIcon class="h-4 w-4 text-muted-foreground" />
         </div>
         <div class="p-6 pt-0">
           <div class="text-2xl font-bold">{{ pendingTaskCount }}</div>
@@ -437,18 +436,8 @@ onUnmounted(() => {
       <div class="rounded-xl border bg-card text-card-foreground shadow">
         <div class="gap-y-1.5 p-6 flex flex-row items-center justify-between space-y-0 pb-2">
           <h3 class="tracking-tight text-sm font-medium">udys/gas requested</h3>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            class="h-4 w-4 text-muted-foreground"
-          >
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-          </svg>
+
+          <FuelIcon class="h-4 w-4 text-muted-foreground" />
         </div>
         <div class="p-6 pt-0">
           <div class="text-2xl font-bold">
@@ -473,40 +462,17 @@ onUnmounted(() => {
       <div class="rounded-xl border bg-card text-card-foreground shadow">
         <div class="gap-y-1.5 p-6 flex flex-row items-center justify-between space-y-0 pb-2">
           <h3 class="tracking-tight text-sm font-medium">Executed Tasks</h3>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            class="h-4 w-4 text-muted-foreground"
-          >
-            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-          </svg>
+          <ListChecksIcon class="h-4 w-4 text-muted-foreground" />
         </div>
         <div class="p-6 pt-0">
           <div class="text-2xl font-bold">{{ executedTaskCount }}</div>
-          <p class="text-xs text-muted-foreground">Total executed</p>
+          <p class="text-xs text-muted-foreground">executed last block</p>
         </div>
       </div>
       <div class="rounded-xl border bg-card text-card-foreground shadow">
         <div class="gap-y-1.5 p-6 flex flex-row items-center justify-between space-y-0 pb-2">
           <h3 class="tracking-tight text-sm font-medium">udys/gas executed</h3>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            class="h-4 w-4 text-muted-foreground"
-          >
-            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-            <path d="M2 10h20"></path>
-          </svg>
+          <FuelIcon class="h-4 w-4 text-muted-foreground" />
         </div>
         <div class="p-6 pt-0">
           <div class="text-2xl font-bold">

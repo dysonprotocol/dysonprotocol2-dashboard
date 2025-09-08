@@ -19,7 +19,7 @@ const escapeHTML = (str) =>
         '>': '&gt;',
         "'": '&#39;',
         '"': '&quot;',
-      }[tag] || tag)
+      })[tag] || tag
   )
 
 /** Fetch chain info for address. */
@@ -777,7 +777,9 @@ export async function runScript({
 
 function parseScriptResponse(events) {
   if (!Array.isArray(events)) return null
-  const scriptEvt = events.find((e) => e.type === 'dysonprotocol.script.v1.EventExecScript')
+  const scriptEvt = events
+    .reverse()
+    .find((e) => e.type === 'dysonprotocol.script.v1.EventExecScript')
   if (!scriptEvt?.attributes) return null
 
   const responseAttr = scriptEvt.attributes.find((a) => a.key === 'response')
