@@ -115,8 +115,9 @@ defineOptions({ name: 'AppSidebar' })
 import KeplrCard from '@/components/wallet/KeplrCard.vue'
 import CosmjsWallets from '@/components/wallet/CosmjsWallets.vue'
 import { Tag, SquareStack, ArrowLeftRight, ShieldCheck, Landmark, Clock } from 'lucide-vue-next'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRepo } from 'pinia-orm'
+import { useAxiosRepo } from '@pinia-orm/axios'
 import { LatestBlock, NodeInfo } from '@/orm/models/base/TendermintService'
 
 function linkClass(isActive) {
@@ -152,8 +153,14 @@ const nodeCommitUrl = computed(() =>
   nodeCommit.value ? `${nodeRepoUrl}/commit/${nodeCommit.value}` : '#'
 )
 
-const dashCommit = import.meta.env.VITE_GIT_COMMIT || ''
+/* global __GIT_COMMIT__ */
+const dashCommit = typeof __GIT_COMMIT__ !== 'undefined' ? __GIT_COMMIT__ : ''
 const dashboardCommitUrl = computed(() =>
   dashCommit ? `${dashRepoUrl}/commit/${dashCommit}` : '#'
 )
+
+onMounted(() => {
+  // Ensure NodeInfo is populated so version/commit render
+  useAxiosRepo(NodeInfo).api().fetch()
+})
 </script>
