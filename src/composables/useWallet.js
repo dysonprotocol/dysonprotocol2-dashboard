@@ -214,7 +214,7 @@ export function useWallet() {
   const suggestChainIfNeeded = async (provider) => {
     const name = chainId.value.includes('mainnet')
       ? 'DysonProtocol2'
-      : `DysonProtocol2 (${chainId.value})`
+      : `DysonProtocol2 (${chainId.value.split('-').slice(0, -1).join('-')})`
 
     const chainInfo = {
       chainId: chainId.value,
