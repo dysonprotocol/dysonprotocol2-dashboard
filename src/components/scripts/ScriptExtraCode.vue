@@ -44,25 +44,37 @@
             <Alert v-if="result" class="mt-3 break-all">
               <AlertTitle>{{ result.simulate ? 'Simulation' : 'Execution' }} Successful</AlertTitle>
               <AlertDescription>
-                <div v-if="result.result !== null" class="mt-2 w-full min-w-0">
+                <div v-if="result.result.result !== null" class="mt-2 w-full min-w-0">
                   <div class="font-medium text-xs opacity-80">Result:</div>
                   <div class="mt-1 max-h-32 w-full max-w-full overflow-x-auto overflow-y-auto">
                     <pre
                       class="text-xs p-2 border rounded inline-block min-w-full whitespace-pre"
-                      >{{ formatResult(result.result) }}</pre
+                      >{{ formatResult(result.result.result) }}</pre
                     >
                   </div>
                 </div>
-                <div v-if="result.stdout" class="mt-2 w-full min-w-0">
+                <div v-if="result.result.stdout" class="mt-2 w-full min-w-0">
                   <div class="font-medium text-xs opacity-80">Output:</div>
                   <div class="mt-1 max-h-32 w-full max-w-full overflow-x-auto overflow-y-auto">
                     <pre
                       class="text-xs p-2 border rounded inline-block min-w-full whitespace-pre"
-                      >{{ result.stdout }}</pre
+                      >{{ result.result.stdout }}</pre
                     >
                   </div>
                 </div>
                 <div class="mt-2 text-xs opacity-80">
+                  <div v-if="result.result.cumSize != null">
+                    cumsize: {{ result.result.cumSize }}
+                  </div>
+                  <div v-if="result.result.gasLimit != null">
+                    gas limit: {{ result.result.gasLimit }}
+                  </div>
+                  <div v-if="result.result.nodesExecuted != null">
+                    nodes called: {{ result.result.nodesExecuted }}
+                  </div>
+                  <div v-if="result.gasConsumed != null">
+                    script gas consumed: {{ result.result.gasConsumed }}
+                  </div>
                   <template v-if="result.simulate">
                     <div>gas used: {{ result.txGasUsed }}</div>
                   </template>
@@ -323,6 +335,8 @@ async function call(simulate: boolean) {
         stdout: res.scriptResponse.stdout,
         gasConsumed: res.scriptResponse.script_gas_consumed,
         nodesExecuted: res.scriptResponse.nodes_called,
+        cumSize: res.scriptResponse.cumsize,
+        gasLimit: res.scriptResponse.gas_limit,
         simulate,
         txGasWanted: Number.isFinite(wanted) ? wanted : undefined,
         txGasUsed: Number.isFinite(used) ? used : undefined,
