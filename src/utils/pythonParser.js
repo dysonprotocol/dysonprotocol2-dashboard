@@ -12,16 +12,29 @@ export class ScriptParseError extends Error {
   }
 }
 
+function sanitizeForPyAst(source) {
+  if (!source) return source
+  // Replace unsupported dict-unpacking entries like `**kwargs` inside dict literals
+  // with a dummy key to keep the AST parseable. We only care about discovering
+  // function definitions, not exact dict shapes.
+  // Pattern: after '{' or ',', then optional spaces, then '**' IDENT, then before ',' or '}'
+  // Replacement preserves commas and line count.
+  const spreadInDict = /\*\*/g
+
+  return source.replace(spreadInDict, '')
+}
+
 export function parseScriptFunctions(source) {
   if (!source?.trim()) return []
 
-  const lines = source.split('\n')
+  const sanitized = sanitizeForPyAst(source)
+  const lines = sanitized.split('\n')
 
   const visitorResults = []
 
   class FuncVisitor extends PyAstNodeVisitor {
     visitFunctionDef(node) {
-      const fn = buildFunctionRecord(node, source, lines)
+      const fn = buildFunctionRecord(node, sanitized, lines)
       if (fn) visitorResults.push(fn)
       this.genericVisit(node)
     }
@@ -31,7 +44,7 @@ export function parseScriptFunctions(source) {
     }
   }
 
-  const ast = parsePyAst(source)
+  const ast = parsePyAst(sanitized)
   const visitor = new FuncVisitor()
   visitor.visit(ast)
 

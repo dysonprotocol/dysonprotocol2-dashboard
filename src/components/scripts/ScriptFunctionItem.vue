@@ -8,16 +8,14 @@
     <AccordionItem :value="storageKey">
       <AccordionTrigger class="font-semibold">
         <div class="flex-1 text-left">
-          <span class="font-semibold font-mono text-sm">{{
-            func.signature || func.function_name
-          }}</span>
+          <span class="font-semibold font-mono text-sm">{{ displaySignature }}</span>
         </div>
       </AccordionTrigger>
       <AccordionContent>
         <div class="">
           <div v-if="hasInputs">
             <pre class="text-sm whitespace-pre-wrap mb-4" :class="{ 'line-clamp-3': !isOpen }">{{
-              func.docstring
+              docstring
             }}</pre>
             <label class="block font-medium mb-2">Parameters:</label>
             <Textarea
@@ -205,7 +203,7 @@ const { goToException: goTo } = useGoToException()
 
 // Open state per address+fn
 const openStates = useStorage('script-function-open-states', {})
-const storageKey = computed(() => `${props.address}_${props.func.function_name}`)
+const storageKey = computed(() => `${props.address}_${props.func.name || props.func.function_name}`)
 const isOpen = computed(() => openStates.value[storageKey.value] ?? false)
 
 const accordionValue = computed({
@@ -233,12 +231,11 @@ const jsonError = ref('')
 
 const textareaRef = ref(null)
 
-const hasInputs = computed(() => {
-  const hasParams = props.func.parameters && props.func.parameters.length > 0
-  const acceptsKwargs = props.func.kwargs !== null
-  return hasParams || acceptsKwargs
-})
-const placeholder = computed(() => buildKwargsPlaceholder(props.func))
+const paramList = computed(() => getParamList(props.func))
+const hasInputs = computed(() => paramList.value.length > 0)
+const placeholder = computed(() => buildKwargsPlaceholderFromSchema(props.func))
+const docstring = computed(() => getDescription(props.func))
+const displaySignature = computed(() => buildDisplaySignature(props.func))
 const noParamsMessage = computed(() =>
   props.func.kwargs === null
     ? 'This function has no parameters'
@@ -306,19 +303,52 @@ watch(
   { immediate: true }
 )
 
-function buildKwargsPlaceholder(f) {
-  const parameters = f.parameters
-  if (!parameters || parameters.length === 0) return '{}'
+function getDescription(fn) {
+  // Server schema shape: { name, schema: { description, parameters: { properties, required } } }
+  if (fn?.schema?.description) return fn.schema.description
+  return fn?.docstring || ''
+}
+
+function getParamList(fn) {
+  // Prefer server schema params
+  const p = fn?.schema?.parameters || fn?.schema?.parameters || null
+  const props = p?.properties || {}
+  const required = new Set((p?.required || []).map((x) => String(x)))
+  const keys = Object.keys(props)
+  return keys.map((k) => ({
+    name: k,
+    required: required.has(k),
+    default: props[k]?.default,
+  }))
+}
+
+function buildKwargsPlaceholderFromSchema(fn) {
+  const params = getParamList(fn)
+  if (!params.length) return '{}'
   const form = {}
-  for (const p of parameters) form[p.name] = p.required ? null : p.default
+  for (const p of params) form[p.name] = p.required ? null : p.default
   return JSON.stringify(form, null, 2)
+}
+
+function buildDisplaySignature(fn) {
+  const name = fn?.name || fn?.function_name || 'function'
+  const params = getParamList(fn)
+  const parts = params.map((p) => (p.required ? p.name : `${p.name}=${formatDefault(p.default)}`))
+  return `${name}(${parts.join(', ')})`
+}
+
+function formatDefault(val) {
+  if (val === undefined) return '...'
+  if (typeof val === 'string') return `'${val}'`
+  if (val && typeof val === 'object') return JSON.stringify(val)
+  return String(val)
 }
 
 watch(
   () => props.func,
   (f) => {
     const k = storageKey.value
-    if (!paramInputs.value[k]) paramInputs.value[k] = buildKwargsPlaceholder(f)
+    if (!paramInputs.value[k]) paramInputs.value[k] = buildKwargsPlaceholderFromSchema(f)
     kwargsInput.value = paramInputs.value[k]
     if (!functionExecutors.value[k]) functionExecutors.value[k] = props.address
     selectedExecutor.value = functionExecutors.value[k]
@@ -356,12 +386,7 @@ function formatResult(r) {
   return JSON.stringify(r, null, 2)
 }
 
-function formatNumber(num) {
-  if (num == null || num === undefined) return '0'
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
-  return Number(num).toLocaleString()
-}
+// removed unused formatNumber
 
 async function run(simulate) {
   if (jsonError.value) return

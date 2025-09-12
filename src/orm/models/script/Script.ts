@@ -2,7 +2,6 @@ import { Model } from 'pinia-orm'
 import type { Request } from '@pinia-orm/axios'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import ScriptParams from './Params'
-import { parseScriptFunctions, extractDocstring } from '../../../utils/pythonParser.js'
 
 type ScriptResponse = {
   script?: {
@@ -45,21 +44,33 @@ export class Script extends Model {
               const addr = String(s?.address || address || '')
               if (!addr) return []
               const codeStr = String(s?.code ?? '')
-              const functions: unknown[] =
-                (parseScriptFunctions as (src: string) => unknown[])(codeStr) || []
-              const docstring = (extractDocstring as (src: string | undefined | null) => string)(
-                codeStr
-              )
               return [
                 {
                   address: addr,
                   version: String(s?.version ?? '0'),
                   code: codeStr,
                   update_height: String(s?.update_height ?? '0'),
-                  functions,
-                  docstring,
+                  // Leave functions empty here; populate via fetchFunctionSchema()
+                  functions: [],
+                  docstring: '',
                 },
               ]
+            },
+          })
+        },
+        async fetchFunctionSchema(this: Request, address: string) {
+          const body = { executor_address: address, script_address: address }
+          return this.post(`/dysonprotocol/script/v1/function_schema`, body, {
+            dataTransformer: ({ data }: { data: { schema_json?: string } }) => {
+              let schemas: unknown
+              try {
+                schemas = data?.schema_json ? JSON.parse(String(data.schema_json)) : undefined
+              } catch (e) {
+                console.error('Failed to parse function schema_json', e)
+                schemas = undefined
+              }
+              const functions = Array.isArray(schemas) ? (schemas as unknown[]) : []
+              return [{ address, functions }]
             },
           })
         },
@@ -347,5 +358,7 @@ export class Script extends Model {
     },
   }
 }
+
+// Removed local transformer; we keep server ordering and shape in `functions`.
 
 export default Script

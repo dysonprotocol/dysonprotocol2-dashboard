@@ -69,6 +69,7 @@ const hasUnsavedChanges = computed(() => {
 async function refresh() {
   if (!props.address) return
   await useAxiosRepo(Script).api().fetchInfo(props.address)
+  await useAxiosRepo(Script).api().fetchFunctionSchema(props.address)
 }
 
 function focusCode() {
