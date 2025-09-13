@@ -71,6 +71,8 @@ let editor: any = null
 
 async function ensureMonaco() {
   if (!monaco) monaco = await import('monaco-editor/esm/vs/editor/editor.api')
+  const py = await import('monaco-editor/esm/vs/basic-languages/python/python.js')
+  fixPythonFStringBug((py as any).language)
   await import('monaco-editor/esm/vs/basic-languages/python/python.contribution')
   return monaco
 }
@@ -91,18 +93,20 @@ const editorSelectedGrant = ref(null)
 const editorExecutorAddress = ref('')
 const editorGranteeAddress = ref('')
 
-let errorDecorations = null
+let errorDecorations: any = null
 
 const defaultCode = `# No script found.`
 
 const canEdit = computed(() => {
-  const directOwnerUnlocked = wallet.unlockedWallets.value?.some((w) => w.address === props.address)
+  const directOwnerUnlocked = wallet.unlockedWallets.value?.some(
+    (w: any) => w.address === props.address
+  )
   if (directOwnerUnlocked) return true
   if (!editorIsAuthz.value) return false
   if (!editorSelectedGrant.value) return false
   const grantee = editorGranteeAddress.value
   if (!grantee) return false
-  const granteeUnlocked = wallet.unlockedWallets.value?.some((w) => w.address === grantee)
+  const granteeUnlocked = wallet.unlockedWallets.value?.some((w: any) => w.address === grantee)
   return !!granteeUnlocked
 })
 
@@ -128,7 +132,9 @@ async function save() {
   }
   clearError()
   clearSuccessMessage()
-  const directOwnerUnlocked = wallet.unlockedWallets.value?.some((w) => w.address === props.address)
+  const directOwnerUnlocked = wallet.unlockedWallets.value?.some(
+    (w: any) => w.address === props.address
+  )
   let canProceed = !!directOwnerUnlocked
   if (
     !canProceed &&
@@ -137,7 +143,7 @@ async function save() {
     editorGranteeAddress.value
   ) {
     const granteeUnlocked = wallet.unlockedWallets.value?.some(
-      (w) => w.address === editorGranteeAddress.value
+      (w: any) => w.address === editorGranteeAddress.value
     )
     canProceed = !!granteeUnlocked
   }
@@ -153,7 +159,7 @@ async function save() {
         address: props.address,
         code: currentContent.value,
         wallet: {
-          sendMsg: (params) =>
+          sendMsg: (params: any) =>
             wallet.sendMsg({
               ...params,
               executorAddress: selectedEditorExecutor.value,
@@ -168,7 +174,8 @@ async function save() {
     await useAxiosRepo(Script).api().fetchInfo(props.address)
   } catch (error) {
     console.error('Save failed', error)
-    localError.value = `Save failed: ${error?.message || String(error)}`
+    const err: any = error
+    localError.value = `Save failed: ${err?.message || String(error)}`
   } finally {
     isSaving.value = false
   }
@@ -187,7 +194,7 @@ function clearSuccessMessage() {
   nextTick(() => updateEditorHeight())
 }
 
-function editorMsgTypeFilter(grant) {
+function editorMsgTypeFilter(grant: any) {
   const auth = grant?.authorization
   if (!auth?.['@type']) return { valid: false, notes: 'No authorization' }
   if (auth['@type'] === '/cosmos.authz.v1beta1.GenericAuthorization') {
@@ -197,33 +204,42 @@ function editorMsgTypeFilter(grant) {
   return { valid: false, notes: 'Unsupported authz type' }
 }
 
-function onEditorExecutor(addr) {
+function onEditorExecutor(addr: string) {
   editorExecutorAddress.value = addr || ''
 }
-function onEditorGrantee(addr) {
+function onEditorGrantee(addr: string) {
   editorGranteeAddress.value = addr || ''
 }
-function onEditorIsAuthz(v) {
+function onEditorIsAuthz(v: boolean) {
   editorIsAuthz.value = !!v
 }
-function onEditorAuthzNotes(n) {
+function onEditorAuthzNotes(n: string) {
   editorAuthzNotes.value = n || ''
 }
-function onEditorSelectedGrant(g) {
+function onEditorSelectedGrant(g: any) {
   editorSelectedGrant.value = g || null
 }
 
 function dispatchScriptContentChanged() {
-  try {
-    const content = String(currentContent.value || '')
-    const lineCount = content ? content.split('\n').length : 0
-    window.dispatchEvent(
-      new CustomEvent('dyson:script-content-changed', {
-        detail: { address: props.address, lineCount },
-      })
-    )
-  } catch (e) {
-    // noop: do not block editor on dispatch errors
+  const content = String(currentContent.value || '')
+  const lineCount = content ? content.split('\n').length : 0
+  const evt = new window.CustomEvent('dyson:script-content-changed', {
+    detail: { address: props.address, lineCount },
+  })
+  window.dispatchEvent(evt)
+}
+
+// TODO: remove when fixed: https://github.com/microsoft/monaco-editor/issues/1762
+function fixPythonFStringBug(lang: any): void {
+  if (!lang || !lang.tokenizer) return
+  const { tokenizer } = lang
+  const badRules = ['fStringBody', 'fDblStringBody', 'fStringDetail']
+  for (const rule of badRules) delete tokenizer[rule]
+  const badRefs = new Set(badRules.map((r) => `@${r}`))
+  const isBad = (rule: any) => Array.isArray(rule) && rule.length === 3 && badRefs.has(rule[2])
+  for (const name of Object.keys(tokenizer)) {
+    const rules = tokenizer[name]
+    if (Array.isArray(rules)) tokenizer[name] = rules.filter((r) => !isBad(r))
   }
 }
 
@@ -265,7 +281,7 @@ async function initEditor() {
   updateEditorHeight()
 }
 
-function onExceptionEvent(e) {
+function onExceptionEvent(e: any) {
   if (!editor) return
   const ex = e?.detail
   if (!ex) return
@@ -294,7 +310,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateEditorHeight)
 })
 
-function updateEditorContent(newContent) {
+function updateEditorContent(newContent: string) {
   if (editor && editor.getValue() !== newContent) {
     editor.setValue(newContent)
     currentContent.value = newContent
@@ -315,7 +331,7 @@ function updateEditorHeight() {
   })
 }
 
-function highlightRange(line, startColRaw, endLine, endColRaw) {
+function highlightRange(line: number, startColRaw: number, endLine: number, endColRaw: number) {
   if (!editor) return
   const m = monaco
   const col = Math.max(1, Number(startColRaw ?? 0) + 1)

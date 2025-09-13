@@ -24,11 +24,27 @@ let monaco: typeof Monaco | null = null
 let editor: Monaco.editor.IStandaloneCodeEditor | null = null
 let decorations: Monaco.editor.IEditorDecorationsCollection | null = null
 
+// TODO: remove when fixed: https://github.com/microsoft/monaco-editor/issues/1762
+function fixPythonFStringBug(lang: any): void {
+  if (!lang || !lang.tokenizer) return
+  const { tokenizer } = lang
+  const badRules = ['fStringBody', 'fDblStringBody', 'fStringDetail']
+  for (const rule of badRules) delete tokenizer[rule]
+  const badRefs = new Set(badRules.map((r) => `@${r}`))
+  const isBad = (rule: any) => Array.isArray(rule) && rule.length === 3 && badRefs.has(rule[2])
+  for (const name of Object.keys(tokenizer)) {
+    const rules = tokenizer[name]
+    if (Array.isArray(rules)) tokenizer[name] = rules.filter((r) => !isBad(r))
+  }
+}
+
 async function ensureMonaco(language?: string) {
   if (!monaco) {
     monaco = (await import('monaco-editor/esm/vs/editor/editor.api')) as typeof Monaco
   }
   if (language === 'python') {
+    const py = await import('monaco-editor/esm/vs/basic-languages/python/python.js')
+    fixPythonFStringBug((py as any).language)
     await import('monaco-editor/esm/vs/basic-languages/python/python.contribution')
   }
   return monaco
