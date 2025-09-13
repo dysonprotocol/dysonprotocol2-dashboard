@@ -10,13 +10,15 @@
         <AccordionTrigger class="font-semibold">Extra Code</AccordionTrigger>
         <AccordionContent class="">
           <div class="min-w-0">
-            <div class="h-28 w-full min-w-0 border rounded-sm">
+            <div class="w-full min-w-0 border rounded-sm">
               <MonacoEditor
                 ref="monacoRef"
                 v-model="extraCode"
                 language="python"
                 :theme="editorTheme"
                 :line-number-offset="scriptLineCount"
+                :auto-height="true"
+                :min-height="112"
               />
             </div>
             <div class="text-xs opacity-60 mt-1">
@@ -30,7 +32,7 @@
               <AlertDescription>
                 <div class="font-medium text-xs opacity-80">Error:</div>
                 <pre
-                  class="text-xs p-2 mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-words border rounded"
+                  class="text-xs p-2 mt-1 max-h-180 overflow-auto whitespace-pre-wrap break-words border rounded"
                   >{{ errorText }}</pre
                 >
                 <div v-if="exception" class="mt-2 text-xs">
@@ -46,7 +48,7 @@
               <AlertDescription>
                 <div v-if="result.result.result !== null" class="mt-2 w-full min-w-0">
                   <div class="font-medium text-xs opacity-80">Result:</div>
-                  <div class="mt-1 max-h-32 w-full max-w-full overflow-x-auto overflow-y-auto">
+                  <div class="mt-1 max-h-180 w-full max-w-full overflow-x-auto overflow-y-auto">
                     <pre
                       class="text-xs p-2 border rounded inline-block min-w-full whitespace-pre"
                       >{{ formatResult(result.result.result) }}</pre
@@ -55,7 +57,7 @@
                 </div>
                 <div v-if="result.result.stdout" class="mt-2 w-full min-w-0">
                   <div class="font-medium text-xs opacity-80">Output:</div>
-                  <div class="mt-1 max-h-32 w-full max-w-full overflow-x-auto overflow-y-auto">
+                  <div class="mt-1 max-h-180 w-full max-w-full overflow-x-auto overflow-y-auto">
                     <pre
                       class="text-xs p-2 border rounded inline-block min-w-full whitespace-pre"
                       >{{ result.result.stdout }}</pre

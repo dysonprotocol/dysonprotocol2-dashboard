@@ -241,14 +241,14 @@ async function initEditor() {
     language: 'python',
     theme: editorTheme.value,
     readOnly: readOnly.value,
-    minimap: { enabled: false },
+    minimap: { enabled: true },
     scrollBeyondLastLine: false,
     automaticLayout: true,
     wordWrap: 'bounded',
     wordWrapColumn: 120,
     wrappingStrategy: 'simple',
     overviewRulerLanes: 0,
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
   })
   // Auto-fit height to content

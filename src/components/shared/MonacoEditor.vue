@@ -12,6 +12,9 @@ const props = defineProps<{
   theme?: string
   lineNumberOffset?: number
   options?: Record<string, unknown>
+  autoHeight?: boolean
+  minHeight?: number
+  maxHeight?: number
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -45,6 +48,9 @@ async function createEditor() {
     fontSize: 12,
     fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
     lineNumbers: (n) => String(n + Number(props.lineNumberOffset || 0)),
+    scrollbar: props.autoHeight
+      ? { vertical: 'hidden', alwaysConsumeMouseWheel: false }
+      : { alwaysConsumeMouseWheel: false },
     ...(props.options || {}),
   }
   editor = m.editor.create(container.value, initial)
@@ -53,6 +59,8 @@ async function createEditor() {
     const v = editor!.getValue()
     if (v !== props.modelValue) emit('update:modelValue', v)
   })
+  editor.onDidContentSizeChange(() => adjustHeight())
+  adjustHeight()
 }
 
 function disposeEditor() {
@@ -109,7 +117,12 @@ watch(
 )
 
 function layout() {
-  editor?.layout()
+  if (!editor) return
+  if (props.autoHeight) {
+    adjustHeight()
+    return
+  }
+  editor.layout()
 }
 
 function highlightRange(startLine: number, startCol: number, endLine: number, endCol: number) {
@@ -130,6 +143,20 @@ function highlightRange(startLine: number, startCol: number, endLine: number, en
 
 function clearDecorations() {
   decorations?.set([])
+}
+
+function adjustHeight() {
+  if (!props.autoHeight || !editor || !container.value) return
+  // Compute desired content height
+  const contentHeight = Math.ceil(editor.getContentHeight())
+  const minH = typeof props.minHeight === 'number' ? Math.max(0, props.minHeight) : 0
+  const maxH =
+    typeof props.maxHeight === 'number' ? Math.max(minH, props.maxHeight) : Number.POSITIVE_INFINITY
+  const target = Math.max(minH, Math.min(contentHeight, maxH))
+  // Apply explicit pixel height to container and layout editor
+  container.value.style.height = `${target}px`
+  const width = container.value.clientWidth || 0
+  editor.layout({ width, height: target })
 }
 
 defineExpose({ layout, highlightRange, clearDecorations })
