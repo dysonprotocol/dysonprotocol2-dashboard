@@ -84,6 +84,8 @@ function onEditorContentChanged(content: string) {
 
 function onScriptSaved(e: { address: string; code: string }) {
   editedContent.value = e?.code || ''
+  // Ensure functions and schema refresh immediately after save
+  void refresh()
 }
 
 watchEffect(() => {

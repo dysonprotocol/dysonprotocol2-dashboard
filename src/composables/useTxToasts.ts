@@ -61,7 +61,7 @@ export function useTxToasts() {
         const Comp = CustomTxToast(title, statusText, item.txHash)
         show(Comp as unknown as string, {
           id: key,
-          duration: 999999,
+          duration: 10000,
           onDismiss: () => {
             try {
               removeTransaction(item.txHash)

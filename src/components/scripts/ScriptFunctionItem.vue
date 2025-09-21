@@ -203,7 +203,7 @@ const { goToException: goTo } = useGoToException()
 
 // Open state per address+fn
 const openStates = useStorage('script-function-open-states', {})
-const storageKey = computed(() => `${props.address}_${props.func.name || props.func.function_name}`)
+const storageKey = computed(() => `${props.address}_${props.func.function_name}`)
 const isOpen = computed(() => openStates.value[storageKey.value] ?? false)
 
 const accordionValue = computed({
@@ -331,7 +331,7 @@ function buildKwargsPlaceholderFromSchema(fn) {
 }
 
 function buildDisplaySignature(fn) {
-  const name = fn?.name || fn?.function_name || 'function'
+  const name = fn?.function_name
   const params = getParamList(fn)
   const parts = params.map((p) => (p.required ? p.name : `${p.name}=${formatDefault(p.default)}`))
   return `${name}(${parts.join(', ')})`
@@ -347,6 +347,10 @@ function formatDefault(val) {
 watch(
   () => props.func,
   (f) => {
+    if (!f?.function_name) {
+      console.error('ScriptFunctionItem: missing function_name in func')
+      return
+    }
     const k = storageKey.value
     if (!paramInputs.value[k]) paramInputs.value[k] = buildKwargsPlaceholderFromSchema(f)
     kwargsInput.value = paramInputs.value[k]

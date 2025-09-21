@@ -1,0 +1,79 @@
+{
+    "request": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgPoolSwap",
+        "definitions": {
+            "dysonprotocol.whaleswap.v1.MsgPoolSwap": {
+                "properties": {
+                    "trader": {
+                        "type": "string"
+                    },
+                    "pool_id": {
+                        "type": "string",
+                        "description": "target pool id to execute the swap against"
+                    },
+                    "input": {
+                        "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+                        "additionalProperties": false
+                    },
+                    "minimum_out_amount": {
+                        "type": "string",
+                        "description": "sdk.Int string"
+                    },
+                    "out_denom": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "Msg Pool Swap",
+                "description": "Single-pool swap. - `input` denom must be one of the pool reserves; `out_denom` must be the   other. - `minimum_out_amount` is an sdk.Int string; the swap fails if the computed   output is less than this value after fees."
+            },
+            "cosmos.base.v1beta1.Coin": {
+                "properties": {
+                    "denom": {
+                        "type": "string"
+                    },
+                    "amount": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "Coin",
+                "description": "Coin defines a token with a denomination and an amount. NOTE: The amount field is an Int which implements the custom method signatures required by gogoproto."
+            }
+        }
+    },
+    "response": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgPoolSwapResponse",
+        "definitions": {
+            "dysonprotocol.whaleswap.v1.MsgPoolSwapResponse": {
+                "properties": {
+                    "amount_out": {
+                        "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "Msg Pool Swap Response"
+            },
+            "cosmos.base.v1beta1.Coin": {
+                "properties": {
+                    "denom": {
+                        "type": "string"
+                    },
+                    "amount": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "Coin",
+                "description": "Coin defines a token with a denomination and an amount. NOTE: The amount field is an Int which implements the custom method signatures required by gogoproto."
+            }
+        }
+    }
+}

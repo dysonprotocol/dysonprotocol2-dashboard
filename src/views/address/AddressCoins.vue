@@ -91,13 +91,8 @@
             <!-- spendable display amount -->
             <a class="text-xs cursor-pointer hover:underline" @click="spendableClick">
               Spendable:
-              {{
-                DenomMetadata.normalize({
-                  amount: spendables.find((c: any) => c.denom === sendDenom)?.amount || '0',
-                  denom: sendDenom,
-                }).display.amount
-              }}
-              {{ sendDenom }}
+              {{ spendableDisplay.amount }}
+              {{ spendableDisplay.denom }}
             </a>
             <!-- amount selector -->
             <AmountDenomSelector
@@ -116,9 +111,10 @@
           </div>
           <div class="text-xs">
             <label for="confirm">
-              <Checkbox
+              <input
                 id="confirm"
-                v-model:checked="confirm"
+                type="checkbox"
+                v-model="confirm"
                 name="confirm"
                 :disabled="!hasInputs"
               />
@@ -129,6 +125,18 @@
             </label>
           </div>
           <Button type="submit" :disabled="!canSend || !signerReady">Send</Button>
+          <div v-if="!signerReady || !canSend" class="mt-2 text-xs text-yellow-600">
+            <ul class="list-disc pl-4">
+              <li v-if="!signerReady">
+                Signer not ready: unlock wallet or select an authorized signer
+              </li>
+              <li v-if="!address">Missing sender address</li>
+              <li v-if="!String(sendTo).trim()">Recipient is required</li>
+              <li v-if="!String(sendAmount).trim()">Amount is required</li>
+              <li v-if="!String(sendDenom).trim()">Denom is required</li>
+              <li v-if="!confirm">Please check Confirm Send</li>
+            </ul>
+          </div>
           <Alert v-if="sendError" variant="destructive" class="mt-2">
             <AlertDescription>{{ sendError }}</AlertDescription>
           </Alert>
@@ -194,7 +202,6 @@ import WalletSelector from '@/components/shared/WalletSelector.vue'
 import { Grant } from '@/orm/models/authz/Grant'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
@@ -254,6 +261,8 @@ const hasInputs = computed(() =>
   )
 )
 const canSend = computed(() => Boolean(props.address && hasInputs.value && confirm.value))
+
+// Removed: in-template conditions now explain disabled reasons
 
 // Bank MsgSend authz filter scoped to this address as granter
 function msgTypeFilter(grant: any) {
@@ -351,6 +360,20 @@ const allowedBases = computed(() => {
   }
 })
 const defaultBaseDenom = computed(() => 'udys')
+
+// Spendable display in the display denom (e.g., dys2)
+const spendableDisplay = computed(() => {
+  try {
+    const denom = String(sendDenom.value || defaultBaseDenom.value)
+    const amount = String(
+      (spendables.value as any[]).find((c: any) => String(c.denom) === denom)?.amount || '0'
+    )
+    return DenomMetadata.normalize({ amount, denom }).display
+  } catch (e) {
+    console.error('Failed to compute spendableDisplay', e)
+    return { amount: '0', denom: '' } as any
+  }
+})
 
 function onUpdateBase(payload: { amount: string; denom: string }) {
   sendAmount.value = payload.amount || ''

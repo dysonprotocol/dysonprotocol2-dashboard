@@ -172,6 +172,7 @@ async function save() {
     showSuccessMessage()
     emit('script-updated', { address: props.address, code: originalContent.value })
     await useAxiosRepo(Script).api().fetchInfo(props.address)
+    await useAxiosRepo(Script).api().fetchFunctionSchema(props.address)
   } catch (error) {
     console.error('Save failed', error)
     const err: any = error
