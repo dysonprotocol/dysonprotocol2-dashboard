@@ -195,6 +195,38 @@ export class WhaleswapPool extends Model {
             },
           })
         },
+        async fetchPoolsByOwner(
+          this: Request,
+          owner: string,
+          opts?: { limit?: string; next_key?: string }
+        ): Promise<{ next_key?: string; total?: string; returned?: number; limit?: string }> {
+          const qs = new URLSearchParams()
+          if (opts?.next_key) qs.set('pagination.key', opts.next_key)
+          if (opts?.limit) qs.set(opts.next_key ? 'pagination.limit' : 'limit', opts.limit)
+          let nk: string | undefined
+          let total: string | undefined
+          let returned = 0
+          await this.get(`/dysonprotocol/whaleswap/v1/pools/owner/${owner}?${qs}`, {
+            dataTransformer: ({
+              data,
+            }: {
+              data: {
+                pools?: PoolData[]
+                pagination?: { next_key?: string; total?: string | number }
+              }
+            }) => {
+              const list = Array.isArray(data?.pools) ? data!.pools! : []
+              returned = list.length
+              nk = data?.pagination?.next_key || ''
+              const tot = data?.pagination?.total
+              total = typeof tot === 'number' ? String(tot) : (tot as string | undefined)
+              return list
+                .filter((p) => p?.pool_id != null)
+                .map((p) => WhaleswapPool.transformOne(p))
+            },
+          })
+          return { next_key: nk || undefined, total, returned, limit: opts?.limit }
+        },
       },
     },
   }

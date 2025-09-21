@@ -9,12 +9,13 @@
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
+import { useRepo } from 'pinia-orm'
 import WhaleswapAuction from '@/orm/models/whaleswap/Auction'
 
 const route = useRoute()
 const auctionId = computed(() => String(route.params.auctionId || ''))
 const api = useAxiosRepo(WhaleswapAuction).api()
-const repo = useAxiosRepo(WhaleswapAuction).repo()
+const repo = useRepo(WhaleswapAuction)
 const auction = computed(() => repo.find(auctionId.value) || {})
 
 onMounted(() => {

@@ -1,6 +1,9 @@
 <template>
   <div class="p-4 space-y-2">
     <h2 class="text-xl font-semibold">Pool #{{ poolId }}</h2>
+    <div class="rounded-md border p-3">
+      <PoolSwapInline :pool-id="poolId" />
+    </div>
     <pre class="text-xs overflow-auto">{{ JSON.stringify(pool, null, 2) }}</pre>
   </div>
 </template>
@@ -9,12 +12,14 @@
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
+import { useRepo } from 'pinia-orm'
 import WhaleswapPool from '@/orm/models/whaleswap/Pool'
+import PoolSwapInline from '@/components/whaleswap/forms/PoolSwapInline.vue'
 
 const route = useRoute()
 const poolId = computed(() => String(route.params.poolId || ''))
 const api = useAxiosRepo(WhaleswapPool).api()
-const repo = useAxiosRepo(WhaleswapPool).repo()
+const repo = useRepo(WhaleswapPool)
 const pool = computed(() => repo.find(poolId.value) || {})
 
 onMounted(() => {

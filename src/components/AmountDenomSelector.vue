@@ -11,6 +11,7 @@
       class="w-full"
       :disabled="disabled"
       @input="onAmountInput"
+      @blur="onAmountBlur"
     />
     <Select v-model="selectedBaseDenom" :disabled="disabled || options.length === 0">
       <SelectTrigger class="w-full sm:w-48">
@@ -96,7 +97,11 @@ function onAmountInput(event) {
   amountDisplay.value = event.target.value
 }
 
-watch([amountDisplay, selectedBaseDenom, () => props.baseDenoms], computeAndEmit)
+function onAmountBlur() {
+  computeAndEmit()
+}
+
+watch([selectedBaseDenom, () => props.baseDenoms], computeAndEmit)
 
 watch(
   () => options.value.map((o) => o.base).join('|'),

@@ -16,8 +16,8 @@
             Offer #{{ o.offer_id }} — {{ o.status }}
           </RouterLink>
           <div class="text-xs text-muted-foreground">
-            have {{ o.remaining_have?.amount }} {{ o.remaining_have?.denom }} / want
-            {{ o.remaining_want?.amount }} {{ o.remaining_want?.denom }}
+            have {{ displayHave(o).amount }} {{ displayHave(o).denom }} / want
+            {{ displayWant(o).amount }} {{ displayWant(o).denom }}
           </div>
         </li>
       </ul>
@@ -32,6 +32,7 @@ import { useAxiosRepo } from '@pinia-orm/axios'
 import OfferMakeForm from '@/components/whaleswap/forms/OfferMakeForm.vue'
 import { useRepo } from 'pinia-orm'
 import WhaleswapOffer from '@/orm/models/whaleswap/Offer'
+import { DenomMetadata } from '@/orm/models/bank/DenomMetadata'
 
 const route = useRoute()
 const address = computed(() => String(route.params.address || ''))
@@ -42,6 +43,29 @@ const offerRepo = useRepo(WhaleswapOffer)
 const offers = computed(() =>
   (offerRepo.all() as Array<Record<string, any>>).filter((o) => o.maker === address.value)
 )
+
+function displayHave(o: any) {
+  try {
+    const c = o?.remaining_have || { amount: '0', denom: '' }
+    return DenomMetadata.normalize({ amount: c.amount, denom: c.denom }).display
+  } catch {
+    return {
+      amount: String(o?.remaining_have?.amount || '0'),
+      denom: String(o?.remaining_have?.denom || ''),
+    }
+  }
+}
+function displayWant(o: any) {
+  try {
+    const c = o?.remaining_want || { amount: '0', denom: '' }
+    return DenomMetadata.normalize({ amount: c.amount, denom: c.denom }).display
+  } catch {
+    return {
+      amount: String(o?.remaining_want?.amount || '0'),
+      denom: String(o?.remaining_want?.denom || ''),
+    }
+  }
+}
 
 async function load() {
   if (!address.value) return

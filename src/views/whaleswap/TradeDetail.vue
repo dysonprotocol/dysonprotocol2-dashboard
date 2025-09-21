@@ -9,12 +9,13 @@
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
+import { useRepo } from 'pinia-orm'
 import WhaleswapTrade from '@/orm/models/whaleswap/Trade'
 
 const route = useRoute()
 const tradeId = computed(() => String(route.params.tradeId || ''))
 const api = useAxiosRepo(WhaleswapTrade).api()
-const repo = useAxiosRepo(WhaleswapTrade).repo()
+const repo = useRepo(WhaleswapTrade)
 const trade = computed(() => repo.find(tradeId.value) || {})
 
 onMounted(() => {

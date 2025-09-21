@@ -166,7 +166,11 @@ export class WhaleswapActions extends Model {
           }
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: creator })
           ensureOk(res, 'Whaleswap create pool failed')
-          await useAxiosRepo(WhaleswapPool).api().fetchPools()
+          try {
+            await useAxiosRepo(WhaleswapPool).api().fetchPoolsByOwner(creator, { limit: '50' })
+          } catch (e) {
+            await useAxiosRepo(WhaleswapPool).api().fetchPools()
+          }
           return res
         },
         async addLiquidity(

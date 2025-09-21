@@ -12,16 +12,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const tab = computed(() => String((route.query.tab as string) || 'offers'))
 
-const activeComponent = computed(() => {
-  if (tab.value === 'pools') return () => import('./tabs/HubPools.vue')
-  if (tab.value === 'auctions') return () => import('./tabs/HubAuctions.vue')
-  if (tab.value === 'trades') return () => import('./tabs/HubTrades.vue')
-  return () => import('./tabs/HubOffers.vue')
-})
+const Tabs: Record<string, any> = {
+  offers: defineAsyncComponent(() => import('./tabs/HubOffers.vue')),
+  pools: defineAsyncComponent(() => import('./tabs/HubPools.vue')),
+  auctions: defineAsyncComponent(() => import('./tabs/HubAuctions.vue')),
+  trades: defineAsyncComponent(() => import('./tabs/HubTrades.vue')),
+}
+
+const activeComponent = computed(() => Tabs[tab.value] || Tabs.offers)
 </script>
