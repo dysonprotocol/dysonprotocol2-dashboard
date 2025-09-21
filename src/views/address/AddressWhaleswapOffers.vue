@@ -1,6 +1,9 @@
 <template>
   <div class="p-4 space-y-4">
     <h2 class="text-xl font-semibold">Offers by {{ address }}</h2>
+    <div class="rounded-md border p-3">
+      <OfferMakeForm :base-denoms="[]" />
+    </div>
     <div class="text-sm text-muted-foreground" v-if="isLoading">Loading…</div>
     <div v-else>
       <div v-if="offers.length === 0" class="text-sm">No offers.</div>
@@ -26,6 +29,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
+import OfferMakeForm from '@/components/whaleswap/forms/OfferMakeForm.vue'
 import { useRepo } from 'pinia-orm'
 import WhaleswapOffer from '@/orm/models/whaleswap/Offer'
 

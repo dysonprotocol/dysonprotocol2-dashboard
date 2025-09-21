@@ -151,97 +151,105 @@
 
         <div class="p-4 w-full lg:w-1/2">
           <div class="font-medium mb-2">Denoms</div>
-          <div class="border rounded p-3 bg-base-100">
-            <div class="font-medium mb-2">Mint coin(s)</div>
-            <div class="text-xs opacity-70 mb-2">
-              Destination: <span class="font-mono">{{ resolvedAddress }}</span>
-            </div>
-            <form class="grid grid-cols-1" @submit.prevent="mintCoins">
-              <div class="space-y-2">
-                <label class="input w-full">
-                  <span class="label">Display Amount</span>
-                  <input
-                    :value="mintAmountDisplay"
-                    placeholder="amount (display)"
-                    type="text"
-                    inputmode="decimal"
-                    step="0.000001"
-                    :disabled="denomBusy === 'mint'"
-                    @focus="isEditingDisplay = true"
-                    @blur="onDisplayBlur"
-                    @input="onDisplayInput"
-                  />
-                </label>
-                <div v-if="mintAmountDisplayError" class="text-error text-sm">
-                  {{ mintAmountDisplayError }}
-                </div>
-                <label class="input w-full">
-                  <span class="label">Display Denom</span>
-                  <input class="input-ghost" :value="mintDisplayLabel" readonly />
-                </label>
-                <ul class="list-disc list-inside text-xs opacity-70 space-y-1">
-                  <li>
-                    Display Denom: <span class="font-mono">{{ mintDisplayLabel }}</span>
-                  </li>
-                  <li>
-                    Display amount: <span class="font-mono">{{ mintAmountDisplayNormalized }}</span>
-                  </li>
-                  <li>
-                    Decimal places:
-                    <span v-if="mintDenom === routeName" class="font-mono">6</span>
-                    <span v-else class="font-mono">0</span>
-                  </li>
-                  <li>
-                    Base Denom: <span class="font-mono">{{ mintDenom }}</span>
-                  </li>
-                  <li>
-                    Base amount: <span class="font-mono">{{ mintAmount }}</span>
-                  </li>
-                  <li v-if="hasEstimatedFee">
-                    Fee: <span class="font-mono">{{ estimatedFeeDisplay.amount }}</span>
-                    {{ estimatedFeeDisplay.label }}
-                    <span class="opacity-70">({{ estimatedFeeUdys }} udys)</span>
-                  </li>
-                </ul>
-                <p class="flex items-center gap-2 my-2">
-                  <label
-                    class="cursor-pointer wrap-anywhere overflow-hidden"
-                    for="confirmMintChecked"
-                  >
-                    <input
-                      id="confirmMintChecked"
-                      v-model="confirmMintChecked"
-                      type="checkbox"
-                      class="checkbox mr-2"
-                    />
-                    I understand the cost is non-refundable.
-                  </label>
-                </p>
-                <div class="mt-2 grid grid-cols-2 gap-2">
-                  <WalletSelector
-                    v-model="selectedExecutorMint"
-                    :allowed-addresses="allowedAddresses"
-                    :default-address="ownerAddress"
-                    :button-class="'btn-sm w-full'"
-                    :msg-type-filter="msgTypeFilterMintCoins"
-                    :show-locked="false"
-                    @update:executor-address="onExecutorAddressMint"
-                    @update:grantee-address="onGranteeAddressMint"
-                    @update:is-authz="onIsAuthzMint"
-                  />
-                  <button
-                    class="btn btn-primary btn-sm"
-                    :disabled="denomBusy === 'mint' || !canMint || !confirmMintChecked"
-                  >
-                    mint
-                  </button>
-                </div>
-                <div v-if="denomErrMint" class="alert alert-error alert-soft mt-2">
-                  {{ denomErrMint }}
-                </div>
+          <Card class="border rounded p-3">
+            <CardHeader class="p-0 mb-2">
+              <CardTitle class="font-medium">Mint coin(s)</CardTitle>
+            </CardHeader>
+            <CardContent class="p-0">
+              <div class="text-xs opacity-70 mb-2">
+                Destination: <span class="font-mono">{{ resolvedAddress }}</span>
               </div>
-            </form>
-          </div>
+              <form class="grid grid-cols-1" @submit.prevent="mintCoins">
+                <div class="space-y-2">
+                  <div class="w-full space-y-1">
+                    <Label for="mintDisplayAmount">Display Amount</Label>
+                    <Input
+                      id="mintDisplayAmount"
+                      :value="mintAmountDisplay"
+                      placeholder="amount (display)"
+                      type="text"
+                      inputmode="decimal"
+                      step="0.000001"
+                      :disabled="denomBusy === 'mint'"
+                      @focus="isEditingDisplay = true"
+                      @blur="onDisplayBlur"
+                      @input="onDisplayInput"
+                    />
+                  </div>
+                  <div v-if="mintAmountDisplayError" class="text-error text-sm">
+                    {{ mintAmountDisplayError }}
+                  </div>
+                  <div class="w-full space-y-1">
+                    <Label for="mintDisplayDenom">Display Denom</Label>
+                    <Input id="mintDisplayDenom" :value="mintDisplayLabel" readonly />
+                  </div>
+                  <ul class="list-disc list-inside text-xs opacity-70 space-y-1">
+                    <li>
+                      Display Denom: <span class="font-mono">{{ mintDisplayLabel }}</span>
+                    </li>
+                    <li>
+                      Display amount:
+                      <span class="font-mono">{{ mintAmountDisplayNormalized }}</span>
+                    </li>
+                    <li>
+                      Decimal places:
+                      <span v-if="mintDenom === routeName" class="font-mono">6</span>
+                      <span v-else class="font-mono">0</span>
+                    </li>
+                    <li>
+                      Base Denom: <span class="font-mono">{{ mintDenom }}</span>
+                    </li>
+                    <li>
+                      Base amount: <span class="font-mono">{{ mintAmount }}</span>
+                    </li>
+                    <li v-if="hasEstimatedFee">
+                      Fee: <span class="font-mono">{{ estimatedFeeDisplay.amount }}</span>
+                      {{ estimatedFeeDisplay.label }}
+                      <span class="opacity-70">({{ estimatedFeeUdys }} udys)</span>
+                    </li>
+                  </ul>
+                  <div
+                    v-if="denomBusy === 'mint' || !canMint || !confirmMintChecked"
+                    class="text-xs text-error/80 space-y-1"
+                  >
+                    <div class="font-medium">Cannot mint because:</div>
+                    <ul class="list-disc list-inside space-y-0.5">
+                      <li v-for="r in mintDisabledReasons" :key="r">{{ r }}</li>
+                    </ul>
+                  </div>
+                  <div class="flex items-center gap-2 my-2">
+                    <Checkbox id="confirmMintChecked" v-model="confirmMintChecked" />
+                    <Label class="cursor-pointer" for="confirmMintChecked">
+                      I understand the cost is non-refundable.
+                    </Label>
+                  </div>
+                  <CardFooter class="p-0 mt-2 grid grid-cols-2 gap-2">
+                    <WalletSelector
+                      v-model="selectedExecutorMint"
+                      :allowed-addresses="allowedAddresses"
+                      :default-address="ownerAddress"
+                      :button-class="'btn-sm w-full'"
+                      :msg-type-filter="msgTypeFilterMintCoins"
+                      :show-locked="false"
+                      @update:executor-address="onExecutorAddressMint"
+                      @update:grantee-address="onGranteeAddressMint"
+                      @update:is-authz="onIsAuthzMint"
+                    />
+                    <Button
+                      type="submit"
+                      :disabled="denomBusy === 'mint' || !canMint || !confirmMintChecked"
+                      class="btn-primary btn-sm"
+                    >
+                      mint
+                    </Button>
+                  </CardFooter>
+                  <div v-if="denomErrMint" class="alert alert-error alert-soft mt-2">
+                    {{ denomErrMint }}
+                  </div>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
           <BurnCoinsForm />
           <div class="mt-3">
             <div v-if="isLoadingDenoms" class="opacity-70">Loading…</div>
@@ -406,6 +414,15 @@ import NameserviceParams from '@/orm/models/nameservice/NameserviceParams'
 import NameserviceActions from '@/orm/models/nameservice/Actions'
 import BurnCoinsForm from '@/components/names/BurnCoinsForm.vue'
 import Supply from '@/orm/models/bank/Supply'
+import Card from '@/components/ui/card/Card.vue'
+import CardHeader from '@/components/ui/card/CardHeader.vue'
+import CardTitle from '@/components/ui/card/CardTitle.vue'
+import CardContent from '@/components/ui/card/CardContent.vue'
+import CardFooter from '@/components/ui/card/CardFooter.vue'
+import Label from '@/components/ui/label/Label.vue'
+import Input from '@/components/ui/input/Input.vue'
+import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
+import Button from '@/components/ui/button/Button.vue'
 
 const route = useRoute()
 const routeName = computed(() => String(route.params.name || ''))
@@ -664,6 +681,16 @@ const denomErrMint = ref('')
 const confirmMintChecked = ref(false)
 const canMint = computed(() => Boolean(mintDenom.value) && Boolean(mintAmount.value))
 const isEditingDisplay = ref(false)
+const mintDisabledReasons = computed(() => {
+  const reasons: string[] = []
+  if (denomBusy.value === 'mint') reasons.push('Transaction in progress')
+  if (!mintDenom.value) reasons.push('Base denom is not set')
+  const raw = String(mintAmountDisplay.value || '').trim()
+  if (!raw) reasons.push('Enter a valid amount')
+  if (mintAmountDisplayError.value) reasons.push(String(mintAmountDisplayError.value))
+  if (!confirmMintChecked.value) reasons.push('Please confirm cost is non-refundable')
+  return Array.from(new Set(reasons))
+})
 
 function baseToDisplayAssuming6(amountBase: string) {
   const s = String(amountBase || '0')
@@ -690,11 +717,9 @@ function displayToBaseAssuming6(amountDisplay: string) {
 watchEffect(() => {
   if (!isDisplayValid.value) {
     mintAmount.value = ''
-    confirmMintChecked.value = false
     return
   }
   mintAmount.value = displayToBaseAssuming6(mintAmountDisplay.value)
-  confirmMintChecked.value = false
 })
 function onDisplayInput(e: any) {
   const v = String(e?.target?.value ?? '')
@@ -765,6 +790,7 @@ async function mintCoins() {
       .mintCoins({
         name_destination: String(resolvedAddress.value || ''),
         amount: [{ denom: String(mintDenom.value || ''), amount: String(mintAmount.value || '0') }],
+        mint_fee: { denom: 'udys', amount: String(estimatedFeeUdys.value || '0') },
         wallet,
         executorAddress: executor,
         gasLimit: 'auto',

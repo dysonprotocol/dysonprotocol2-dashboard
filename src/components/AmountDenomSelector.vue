@@ -51,6 +51,7 @@ const { loadDenomMetadata, getDisplayOptions } = useWallet()
 
 const amountDisplay = ref('')
 const selectedBaseDenom = ref('')
+const isSyncingFromProps = ref(false)
 
 const options = computed(() => getDisplayOptions({ allowedBases: props.baseDenoms }))
 
@@ -71,6 +72,7 @@ function computeAndEmit() {
   emit('update:display', { amount: amountStr, denom: displayDenom })
 
   // Do not emit base-clearing updates; preserve user input on denom changes
+  if (isSyncingFromProps.value) return
   if (!displayDenom || amountStr === '') return
 
   // Convert display -> base using exponent from options (no metadata lookup ambiguity)
@@ -113,20 +115,24 @@ watch(
   () => {
     const baseDenom = String(props.base?.denom || '')
     const hasValidDenom = baseDenom && options.value.some((o) => o.base === baseDenom)
-    if (hasValidDenom) selectedBaseDenom.value = baseDenom
-    const exp = Number(options.value.find((o) => o.base === baseDenom)?.exponent || 0)
-    const baseAmount = props.base?.amount
-    if (baseAmount == null || baseAmount === '') return
-    const s = String(baseAmount)
-    if (exp <= 0) amountDisplay.value = s
-    else if (s.length <= exp) {
-      const pad = '0'.repeat(exp - s.length)
-      amountDisplay.value = `0.${pad}${s}`.replace(/\.0+$/, '')
-    } else {
-      const i = s.length - exp
-      amountDisplay.value = `${s.slice(0, i)}.${s.slice(i)}`.replace(/\.0+$/, '')
+    isSyncingFromProps.value = true
+    try {
+      if (hasValidDenom) selectedBaseDenom.value = baseDenom
+      const exp = Number(options.value.find((o) => o.base === baseDenom)?.exponent || 0)
+      const baseAmount = props.base?.amount
+      if (baseAmount == null || baseAmount === '') return
+      const s = String(baseAmount)
+      if (exp <= 0) amountDisplay.value = s
+      else if (s.length <= exp) {
+        const pad = '0'.repeat(exp - s.length)
+        amountDisplay.value = `0.${pad}${s}`.replace(/\.0+$/, '')
+      } else {
+        const i = s.length - exp
+        amountDisplay.value = `${s.slice(0, i)}.${s.slice(i)}`.replace(/\.0+$/, '')
+      }
+    } finally {
+      isSyncingFromProps.value = false
     }
-    computeAndEmit()
   }
 )
 </script>

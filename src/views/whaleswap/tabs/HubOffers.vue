@@ -1,5 +1,8 @@
 <template>
   <div class="space-y-3">
+    <div class="rounded-md border p-3">
+      <OfferMakeForm :base-denoms="[]" />
+    </div>
     <div class="flex gap-2 items-end">
       <label class="text-sm">
         Have
@@ -30,6 +33,7 @@ import { ref, computed } from 'vue'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import WhaleswapOffer from '@/orm/models/whaleswap/Offer'
+import OfferMakeForm from '@/components/whaleswap/forms/OfferMakeForm.vue'
 
 const have = ref('')
 const want = ref('')

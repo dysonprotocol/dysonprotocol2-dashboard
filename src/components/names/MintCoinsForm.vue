@@ -13,7 +13,7 @@
       />
       <input
         v-model.trim="amount"
-        class="input input-bordered w-full"
+        class=""
         placeholder="amount (base units)"
         inputmode="numeric"
         :disabled="isBusy"

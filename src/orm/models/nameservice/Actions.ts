@@ -294,17 +294,20 @@ export class NameserviceActions extends Model {
           params: {
             name_destination: string
             amount: Array<{ denom: string; amount: string }>
+            mint_fee?: { denom: string; amount: string }
             wallet: WalletLike
             gasLimit?: number | 'auto'
             memo?: string
             executorAddress?: string
           }
         ) {
-          const { name_destination, amount, wallet, gasLimit, memo, executorAddress } = params
+          const { name_destination, amount, mint_fee, wallet, gasLimit, memo, executorAddress } =
+            params
           const msg = {
             '@type': '/dysonprotocol.nameservice.v1.MsgMintCoins',
             name_destination,
             amount,
+            ...(mint_fee ? { mint_fee } : {}),
           }
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress })
           if (!res?.success) throw new Error(res?.rawLog || 'Mint coins failed')
