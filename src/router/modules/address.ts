@@ -12,6 +12,10 @@ const AddressStaking = () => import('@/views/address/AddressStaking.vue')
 const AddressNFTs = () => import('@/views/address/AddressNFTs.vue')
 const AddressAuthz = () => import('@/views/address/AddressAuthz.vue')
 const AddressSummary = () => import('@/views/address/AddressSummary.vue')
+const AddressWhaleswapOffers = () => import('@/views/address/AddressWhaleswapOffers.vue')
+const AddressWhaleswapTrades = () => import('@/views/address/AddressWhaleswapTrades.vue')
+const AddressWhaleswapPools = () => import('@/views/address/AddressWhaleswapPools.vue')
+const AddressWhaleswapAuctions = () => import('@/views/address/AddressWhaleswapAuctions.vue')
 
 export const addressRoutes: RouteRecordRaw[] = [
   {
@@ -95,6 +99,34 @@ export const addressRoutes: RouteRecordRaw[] = [
         component: AddressAuthz,
         props: true,
         meta: { title: 'Address Authz' },
+      },
+      {
+        path: 'whaleswap/offers',
+        name: 'AddressWhaleswapOffers',
+        component: AddressWhaleswapOffers,
+        props: true,
+        meta: { title: 'Address Offers' },
+      },
+      {
+        path: 'whaleswap/trades',
+        name: 'AddressWhaleswapTrades',
+        component: AddressWhaleswapTrades,
+        props: true,
+        meta: { title: 'Address Trades' },
+      },
+      {
+        path: 'whaleswap/pools',
+        name: 'AddressWhaleswapPools',
+        component: AddressWhaleswapPools,
+        props: true,
+        meta: { title: 'Address Pools' },
+      },
+      {
+        path: 'whaleswap/auctions',
+        name: 'AddressWhaleswapAuctions',
+        component: AddressWhaleswapAuctions,
+        props: true,
+        meta: { title: 'Address Auctions' },
       },
     ],
   },

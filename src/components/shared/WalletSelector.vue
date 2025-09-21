@@ -13,91 +13,100 @@
         </Button>
       </DialogTrigger>
 
-      <DialogContent data-testid="wallet-selector-modal">
-        <DialogHeader>
-          <DialogTitle>Select wallet</DialogTitle>
-        </DialogHeader>
+      <DialogContent>
+        <div data-testid="wallet-selector-modal">
+          <DialogHeader>
+            <DialogTitle>Select wallet</DialogTitle>
+          </DialogHeader>
 
-        <div v-if="selectedAuthz && selectedAuthz.notes" class="mt-2 text-xs opacity-80 break-all">
-          Note: {{ selectedAuthz.notes }}
-        </div>
-        <ul class="mt-4">
-          <li v-if="groupedOptions.length === 0" class="px-4 py-2 text-sm opacity-70">
-            No wallets available. Enable Keplr or add and unlock a JS wallet in the sidebar.
-          </li>
-          <li v-for="group in groupedOptions" :key="group.wallet.address" class="my-1">
-            <div
-              class="w-full text-left p-4 text-sm rounded-md border border-primary/10"
-              :class="{
-                'cursor-not-allowed': !group.wallet.isUnlocked || !group.directAllowed,
-                'hover:cursor-pointer border-primary/40 hover:bg-primary/10':
-                  group.wallet.isUnlocked && group.directAllowed,
-                'bg-primary/10': isDirectSelected(group.wallet.address),
-              }"
-              :data-testid="`wallet-item-${group.wallet.name}`"
-              @click="
-                group.wallet.isUnlocked && group.directAllowed && selectDirect(group.wallet.address)
-              "
-            >
+          <div
+            v-if="selectedAuthz && selectedAuthz.notes"
+            class="mt-2 text-xs opacity-80 break-all"
+          >
+            Note: {{ selectedAuthz.notes }}
+          </div>
+          <ul class="mt-4">
+            <li v-if="groupedOptions.length === 0" class="px-4 py-2 text-sm opacity-70">
+              No wallets available. Enable Keplr or add and unlock a JS wallet in the sidebar.
+            </li>
+            <li v-for="group in groupedOptions" :key="group.wallet.address" class="my-1">
               <div
-                class="flex items-start justify-between"
-                :class="{ 'opacity-50': !group.wallet.isUnlocked || !group.directAllowed }"
+                class="w-full text-left p-4 text-sm rounded-md border border-primary/10"
+                :class="{
+                  'cursor-not-allowed': !group.wallet.isUnlocked || !group.directAllowed,
+                  'hover:cursor-pointer border-primary/40 hover:bg-primary/10':
+                    group.wallet.isUnlocked && group.directAllowed,
+                  'bg-primary/10': isDirectSelected(group.wallet.address),
+                }"
+                :data-testid="`wallet-item-${group.wallet.name}`"
+                @click="
+                  group.wallet.isUnlocked &&
+                  group.directAllowed &&
+                  selectDirect(group.wallet.address)
+                "
               >
-                <p
-                  :class="isDirectSelected(group.wallet.address) ? 'font-semibold' : 'font-normal'"
+                <div
+                  class="flex items-start justify-between"
+                  :class="{ 'opacity-50': !group.wallet.isUnlocked || !group.directAllowed }"
                 >
-                  {{ group.wallet.name }}
-                  <span class="text-xs text-base-content/60">({{ group.wallet.type }})</span>
-                </p>
-                <span v-if="isDirectSelected(group.wallet.address)" class="text-primary">
-                  <CheckIcon class="size-5" />
-                </span>
-              </div>
-              <div class="mt-2 font-mono text-xs break-all">
-                {{ group.wallet.address }}
-              </div>
-
-              <div v-if="group.wallet.isUnlocked && group.authzOptions.length > 0" class="mt-3">
-                <div class="text-xs text-base-content/60 mb-1">Via Authz</div>
-                <div class="space-y-1">
-                  <Button
-                    v-for="(auth, idx) in group.authzOptions"
-                    :key="auth.granterAddress + ':' + idx"
-                    type="button"
-                    variant="outline"
-                    class="w-full justify-start border-primary/60 hover:bg-primary/10 h-auto"
-                    :class="{
-                      'bg-primary/10': isAuthzSelected(group.wallet.address, auth),
-                    }"
-                    @click.stop="selectAuthz(group.wallet, auth)"
+                  <p
+                    :class="
+                      isDirectSelected(group.wallet.address) ? 'font-semibold' : 'font-normal'
+                    "
                   >
-                    <div class="w-full">
-                      <div class="flex items-center justify-between">
-                        <div>
-                          <span class="font-medium">{{ short(auth.granterAddress) }}</span>
-                          <span class="opacity-70"> via Authz</span>
-                          <span class="opacity-70"> (signed by {{ group.wallet.name }})</span>
+                    {{ group.wallet.name }}
+                    <span class="text-xs text-base-content/60">({{ group.wallet.type }})</span>
+                  </p>
+                  <span v-if="isDirectSelected(group.wallet.address)" class="text-primary">
+                    <CheckIcon class="size-5" />
+                  </span>
+                </div>
+                <div class="mt-2 font-mono text-xs break-all">
+                  {{ group.wallet.address }}
+                </div>
+
+                <div v-if="group.wallet.isUnlocked && group.authzOptions.length > 0" class="mt-3">
+                  <div class="text-xs text-base-content/60 mb-1">Via Authz</div>
+                  <div class="space-y-1">
+                    <Button
+                      v-for="(auth, idx) in group.authzOptions"
+                      :key="auth.granterAddress + ':' + idx"
+                      type="button"
+                      variant="outline"
+                      class="w-full justify-start border-primary/60 hover:bg-primary/10 h-auto"
+                      :class="{
+                        'bg-primary/10': isAuthzSelected(group.wallet.address, auth),
+                      }"
+                      @click.stop="selectAuthz(group.wallet, auth)"
+                    >
+                      <div class="w-full">
+                        <div class="flex items-center justify-between">
+                          <div>
+                            <span class="font-medium">{{ short(auth.granterAddress) }}</span>
+                            <span class="opacity-70"> via Authz</span>
+                            <span class="opacity-70"> (signed by {{ group.wallet.name }})</span>
+                          </div>
+                          <span
+                            v-if="isAuthzSelected(group.wallet.address, auth)"
+                            class="text-primary"
+                          >
+                            <CheckIcon class="size-5" />
+                          </span>
                         </div>
-                        <span
-                          v-if="isAuthzSelected(group.wallet.address, auth)"
-                          class="text-primary"
-                        >
-                          <CheckIcon class="size-5" />
-                        </span>
+                        <div class="text-xs opacity-70 mt-1 flex items-center gap-2">
+                          <span>{{ auth.notes }}</span>
+                          <span v-if="auth.expiration" :title="auth.expiration"
+                            >exp: {{ shortTs(auth.expiration) }}</span
+                          >
+                        </div>
                       </div>
-                      <div class="text-xs opacity-70 mt-1 flex items-center gap-2">
-                        <span>{{ auth.notes }}</span>
-                        <span v-if="auth.expiration" :title="auth.expiration"
-                          >exp: {{ shortTs(auth.expiration) }}</span
-                        >
-                      </div>
-                    </div>
-                  </Button>
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </li>
-        </ul>
+            </li>
+          </ul>
+        </div>
       </DialogContent>
     </Dialog>
   </div>

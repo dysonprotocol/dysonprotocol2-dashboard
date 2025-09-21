@@ -55,5 +55,26 @@ export function getAddressLinks(address: string): AddressLink[] {
       iconClass: 'lucide--key-round',
       to: { name: 'AddressAuthz', params: { address } },
     },
+    // whaleswap
+    {
+      text: 'Offers',
+      iconClass: 'lucide--list-plus',
+      to: { name: 'AddressWhaleswapOffers', params: { address } },
+    },
+    {
+      text: 'Trades',
+      iconClass: 'lucide--arrow-left-right',
+      to: { name: 'AddressWhaleswapTrades', params: { address } },
+    },
+    {
+      text: 'Pools',
+      iconClass: 'lucide--waves',
+      to: { name: 'AddressWhaleswapPools', params: { address } },
+    },
+    {
+      text: 'Auctions',
+      iconClass: 'lucide--gavel',
+      to: { name: 'AddressWhaleswapAuctions', params: { address } },
+    },
   ]
 }

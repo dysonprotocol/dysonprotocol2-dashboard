@@ -44,6 +44,36 @@ export const explorerRoutes: RouteRecordRaw[] = [
     component: () => import('@/views/chain/GovernanceProposal.vue'),
     props: true,
   },
+  // whaleswap
+  {
+    path: '/whaleswap',
+    name: 'WhaleswapHub',
+    component: () => import('@/views/whaleswap/WhaleswapHub.vue'),
+  },
+  {
+    path: '/whaleswap/offers/:offerId(\\d+)',
+    name: 'WhaleswapOffer',
+    component: () => import('@/views/whaleswap/OfferDetail.vue'),
+    props: true,
+  },
+  {
+    path: '/whaleswap/pools/:poolId(\\d+)',
+    name: 'WhaleswapPool',
+    component: () => import('@/views/whaleswap/PoolDetail.vue'),
+    props: true,
+  },
+  {
+    path: '/whaleswap/auctions/:auctionId(\\d+)',
+    name: 'WhaleswapAuction',
+    component: () => import('@/views/whaleswap/AuctionDetail.vue'),
+    props: true,
+  },
+  {
+    path: '/whaleswap/trades/:tradeId(\\d+)',
+    name: 'WhaleswapTrade',
+    component: () => import('@/views/whaleswap/TradeDetail.vue'),
+    props: true,
+  },
 ]
 
 export default explorerRoutes

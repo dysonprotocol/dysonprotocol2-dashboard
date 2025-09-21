@@ -1,0 +1,55 @@
+<template>
+  <div class="space-y-3">
+    <div class="flex gap-2 items-end">
+      <label class="text-sm">
+        Sell
+        <input v-model="sell" class="input input-sm ml-2" placeholder="denom" />
+      </label>
+      <label class="text-sm">
+        Bid
+        <input v-model="bid" class="input input-sm ml-2" placeholder="denom" />
+      </label>
+      <button class="btn btn-sm" @click="load">Search</button>
+    </div>
+    <div class="text-sm text-muted-foreground" v-if="isLoading">Loading…</div>
+    <ul v-else class="space-y-2">
+      <li v-for="a in auctions" :key="a.auction_id" class="rounded-md border p-2">
+        <RouterLink
+          :to="{ name: 'WhaleswapAuction', params: { auctionId: a.auction_id } }"
+          class="hover:underline"
+        >
+          Auction #{{ a.auction_id }} — {{ a.sell?.amount }} {{ a.sell?.denom }}
+        </RouterLink>
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useAxiosRepo } from '@pinia-orm/axios'
+import { useRepo } from 'pinia-orm'
+import WhaleswapAuction from '@/orm/models/whaleswap/Auction'
+
+const sell = ref('')
+const bid = ref('')
+const isLoading = ref(false)
+const auctionApi = useAxiosRepo(WhaleswapAuction).api()
+const auctionRepo = useRepo(WhaleswapAuction)
+const auctions = computed(() => auctionRepo.all() as Array<Record<string, any>>)
+
+async function load() {
+  isLoading.value = true
+  try {
+    await auctionApi.fetchAuctions({
+      sell_denom: sell.value || undefined,
+      bid_denom: bid.value || undefined,
+      limit: '50',
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+load()
+</script>

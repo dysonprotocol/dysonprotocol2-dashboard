@@ -115,6 +115,13 @@
                 <span>Governance</span>
               </a>
             </router-link>
+
+            <router-link to="/whaleswap" custom v-slot="{ href, navigate, isActive }">
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">
+                <span class="iconify size-4" :class="'lucide--fish'" />
+                <span>Whaleswap</span>
+              </a>
+            </router-link>
           </nav>
         </div>
       </div>
