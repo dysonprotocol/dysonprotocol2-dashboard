@@ -169,6 +169,7 @@ export class WhaleswapActions extends Model {
           try {
             await useAxiosRepo(WhaleswapPool).api().fetchPoolsByOwner(creator, { limit: '50' })
           } catch (e) {
+            console.error(e)
             await useAxiosRepo(WhaleswapPool).api().fetchPools()
           }
           return res
@@ -241,8 +242,7 @@ export class WhaleswapActions extends Model {
             trader: string
             pool_id: string | number
             input: Coin
-            out_denom: string
-            minimum_out_amount?: string
+            minimum_output?: Coin
             wallet: {
               sendMsg: (args: {
                 msg: unknown
@@ -255,15 +255,13 @@ export class WhaleswapActions extends Model {
             memo?: string
           }
         ) {
-          const { trader, pool_id, input, out_denom, minimum_out_amount, wallet, gasLimit, memo } =
-            params
+          const { trader, pool_id, input, minimum_output, wallet, gasLimit, memo } = params
           const msg = {
             '@type': '/dysonprotocol.whaleswap.v1.MsgPoolSwap',
             trader,
             pool_id: String(pool_id),
             input,
-            out_denom,
-            ...(minimum_out_amount ? { minimum_out_amount } : {}),
+            ...(minimum_output ? { minimum_output } : {}),
           }
           const res = await wallet.sendMsg({ msg, gasLimit, memo, executorAddress: trader })
           ensureOk(res, 'Whaleswap pool swap failed')

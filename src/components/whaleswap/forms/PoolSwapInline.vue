@@ -92,6 +92,8 @@ import { useWallet } from '@/composables/useWallet'
 import WhaleswapPool from '@/orm/models/whaleswap/Pool'
 import { useRepo } from 'pinia-orm'
 import { useAxiosRepo } from '@pinia-orm/axios'
+import api from '@/orm/http'
+import { sendMsgs } from '@/utils/dysonTxUtils'
 
 const props = defineProps({
   poolId: { type: String, required: true },
@@ -104,6 +106,7 @@ const input = ref({ amount: '', denom: '' })
 // derive input denom from selected input coin; initialize on mount
 const slipPct = ref(props.defaultSlippagePct)
 const isSimulating = ref(false)
+const simOut = ref({ denom: '', amount: '' })
 
 const poolRepo = useRepo(WhaleswapPool)
 const poolApi = useAxiosRepo(WhaleswapPool).api()
@@ -172,6 +175,7 @@ const outEstimate = computed(() => {
 })
 
 const previewOut = computed(() => {
+  if (simOut.value && simOut.value.amount) return String(simOut.value.amount)
   const v = outEstimate.value
   return v == null ? '—' : String(v)
 })
@@ -184,9 +188,42 @@ async function simulatePreview() {
   if (!canSimulate.value) return
   isSimulating.value = true
   try {
-    // Use simulate path from sendMsgs helper via actions by passing minimum_out_amount empty
-    // We don't need to store the result, just show success message that on-chain estimate available.
-    successMessage.value = 'Simulation OK (on submit, minOut will use slippage)'
+    errorMessage.value = ''
+    successMessage.value = ''
+    simOut.value = { denom: '', amount: '' }
+    const { getWallet, buildFee } = useWallet()
+    const { walletInstance, type, address } = await getWallet(trader.value)
+    const msg = {
+      '@type': '/dysonprotocol.whaleswap.v1.MsgPoolSwap',
+      trader: trader.value,
+      pool_id: String(props.poolId),
+      input: { denom: input.value.denom, amount: String(input.value.amount) },
+      minimum_output: { denom: outDenom.value, amount: '0' },
+    }
+    const res = await sendMsgs({
+      apiUrl: api.defaults.baseURL,
+      wallet: walletInstance,
+      walletType: type,
+      address,
+      msgs: [msg],
+      memo: '',
+      fee: buildFee(100000000),
+      simulate: true,
+    })
+    if (!res?.success) {
+      throw new Error(res?.rawLog || 'Simulation failed')
+    }
+    const mrs = (res?.raw?.result?.msg_responses || []).filter((r) => r && r['@type'])
+    const swapResp = mrs.find(
+      (r) => r['@type'] === '/dysonprotocol.whaleswap.v1.MsgPoolSwapResponse'
+    )
+    const out = swapResp?.amount_out
+    if (out && out.amount && out.denom) {
+      simOut.value = { denom: String(out.denom), amount: String(out.amount) }
+      successMessage.value = `Estimated: ${out.amount} ${out.denom} (gas used ${res.gasUsed || 'n/a'})`
+    } else {
+      successMessage.value = `Simulation OK (no parsed msg_responses). Gas used ${res.gasUsed || 'n/a'}`
+    }
   } catch (e) {
     errorMessage.value = String(e?.message || e)
   } finally {
@@ -207,7 +244,14 @@ const isDisabled = computed(() => {
 
 function computeMinOut() {
   const s = Number(slipPct.value)
-  if (isBanded.value) return '1' // require a positive min_out; use 1 as conservative floor
+  if (isBanded.value) {
+    const amt = String(simOut.value?.amount || '').trim()
+    if (/^\d+$/.test(amt) && amt !== '0') {
+      const v = Math.floor(Number(amt) * (1 - s / 100))
+      return String(v)
+    }
+    return '1' // conservative fallback when no simulation available
+  }
   const out = outEstimate.value || 0n
   const factor = 1 - s / 100
   const v = Math.floor(Number(out) * factor)
@@ -220,10 +264,9 @@ async function onSubmit() {
     trader: trader.value,
     pool_id: props.poolId,
     input: { denom: input.value.denom, amount: String(input.value.amount) },
-    out_denom: outDenom.value,
   }
   const mo = computeMinOut()
-  if (mo) args.minimum_out_amount = mo
+  args.minimum_output = { denom: outDenom.value, amount: mo }
   await submit(function poolSwap() {}, { ...args, wallet: { sendMsg } })
 }
 </script>
