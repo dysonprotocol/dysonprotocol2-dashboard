@@ -1,15 +1,13 @@
 <template>
   <div class="space-y-3">
     <div class="flex gap-2 items-end">
-      <label class="text-sm">
-        Sell
-        <input v-model="sell" class="input input-sm ml-2" placeholder="denom" />
-      </label>
-      <label class="text-sm">
-        Bid
-        <input v-model="bid" class="input input-sm ml-2" placeholder="denom" />
-      </label>
-      <button class="btn btn-sm" @click="load">Search</button>
+      <label class="text-sm"
+        >Sell <Input v-model="sell" class="ml-2 w-48" placeholder="denom"
+      /></label>
+      <label class="text-sm"
+        >Bid <Input v-model="bid" class="ml-2 w-48" placeholder="denom"
+      /></label>
+      <Button @click="load">Search</Button>
     </div>
     <div class="text-sm text-muted-foreground" v-if="isLoading">Loading…</div>
     <ul v-else class="space-y-2">
@@ -30,6 +28,8 @@ import { ref, computed } from 'vue'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
 import WhaleswapAuction from '@/orm/models/whaleswap/Auction'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const sell = ref('')
 const bid = ref('')
