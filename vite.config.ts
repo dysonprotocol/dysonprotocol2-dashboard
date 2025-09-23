@@ -84,7 +84,7 @@ export default defineConfig(({ mode }) => {
           timeout: 60000,
           proxyTimeout: 60000,
         },
-        '/ibc': {
+        '/ibc/': {
           target: proxyTarget,
           changeOrigin: true,
           secure: false,
