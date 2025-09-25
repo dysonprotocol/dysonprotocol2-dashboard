@@ -122,6 +122,13 @@
                 <span>Whaleswap</span>
               </a>
             </router-link>
+
+            <router-link to="/ibc" custom v-slot="{ href, navigate, isActive }">
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">
+                <span class="iconify size-4" :class="'lucide--box'" />
+                <span>IBC</span>
+              </a>
+            </router-link>
           </nav>
         </div>
       </div>

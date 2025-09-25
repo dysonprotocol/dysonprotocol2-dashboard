@@ -4,11 +4,10 @@ const IBC = () => import('@/views/ibc/IBC.vue')
 
 const ibcRoutes: RouteRecordRaw[] = [
   {
-    path: '/ibc-connections',
+    path: '/ibc',
     name: 'IBC',
     component: IBC,
   },
 ]
 
 export default ibcRoutes
-
