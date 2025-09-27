@@ -109,7 +109,6 @@
       {"type":"file","name":"dysonprotocol.crontask.v1.SubscriptionByID.json"},
       {"type":"file","name":"dysonprotocol.crontask.v1.SubscriptionsAll.json"},
       {"type":"file","name":"dysonprotocol.crontask.v1.SubscriptionsByCreator.json"},
-      {"type":"file","name":"dysonprotocol.crontask.v1.SubscriptionsByStatus.json"},
       {"type":"file","name":"dysonprotocol.crontask.v1.TaskByID.json"},
       {"type":"file","name":"dysonprotocol.crontask.v1.TasksAll.json"},
       {"type":"file","name":"dysonprotocol.crontask.v1.TasksByAddress.json"},
@@ -148,6 +147,7 @@
       {"type":"file","name":"dysonprotocol.whaleswap.v1.Auctions.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.AuctionsByPairPriceRange.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.AuctionsBySeller.json"},
+      {"type":"file","name":"dysonprotocol.whaleswap.v1.Metrics.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.Offer.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.Offers.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.OffersBest.json"},
@@ -329,6 +329,7 @@
       {"type":"file","name":"dysonprotocol.whaleswap.v1.ConvertToSolid.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.CreatePool.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.MakeOffer.json"},
+      {"type":"file","name":"dysonprotocol.whaleswap.v1.MakeTrade.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.OpenAuction.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.PoolSwap.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.RedeemAuction.json"},
@@ -375,5 +376,5 @@
     ]}
   ]}
 ,
-  {"type":"report","directories":3,"files":369}
+  {"type":"report","directories":3,"files":370}
 ]

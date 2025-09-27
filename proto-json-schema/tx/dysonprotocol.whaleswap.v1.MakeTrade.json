@@ -1,9 +1,9 @@
 {
     "request": {
         "$schema": "http://json-schema.org/draft-04/schema#",
-        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgPoolSwap",
+        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgMakeTrade",
         "definitions": {
-            "dysonprotocol.whaleswap.v1.MsgPoolSwap": {
+            "dysonprotocol.whaleswap.v1.MsgMakeTrade": {
                 "properties": {
                     "trader": {
                         "type": "string"
@@ -14,15 +14,15 @@
                         },
                         "additionalProperties": false,
                         "type": "array",
-                        "description": "End-of-tx debit caps per denom (vector cap). Missing denom implies 0."
+                        "description": "End-of-tx debit caps per denom for the trader"
                     },
-                    "legs": {
+                    "operations": {
                         "items": {
-                            "$ref": "#/definitions/dysonprotocol.whaleswap.v1.SwapLeg"
+                            "$ref": "#/definitions/dysonprotocol.whaleswap.v1.TradeOperation"
                         },
                         "additionalProperties": false,
                         "type": "array",
-                        "description": "Arbitrary set of swap legs; order does not need to be contiguous by denom."
+                        "description": "Mixed operations processed in-order"
                     },
                     "min_output": {
                         "items": {
@@ -30,12 +30,12 @@
                         },
                         "additionalProperties": false,
                         "type": "array",
-                        "description": "Final minimum outputs required per denom after aggregation."
+                        "description": "Final trader minimum outputs per denom after aggregation"
                     }
                 },
                 "additionalProperties": false,
                 "type": "object",
-                "title": "Msg Pool Swap"
+                "title": "Msg Make Trade"
             },
             "cosmos.base.v1beta1.Coin": {
                 "properties": {
@@ -69,14 +69,44 @@
                 "additionalProperties": false,
                 "type": "object",
                 "title": "Swap Leg"
+            },
+            "dysonprotocol.whaleswap.v1.TakeItem": {
+                "properties": {
+                    "offer_id": {
+                        "type": "string"
+                    },
+                    "take_units": {
+                        "type": "string",
+                        "description": "units to take (sdk.Int string). If empty, take full remaining."
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "Take Item"
+            },
+            "dysonprotocol.whaleswap.v1.TradeOperation": {
+                "properties": {
+                    "swap": {
+                        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.SwapLeg",
+                        "additionalProperties": false
+                    },
+                    "take": {
+                        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.TakeItem",
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "Trade Operation",
+                "description": "TradeOperation allows mixing pool swap legs and orderbook takes."
             }
         }
     },
     "response": {
         "$schema": "http://json-schema.org/draft-04/schema#",
-        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgPoolSwapResponse",
+        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgMakeTradeResponse",
         "definitions": {
-            "dysonprotocol.whaleswap.v1.MsgPoolSwapResponse": {
+            "dysonprotocol.whaleswap.v1.MsgMakeTradeResponse": {
                 "properties": {
                     "amount_out": {
                         "items": {
@@ -88,7 +118,7 @@
                 },
                 "additionalProperties": false,
                 "type": "object",
-                "title": "Msg Pool Swap Response"
+                "title": "Msg Make Trade Response"
             },
             "cosmos.base.v1beta1.Coin": {
                 "properties": {
