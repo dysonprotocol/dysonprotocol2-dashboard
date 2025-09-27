@@ -1,11 +1,11 @@
 {
     "request": {
         "$schema": "http://json-schema.org/draft-04/schema#",
-        "$ref": "#/definitions/dysonprotocol.crontask.v1.QuerySubscriptionsByCreatorRequest",
+        "$ref": "#/definitions/dysonprotocol.crontask.v1.QuerySubscriptionsByStatusRequest",
         "definitions": {
-            "dysonprotocol.crontask.v1.QuerySubscriptionsByCreatorRequest": {
+            "dysonprotocol.crontask.v1.QuerySubscriptionsByStatusRequest": {
                 "properties": {
-                    "creator": {
+                    "status": {
                         "type": "string"
                     },
                     "pagination": {
@@ -15,7 +15,7 @@
                 },
                 "additionalProperties": false,
                 "type": "object",
-                "title": "Query Subscriptions By Creator Request"
+                "title": "Query Subscriptions By Status Request"
             },
             "cosmos.base.query.v1beta1.PageRequest": {
                 "properties": {

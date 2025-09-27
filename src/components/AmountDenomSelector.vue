@@ -15,7 +15,9 @@
     />
     <Select v-model="selectedBaseDenom" :disabled="disabled || options.length === 0">
       <SelectTrigger class="w-full sm:w-48">
-        <SelectValue placeholder="Denom" />
+        <SelectValue placeholder="Denom">
+          <span>{{ selectedDisplay }}</span>
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem v-for="opt in options" :key="opt.base" :value="opt.base">
@@ -55,6 +57,12 @@ const selectedBaseDenom = ref('')
 const isSyncingFromProps = ref(false)
 
 const options = computed(() => getDisplayOptions({ allowedBases: props.baseDenoms }))
+
+const selectedDisplay = computed(() => {
+  const opt = options.value.find((o) => o.base === selectedBaseDenom.value)
+  if (!opt) return ''
+  return opt.display
+})
 
 function initializeSelection() {
   if (props.defaultBaseDenom && options.value.some((o) => o.base === props.defaultBaseDenom)) {
@@ -101,12 +109,46 @@ function onAmountBlur() {
   computeAndEmit()
 }
 
-watch([selectedBaseDenom, () => props.baseDenoms], computeAndEmit)
+// Emit base only when user changes denom
+watch(selectedBaseDenom, computeAndEmit)
 
-watch(
-  () => options.value.map((o) => o.base).join('|'),
-  () => initializeSelection()
-)
+// Keep selection valid if options change
+watch(options, () => {
+  if (!options.value.some((o) => o.base === selectedBaseDenom.value)) initializeSelection()
+  // Recompute display from current base after metadata/options change
+  const baseDenom = String(props.base?.denom || '')
+  const hasValidDenom = baseDenom && options.value.some((o) => o.base === baseDenom)
+  isSyncingFromProps.value = true
+  try {
+    if (hasValidDenom) selectedBaseDenom.value = baseDenom
+    const exp = Number(options.value.find((o) => o.base === baseDenom)?.exponent || 0)
+    const baseAmount = props.base?.amount
+    if (baseAmount == null || baseAmount === '') {
+      amountDisplay.value = ''
+    } else {
+      const s = String(baseAmount)
+      if (exp <= 0) amountDisplay.value = s
+      else if (s.length <= exp) {
+        const pad = '0'.repeat(exp - s.length)
+        amountDisplay.value = `0.${pad}${s}`.replace(/\.0+$/, '')
+      } else {
+        const i = s.length - exp
+        amountDisplay.value = `${s.slice(0, i)}.${s.slice(i)}`.replace(/\.0+$/, '')
+      }
+    }
+    // Update display event without changing parent base
+    computeAndEmit()
+  } finally {
+    isSyncingFromProps.value = false
+  }
+})
+
+// React to defaultBaseDenom changes when parent is not driving base
+watch([() => props.defaultBaseDenom, options], () => {
+  if (props.base?.denom) return
+  const d = props.defaultBaseDenom
+  if (d && options.value.some((o) => o.base === d)) selectedBaseDenom.value = d
+})
 
 onMounted(async () => {
   await loadDenomMetadata()
@@ -135,6 +177,8 @@ watch(
         const i = s.length - exp
         amountDisplay.value = `${s.slice(0, i)}.${s.slice(i)}`.replace(/\.0+$/, '')
       }
+      // Sync display event without emitting base back to parent
+      computeAndEmit()
     } finally {
       isSyncingFromProps.value = false
     }

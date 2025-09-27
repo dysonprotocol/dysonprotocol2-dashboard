@@ -2,141 +2,152 @@
   <div class="p-4 max-w-screen-xl mx-auto">
     <h2 class="text-xl font-bold mb-2">Crontasks</h2>
     <p class="text-sm text-gray-600 mb-4">Address: {{ address }}</p>
+    <div>
+      <!-- Create subscription -->
+      <SubscriptionForm :creator="address" />
 
-    <!-- Create/schedule a task -->
-    <div class="bg-base-200 p-4 rounded mb-4">
-      <h3 class="font-semibold mb-3">Create task</h3>
-      <form class="grid gap-3" @submit.prevent="onCreate">
-        <div class="flex flex-col-2 gap-4">
-          <!-- Left column: stacked fieldset with inputs -->
-          <fieldset class="fieldset bg-base-200 border-base-300 rounded-box max-w-md border p-4">
-            <legend class="fieldset-legend">Task parameters</legend>
+      <hr class="my-4" />
+      <!-- List subscriptions by creator -->
+      <SubscriptionTable :creator="address" />
+      <hr class="my-4" />
+      <!-- Create/schedule a task -->
+      <div class="">
+        <h3 class="font-semibold mb-3">Create task</h3>
+        <form class="grid gap-3" @submit.prevent="onCreate">
+          <div class="flex flex-col-2 gap-4">
+            <!-- Left column: stacked fieldset with inputs -->
+            <fieldset class="fieldset border-base-300 rounded-box max-w-md border p-4">
+              <legend class="fieldset-legend">Task parameters</legend>
 
-            <label class="label">scheduled_timestamp</label>
-            <Input
-              v-model.trim="form.scheduled"
-              type="text"
-              class="w-full"
-              placeholder="e.g. +1h30m or 1736467200"
-            />
-
-            <label class="label">expiry_timestamp</label>
-            <Input
-              v-model.trim="form.expiry"
-              type="text"
-              class="w-full"
-              placeholder="optional, e.g. +2h"
-            />
-
-            <label class="label">task_gas_limit</label>
-            <Input
-              v-model.trim="form.gasLimit"
-              type="text"
-              class="w-full"
-              placeholder="e.g. 500000"
-            />
-
-            <label class="label">task_gas_fee</label>
-            <div class="grid gap-2">
-              <AmountDenomSelector
-                v-model:base="form.feeBase"
-                :base-denoms="['udys']"
-                default-base-denom="udys"
+              <label class="label">scheduled_timestamp</label>
+              <Input
+                v-model.trim="form.scheduled"
+                type="text"
+                class="w-full"
+                placeholder="e.g. +1h30m or 1736467200"
               />
-            </div>
 
-            <label class="label">tx memo (optional)</label>
-            <Input v-model.trim="form.memo" type="text" class="w-full" placeholder="" />
+              <label class="label">expiry_timestamp</label>
+              <Input
+                v-model.trim="form.expiry"
+                type="text"
+                class="w-full"
+                placeholder="optional, e.g. +2h"
+              />
 
-            <div class="flex items-center gap-2 pt-2">
-              <Button size="sm" type="submit" :disabled="isCreating">{{
-                isCreating ? 'Creating…' : 'Create Task'
-              }}</Button>
-              <span v-if="createError" class="text-error text-sm">{{ createError }}</span>
-              <span v-if="createOk" class="text-success text-sm">Created</span>
-            </div>
-          </fieldset>
+              <label class="label">task_gas_limit</label>
+              <Input
+                v-model.trim="form.gasLimit"
+                type="text"
+                class="w-full"
+                placeholder="e.g. 500000"
+              />
 
-          <!-- Right column: textarea -->
-          <div class="">
-            <span class="font-medium">Message(s) (raw JSON including @type)</span>
-            <Textarea
-              ref="msgTextarea"
-              v-model="form.rawMsg"
-              class="w-full font-mono"
-              rows="10"
-              placeholder='{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"...","to_address":"...","amount":[{"denom":"udys","amount":"1"}]}'
-            />
-            <span class="text-xs opacity-70"
-              >Provide the full message JSON(s) as sent to including "@type".</span
-            >
-          </div>
-        </div>
-      </form>
-    </div>
+              <label class="label">task_gas_fee</label>
+              <div class="grid gap-2">
+                <AmountDenomSelector
+                  v-model:base="form.feeBase"
+                  :base-denoms="['udys']"
+                  default-base-denom="udys"
+                />
+              </div>
 
-    <!-- List tasks by creator -->
-    <div class="bg-base-200 p-4 rounded">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex gap-2 items-end">
-          <Button size="sm" :disabled="isLoading" @click="refreshAll">Reload</Button>
-        </div>
-        <div class="text-sm opacity-70">{{ tasks.length }} task(s)</div>
-      </div>
+              <label class="label">tx memo (optional)</label>
+              <Input v-model.trim="form.memo" type="text" class="w-full" placeholder="" />
 
-      <div class="text-sm mb-2">
-        <span v-if="error" class="text-error">{{ error }}</span>
-        <span v-else-if="isLoading">Loading…</span>
-      </div>
+              <div class="flex items-center gap-2 pt-2">
+                <Button size="sm" type="submit" :disabled="isCreating">{{
+                  isCreating ? 'Creating…' : 'Create Task'
+                }}</Button>
+                <span v-if="createError" class="text-error text-sm">{{ createError }}</span>
+                <span v-if="createOk" class="text-success text-sm">Created</span>
+              </div>
+            </fieldset>
 
-      <div class="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>id</TableHead>
-              <TableHead>status</TableHead>
-              <TableHead>scheduled</TableHead>
-              <TableHead>expiry</TableHead>
-              <TableHead>gas_limit</TableHead>
-              <TableHead>gas_fee</TableHead>
-              <TableHead>gas_price</TableHead>
-              <TableHead>created</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="t in tasks" :key="t.task_id">
-              <TableCell class="font-mono">
-                <Button as-child variant="link" class="px-0">
-                  <RouterLink :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }">
-                    {{ t.task_id }}
-                  </RouterLink>
-                </Button>
-              </TableCell>
-              <TableCell>{{ t.status }}</TableCell>
-              <TableCell class="font-mono">{{ formatTimestamp(t.scheduled_timestamp) }}</TableCell>
-              <TableCell class="font-mono">{{ formatTimestamp(t.expiry_timestamp) }}</TableCell>
-              <TableCell class="font-mono">{{ t.task_gas_limit }}</TableCell>
-              <TableCell class="font-mono"
-                ><span v-if="t.task_gas_fee">{{ formatCoin(t.task_gas_fee) }}</span></TableCell
+            <!-- Right column: textarea -->
+            <div class="flex-1 min-w-0">
+              <span class="font-medium">Message(s) (raw JSON including @type)</span>
+              <Textarea
+                ref="msgTextarea"
+                v-model="form.rawMsg"
+                class="w-full max-w-full font-mono resize-y"
+                rows="10"
+                placeholder='{"@type":"/cosmos.bank.v1beta1.MsgSend","from_address":"...","to_address":"...","amount":[{"denom":"udys","amount":"1"}]}'
+              />
+              <span class="text-xs opacity-70"
+                >Provide the full message JSON(s) as sent to including "@type".</span
               >
-              <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
-              <TableCell class="font-mono">{{ formatTimestamp(t.creation_time) }}</TableCell>
-            </TableRow>
-            <TableRow v-if="!isLoading && !error && tasks.length === 0">
-              <TableCell colspan="8" class="text-center opacity-70">No tasks</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+            </div>
+          </div>
+        </form>
       </div>
-      <div class="mt-3 flex justify-center">
-        <Button
-          v-if="nextKey && !error"
-          size="sm"
-          :disabled="isLoading || isLoadingMore"
-          @click="loadMore"
-        >
-          {{ isLoadingMore ? 'Loading…' : 'Load more' }}
-        </Button>
+
+      <hr class="my-4" />
+      <!-- List tasks by creator -->
+      <div class="">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex gap-2 items-end">
+            <Button size="sm" :disabled="isLoading" @click="refreshAll">Reload</Button>
+          </div>
+          <div class="text-sm opacity-70">{{ tasks.length }} task(s)</div>
+        </div>
+
+        <div class="text-sm mb-2">
+          <span v-if="error" class="text-error">{{ error }}</span>
+          <span v-else-if="isLoading">Loading…</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>id</TableHead>
+                <TableHead>status</TableHead>
+                <TableHead>scheduled</TableHead>
+                <TableHead>expiry</TableHead>
+                <TableHead>gas_limit</TableHead>
+                <TableHead>gas_fee</TableHead>
+                <TableHead>gas_price</TableHead>
+                <TableHead>created</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="t in tasks" :key="t.task_id">
+                <TableCell class="font-mono">
+                  <Button as-child variant="link" class="px-0">
+                    <RouterLink :to="{ name: 'TaskDetails', params: { taskId: t.task_id } }">
+                      {{ t.task_id }}
+                    </RouterLink>
+                  </Button>
+                </TableCell>
+                <TableCell>{{ t.status }}</TableCell>
+                <TableCell class="font-mono">{{
+                  formatTimestamp(t.scheduled_timestamp)
+                }}</TableCell>
+                <TableCell class="font-mono">{{ formatTimestamp(t.expiry_timestamp) }}</TableCell>
+                <TableCell class="font-mono">{{ t.task_gas_limit }}</TableCell>
+                <TableCell class="font-mono"
+                  ><span v-if="t.task_gas_fee">{{ formatCoin(t.task_gas_fee) }}</span></TableCell
+                >
+                <TableCell class="font-mono">{{ formatGasPrice(t) }}</TableCell>
+                <TableCell class="font-mono">{{ formatTimestamp(t.creation_time) }}</TableCell>
+              </TableRow>
+              <TableRow v-if="!isLoading && !error && tasks.length === 0">
+                <TableCell colspan="8" class="text-center opacity-70">No tasks</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+        <div class="mt-3 flex justify-center">
+          <Button
+            v-if="nextKey && !error"
+            size="sm"
+            :disabled="isLoading || isLoadingMore"
+            @click="loadMore"
+          >
+            {{ isLoadingMore ? 'Loading…' : 'Load more' }}
+          </Button>
+        </div>
       </div>
     </div>
   </div>
@@ -163,11 +174,13 @@ import {
   TableBody,
   TableCell,
 } from '@/components/ui/table'
+import SubscriptionForm from '@/components/crontask/SubscriptionForm.vue'
+import SubscriptionTable from '@/components/crontask/SubscriptionTable.vue'
 
 const props = defineProps<{ address: string }>()
 
 const api = useAxiosRepo(CrontaskTask).api()
-const repo = useRepo(CrontaskTask)
+const repo = useRepo(CrontaskTask) as any
 const tasks = computed<any[]>(() =>
   (repo.where('creator', props.address).get() as any[])
     .slice()

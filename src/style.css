@@ -20,6 +20,12 @@ body,
   height: 100%;
 }
 
+/* Ensure a single scroll container (the main app column). Prevent body/html from adding a second scrollbar */
+html,
+body {
+  overflow: hidden;
+}
+
 :root {
   --layout-sidebar-width: 19rem;
   --background: oklch(1 0 0);

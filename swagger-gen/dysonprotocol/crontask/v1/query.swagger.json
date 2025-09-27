@@ -179,6 +179,70 @@
         ]
       }
     },
+    "/dysonprotocol/crontask/v1/subscriptions/status/{status}": {
+      "get": {
+        "summary": "SubscriptionsByStatus returns subscriptions for a status",
+        "operationId": "dysonprotocol.crontask.v1.QuerySubscriptionsByStatusRequest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.crontask.v1.QuerySubscriptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pagination.key",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "pagination.count_total",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.reverse",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Query"
+        ]
+      }
+    },
     "/dysonprotocol/crontask/v1/subscriptions/{subscription_id}": {
       "get": {
         "summary": "SubscriptionByID returns a subscription by id",
@@ -626,10 +690,13 @@
           "format": "int64",
           "title": "Retention period for completed/failed/expired tasks (seconds)"
         },
-        "max_expiry_delta": {
+        "max_subscription_duration": {
           "type": "string",
-          "format": "int64",
-          "title": "Maximum allowed delta for subscription expiry renewal (default 7 days)"
+          "title": "Maximum subscription duration (default 7 days)"
+        },
+        "min_stake_per_subscription": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "title": "Minimum stake required per active subscription"
         }
       },
       "title": "Params defines the parameters for the crontask module"
@@ -711,13 +778,9 @@
           "type": "string",
           "title": "creator account that owns this subscription"
         },
-        "event_type": {
-          "type": "string",
-          "title": "event type to match (e.g., \"transfer\")"
-        },
         "filter": {
           "type": "string",
-          "title": "GJSON filter to match events"
+          "title": "GJSON filter to match events across the normalized block event array"
         },
         "script_address": {
           "type": "string",
@@ -755,7 +818,7 @@
         "expiry_timestamp": {
           "type": "string",
           "format": "int64",
-          "title": "subscription expiry timestamp (unix seconds)"
+          "title": "Subscription expiry timestamp (unix seconds)"
         },
         "triger_count": {
           "type": "string",
