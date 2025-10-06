@@ -10,35 +10,35 @@
     </section>
 
     <section>
-      <details>
+      <details open>
         <summary>Clients → Connections → Channels</summary>
         <ClientsTree />
       </details>
     </section>
 
     <section>
-      <details>
+      <details open>
         <summary>ICS-20 (Transfer)</summary>
         <Ics20Panel />
       </details>
     </section>
 
     <section>
-      <details>
+      <details open>
         <summary>ICS-27 (Interchain Accounts)</summary>
         <Ics27Panel />
       </details>
     </section>
 
     <section>
-      <details>
+      <details open>
         <summary>Connections</summary>
         <ConnectionsTable />
       </details>
     </section>
 
     <section>
-      <details>
+      <details open>
         <summary>Channels</summary>
         <ChannelsTable />
       </details>

@@ -10,15 +10,27 @@
             <th>state</th>
             <th>ordering</th>
             <th>connection_hops</th>
+            <th>counterparty</th>
+            <th>next_send</th>
+            <th>next_recv</th>
+            <th>commitments</th>
+            <th>unreceived_packets</th>
+            <th>remote_chain_id</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>transfer</td>
-            <td>channel-0</td>
-            <td>OPEN</td>
-            <td>ORDERED</td>
-            <td>connection-0</td>
+          <tr v-for="c in rows" :key="c.port_id + '/' + c.channel_id">
+            <td>{{ c.port_id }}</td>
+            <td>{{ c.channel_id }}</td>
+            <td>{{ c.state }}</td>
+            <td>{{ c.ordering }}</td>
+            <td>{{ c.connection_hops.join(', ') }}</td>
+            <td>{{ c.counterparty_port_id }}/{{ c.counterparty_channel_id }}</td>
+            <td>{{ c.next_sequence_send || '—' }}</td>
+            <td>{{ c.next_sequence_receive || '—' }}</td>
+            <td>{{ (c.commitments || []).length }}</td>
+            <td>{{ (c.unreceived_packets || []).length }}</td>
+            <td>{{ remoteChainId(c) }}</td>
           </tr>
         </tbody>
       </table>
@@ -27,7 +39,43 @@
 </template>
 
 <script setup lang="ts">
-// Placeholder static table; wire to data later.
+import { computed, onMounted } from 'vue'
+import { useRepo } from 'pinia-orm'
+import { useAxiosRepo } from '@pinia-orm/axios'
+import IbcChannel from '@/orm/models/ibc/core/channel/Channel'
+import IbcConnection from '@/orm/models/ibc/core/connection/Connection'
+import IbcClient from '@/orm/models/ibc/core/client/Client'
+
+const repo = useRepo(IbcChannel)
+const rows = computed(() => repo.all() as Array<any>)
+
+onMounted(async () => {
+  await useAxiosRepo(IbcChannel).api().fetchChannels()
+  const list = repo.all() as Array<any>
+  // Fire-and-forget enrichment for each channel
+  list.forEach(async (ch) => {
+    const api = useAxiosRepo(IbcChannel).api()
+    await Promise.allSettled([
+      api.fetchNextSend(ch.channel_id, ch.port_id),
+      api.fetchNextRecv(ch.channel_id, ch.port_id),
+      api.fetchPacketCommitments(ch.channel_id, ch.port_id).then(async () => {
+        const seqs =
+          ((repo.find([ch.port_id, ch.channel_id]) as any)?.commitments as string[]) || []
+        if (seqs.length) await api.fetchUnreceivedPackets(ch.channel_id, ch.port_id, seqs)
+      }),
+    ])
+  })
+})
+
+function remoteChainId(ch: any): string {
+  const hop = Array.isArray(ch?.connection_hops) ? String(ch.connection_hops[0] || '') : ''
+  if (!hop) return ''
+  const conn = (useRepo(IbcConnection).find(hop) as any) || null
+  const clientId = conn?.client_id || ''
+  if (!clientId) return ''
+  const client = (useRepo(IbcClient).find(clientId) as any) || null
+  return client?.remote_chain_id || ''
+}
 </script>
 
 <style scoped>

@@ -6,6 +6,7 @@ import TxBlock from '@/orm/models/tx/TxBlock'
 import { ensureGlobalCrontaskEventSync } from '@/orm/subscriptions/crontaskEvents'
 import { ensureGlobalBankTransferSync } from '@/orm/subscriptions/bankTransferEvents'
 import { ensureGlobalWhaleswapEventSync } from '@/orm/subscriptions/whaleswapEvents'
+import { ensureGlobalIbcEventSync } from '@/orm/subscriptions/ibcEvents'
 import { useWallet } from '@/composables/useWallet'
 
 let started = false
@@ -52,6 +53,7 @@ export function startLatestBlockPoller() {
     }
     ensureGlobalBankTransferSync({ isKnownAddress })
     ensureGlobalWhaleswapEventSync({ isKnownAddress })
+    ensureGlobalIbcEventSync()
   } catch (e) {
     console.error('[tm.ws] init crontask sync error', e)
   }

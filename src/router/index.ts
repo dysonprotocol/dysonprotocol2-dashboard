@@ -5,6 +5,7 @@ import explorerRoutes from './modules/explorer'
 import miscRoutes from './modules/misc'
 import redirectRoutes from './modules/redirects'
 import ibcRoutes from './modules/ibc'
+import ibcTransfersRoutes from './modules/ibcTransfers'
 
 const Index = () => import('@/views/Index.vue')
 
@@ -19,6 +20,7 @@ const routes: RouteRecordRaw[] = [
   ...redirectRoutes,
   ...explorerRoutes,
   ...ibcRoutes,
+  ...ibcTransfersRoutes,
   ...addressRoutes,
   ...miscRoutes,
 ]

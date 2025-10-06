@@ -106,7 +106,6 @@ export class DenomMetadata extends Model {
     const denom = String(args.denom || '')
     const rawAmount = args.amount as unknown
 
-    // Build quick lookup over metadata units
     const all = useRepo(DenomMetadata).all() as unknown as Array<{
       base: string
       display: string
@@ -114,79 +113,73 @@ export class DenomMetadata extends Model {
       name?: string
     }>
 
-    let metadata: (typeof all)[number] | null = null
-    let inputUnit: { denom: string; exponent: number; aliases?: string[] } | null = null
-    for (const md of all) {
-      for (const unit of md.denom_units || []) {
-        if (unit.denom === denom || (unit.aliases || []).includes(denom)) {
-          metadata = md
-          inputUnit = unit
-          break
-        }
-      }
-      if (metadata) break
+    const findUnit = (
+      md: (typeof all)[number],
+      d: string
+    ): { denom: string; exponent: number; aliases?: string[] } | null =>
+      (md.denom_units || []).find((u) => u.denom === d || (u.aliases || []).includes(d)) || null
+
+    const toBaseAmount = (val: unknown, exp: number): bigint => {
+      const s = typeof val === 'bigint' ? val.toString() : String(val || '0').trim()
+      if (!s.includes('.')) return BigInt(s || '0') * 10n ** BigInt(exp)
+      const [a, bRaw = ''] = s.split('.')
+      const frac = bRaw.slice(0, exp)
+      const pad = Math.max(0, exp - frac.length)
+      const baseStr = (a || '0') + (frac + '0'.repeat(pad))
+      return BigInt(baseStr || '0')
     }
 
-    // Unknown denom fallback: exponent 0 passthrough
-    if (!metadata || !inputUnit) {
-      const amountStr =
-        typeof rawAmount === 'bigint' ? rawAmount.toString() : String(rawAmount || '0')
-      const baseAmount = BigInt(
-        amountStr.includes('.') ? amountStr.replace(/\..*$/, '') : amountStr
-      )
-      const baseDenom = denom
+    const finalize = (md: (typeof all)[number], baseAmount: bigint) => {
+      const baseDenom = md.base
+      const displayDenom = md.display || baseDenom
+      const displayUnit =
+        (md.denom_units || []).find(
+          (u) => u.denom === displayDenom || (u.aliases || []).includes(displayDenom)
+        ) || null
+      const displayExp = Number(displayUnit?.exponent || 0)
+      let displayAmountStr = baseAmount.toString()
+      if (displayExp > 0) {
+        const scale = 10n ** BigInt(displayExp)
+        const intPart = baseAmount / scale
+        const fracPart = baseAmount % scale
+        displayAmountStr =
+          fracPart === 0n
+            ? intPart.toString()
+            : `${intPart.toString()}.${fracPart.toString().padStart(displayExp, '0').replace(/0+$/, '')}`
+      }
       return {
         base: { amount: baseAmount.toString(), denom: baseDenom },
-        display: { amount: baseAmount.toString(), denom: baseDenom },
-        metadata: {
-          base: baseDenom,
-          display: baseDenom,
-          denom_units: [{ denom: baseDenom, exponent: 0 }],
-          name: baseDenom,
-        },
+        display: { amount: displayAmountStr, denom: displayDenom },
+        metadata: md,
       }
     }
 
-    const inputExp = Number(inputUnit.exponent || 0)
-    const amountStr =
-      typeof rawAmount === 'bigint' ? rawAmount.toString() : String(rawAmount || '0').trim()
-
-    // Convert input amount (possibly decimal) in input unit -> base integer
-    let baseAmount: bigint
-    if (amountStr.includes('.')) {
-      const [a, bRaw = ''] = amountStr.split('.')
-      const frac = bRaw.slice(0, inputExp)
-      const pad = Math.max(0, inputExp - frac.length)
-      const baseStr = (a || '0') + (frac + '0'.repeat(pad))
-      baseAmount = BigInt(baseStr || '0')
-    } else {
-      baseAmount = BigInt(amountStr || '0') * 10n ** BigInt(inputExp)
+    // 1) Exact base match
+    const mdBase = all.find((m) => String(m.base) === denom)
+    if (mdBase) {
+      const exp = Number(findUnit(mdBase, denom)?.exponent || 0)
+      return finalize(mdBase, toBaseAmount(rawAmount, exp))
     }
 
-    const baseDenom = metadata.base
-
-    // Compute display amount (decimal string) using metadata.display
-    const displayDenom = metadata.display || baseDenom
-    const displayUnit = (metadata.denom_units || []).find(
-      (u) => u.denom === displayDenom || (u.aliases || []).includes(displayDenom)
-    )
-    const displayExp = Number(displayUnit?.exponent || 0)
-    let displayAmountStr = baseAmount.toString()
-    if (displayExp > 0) {
-      const scale = 10n ** BigInt(displayExp)
-      const intPart = baseAmount / scale
-      const fracPart = baseAmount % scale
-      if (fracPart === 0n) displayAmountStr = intPart.toString()
-      else {
-        const fracPadded = fracPart.toString().padStart(displayExp, '0').replace(/0+$/, '')
-        displayAmountStr = `${intPart.toString()}.${fracPadded}`
-      }
+    // 2) Unit match
+    for (const md of all) {
+      const unit = findUnit(md, denom)
+      if (!unit) continue
+      return finalize(md, toBaseAmount(rawAmount, Number(unit.exponent || 0)))
     }
 
+    // 3) Unknown denom passthrough (exponent 0)
+    const s = typeof rawAmount === 'bigint' ? rawAmount.toString() : String(rawAmount || '0')
+    const baseAmount = BigInt(s.includes('.') ? s.replace(/\..*$/, '') : s)
     return {
-      base: { amount: baseAmount.toString(), denom: baseDenom },
-      display: { amount: displayAmountStr, denom: displayDenom },
-      metadata,
+      base: { amount: baseAmount.toString(), denom },
+      display: { amount: baseAmount.toString(), denom },
+      metadata: {
+        base: denom,
+        display: denom,
+        denom_units: [{ denom, exponent: 0 }],
+        name: denom,
+      },
     }
   }
 }
