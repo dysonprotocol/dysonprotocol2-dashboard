@@ -11,7 +11,7 @@ import { file_google_protobuf_descriptor } from "@bufbuild/protobuf/wkt";
  * Describes the file cosmos/query/v1/query.proto.
  */
 export const file_cosmos_query_v1_query: GenFile = /*@__PURE__*/
-  fileDesc("Chtjb3Ntb3MvcXVlcnkvdjEvcXVlcnkucHJvdG8SD2Nvc21vcy5xdWVyeS52MTpNChFtb2R1bGVfcXVlcnlfc2FmZRIeLmdvb2dsZS5wcm90b2J1Zi5NZXRob2RPcHRpb25zGPGMpgUgASgIUg9tb2R1bGVRdWVyeVNhZmVCKlooZ2l0aHViLmNvbS9jb3Ntb3MvY29zbW9zLXNkay90eXBlcy9xdWVyeWIGcHJvdG8z", [file_google_protobuf_descriptor]);
+  fileDesc("Chtjb3Ntb3MvcXVlcnkvdjEvcXVlcnkucHJvdG8SD2Nvc21vcy5xdWVyeS52MTpNChFtb2R1bGVfcXVlcnlfc2FmZRIeLmdvb2dsZS5wcm90b2J1Zi5NZXRob2RPcHRpb25zGPGMpgUgASgIUg9tb2R1bGVRdWVyeVNhZmVCqQEKE2NvbS5jb3Ntb3MucXVlcnkudjFCClF1ZXJ5UHJvdG9QAVooZ2l0aHViLmNvbS9jb3Ntb3MvY29zbW9zLXNkay90eXBlcy9xdWVyeaICA0NRWKoCD0Nvc21vcy5RdWVyeS5WMcoCD0Nvc21vc1xRdWVyeVxWMeICG0Nvc21vc1xRdWVyeVxWMVxHUEJNZXRhZGF0YeoCEUNvc21vczo6UXVlcnk6OlYxYgZwcm90bzM", [file_google_protobuf_descriptor]);
 
 /**
  * module_query_safe is set to true when the query is safe to be called from
