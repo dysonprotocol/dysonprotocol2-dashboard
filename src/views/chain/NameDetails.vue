@@ -50,7 +50,7 @@
                   <div class="mt-2 grid grid-cols-2 gap-2">
                     <WalletSelector
                       v-model="selectedExecutor"
-                      :allowed-addresses="allowedAddresses"
+                      :allowed-addresses="allowedOwnerAddresses"
                       :default-address="ownerAddress"
                       :button-class="'btn-sm w-full'"
                       :msg-type-filter="msgTypeFilter"
@@ -126,7 +126,7 @@
                   <div class="mt-2 grid grid-cols-2 gap-2">
                     <WalletSelector
                       v-model="selectedExecutorMeta"
-                      :allowed-addresses="allowedAddresses"
+                      :allowed-addresses="allowedOwnerAddresses"
                       :default-address="ownerAddress"
                       :button-class="'btn-sm w-full'"
                       :msg-type-filter="msgTypeFilterNameMetadata"
@@ -226,8 +226,8 @@
                   <CardFooter class="p-0 mt-2 grid grid-cols-2 gap-2">
                     <WalletSelector
                       v-model="selectedExecutorMint"
-                      :allowed-addresses="allowedAddresses"
-                      :default-address="ownerAddress"
+                      :allowed-addresses="allowedDestAddresses"
+                      :default-address="resolvedAddress"
                       :button-class="'btn-sm w-full'"
                       :msg-type-filter="msgTypeFilterMintCoins"
                       :show-locked="false"
@@ -342,8 +342,8 @@
             <div class="mt-2 grid grid-cols-2 gap-2">
               <WalletSelector
                 v-model="selectedExecutorClass"
-                :allowed-addresses="allowedAddresses"
-                :default-address="ownerAddress"
+                :allowed-addresses="allowedDestAddresses"
+                :default-address="resolvedAddress"
                 :button-class="'btn-sm w-full'"
                 :msg-type-filter="msgTypeFilterSaveClass"
                 :show-locked="false"
@@ -444,7 +444,8 @@ const selectedExecutor = ref('')
 const selectedExecutorAddress = ref('')
 const selectedGranteeAddress = ref('')
 const isAuthz = ref(false)
-const allowedAddresses = computed(() => (resolvedAddress.value ? [resolvedAddress.value] : []))
+const allowedOwnerAddresses = computed(() => (ownerAddress.value ? [ownerAddress.value] : []))
+const allowedDestAddresses = computed(() => (resolvedAddress.value ? [resolvedAddress.value] : []))
 
 function msgTypeFilter(grant: any) {
   const auth = grant?.authorization

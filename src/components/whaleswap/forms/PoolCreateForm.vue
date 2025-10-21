@@ -55,6 +55,12 @@
         <AlertTitle>Success</AlertTitle>
         <AlertDescription>{{ successMessage }}</AlertDescription>
       </Alert>
+      <div v-if="disabledReasons.length" class="text-xs text-error/80 space-y-1">
+        <div class="font-medium">Cannot create because:</div>
+        <ul class="list-disc list-inside space-y-0.5">
+          <li v-for="r in disabledReasons" :key="r">{{ r }}</li>
+        </ul>
+      </div>
     </CardContent>
     <CardFooter>
       <Button class="w-full" :disabled="isDisabled" @click="onSubmit">
@@ -145,10 +151,48 @@ const bandValid = computed(() => {
   return okMin && okMax
 })
 
-const isDisabled = computed(
-  () =>
-    isSubmitting.value || !creator.value || !coinsValid.value || !feeValid.value || !bandValid.value
-)
+const disabledReasons = computed(() => {
+  const reasons: string[] = []
+  if (!creator.value) reasons.push('Select a wallet')
+
+  // Reserves validation (more granular than coinsValid)
+  const a = coinA.value
+  const b = coinB.value
+  if (!a.denom) reasons.push('First reserve denom is required')
+  if (!b.denom) reasons.push('Second reserve denom is required')
+  if (a.denom && b.denom && a.denom === b.denom) reasons.push('Reserves must be different denoms')
+  if (!a.amount) reasons.push('First reserve amount is required')
+  if (!b.amount) reasons.push('Second reserve amount is required')
+
+  // Fee validation
+  const s = typeof feePct.value === 'string' ? feePct.value.trim() : ''
+  if (s && !/^0(\.\d+)?$/.test(s)) reasons.push('Fee must be a decimal in [0,1), e.g., 0.003')
+
+  // Band validation (surface the same constraints as bandValid)
+  if (bandEnabled.value) {
+    const hasBothMin =
+      !!minPriceA.value.denom &&
+      !!minPriceB.value.denom &&
+      !!minPriceA.value.amount &&
+      !!minPriceB.value.amount
+    const hasBothMax =
+      !!maxPriceA.value.denom &&
+      !!maxPriceB.value.denom &&
+      !!maxPriceA.value.amount &&
+      !!maxPriceB.value.amount
+    if (hasBothMin || hasBothMax) {
+      const set = new Set([coinA.value.denom, coinB.value.denom])
+      if (hasBothMin && !(set.has(minPriceA.value.denom) && set.has(minPriceB.value.denom)))
+        reasons.push('Min price denoms must match reserve denoms')
+      if (hasBothMax && !(set.has(maxPriceA.value.denom) && set.has(maxPriceB.value.denom)))
+        reasons.push('Max price denoms must match reserve denoms')
+    }
+  }
+
+  return reasons
+})
+
+const isDisabled = computed(() => isSubmitting.value || disabledReasons.value.length > 0)
 
 async function onSubmit() {
   const { sendMsg } = useWallet()
