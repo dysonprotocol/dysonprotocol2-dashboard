@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { QueryAuctionByNFTRequest, QueryAuctionRequest, QueryAuctionResponse, QueryAuctionsByPairPriceRangeRequest, QueryAuctionsBySellerRequest, QueryAuctionsRequest, QueryAuctionsResponse, QueryMetricsRequest, QueryMetricsResponse, QueryOfferRequest, QueryOfferResponse, QueryOffersBestRequest, QueryOffersByDenomRequest, QueryOffersByOwnerRequest, QueryOffersByOwnerResponse, QueryOffersByPairPriceRangeRequest, QueryOffersRequest, QueryOffersResponse, QueryParamsRequest, QueryParamsResponse, QueryPoolBySharesDenomRequest, QueryPoolRequest, QueryPoolResponse, QueryPoolsByDenomRequest, QueryPoolsByOwnerRequest, QueryPoolsByPairPriceRangeRequest, QueryPoolsByPairRequest, QueryPoolsRequest, QueryPoolsResponse, QueryTradeRequest, QueryTradeResponse, QueryTradesByOfferRequest, QueryTradesByOfferResponse, QueryTradesByPoolRequest, QueryTradesByPoolResponse, QueryTradesByTakerRequest, QueryTradesByTakerResponse } from "./query_pb.js";
+import { QueryAuctionByNFTRequest, QueryAuctionByNFTResponse, QueryAuctionRequest, QueryAuctionResponse, QueryAuctionsByPairPriceRangeRequest, QueryAuctionsByPairPriceRangeResponse, QueryAuctionsBySellerRequest, QueryAuctionsBySellerResponse, QueryAuctionsRequest, QueryAuctionsResponse, QueryMetricsRequest, QueryMetricsResponse, QueryOfferRequest, QueryOfferResponse, QueryOffersBestRequest, QueryOffersBestResponse, QueryOffersByDenomRequest, QueryOffersByDenomResponse, QueryOffersByOwnerRequest, QueryOffersByOwnerResponse, QueryOffersByPairPriceRangeRequest, QueryOffersByPairPriceRangeResponse, QueryOffersRequest, QueryOffersResponse, QueryParamsRequest, QueryParamsResponse, QueryPoolBySharesDenomRequest, QueryPoolBySharesDenomResponse, QueryPoolRequest, QueryPoolResponse, QueryPoolsByDenomRequest, QueryPoolsByDenomResponse, QueryPoolsByOwnerRequest, QueryPoolsByOwnerResponse, QueryPoolsByPairPriceRangeRequest, QueryPoolsByPairPriceRangeResponse, QueryPoolsByPairRequest, QueryPoolsByPairResponse, QueryPoolsRequest, QueryPoolsResponse, QueryPositionRequest, QueryPositionResponse, QueryPositionsByPoolRequest, QueryPositionsByPoolResponse, QueryPositionsByUserRequest, QueryPositionsByUserResponse, QueryTradeRequest, QueryTradeResponse, QueryTradesByAuctionRequest, QueryTradesByAuctionResponse, QueryTradesByOfferRequest, QueryTradesByOfferResponse, QueryTradesByPoolRequest, QueryTradesByPoolResponse, QueryTradesByTakerRequest, QueryTradesByTakerResponse, QueryTradesRequest, QueryTradesResponse } from "./query_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -15,7 +15,11 @@ export const Query = {
   typeName: "dysonprotocol.whaleswap.v1.Query",
   methods: {
     /**
-     * Params queries the whaleswap module parameters
+     *
+     * Params queries the current whaleswap module parameters.
+     *
+     * Returns all module configuration values including fees, limits, and module
+     * settings. No filtering or pagination supported (empty request accepted).
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.Params
      */
@@ -26,7 +30,11 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
-     * Pools
+     *
+     * Pool queries a single AMM pool by ID.
+     *
+     * Returns complete pool data including reserves, shares denom, and
+     * configuration. Direct lookup by pool_id for fast retrieval.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.Pool
      */
@@ -37,6 +45,12 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
+     *
+     * Pools lists all AMM pools with pagination.
+     *
+     * Returns all pools in the system with no filtering. Uses direct pagination
+     * over the primary PoolsMap. Results ordered by pool ID ascending.
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.Pools
      */
     pools: {
@@ -46,69 +60,96 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
-     * PoolsByPair returns all pools matching the provided denom pair with
-     * pagination. Denom order in the request is irrelevant.
+     *
+     * PoolsByPair queries all pools matching a denom pair with pagination.
+     *
+     * Returns pools containing exactly the specified denom pair, regardless of
+     * order. Canonicalizes the pair internally for consistent lookup. Uses
+     * filtered pagination over the primary PoolsMap. Results ordered by pool ID
+     * ascending.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.PoolsByPair
      */
     poolsByPair: {
       name: "PoolsByPair",
       I: QueryPoolsByPairRequest,
-      O: QueryPoolsResponse,
+      O: QueryPoolsByPairResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * PoolsByDenom returns all pools that include the provided denom on either
-     * side of the pair. This leverages a reverse index keyed by denom.
+     *
+     * PoolsByDenom queries all pools that include a specific denom on either
+     * side.
+     *
+     * Returns pools where the specified denom appears in either coin position.
+     * Uses filtered pagination over the primary PoolsMap. Results ordered by pool
+     * ID ascending.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.PoolsByDenom
      */
     poolsByDenom: {
       name: "PoolsByDenom",
       I: QueryPoolsByDenomRequest,
-      O: QueryPoolsResponse,
+      O: QueryPoolsByDenomResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * PoolBySharesDenom returns the pool that mints the provided shares denom.
+     *
+     * PoolBySharesDenom queries the pool that mints a specific shares denom.
+     *
+     * Returns the pool with matching shares_denom (expected to be unique).
+     * Scans pools to find the matching one; uses unpaginated scan since shares
+     * denoms are expected to be unique.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.PoolBySharesDenom
      */
     poolBySharesDenom: {
       name: "PoolBySharesDenom",
       I: QueryPoolBySharesDenomRequest,
-      O: QueryPoolResponse,
+      O: QueryPoolBySharesDenomResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * PoolsByPairPriceRange returns pools for a given pair whose instantaneous
-     * price (derived from reserves, P = coin_b/coin_a) falls within the optional
-     * [min_price, max_price] range. Prices are expressed as cosmos.Dec strings.
-     * If neither bound is provided, it returns all pools for the pair.
+     *
+     * PoolsByPairPriceRange queries pools for a pair whose instantaneous price
+     * falls within optional bounds.
+     *
+     * Filters pools by denom pair and price range (quote/base ratio from
+     * reserves). Bounds are inclusive and optional; omitting both returns all
+     * matching pairs. Uses filtered pagination over the primary PoolsMap. Results
+     * ordered by pool ID ascending.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.PoolsByPairPriceRange
      */
     poolsByPairPriceRange: {
       name: "PoolsByPairPriceRange",
       I: QueryPoolsByPairPriceRangeRequest,
-      O: QueryPoolsResponse,
+      O: QueryPoolsByPairPriceRangeResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * PoolsByOwner returns pools where the requested owner holds a non-zero
-     * balance of pool shares. This may be implemented via a filtered scan unless
-     * the application maintains a dedicated reverse index.
+     *
+     * PoolsByOwner queries pools where the owner holds non-zero shares balance.
+     *
+     * Returns pools where the specified owner has a positive balance of pool
+     * shares. Uses bank module balance checks for each pool's shares denom. Falls
+     * back to filtered scan when no dedicated index exists. Results ordered by
+     * pool ID ascending.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.PoolsByOwner
      */
     poolsByOwner: {
       name: "PoolsByOwner",
       I: QueryPoolsByOwnerRequest,
-      O: QueryPoolsResponse,
+      O: QueryPoolsByOwnerResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * Offers
+     *
+     * Offer queries a single offer by ID.
+     *
+     * Returns offer data including maker, amounts, status, and timestamps.
+     * Direct lookup by offer_id for fast retrieval.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.Offer
      */
@@ -119,6 +160,15 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
+     *
+     * OffersByOwner queries offers by owner address with optional status filter.
+     *
+     * Returns offers owned by the specified address, optionally filtered by
+     * status. Uses indexed queries when both owner and status provided for
+     * optimal performance. Falls back to filtered scans for partial filters to
+     * avoid nil entries. Supports pagination with consistent ordering by offer
+     * ID.
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.OffersByOwner
      */
     offersByOwner: {
@@ -128,7 +178,14 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
-     * Unified offers listing with optional filters and pagination
+     *
+     * Offers provides unified offer listing with optional denom filters and
+     * pagination.
+     *
+     * Supports multiple query patterns based on provided filters for optimal
+     * performance: both denoms (pair+price index), single have_denom, single
+     * want_denom, or no filters. Canonicalizes pairs for consistent indexing and
+     * ordering. Supports pagination with consistent ordering by offer ID.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.Offers
      */
@@ -139,49 +196,67 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
-     * OffersByDenom returns offers that mention the provided denom either as the
-     * have or want side, depending on the optional role filter. When role is
-     * unset or empty, both sides are considered.
+     *
+     * OffersByDenom queries offers that reference a specific denom either as have
+     * or want side.
+     *
+     * Returns offers where the specified denom appears in either have_denom or
+     * want_denom. Uses role filter to restrict to "have" side, "want" side, or
+     * both (when empty). Leverages OffersByHave and OffersByWant indices when
+     * role specified for efficiency. Falls back to filtered scan over primary
+     * OffersMap when role unspecified. Supports pagination with consistent
+     * ordering by offer ID.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.OffersByDenom
      */
     offersByDenom: {
       name: "OffersByDenom",
       I: QueryOffersByDenomRequest,
-      O: QueryOffersResponse,
+      O: QueryOffersByDenomResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * OffersByPairPriceRange returns offers for a pair (order of have/want is
-     * irrelevant; the implementation canonicalizes to pairKey) whose price lies
-     * within the optional [min_price, max_price] range. Prices are cosmos.Dec
-     * strings representing want-per-have (high-per-low orientation), so lower is
-     * better for takers paying want to receive have.
+     *
+     * OffersByPairPriceRange queries offers for a pair whose price lies within
+     * optional bounds.
+     *
+     * Filters offers by denom pair and price range (want-per-have ratio).
+     * Canonicalizes pair for consistent indexing; bounds are inclusive and
+     * optional. Uses OffersByPairPrice index for efficient ordered scanning.
+     * Supports pagination with ordering by price ascending.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.OffersByPairPriceRange
      */
     offersByPairPriceRange: {
       name: "OffersByPairPriceRange",
       I: QueryOffersByPairPriceRangeRequest,
-      O: QueryOffersResponse,
+      O: QueryOffersByPairPriceRangeResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * OffersBest returns up to `limit` best-priced offers for the given pair
-     * (treating price as want-per-have, sorted ascending). This is a convenience
-     * endpoint for top-of-book queries.
+     *
+     * OffersBest returns up to limit best-priced offers for a pair (convenience
+     * endpoint).
+     *
+     * Returns top offers for a pair sorted by price (want-per-have, ascending =
+     * best for takers). Canonicalizes pair for indexing; applies limit
+     * (defaulting to 10) via pagination. Uses OffersByPairPrice index for
+     * efficient ordered retrieval.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.OffersBest
      */
     offersBest: {
       name: "OffersBest",
       I: QueryOffersBestRequest,
-      O: QueryOffersResponse,
+      O: QueryOffersBestResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * Trades
-     * Get a single trade by id
+     *
+     * Trade queries a single trade by ID.
+     *
+     * Returns complete trade data including participants, amounts, and
+     * operations. Direct lookup by trade_id for fast retrieval.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.Trade
      */
@@ -192,6 +267,31 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
+     *
+     * Trades lists trades with optional denom filters and pagination.
+     *
+     * Returns trades filtered by sent_denom and/or received_denom if specified.
+     * Uses filtered pagination over primary TradesMap for flexibility. Checks
+     * TotalSent and TotalReceived coin arrays for denom presence.
+     * Supports pagination with consistent ordering by trade ID.
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Query.Trades
+     */
+    trades: {
+      name: "Trades",
+      I: QueryTradesRequest,
+      O: QueryTradesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     *
+     * TradesByOffer queries all trades involving a specific offer.
+     *
+     * Returns all trades where the specified offer_id appears as a participant.
+     * Uses TradesByOfferIndex with (offer_id, trade_id) keys for efficient
+     * lookup. Applies prefix filtering to iterate only trades for the specified
+     * offer. Supports pagination with consistent ordering by trade ID.
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.TradesByOffer
      */
     tradesByOffer: {
@@ -201,6 +301,14 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
+     *
+     * TradesByTaker queries all trades executed by a specific taker address.
+     *
+     * Returns all trades where the specified address appears as the taker
+     * (trader). Uses TradesByTraderIndex with (trader_address, trade_id) keys for
+     * efficient lookup. Applies prefix filtering to iterate only trades for the
+     * specified trader. Supports pagination with consistent ordering by trade ID.
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.TradesByTaker
      */
     tradesByTaker: {
@@ -210,7 +318,13 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
-     * TradesByPool lists trades for an AMM pool
+     *
+     * TradesByPool queries all trades involving a specific AMM pool.
+     *
+     * Returns all trades where the specified pool_id appears as a participant.
+     * Uses TradesByPoolIndex with (pool_id, trade_id) keys for efficient lookup.
+     * Applies prefix filtering to iterate only trades for the specified pool.
+     * Supports pagination with consistent ordering by trade ID.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.TradesByPool
      */
@@ -221,7 +335,29 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
-     * Auctions
+     *
+     * TradesByAuction queries all trades involving auction redemptions for a
+     * specific auction.
+     *
+     * Returns all trades where the specified auction_id appears as a participant.
+     * Uses TradesByAuctionIndex with (auction_id, trade_id) keys for efficient
+     * lookup. Applies prefix filtering to iterate only trades for the specified
+     * auction. Supports pagination with consistent ordering by trade ID.
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Query.TradesByAuction
+     */
+    tradesByAuction: {
+      name: "TradesByAuction",
+      I: QueryTradesByAuctionRequest,
+      O: QueryTradesByAuctionResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     *
+     * Auction queries a single auction by ID.
+     *
+     * Returns complete auction data including escrow details, bids, and NFT
+     * markers. Direct lookup by auction_id for fast retrieval.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.Auction
      */
@@ -232,7 +368,14 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
-     * List auctions with optional filters and pagination
+     *
+     * Auctions provides unified auction listing with optional denom filters and
+     * pagination.
+     *
+     * Supports multiple query patterns based on provided filters for optimal
+     * performance: both denoms (pair index), single sell_denom, single bid_denom,
+     * or no filters. Applies appropriate prefix filtering to optimize index
+     * usage. Supports pagination with consistent ordering by auction ID.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.Auctions
      */
@@ -243,47 +386,123 @@ export const Query = {
       kind: MethodKind.Unary,
     },
     /**
-     * AuctionsBySeller returns auctions opened by the specified seller address.
+     *
+     * AuctionsBySeller queries auctions created by a specific seller address.
+     *
+     * Returns auctions where the specified address appears as the seller.
+     * Uses filtered pagination over primary AuctionsMap (no dedicated index
+     * assumed). Results ordered by auction ID ascending.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.AuctionsBySeller
      */
     auctionsBySeller: {
       name: "AuctionsBySeller",
       I: QueryAuctionsBySellerRequest,
-      O: QueryAuctionsResponse,
+      O: QueryAuctionsBySellerResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * AuctionByNFT returns the auction associated with the specific NFT
-     * (class_id, nft_id) used as the escrow marker.
+     *
+     * AuctionByNFT queries the auction associated with specific NFT escrow
+     * markers.
+     *
+     * Returns the auction where the specified class_id and nft_id appear as
+     * escrow markers. Scans auctions to find matching NFT identifiers (expected
+     * to be unique). Uses unpaginated scan since NFT markers should be unique per
+     * auction.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.AuctionByNFT
      */
     auctionByNFT: {
       name: "AuctionByNFT",
       I: QueryAuctionByNFTRequest,
-      O: QueryAuctionResponse,
+      O: QueryAuctionByNFTResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * AuctionsByPairPriceRange returns auctions for a given (sell,bid) pair whose
-     * effective price (bid-per-sell) falls within [min_price, max_price].
-     * IMPORTANT: This endpoint requires iterating relevant NFTs/auctions and
-     * computing the current effective price from valuation or current bid and the
-     * redeemable sell-coin amount. It is designed for UI discovery and may be
-     * more expensive than index-backed queries.
+     *
+     * AuctionsByPairPriceRange queries auctions for a pair whose effective price
+     * falls within bounds.
+     *
+     * Filters auctions by sell/bid denom pair using AuctionsBySellBid index.
+     * Applies prefix filtering to iterate only auctions for the specified pair.
+     * Price filtering is placeholder (marked as TODO in implementation).
+     * Supports pagination with consistent ordering by auction ID.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.AuctionsByPairPriceRange
      */
     auctionsByPairPriceRange: {
       name: "AuctionsByPairPriceRange",
       I: QueryAuctionsByPairPriceRangeRequest,
-      O: QueryAuctionsResponse,
+      O: QueryAuctionsByPairPriceRangeResponse,
       kind: MethodKind.Unary,
     },
     /**
-     * Metrics returns a breakdown of module-expected balances by subsystem
-     * and summary counters for invariants and monitoring.
+     *
+     * Position queries a leverage position by ID and includes comprehensive
+     * health and interest information.
+     *
+     * Retrieves complete position data including collateral, debt, and status.
+     * Computes real-time interest accrual based on elapsed time and rates.
+     * Calculates current collateral ratio and liquidation health status.
+     * Determines action permissions: close by owner, initialize/finalize
+     * liquidation. Returns enriched position data with computed fields for UI
+     * consumption.
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Query.Position
+     */
+    position: {
+      name: "Position",
+      I: QueryPositionRequest,
+      O: QueryPositionResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     *
+     * PositionsByUser lists all leverage positions for a user with optional
+     * filters.
+     *
+     * Uses indexed queries on PositionsByUserIndex with (user,status,position_id)
+     * keys. Defaults to OPEN positions when status unspecified. Applies
+     * additional filters for pool_id, borrowed_denom, collateral_denom as
+     * specified. Supports pagination with consistent ordering by position ID.
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Query.PositionsByUser
+     */
+    positionsByUser: {
+      name: "PositionsByUser",
+      I: QueryPositionsByUserRequest,
+      O: QueryPositionsByUserResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     *
+     * PositionsByPool lists all leverage positions in a specific pool with
+     * optional status filter.
+     *
+     * Uses indexed queries on PositionsByPoolIndex with
+     * (pool_id,status,position_id) keys. Defaults to OPEN positions when status
+     * unspecified. Filters positions by the specified pool_id. Supports
+     * pagination with consistent ordering by position ID.
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Query.PositionsByPool
+     */
+    positionsByPool: {
+      name: "PositionsByPool",
+      I: QueryPositionsByPoolRequest,
+      O: QueryPositionsByPoolResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     *
+     * Metrics computes comprehensive module metrics including escrow balances and
+     * trade statistics.
+     *
+     * Aggregates escrow balances: AMM pool reserves, offer-locked coins, PFAND
+     * requirements. Counts auctions across all records by summing sell amounts.
+     * Calculates total fees earned across all pools. Counts total trades by
+     * iterating the trades map. Returns consolidated TradeMetrics for monitoring
+     * and invariants checking.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Query.Metrics
      */

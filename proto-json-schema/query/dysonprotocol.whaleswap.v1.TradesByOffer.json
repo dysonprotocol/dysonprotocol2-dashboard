@@ -6,11 +6,13 @@
             "dysonprotocol.whaleswap.v1.QueryTradesByOfferRequest": {
                 "properties": {
                     "offer_id": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Offer ID to filter trades by; returns all trades involving this offer"
                     },
                     "pagination": {
                         "$ref": "#/definitions/cosmos.base.query.v1beta1.PageRequest",
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "Standard pagination parameters; results ordered by trade ID ascending"
                     }
                 },
                 "additionalProperties": false,
@@ -60,11 +62,13 @@
                             "$ref": "#/definitions/dysonprotocol.whaleswap.v1.Trade"
                         },
                         "additionalProperties": false,
-                        "type": "array"
+                        "type": "array",
+                        "description": "List of trades involving the specified offer"
                     },
                     "pagination": {
                         "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse",
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "Pagination metadata for result set navigation"
                     }
                 },
                 "additionalProperties": false,
@@ -103,48 +107,170 @@
                 "title": "Coin",
                 "description": "Coin defines a token with a denomination and an amount. NOTE: The amount field is an Int which implements the custom method signatures required by gogoproto."
             },
+            "dysonprotocol.whaleswap.v1.AuctionRedeem": {
+                "properties": {
+                    "auction_id": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "Auction Redeem",
+                "description": "AuctionRedeem operation for recording auction redemption in Trade history"
+            },
+            "dysonprotocol.whaleswap.v1.SwapLeg": {
+                "properties": {
+                    "pool_id": {
+                        "type": "string"
+                    },
+                    "swap_in": {
+                        "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+                        "additionalProperties": false,
+                        "description": "Exactly one of swap_in (exact-in) or swap_out (exact-out) must be set. Use message-level min_output for rate constraints across legs."
+                    },
+                    "swap_out": {
+                        "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "Swap Leg"
+            },
+            "dysonprotocol.whaleswap.v1.TakeItem": {
+                "properties": {
+                    "offer_id": {
+                        "type": "string",
+                        "description": "ID of the offer to take from; offer must exist and be in open status."
+                    },
+                    "take_units": {
+                        "type": "string",
+                        "description": "Units to take (sdk.Int string). If empty, take full remaining. Must be positive and \u2264 remaining."
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "Take Item"
+            },
             "dysonprotocol.whaleswap.v1.Trade": {
                 "properties": {
                     "trade_id": {
                         "type": "string"
                     },
                     "offer_id": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "\u2550\u2550\u2550\u2550\u2550 DEPRECATED FIELDS (fields 2-10) - for migration compatibility \u2550\u2550\u2550\u2550\u2550 These fields are kept for backwards compatibility. Migration logic should read these and populate the new fields (20+) below. Deprecated: use operations field 23 and trader field 20 instead"
                     },
                     "taker": {
-                        "type": "string"
-                    },
-                    "height": {
-                        "type": "string"
-                    },
-                    "timestamp": {
                         "type": "string",
+                        "description": "Deprecated: use trader field 20 instead"
+                    },
+                    "height_deprecated": {
+                        "type": "string",
+                        "description": "Deprecated: use height field 21 instead"
+                    },
+                    "timestamp_deprecated": {
+                        "type": "string",
+                        "description": "Deprecated: use timestamp field 22 instead",
                         "format": "date-time"
                     },
                     "sent": {
                         "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "Deprecated: use total_sent field 24 instead"
                     },
                     "received": {
                         "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "Deprecated: use total_received field 25 instead"
                     },
                     "pool_id": {
                         "type": "string",
-                        "description": "pool_id is non-zero for AMM swaps; zero otherwise"
+                        "description": "Deprecated: use operations field 23 to infer pool swaps"
                     },
                     "auction_id": {
                         "type": "string",
-                        "description": "auction_id is non-zero for auction escrow release trades (redeem); zero otherwise"
+                        "description": "Deprecated: use operations field 23 to infer auction redemptions"
+                    },
+                    "note_deprecated": {
+                        "type": "string",
+                        "description": "Deprecated: use note field 26 instead"
+                    },
+                    "trader": {
+                        "type": "string",
+                        "description": "\u2550\u2550\u2550\u2550\u2550 NEW FIELDS (fields 20+) \u2550\u2550\u2550\u2550\u2550 Trader address (was taker in old schema, field 3)"
+                    },
+                    "height": {
+                        "type": "string",
+                        "description": "Block height when trade was executed (was field 4 in old schema)"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "description": "Timestamp when trade was executed (was field 5 in old schema)",
+                        "format": "date-time"
+                    },
+                    "operations": {
+                        "items": {
+                            "$ref": "#/definitions/dysonprotocol.whaleswap.v1.TradeOperation"
+                        },
+                        "additionalProperties": false,
+                        "type": "array",
+                        "description": "Operations executed in this trade (from tx.proto TradeOperation). Each operation records what was sent/received for that specific step. Replaces offer_id/pool_id/auction_id fields (2, 8, 9) from old schema."
+                    },
+                    "total_sent": {
+                        "items": {
+                            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                        },
+                        "additionalProperties": false,
+                        "type": "array",
+                        "description": "Aggregated totals across all operations (was single sent field 6)"
+                    },
+                    "total_received": {
+                        "items": {
+                            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                        },
+                        "additionalProperties": false,
+                        "type": "array",
+                        "description": "Aggregated totals across all operations (was single received field 7)"
                     },
                     "note": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Optional note (was field 10 in old schema)"
                     }
                 },
                 "additionalProperties": false,
                 "type": "object",
                 "title": "Trade",
-                "description": "Trade captures a single fill of an offer. - `sent` is the coin paid by the taker (want-denom), and `received` is the   coin delivered by the module (have-denom or base of liquid-have)."
+                "description": "Trade captures a batch of operations executed atomically in a single message. Operations are stored in execution order, preserving the exact sequence from the original message (MsgMakeTrade, MsgPoolSwap, MsgTakeOffer, MsgRedeemAuction)."
+            },
+            "dysonprotocol.whaleswap.v1.TradeOperation": {
+                "properties": {
+                    "swap": {
+                        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.SwapLeg",
+                        "additionalProperties": false
+                    },
+                    "take": {
+                        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.TakeItem",
+                        "additionalProperties": false
+                    },
+                    "auction": {
+                        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.AuctionRedeem",
+                        "additionalProperties": false
+                    },
+                    "sent": {
+                        "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+                        "additionalProperties": false,
+                        "description": "Execution results (populated when recording Trade):"
+                    },
+                    "received": {
+                        "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "title": "Trade Operation",
+                "description": "TradeOperation allows mixing pool swap legs, orderbook takes, and auction redemptions. When stored in Trade.operations, sent/received fields are populated with execution results. When used in MsgMakeTrade.operations, sent/received are empty (populated during execution)."
             }
         }
     }

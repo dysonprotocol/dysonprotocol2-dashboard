@@ -1,148 +1,126 @@
-import type { GenFile, GenMessage } from '@bufbuild/protobuf/codegenv2'
-import { messageDesc } from '@bufbuild/protobuf/codegenv2'
-import type { Message, JsonValue } from '@bufbuild/protobuf'
-import {
-  create,
-  toBinary,
-  fromBinary,
-  toJson as bufToJson,
-  fromJson as bufFromJson,
-  createRegistry,
-} from '@bufbuild/protobuf'
+// Static registry for generated protobuf message types.
 
-export function getProtobufRegistry(): Promise<ProtobufRegistry> {
-  if (!registryPromise) registryPromise = buildRegistry()
-  return registryPromise
+import { Any, Message, createRegistry } from '@bufbuild/protobuf'
+import type { JsonValue } from '@bufbuild/protobuf'
+
+type MessageCtor<T extends Message = Message> = {
+  new (data?: Record<string, unknown>): T
+  readonly typeName: string
+  readonly prototype: T
+  readonly fields?: { list(): Iterable<unknown> }
+  readonly runtime?: unknown
+  fromBinary(bytes: Uint8Array, options?: unknown): T
+  fromJson(json: unknown, options?: unknown): T
 }
 
-let registryPromise: Promise<ProtobufRegistry> | undefined
+type MessageInstance = Message
 
-async function buildRegistry(): Promise<ProtobufRegistry> {
-  // Eagerly import all generated protobuf files. We target only *_pb.ts files.
-  // Use a relative glob from this file to project root /ts-client
-  const moduleMap = import.meta.glob('../../ts-client/**/*_pb.ts', { eager: true }) as Record<
-    string,
-    unknown
-  >
+type MessageEntry = { fullName: string; typeUrl: string; schema: MessageCtor }
 
-  type AnyModule = Record<string, unknown>
-  const genFiles: GenFile[] = []
-  const schemas: GenMessage<Message<string>>[] = []
+const moduleMap = import.meta.glob('../../ts-client/**/*_pb.ts', { eager: true }) as Record<
+  string,
+  Record<string, unknown>
+>
 
-  for (const mod of Object.values(moduleMap) as AnyModule[]) {
-    for (const [exportName, exported] of Object.entries(mod)) {
-      // Collect file descriptors (export names starting with "file_")
-      if (exportName.startsWith('file_')) genFiles.push(exported as GenFile)
+const messageTypes = collectMessageTypes(Object.values(moduleMap))
+const typeRegistry = createRegistry(
+  ...(messageTypes as Parameters<typeof createRegistry>[number][])
+)
+const entryList: MessageEntry[] = messageTypes
+  .map((schema) => ({ fullName: schema.typeName, typeUrl: '/' + schema.typeName, schema }))
+  .sort((a, b) => (a.fullName < b.fullName ? -1 : a.fullName > b.fullName ? 1 : 0))
 
-      // Collect message schemas: exported consts ending with Schema that represent messages
-      if (exportName.endsWith('Schema') && isMessageSchema(exported)) {
-        schemas.push(exported as GenMessage<Message<string>>)
-      }
-    }
-  }
-
-  // Deduplicate genFiles by object identity
-  const uniqueFiles = Array.from(new Set(genFiles))
-
-  // Build a type registry from all files so Any fields decode/encode properly
-  const typeRegistry = createRegistry(...uniqueFiles)
-
-  // Prepare entries for UI
-  const byFullName = new Map<string, GenMessage<Message<string>>>()
-  for (const s of schemas) byFullName.set(s.typeName, s)
-  const entries = Array.from(byFullName.values())
-    .map((schema) => ({ fullName: schema.typeName, typeUrl: '/' + schema.typeName, schema }))
-    .sort((a, b) => (a.fullName < b.fullName ? -1 : a.fullName > b.fullName ? 1 : 0))
-
-  // Build Any schema from WKT to parse root Any JSON without manual type lookup
-  const { file_google_protobuf_any } = await import('@bufbuild/protobuf/wkt')
-  type AnyMsg = import('@bufbuild/protobuf/wkt').Any
-  const AnySchema: GenMessage<AnyMsg> = messageDesc(file_google_protobuf_any, 0)
-
-  function fromJson<T extends Message<string>>(schema: GenMessage<T>, json: unknown): T {
-    return bufFromJson(schema, json as JsonValue, { registry: typeRegistry })
-  }
-
-  function toJson<T extends Message<string>>(schema: GenMessage<T>, message: T): unknown {
-    return bufToJson(schema, message, { registry: typeRegistry })
-  }
-
-  function pack<T extends Message<string>>(
-    schema: GenMessage<T>,
-    message: T
-  ): { typeUrl: string; value: Uint8Array } {
-    const value = toBinary(schema, message)
-    const typeUrl = '/' + schema.typeName
-    return { typeUrl, value }
-  }
-
-  function unpack(anyMsg: {
-    typeUrl: string
-    value: Uint8Array
-  }): { schema: GenMessage<Message<string>>; message: Message<string> } | undefined {
+const protobufRegistry: ProtobufRegistry = {
+  entries: entryList,
+  create<T extends MessageInstance>(schema: MessageCtor<T>, value?: unknown): T {
+    return ensureInstance(schema, value) as T
+  },
+  toBinary<T extends MessageInstance>(schema: MessageCtor<T>, message: unknown): Uint8Array {
+    return ensureInstance(schema, message).toBinary()
+  },
+  fromBinary<T extends MessageInstance>(schema: MessageCtor<T>, bytes: Uint8Array): T {
+    return schema.fromBinary(bytes)
+  },
+  fromJson<T extends MessageInstance>(schema: MessageCtor<T>, json: unknown): T {
+    return schema.fromJson(json as JsonValue, { typeRegistry })
+  },
+  toJson<T extends MessageInstance>(schema: MessageCtor<T>, message: unknown): unknown {
+    return ensureInstance(schema, message).toJson({ typeRegistry })
+  },
+  pack<T extends MessageInstance>(schema: MessageCtor<T>, message: unknown) {
+    const instance = ensureInstance(schema, message)
+    return { typeUrl: '/' + schema.typeName, value: instance.toBinary() }
+  },
+  unpack(anyMsg) {
     if (!anyMsg || typeof anyMsg.typeUrl !== 'string') return undefined
     const typeName = anyMsg.typeUrl.substring(anyMsg.typeUrl.lastIndexOf('/') + 1)
     const schema = byFullName.get(typeName)
     if (!schema) return undefined
-    const message = fromBinary(schema as unknown as GenMessage<Message<string>>, anyMsg.value)
-    return { schema, message }
-  }
-
-  function fromJsonAny(
-    json: unknown
-  ): { schema: GenMessage<Message<string>>; message: Message<string> } | undefined {
-    const anyMsg = bufFromJson(AnySchema, json as JsonValue, { registry: typeRegistry })
-    return unpack({ typeUrl: anyMsg.typeUrl, value: anyMsg.value })
-  }
-
-  function toJsonAny<T extends Message<string>>(schema: GenMessage<T>, message: T): unknown {
-    const anyMsg = pack(schema, message)
-    // Build a proper Any message from packed fields before serializing
-    const asAny: AnyMsg = { typeUrl: anyMsg.typeUrl, value: anyMsg.value } as unknown as AnyMsg
-    return bufToJson(AnySchema, asAny, { registry: typeRegistry })
-  }
-
-  return {
-    entries,
-    create,
-    toBinary,
-    fromBinary,
-    fromJson,
-    toJson,
-    pack,
-    unpack,
-    fromJsonAny,
-    toJsonAny,
-  }
+    if (!(anyMsg.value instanceof Uint8Array)) return undefined
+    return { schema, message: schema.fromBinary(anyMsg.value) }
+  },
+  fromJsonAny(json) {
+    const anyMsg = Any.fromJson(json as JsonValue, { typeRegistry })
+    if (!anyMsg.typeUrl || !(anyMsg.value instanceof Uint8Array)) return undefined
+    return this.unpack({ typeUrl: anyMsg.typeUrl, value: anyMsg.value })
+  },
+  toJsonAny<T extends MessageInstance>(schema: MessageCtor<T>, message: unknown) {
+    const { typeUrl, value } = this.pack(schema, message)
+    return new Any({ typeUrl, value }).toJson({ typeRegistry })
+  },
 }
 
-function isMessageSchema(value: unknown): value is GenMessage<Message<string>> {
-  if (!value || typeof value !== 'object') return false
-  // messageDesc returns an object with a stable "typeName" string and a "fields" array
-  const v = value as { typeName?: unknown; fields?: unknown; values?: unknown }
-  if (typeof v.typeName !== 'string') return false
-  // Exclude enums, which expose "values" instead of "fields"
-  if (Array.isArray((v as { values?: unknown[] }).values)) return false
-  return Array.isArray(v.fields)
+const byFullName = new Map<string, MessageCtor>(
+  messageTypes.map((schema) => [schema.typeName, schema])
+)
+
+export function getProtobufRegistry(): Promise<ProtobufRegistry> {
+  return Promise.resolve(protobufRegistry)
+}
+
+function collectMessageTypes(modules: Record<string, unknown>[]): MessageCtor[] {
+  const seen = new Set<MessageCtor>()
+  for (const mod of modules) {
+    for (const exported of Object.values(mod)) {
+      if (isMessageCtor(exported) && !seen.has(exported)) seen.add(exported)
+    }
+  }
+  return Array.from(seen)
+}
+
+function isMessageCtor(value: unknown): value is MessageCtor {
+  if (typeof value !== 'function') return false
+  const candidate = value as MessageCtor & { prototype?: unknown }
+  return (
+    typeof candidate.typeName === 'string' &&
+    typeof candidate.fromJson === 'function' &&
+    typeof candidate.fromBinary === 'function' &&
+    candidate.prototype instanceof Message
+  )
+}
+
+function ensureInstance<T extends MessageInstance>(schema: MessageCtor<T>, value: unknown): T {
+  if (value instanceof schema) return value
+  return new schema((value ?? {}) as Record<string, unknown>)
 }
 
 export interface ProtobufRegistry {
-  entries: { fullName: string; typeUrl: string; schema: GenMessage<Message<string>> }[]
-  create: typeof create
-  toBinary: typeof toBinary
-  fromBinary: typeof fromBinary
-  fromJson<T extends Message<string>>(schema: GenMessage<T>, json: unknown): T
-  toJson<T extends Message<string>>(schema: GenMessage<T>, message: T): unknown
-  pack<T extends Message<string>>(
-    schema: GenMessage<T>,
-    message: T
+  entries: MessageEntry[]
+  create<T extends MessageInstance>(schema: MessageCtor<T>, value?: unknown): T
+  toBinary<T extends MessageInstance>(schema: MessageCtor<T>, message: unknown): Uint8Array
+  fromBinary<T extends MessageInstance>(schema: MessageCtor<T>, bytes: Uint8Array): T
+  fromJson<T extends MessageInstance>(schema: MessageCtor<T>, json: unknown): T
+  toJson<T extends MessageInstance>(schema: MessageCtor<T>, message: unknown): unknown
+  pack<T extends MessageInstance>(
+    schema: MessageCtor<T>,
+    message: unknown
   ): { typeUrl: string; value: Uint8Array }
-  unpack(anyMsg: {
-    typeUrl: string
-    value: Uint8Array
-  }): { schema: GenMessage<Message<string>>; message: Message<string> } | undefined
-  fromJsonAny(
-    json: unknown
-  ): { schema: GenMessage<Message<string>>; message: Message<string> } | undefined
-  toJsonAny<T extends Message<string>>(schema: GenMessage<T>, message: T): unknown
+  unpack(anyMsg: { typeUrl: string; value: Uint8Array }):
+    | {
+        schema: MessageCtor
+        message: MessageInstance
+      }
+    | undefined
+  fromJsonAny(json: unknown): { schema: MessageCtor; message: MessageInstance } | undefined
+  toJsonAny<T extends MessageInstance>(schema: MessageCtor<T>, message: unknown): unknown
 }

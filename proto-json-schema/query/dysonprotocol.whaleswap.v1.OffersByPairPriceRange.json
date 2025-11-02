@@ -6,26 +6,30 @@
             "dysonprotocol.whaleswap.v1.QueryOffersByPairPriceRangeRequest": {
                 "properties": {
                     "have_denom": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Have denom of the pair (denomination being sold)"
                     },
                     "want_denom": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Want denom of the pair (denomination being bought)"
                     },
                     "min_price": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Minimum price threshold as want-per-have cosmos.Dec string (optional, inclusive)"
                     },
                     "max_price": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Maximum price threshold as want-per-have cosmos.Dec string (optional, inclusive)"
                     },
                     "pagination": {
                         "$ref": "#/definitions/cosmos.base.query.v1beta1.PageRequest",
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "Standard pagination parameters; results ordered by price ascending"
                     }
                 },
                 "additionalProperties": false,
                 "type": "object",
-                "title": "Query Offers By Pair Price Range Request",
-                "description": "QueryOffersByPairPriceRangeRequest filters offers for a pair by price range. Prices are expressed as want-per-have (high-per-low orientation) cosmos.Dec strings."
+                "title": "Query Offers By Pair Price Range Request"
             },
             "cosmos.base.query.v1beta1.PageRequest": {
                 "properties": {
@@ -61,25 +65,27 @@
     },
     "response": {
         "$schema": "http://json-schema.org/draft-04/schema#",
-        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.QueryOffersResponse",
+        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.QueryOffersByPairPriceRangeResponse",
         "definitions": {
-            "dysonprotocol.whaleswap.v1.QueryOffersResponse": {
+            "dysonprotocol.whaleswap.v1.QueryOffersByPairPriceRangeResponse": {
                 "properties": {
                     "offers": {
                         "items": {
                             "$ref": "#/definitions/dysonprotocol.whaleswap.v1.OfferData"
                         },
                         "additionalProperties": false,
-                        "type": "array"
+                        "type": "array",
+                        "description": "List of offers within the specified price range, ordered by price"
                     },
                     "pagination": {
                         "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse",
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "Pagination metadata for result set navigation"
                     }
                 },
                 "additionalProperties": false,
                 "type": "object",
-                "title": "Query Offers Response"
+                "title": "Query Offers By Pair Price Range Response"
             },
             "cosmos.base.query.v1beta1.PageResponse": {
                 "properties": {
@@ -164,6 +170,24 @@
                         "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
                         "additionalProperties": false,
                         "description": "pfand_locked is the PFAND coin locked for liquid-mode offers."
+                    },
+                    "settlement_mode": {
+                        "enum": [
+                            "SETTLEMENT_ESCROW",
+                            0,
+                            "SETTLEMENT_LIQUID",
+                            1
+                        ],
+                        "oneOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "integer"
+                            }
+                        ],
+                        "title": "Settlement Mode",
+                        "description": "SettlementMode selects how offers fund the \"have\" side: - ESCROW: Escrow base have in the module at offer creation. - LIQUID: Do not escrow base; lock PFAND and settle from maker balance at take."
                     }
                 },
                 "additionalProperties": false,

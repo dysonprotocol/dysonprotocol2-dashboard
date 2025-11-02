@@ -6,7 +6,8 @@
             "dysonprotocol.whaleswap.v1.QueryOfferRequest": {
                 "properties": {
                     "offer_id": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "ID of the offer to retrieve"
                     }
                 },
                 "additionalProperties": false,
@@ -23,7 +24,8 @@
                 "properties": {
                     "offer": {
                         "$ref": "#/definitions/dysonprotocol.whaleswap.v1.OfferData",
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "The requested offer data"
                     }
                 },
                 "additionalProperties": false,
@@ -95,6 +97,24 @@
                         "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
                         "additionalProperties": false,
                         "description": "pfand_locked is the PFAND coin locked for liquid-mode offers."
+                    },
+                    "settlement_mode": {
+                        "enum": [
+                            "SETTLEMENT_ESCROW",
+                            0,
+                            "SETTLEMENT_LIQUID",
+                            1
+                        ],
+                        "oneOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "integer"
+                            }
+                        ],
+                        "title": "Settlement Mode",
+                        "description": "SettlementMode selects how offers fund the \"have\" side: - ESCROW: Escrow base have in the module at offer creation. - LIQUID: Do not escrow base; lock PFAND and settle from maker balance at take."
                     }
                 },
                 "additionalProperties": false,

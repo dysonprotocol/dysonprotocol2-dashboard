@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { MsgAddLiquidity, MsgAddLiquidityResponse, MsgCancelOffer, MsgCancelOfferResponse, MsgConvertToLiquid, MsgConvertToLiquidResponse, MsgConvertToSolid, MsgConvertToSolidResponse, MsgCreatePool, MsgCreatePoolResponse, MsgMakeOffer, MsgMakeOfferResponse, MsgMakeTrade, MsgMakeTradeResponse, MsgOpenAuction, MsgOpenAuctionResponse, MsgPoolSwap, MsgPoolSwapResponse, MsgRedeemAuction, MsgRedeemAuctionResponse, MsgRemoveLiquidity, MsgRemoveLiquidityResponse, MsgTakeOffer, MsgTakeOfferResponse, MsgUpdateParams, MsgUpdateParamsResponse, MsgUpdatePoolConfig, MsgUpdatePoolConfigResponse } from "./tx_pb.js";
+import { MsgAddCollateral, MsgAddCollateralResponse, MsgAddLiquidity, MsgAddLiquidityResponse, MsgCancelOffer, MsgCancelOfferResponse, MsgClosePosition, MsgClosePositionResponse, MsgCoverPosition, MsgCoverPositionResponse, MsgCreatePool, MsgCreatePoolResponse, MsgFinalizeLiquidation, MsgFinalizeLiquidationResponse, MsgInitializeLiquidation, MsgInitializeLiquidationResponse, MsgMakeOffer, MsgMakeOfferResponse, MsgMakeTrade, MsgMakeTradeResponse, MsgOpenAuction, MsgOpenAuctionResponse, MsgOpenPosition, MsgOpenPositionResponse, MsgPoolSwap, MsgPoolSwapResponse, MsgRedeemAuction, MsgRedeemAuctionResponse, MsgRemoveLiquidity, MsgRemoveLiquidityResponse, MsgTakeOffer, MsgTakeOfferResponse, MsgUpdateParams, MsgUpdateParamsResponse, MsgUpdatePoolConfig, MsgUpdatePoolConfigResponse } from "./tx_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -27,9 +27,9 @@ import { MethodKind } from "@bufbuild/protobuf";
  *   be either empty (unset) or contain exactly two coins whose denoms match the
  *   pool's reserve denoms, representing coin_b / coin_a.
  *
- * - Liquid denoms: The module uses a liquid wrapper L(denom) to represent
- *   tokenized credit balances. Some operations disallow liquid denoms on
- *   certain sides (e.g., offers.want).
+ * - Settlement modes: Orderbook offers specify how the 'have' is funded:
+ *   ESCROW (escrow base have at creation) or LIQUID (no escrow; lock PFAND and
+ *   settle from maker balance at take).
  *
  * Msg defines the whaleswap Msg service.
  *
@@ -39,7 +39,50 @@ export const Msg = {
   typeName: "dysonprotocol.whaleswap.v1.Msg",
   methods: {
     /**
-     * AMM
+     * *
+     * CreatePool creates a two-asset pool with per-denom fee/interest/leverage
+     * parameters and optional directional bound_percent limits.
+     *
+     * Behavior:
+     * - Input normalization: canonicalizes `coins` (exactly two positive coins)
+     * to the pool's denom order.
+     * - Fees and rates: normalizes `fee_rate` and `interest_rate` to exactly two
+     *   DecCoins in pool order; requires 0 <= fee_rate < 1 per denom and
+     *   interest_rate >= 0 per denom.
+     * - Leverage configuration (required): `min_collateral_ratio` and
+     *   `max_leverage_ratio` must have exactly two entries (> 1) matching pool
+     *   denoms; `liquidation_threshold` must have exactly two entries (> 1);
+     *   `max_borrow_percent` must have exactly two entries with amounts in [0,1).
+     * - Bound percent (optional): when omitted defaults to 1 (unbounded) for both
+     *   denoms. When provided, must contain exactly two DecCoins matching pool
+     *   denoms with amounts in (0,1]; 1 disables the bound for that denom.
+     * - Funds and shares: sends initial reserves from `creator` → module;
+     * allocates a new pool_id; persists the pool; computes initial shares as
+     *   floor(sqrt(x*y)); ensures at least one share; mints pool shares and sends
+     *   them to the creator.
+     * - Invariants: asserts AMM and module invariants before returning.
+     *
+     * Validation:
+     * - coins must contain exactly two positive coins with valid denoms.
+     * - fee_rate amounts must satisfy 0 <= x < 1 for both denoms when provided.
+     * - interest_rate amounts must be >= 0 for both denoms when provided.
+     * - min_collateral_ratio must have exactly two entries (> 1) matching pool
+     *   denoms in canonical order.
+     * - max_leverage_ratio must have exactly two entries (> 1) matching pool
+     * denoms in canonical order.
+     * - liquidation_threshold must have exactly two entries (> 1) matching pool
+     *   denoms in canonical order.
+     * - max_borrow_percent must have exactly two entries with amounts in [0,1)
+     *   matching pool denoms in canonical order.
+     * - bound_percent when provided must contain at most two entries with amounts
+     *   in (0,1] matching pool denoms.
+     *
+     * Emits:
+     * - EventPoolCreated(pool_id)
+     * - EventPoolUpdate(pool_id)
+     *
+     * Returns:
+     * - pool_id of the newly created pool (see response).
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.CreatePool
      */
@@ -50,6 +93,45 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
+     * *
+     * UpdatePoolConfig updates pool fees, leverage/threshold params, interest,
+     * optional max_borrow_percent, and bound_percent; majority-owner only.
+     *
+     * Behavior:
+     * - Loads pool; validates signer and majority-ownership.
+     * - Fee rates: optional; normalizes to two DecCoins (pool order); 0 <= x < 1.
+     * - Leverage config: required `min_collateral_ratio` and `max_leverage_ratio`
+     *   with exactly two entries matching pool denoms; each > 1.
+     * - Liquidation threshold: required with exactly two entries; each > 1.
+     * - Interest rate: allows 0/1/2 entries; normalizes to two; each >= 0.
+     * - Max borrow percent: optional; if provided exactly two entries; 0 <= x
+     * < 1.
+     * - Bound percent: optional; when provided must contain exactly two DecCoins
+     *   matching pool denoms with amounts in (0,1]; 1 disables the bound. Omit to
+     *   leave existing bounds unchanged.
+     * - Persists pool with `updated` timestamp; emits EventPoolUpdate; asserts
+     * AMM and module invariants.
+     *
+     * Validation:
+     * - Pool must exist.
+     * - Signer must be valid address and hold majority of pool shares.
+     * - Fee rates when provided must satisfy 0 <= x < 1 for both denoms.
+     * - Leverage config (min_collateral_ratio, max_leverage_ratio) must have
+     *   exactly two entries (> 1) matching pool denoms in canonical order.
+     * - Liquidation threshold must have exactly two entries (> 1) matching pool
+     *   denoms in canonical order.
+     * - Interest rates when provided must be >= 0 for both denoms.
+     * - Max borrow percent when provided must have exactly two entries with
+     * amounts in [0,1) matching pool denoms in canonical order.
+     * - Bound percent when provided must contain at most two entries with amounts
+     *   in (0,1] matching pool denoms.
+     *
+     * Emits:
+     * - EventPoolUpdate(pool_id)
+     *
+     * Returns:
+     * - Empty response.
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.UpdatePoolConfig
      */
     updatePoolConfig: {
@@ -59,6 +141,29 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
+     * *
+     * AddLiquidity (owner-only) escrows provided amounts, refunds any unused
+     * amounts, mints shares, and asserts AMM invariants.
+     *
+     * Behavior:
+     * - Loads pool; validates signer majority ownership.
+     * - Escrows full provided amounts first, then refunds unused surplus.
+     * - Computes shares as floor(min(add1/R1, add2/R2) × totalShares).
+     * - Updates pool reserves with used amounts.
+     * - Mints computed shares via nameservice and transfers to signer.
+     * - Persists pool with updated reserves/timestamp; emits events; asserts AMM
+     *   and module invariants.
+     *
+     * Validation:
+     * - Pool must exist and have exactly two positive reserves.
+     * - Signer must be valid address and hold majority of pool shares.
+     * - Amounts must contain exactly two positive coins matching pool denoms in
+     *   canonical order.
+     *
+     * Emits:
+     * - EventPoolUpdate (after persisting pool state)
+     * - EventPoolLiquidityAdded (pool_id, shares_minted)
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.AddLiquidity
      */
     addLiquidity: {
@@ -68,6 +173,10 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
+     * *
+     * RemoveLiquidity burns the caller's shares and returns the underlying
+     * reserves proportional to the share burned.
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.RemoveLiquidity
      */
     removeLiquidity: {
@@ -77,6 +186,11 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
+     * *
+     * PoolSwap executes one or more exact-in or exact-out pool swap legs with a
+     * single end-of-tx settlement. Applies output-side fees per leg and enforces
+     * aggregate max_input caps and min_output guarantees.
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.PoolSwap
      */
     poolSwap: {
@@ -86,7 +200,9 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
-     * Mixed operations: combine orderbook takes and pool swaps in one tx
+     * *
+     * MakeTrade combines AMM pool swaps and orderbook takes into a single
+     * transaction with end-of-tx settlement.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.MakeTrade
      */
@@ -97,27 +213,10 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
-     * Wrapping (liquid conversions)
-     *
-     * @generated from rpc dysonprotocol.whaleswap.v1.Msg.ConvertToLiquid
-     */
-    convertToLiquid: {
-      name: "ConvertToLiquid",
-      I: MsgConvertToLiquid,
-      O: MsgConvertToLiquidResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * @generated from rpc dysonprotocol.whaleswap.v1.Msg.ConvertToSolid
-     */
-    convertToSolid: {
-      name: "ConvertToSolid",
-      I: MsgConvertToSolid,
-      O: MsgConvertToSolidResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * Orderbook
+     * *
+     * MakeOffer creates an orderbook offer. ESCROW: base "have" is escrowed.
+     * LIQUID: lock PFAND; settlement draws from maker balance at take. Units are
+     * derived via GCD for partial fills.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.MakeOffer
      */
@@ -128,6 +227,9 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
+     * *
+     * TakeOffer executes one or more orderbook takes with netting and settlement.
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.TakeOffer
      */
     takeOffer: {
@@ -137,6 +239,10 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
+     * *
+     * CancelOffer (maker or authorized third party) cancels an open offer and
+     * refunds escrowed assets to the maker while releasing PFAND to the closer.
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.CancelOffer
      */
     cancelOffer: {
@@ -146,7 +252,10 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
-     * Auctions
+     * *
+     * OpenAuction escrows the sell coin and mints an NFT under a class keyed by
+     * bid_denom; class policy (listing/valuation/bid timeouts/allowed denoms) is
+     * set from module params.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.OpenAuction
      */
@@ -157,6 +266,11 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
+     * *
+     * RedeemAuction lets the current NFT owner redeem when no bid is active;
+     * burns the NFT and returns escrow. If owner != original seller and a
+     * valuation exists in bid_denom, a trade record is emitted.
+     *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.RedeemAuction
      */
     redeemAuction: {
@@ -166,7 +280,89 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
-     * Params
+     * *
+     * OpenPosition creates a leveraged position by borrowing against collateral,
+     * swapping to held asset, and recording the position with interest snapshots.
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Msg.OpenPosition
+     */
+    openPosition: {
+      name: "OpenPosition",
+      I: MsgOpenPosition,
+      O: MsgOpenPositionResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * *
+     * ClosePosition swaps held to borrowed, repays principal+interest, returns
+     * remaining collateral and any profit, updates pool accounting, and deletes
+     * the position (respects block delay).
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Msg.ClosePosition
+     */
+    closePosition: {
+      name: "ClosePosition",
+      I: MsgClosePosition,
+      O: MsgClosePositionResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * *
+     * AddCollateral deposits additional collateral to a leveraged position and
+     * clears liquidation markers.
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Msg.AddCollateral
+     */
+    addCollateral: {
+      name: "AddCollateral",
+      I: MsgAddCollateral,
+      O: MsgAddCollateralResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * *
+     * CoverPosition repays accrued interest; optionally reduces principal or
+     * auto-closes on full repayment.
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Msg.CoverPosition
+     */
+    coverPosition: {
+      name: "CoverPosition",
+      I: MsgCoverPosition,
+      O: MsgCoverPositionResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * *
+     * InitializeLiquidation (permissionless) marks a position liquidatable when
+     * its collateral ratio (with accrued interest at the snapshotted rate) falls
+     * below the pool's liquidation_threshold and starts the block-delay
+     * countdown.
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Msg.InitializeLiquidation
+     */
+    initializeLiquidation: {
+      name: "InitializeLiquidation",
+      I: MsgInitializeLiquidation,
+      O: MsgInitializeLiquidationResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * *
+     * FinalizeLiquidation (permissionless) completes leveraged position
+     * liquidation.
+     *
+     * @generated from rpc dysonprotocol.whaleswap.v1.Msg.FinalizeLiquidation
+     */
+    finalizeLiquidation: {
+      name: "FinalizeLiquidation",
+      I: MsgFinalizeLiquidation,
+      O: MsgFinalizeLiquidationResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * *
+     * UpdateParams (authority-only) updates module parameters.
      *
      * @generated from rpc dysonprotocol.whaleswap.v1.Msg.UpdateParams
      */

@@ -116,7 +116,7 @@
               </a>
             </router-link>
 
-            <router-link to="/whaleswap" custom v-slot="{ href, navigate, isActive }">
+            <router-link to="/whaleswap/trades" custom v-slot="{ href, navigate, isActive }">
               <a :href="href" @click="navigate" :class="linkClass(isActive)">
                 <span class="iconify size-4" :class="'lucide--fish'" />
                 <span>Whaleswap</span>

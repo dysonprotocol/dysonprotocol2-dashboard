@@ -6,20 +6,22 @@
             "dysonprotocol.whaleswap.v1.MsgRemoveLiquidity": {
                 "properties": {
                     "signer": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Account burning shares; must hold at least this amount."
                     },
                     "pool_id": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Target pool id."
                     },
                     "shares": {
                         "type": "string",
-                        "description": "shares to burn (sdk.Int string)"
+                        "description": "Shares to burn (sdk.Int string). Must be > 0; equals total supply to fully exit (pool is deleted)."
                     }
                 },
                 "additionalProperties": false,
                 "type": "object",
                 "title": "Msg Remove Liquidity",
-                "description": "Remove liquidity (anyone). Must respect price band and produce non-zero outputs."
+                "description": "* Remove liquidity from a pool by burning shares and returning underlying reserves. Behavior: - Supports full exit (burning all shares, deletes pool, returns all reserves)   and partial exit (burns subset, returns proportional reserves, pool remains). - Full exit: when shares = total_supply, deletes pool, pays out full reserves. - Partial exit: computes pro-rata payout using DecCoins math, ensures reserves don't go to zero (requires full exit for last liquidity). - Burns shares from signer, sends proportional reserves from module to signer. - For partial exits: updates pool reserves, persists pool; asserts AMM invariants. Validation: - Pool must exist. - Shares must be positive integer string. - Signer must hold at least shares amount. - Partial exits cannot deplete any reserve to zero. Emits: - EventPoolLiquidityRemoved with pool_id and shares Returns: - coins returned to the caller in the amount field."
             }
         }
     },
@@ -35,7 +37,7 @@
                         },
                         "additionalProperties": false,
                         "type": "array",
-                        "description": "coins returned"
+                        "description": "Coins returned to the caller proportional to the burned shares."
                     }
                 },
                 "additionalProperties": false,

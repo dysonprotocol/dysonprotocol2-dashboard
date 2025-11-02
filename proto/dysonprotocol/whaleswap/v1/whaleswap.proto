@@ -5,6 +5,7 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
+import "dysonprotocol/whaleswap/v1/tx.proto";
 
 option go_package = "dysonprotocol.com/x/whaleswap/types";
 
@@ -12,11 +13,7 @@ option go_package = "dysonprotocol.com/x/whaleswap/types";
 //
 // Notes:
 // - coin_a.denom < coin_b.denom lexicographically (canonical order)
-// - fee_pct is a decimal string in [0,1)
-// - min_price/max_price are optional decimal strings defining a price band over
-//   P = coin_b.amount/coin_a.amount. If unset (or effectively [0, +∞)) the pool
-//   behaves as constant-product (v2). If set, concentrated-liquidity math
-//   applies.
+// - fee_rate is a per-denom decimal rate in [0,1) as DecCoins
 // - coin_a.amount/coin_b.amount are sdk.Int strings.
 // - The instantaneous price used by price-based queries is derived from
 //   reserves as P = coin_b / coin_a, consistent with the notes above.
@@ -29,17 +26,21 @@ message Pool {
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
   string shares_denom = 4;
-  // fee_pct is the pool swap fee percentage (cosmos.Dec string in [0,1)).
-  string fee_pct = 5 [ (cosmos_proto.scalar) = "cosmos.Dec" ];
-  // min_price/max_price optionally set a price band for concentrated liquidity.
-  // Each is expressed as exactly two coins representing the ratio
-  // coins[1]/coins[0]. For example, [{amount: 1, denom: coins[0].denom},
-  // {amount: 2, denom: coins[1].denom}] means Pmin = 2/1. Empty means unset.
+  // Deprecated: fee_pct is the legacy pool swap fee percentage (cosmos.Dec
+  // string in [0,1)). Use fee_rate field 25 instead. Migration logic should
+  // read this and convert to fee_rate format (two DecCoins, one per reserve
+  // denom in canonical order).
+  string fee_pct = 5
+      [ deprecated = true, (cosmos_proto.scalar) = "cosmos.Dec" ];
+  // Deprecated legacy price band fields retained for decoding old genesis
+  // exports. Migration logic ignores their values and clears them.
   repeated cosmos.base.v1beta1.Coin min_price = 6 [
+    deprecated = true,
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
   repeated cosmos.base.v1beta1.Coin max_price = 7 [
+    deprecated = true,
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
@@ -51,6 +52,81 @@ message Pool {
   repeated cosmos.base.v1beta1.Coin fees_earned = 14 [
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+
+  // ═════ LEVERAGE FIELDS ═════
+  // Annual interest rates per reserve denom (exactly two, canonical order).
+  // Each amount is a decimal string representing APR (per-year accrual).
+  repeated cosmos.base.v1beta1.DecCoin interest_rate = 15 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins"
+  ];
+
+  // Total accrued interest (yield for LPs)
+  repeated cosmos.base.v1beta1.Coin interest_earned = 19 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+
+  // Total borrowed (aggregate for cap enforcement)
+  repeated cosmos.base.v1beta1.Coin total_borrowed = 20 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+
+  // ═════ PER-POOL LEVERAGE RISK PARAMETERS (per-denom) ═════
+  // Minimum collateral ratio required at position open per reserve denom
+  // (exactly two, canonical order). Each amount is a decimal string (> 1).
+  repeated cosmos.base.v1beta1.DecCoin min_collateral_ratio = 21 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins"
+  ];
+
+  // Maximum leverage ratio allowed (collateral + borrowed) / collateral per
+  // reserve denom (exactly two, canonical order). Each amount is a decimal
+  // string (> 1).
+  repeated cosmos.base.v1beta1.DecCoin max_leverage_ratio = 22 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins"
+  ];
+
+  // Collateral ratio threshold below which position is liquidatable per reserve
+  // denom (exactly two, canonical order). Each amount is a decimal string
+  // (> 1).
+  repeated cosmos.base.v1beta1.DecCoin liquidation_threshold = 23 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins"
+  ];
+
+  // Maximum borrow capacity per reserve denom as DecCoins (exactly two,
+  // canonical order). Each amount is a decimal in [0,1).
+  repeated cosmos.base.v1beta1.DecCoin max_borrow_percent = 24 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins"
+  ];
+
+  // Directional price-impact bounds keyed by the sold denom.
+  // Each amount must satisfy 0 < x <= 1; x == 1 disables the bound (unbounded).
+  // Missing entries default to 1 for both pool denoms. Stored in canonical pool
+  // order (coins[0], coins[1]). During swaps, selling denom D enforces that the
+  // post-trade price of D quoted in the opposite denom may drop by at most
+  // x fraction (B = 1/(1-x) multiplier). Values outside (0,1] are rejected at
+  // validation time.
+  repeated cosmos.base.v1beta1.DecCoin bound_percent = 26 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins"
+  ];
+
+  // fee_rate is the per-denom pool swap fee rate (amount in [0,1)), exactly two
+  // entries in canonical pool order matching coins[0].denom and coins[1].denom.
+  // Fee is applied to the OUTPUT denom of each swap leg: for exact-in, the
+  // computed gross output is reduced by fee; for exact-out, the required gross
+  // output is inflated so net (after fee) meets the target. Fees accrue to
+  // fees_earned in the output denom.
+  // Replaces deprecated fee_pct field 5.
+  repeated cosmos.base.v1beta1.DecCoin fee_rate = 25 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins"
   ];
 }
 
@@ -73,26 +149,69 @@ message OfferData {
   string remaining_units = 12; // sdk.Int string
   // pfand_locked is the PFAND coin locked for liquid-mode offers.
   cosmos.base.v1beta1.Coin pfand_locked = 13 [ (gogoproto.nullable) = false ];
+  // settlement_mode mirrors MsgMakeOffer.settlement_mode for this offer.
+  dysonprotocol.whaleswap.v1.SettlementMode settlement_mode = 14;
 }
 
-// Trade captures a single fill of an offer.
-//
-// - `sent` is the coin paid by the taker (want-denom), and `received` is the
-//   coin delivered by the module (have-denom or base of liquid-have).
+// Trade captures a batch of operations executed atomically in a single message.
+// Operations are stored in execution order, preserving the exact sequence from
+// the original message (MsgMakeTrade, MsgPoolSwap, MsgTakeOffer,
+// MsgRedeemAuction).
 message Trade {
   uint64 trade_id = 1;
-  uint64 offer_id = 2;
-  string taker = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
-  uint64 height = 4;
-  google.protobuf.Timestamp timestamp = 5 [ (gogoproto.stdtime) = true ];
-  cosmos.base.v1beta1.Coin sent = 6 [ (gogoproto.nullable) = false ];
-  cosmos.base.v1beta1.Coin received = 7 [ (gogoproto.nullable) = false ];
-  // pool_id is non-zero for AMM swaps; zero otherwise
-  uint64 pool_id = 8;
-  // auction_id is non-zero for auction escrow release trades (redeem); zero
-  // otherwise
-  uint64 auction_id = 9;
-  string note = 10;
+
+  // ═════ DEPRECATED FIELDS (fields 2-10) - for migration compatibility ═════
+  // These fields are kept for backwards compatibility. Migration logic should
+  // read these and populate the new fields (20+) below.
+  // Deprecated: use operations field 23 and trader field 20 instead
+  uint64 offer_id = 2 [ deprecated = true ];
+  // Deprecated: use trader field 20 instead
+  string taker = 3
+      [ deprecated = true, (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  // Deprecated: use height field 21 instead
+  uint64 height_deprecated = 4 [ deprecated = true ];
+  // Deprecated: use timestamp field 22 instead
+  google.protobuf.Timestamp timestamp_deprecated = 5
+      [ deprecated = true, (gogoproto.stdtime) = true ];
+  // Deprecated: use total_sent field 24 instead
+  cosmos.base.v1beta1.Coin sent = 6
+      [ deprecated = true, (gogoproto.nullable) = false ];
+  // Deprecated: use total_received field 25 instead
+  cosmos.base.v1beta1.Coin received = 7
+      [ deprecated = true, (gogoproto.nullable) = false ];
+  // Deprecated: use operations field 23 to infer pool swaps
+  uint64 pool_id = 8 [ deprecated = true ];
+  // Deprecated: use operations field 23 to infer auction redemptions
+  uint64 auction_id = 9 [ deprecated = true ];
+  // Deprecated: use note field 26 instead
+  string note_deprecated = 10 [ deprecated = true ];
+
+  // Reserved field numbers 11-19 for future use
+  reserved 11, 12, 13, 14, 15, 16, 17, 18, 19;
+
+  // ═════ NEW FIELDS (fields 20+) ═════
+  // Trader address (was taker in old schema, field 3)
+  string trader = 20 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  // Block height when trade was executed (was field 4 in old schema)
+  uint64 height = 21;
+  // Timestamp when trade was executed (was field 5 in old schema)
+  google.protobuf.Timestamp timestamp = 22 [ (gogoproto.stdtime) = true ];
+  // Operations executed in this trade (from tx.proto TradeOperation).
+  // Each operation records what was sent/received for that specific step.
+  // Replaces offer_id/pool_id/auction_id fields (2, 8, 9) from old schema.
+  repeated TradeOperation operations = 23 [ (gogoproto.nullable) = false ];
+  // Aggregated totals across all operations (was single sent field 6)
+  repeated cosmos.base.v1beta1.Coin total_sent = 24 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  // Aggregated totals across all operations (was single received field 7)
+  repeated cosmos.base.v1beta1.Coin total_received = 25 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  // Optional note (was field 10 in old schema)
+  string note = 26;
 }
 
 // AuctionRecord stores metadata for a whaleswap-created auction escrow.
@@ -114,12 +233,12 @@ message TradeMetrics {
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
-  // Sum of remaining_have over all open non-liquid offers
+  // Sum of remaining_have over all open escrow-mode offers
   repeated cosmos.base.v1beta1.Coin escrowed_offer_coins = 3 [
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
-  // Sum of pfand_locked over all open liquid-have offers
+  // Sum of pfand_locked over all open liquid-mode offers
   repeated cosmos.base.v1beta1.Coin escrowed_pfand = 4 [
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
@@ -129,15 +248,8 @@ message TradeMetrics {
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
-  // Solid backing for liquid supply: for each liquid denom
-  // whaleswap.dys/coins/X, this reports the required backing amount on solid
-  // denom X.
-  repeated cosmos.base.v1beta1.Coin escrowed_liquid_coins = 6 [
-    (gogoproto.nullable) = false,
-    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
-  ];
   // Sum of fees_earned across all pools (accounted inside pool reserves)
-  repeated cosmos.base.v1beta1.Coin fees_earned = 7 [
+  repeated cosmos.base.v1beta1.Coin fees_earned = 6 [
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];

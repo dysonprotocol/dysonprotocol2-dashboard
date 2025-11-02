@@ -5,7 +5,8 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@ts-client/*": ["ts-client/*"]
     },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "preserve",
@@ -25,6 +26,7 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "src/**/*.d.ts",
+    "ts-client/**/*.ts",
     "e2e/**/*.ts",
     "e2e/**/*.js",
     "vite.config.ts"

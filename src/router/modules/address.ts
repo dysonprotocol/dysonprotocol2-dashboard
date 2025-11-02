@@ -13,7 +13,7 @@ const AddressNFTs = () => import('@/views/address/AddressNFTs.vue')
 const AddressAuthz = () => import('@/views/address/AddressAuthz.vue')
 const AddressSummary = () => import('@/views/address/AddressSummary.vue')
 const AddressWhaleswapOffers = () => import('@/views/address/AddressWhaleswapOffers.vue')
-const AddressWhaleswapTrades = () => import('@/views/address/AddressWhaleswapTrades.vue')
+const AddressWhaleswapTrades = () => import('@/whaleswap/views/TradesList.vue')
 const AddressWhaleswapPools = () => import('@/views/address/AddressWhaleswapPools.vue')
 const AddressWhaleswapAuctions = () => import('@/views/address/AddressWhaleswapAuctions.vue')
 
@@ -111,7 +111,7 @@ export const addressRoutes: RouteRecordRaw[] = [
         path: 'whaleswap/trades',
         name: 'AddressWhaleswapTrades',
         component: AddressWhaleswapTrades,
-        props: true,
+        props: (route) => ({ filterTaker: route.params.address }),
         meta: { title: 'Address Trades' },
       },
       {

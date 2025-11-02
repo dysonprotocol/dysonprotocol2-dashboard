@@ -17,6 +17,13 @@ export const miscRoutes: RouteRecordRaw[] = [
     component: () => import('@/views/DemoWsBlock.vue'),
   },
 
+  {
+    path: '/demo/whaleswap-grpc-pair',
+    name: 'DemoWhaleswapGrpcPair',
+    component: () => import('@/views/DemoWhaleswapGrpcPair.vue'),
+    meta: { title: 'Whaleswap gRPC Pair Queries' },
+  },
+
   { path: '/docs', name: 'ApiDocs', component: Placeholder, meta: { title: 'API Docs' } },
   { path: '/api', name: 'CodeSnippets', component: Placeholder, meta: { title: 'Code Snippets' } },
 

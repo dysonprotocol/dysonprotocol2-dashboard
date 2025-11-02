@@ -1,28 +1,22 @@
-<template>
-  <div class="p-4 space-y-2">
-    <h2 class="text-xl font-semibold">Offer #{{ offerId }}</h2>
-    <div class="rounded-md border p-3">
-      <OfferTakeForm :offer-id-prop="offerId" />
-    </div>
-    <pre class="text-xs overflow-auto">{{ JSON.stringify(offer, null, 2) }}</pre>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAxiosRepo } from '@pinia-orm/axios'
-import { useRepo } from 'pinia-orm'
-import WhaleswapOffer from '@/orm/models/whaleswap/Offer'
-import OfferTakeForm from '@/components/whaleswap/forms/OfferTakeForm.vue'
+import { Card, CardContent } from '@/components/ui/card'
 
 const route = useRoute()
 const offerId = computed(() => String(route.params.offerId || ''))
-const api = useAxiosRepo(WhaleswapOffer).api()
-const repo = useRepo(WhaleswapOffer)
-const offer = computed(() => repo.find(offerId.value) || {})
-
-onMounted(() => {
-  if (offerId.value) api.fetchOffer(offerId.value)
-})
 </script>
+
+<template>
+  <div class="p-4 space-y-4">
+    <h2 class="text-2xl font-semibold">Offer #{{ offerId }}</h2>
+    <Card>
+      <CardContent class="p-8">
+        <div class="text-center text-muted-foreground">
+          <p>Offer detail view coming soon.</p>
+          <p class="text-sm mt-2">Migration to Connect-ES in progress.</p>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+</template>

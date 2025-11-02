@@ -33,6 +33,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
+        '@ts-client': resolve(__dirname, 'ts-client'),
       },
     },
     define: {

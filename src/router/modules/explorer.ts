@@ -46,9 +46,15 @@ export const explorerRoutes: RouteRecordRaw[] = [
   },
   // whaleswap
   {
-    path: '/whaleswap',
-    name: 'WhaleswapHub',
-    component: () => import('@/views/whaleswap/WhaleswapHub.vue'),
+    path: '/whaleswap/trades',
+    name: 'WhaleswapTrades',
+    component: () => import('@/whaleswap/views/TradesList.vue'),
+  },
+  {
+    path: '/whaleswap/trades/:tradeId(\\d+)',
+    name: 'WhaleswapTrade',
+    component: () => import('@/views/whaleswap/TradeDetail.vue'),
+    props: true,
   },
   {
     path: '/whaleswap/offers/:offerId(\\d+)',
@@ -66,12 +72,6 @@ export const explorerRoutes: RouteRecordRaw[] = [
     path: '/whaleswap/auctions/:auctionId(\\d+)',
     name: 'WhaleswapAuction',
     component: () => import('@/views/whaleswap/AuctionDetail.vue'),
-    props: true,
-  },
-  {
-    path: '/whaleswap/trades/:tradeId(\\d+)',
-    name: 'WhaleswapTrade',
-    component: () => import('@/views/whaleswap/TradeDetail.vue'),
     props: true,
   },
 ]

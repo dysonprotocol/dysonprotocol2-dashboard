@@ -84,18 +84,18 @@ print(output)
 assert "Hello from Dyson Protocol!" in output, "Expected 'Hello from Dyson Protocol!' in output, got: " + output
 ```
 
-    Accessing your DWapp at 'http://dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej.localhost:5317'
+    Accessing your DWapp at 'http://dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej.localhost:6317'
 
 
-    * Host dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej.localhost:5317 was resolved.
+    * Host dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej.localhost:6317 was resolved.
     * IPv6: ::1
     * IPv4: 127.0.0.1
-    *   Trying [::1]:5317...
-    * connect to ::1 port 5317 from ::1 port 60762 failed: Connection refused
-    *   Trying 127.0.0.1:5317...
-    * Connected to dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej.localhost (127.0.0.1) port 5317
+    *   Trying [::1]:6317...
+    * connect to ::1 port 6317 from ::1 port 60774 failed: Connection refused
+    *   Trying 127.0.0.1:6317...
+    * Connected to dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej.localhost (127.0.0.1) port 6317
     > GET /hi HTTP/1.1
-    > Host: dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej.localhost:5317
+    > Host: dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej.localhost:6317
     > User-Agent: curl/8.7.1
     > Accept: */*
     > 
@@ -103,9 +103,9 @@ assert "Hello from Dyson Protocol!" in output, "Expected 'Hello from Dyson Proto
     < HTTP/1.1 200 OK
     < Content-Length: 82
     < Content-Type: text/html
-    < Date: Mon, 13 Oct 2025 13:00:32 GMT
+    < Date: Fri, 24 Oct 2025 22:12:01 GMT
     < Server: WSGIServer/0.2 CPython/3.12.11
-    < X-Server-Time: 1760360433
+    < X-Server-Time: 1761343922
     < 
     { [82 bytes data]
     * Connection #0 to host dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej.localhost left intact
@@ -133,7 +133,7 @@ print(f"✓ Script query successful for address: {address}")
 
 ```
 
-    {"script":{"address":"dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej","version":"1","code":"def add(a, b):\n    print(f\"Adding {a} and {b}\")\n    return {\"a\": a, \"b\": b, \"add_result\": a + b}\n\n\ndef wsgi(environ, start_response):\n    status = \"200 OK\"\n    headers = [(\"Content-type\", \"text/html\")]\n    start_response(status, headers)\n    return [\n        b\"\"\"\n\u003chtml\u003e\n    \u003cbody\u003e\n        \u003ch1\u003eHello from Dyson Protocol!\u003c/h1\u003e\n    \u003c/body\u003e\n\u003c/html\u003e\"\"\"\n    ]\n","update_height":"41"}}
+    {"script":{"address":"dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej","version":"1","code":"def add(a, b):\n    print(f\"Adding {a} and {b}\")\n    return {\"a\": a, \"b\": b, \"add_result\": a + b}\n\n\ndef wsgi(environ, start_response):\n    status = \"200 OK\"\n    headers = [(\"Content-type\", \"text/html\")]\n    start_response(status, headers)\n    return [\n        b\"\"\"\n\u003chtml\u003e\n    \u003cbody\u003e\n        \u003ch1\u003eHello from Dyson Protocol!\u003c/h1\u003e\n    \u003c/body\u003e\n\u003c/html\u003e\"\"\"\n    ]\n","update_height":"46"}}
     ✓ Script query successful for address: dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej
 
 
@@ -244,9 +244,9 @@ print(f"Salt: {salt}")
 print(f"Hex Hash: {hex_hash}")
 ```
 
-    Name: alice-sm6re.dys
-    Salt: evees9ndhv
-    Hex Hash: 54cb2e2132269965db16bfe9e4502c37e25a9bc9b39d710ba8567387bb0806ba
+    Name: alice-jyvd6.dys
+    Salt: kw09j8dpim
+    Hex Hash: 70a76b46f6169f24bf451d7a36d60ca15ecaccf5b8540c8c4788e90e52e3b0c9
 
 
 
@@ -305,18 +305,18 @@ print(output)
 assert "Hello from Dyson Protocol!" in output, "Expected 'Hello from Dyson Protocol!' in output, got: " + output
 ```
 
-    Accessing your DWapp at 'http://alice-sm6re.localhost:5317'
+    Accessing your DWapp at 'http://alice-jyvd6.localhost:6317'
 
 
-    * Host alice-sm6re.localhost:5317 was resolved.
+    * Host alice-jyvd6.localhost:6317 was resolved.
     * IPv6: ::1
     * IPv4: 127.0.0.1
-    *   Trying [::1]:5317...
-    * connect to ::1 port 5317 from ::1 port 50950 failed: Connection refused
-    *   Trying 127.0.0.1:5317...
-    * Connected to alice-sm6re.localhost (127.0.0.1) port 5317
+    *   Trying [::1]:6317...
+    * connect to ::1 port 6317 from ::1 port 62042 failed: Connection refused
+    *   Trying 127.0.0.1:6317...
+    * Connected to alice-jyvd6.localhost (127.0.0.1) port 6317
     > GET /hi HTTP/1.1
-    > Host: alice-sm6re.localhost:5317
+    > Host: alice-jyvd6.localhost:6317
     > User-Agent: curl/8.7.1
     > Accept: */*
     > 
@@ -324,12 +324,12 @@ assert "Hello from Dyson Protocol!" in output, "Expected 'Hello from Dyson Proto
     < HTTP/1.1 200 OK
     < Content-Length: 82
     < Content-Type: text/html
-    < Date: Mon, 13 Oct 2025 13:00:36 GMT
+    < Date: Fri, 24 Oct 2025 22:12:04 GMT
     < Server: WSGIServer/0.2 CPython/3.12.11
-    < X-Server-Time: 1760360437
+    < X-Server-Time: 1761343925
     < 
     { [82 bytes data]
-    * Connection #0 to host alice-sm6re.localhost left intact
+    * Connection #0 to host alice-jyvd6.localhost left intact
     
     <html>
         <body>

@@ -4,6 +4,7 @@ package dysonprotocol.whaleswap.v1;
 import "gogoproto/gogo.proto";
 import "amino/amino.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "dysonprotocol/whaleswap/v1/tx.proto";
 
 option go_package = "dysonprotocol.com/x/whaleswap/types";
 
@@ -13,7 +14,11 @@ message EventPoolCreated { uint64 pool_id = 1; }
 
 message EventPoolUpdate { uint64 pool_id = 1; }
 
-message EventPoolSwap { uint64 pool_id = 1; }
+message EventPoolSwap {
+  uint64 pool_id = 1;
+  uint64 trade_id = 2;
+  uint32 operation_index = 3;
+}
 
 message EventPoolLiquidityAdded {
   uint64 pool_id = 1;
@@ -30,27 +35,104 @@ message EventOfferCreated { uint64 offer_id = 1; }
 message EventOfferTaken {
   uint64 offer_id = 1;
   uint64 trade_id = 2;
+  string units_taken = 3;
 }
 
 message EventOfferCancelled { uint64 offer_id = 1; }
 
 message EventPfandLocked {
   cosmos.base.v1beta1.Coin amount = 1 [ (gogoproto.nullable) = false ];
+  uint64 offer_id = 2;
 }
 
 message EventPfandReleased {
   cosmos.base.v1beta1.Coin amount = 1 [ (gogoproto.nullable) = false ];
+  uint64 offer_id = 2;
+  uint64 trade_id = 3;
 }
 
 message EventAuctionCreated { uint64 auction_id = 1; }
 
-message EventAuctionRedeemed { uint64 auction_id = 1; }
+message EventAuctionRedeemed {
+  uint64 auction_id = 1;
+  uint64 trade_id = 2;
+}
 
-// Emitted whenever a Trade is recorded in state
+// Emitted once per Trade after all operations complete (summary event).
+// Operation details are in domain events (EventPoolSwap, EventOfferTaken, etc).
 message EventTradeRecorded {
   uint64 trade_id = 1;
-  uint64 offer_id = 2;
+  string trader = 2;
+  uint32 num_operations = 3;
+  string note = 4;
+}
+
+// ═════════════════════════════════
+// Leverage Events
+// ═════════════════════════════════
+
+message EventLeveragePositionOpened {
+  uint64 position_id = 1;
+  string user = 2;
   uint64 pool_id = 3;
-  uint64 auction_id = 4;
-  string note = 5;
+  string collateral_denom = 5;
+  string collateral_amount = 6;
+  string borrowed_denom = 7;
+  string borrowed_amount = 8;
+  // Observability fields
+  string entry_price_held_per_borrow = 11; // cosmos.Dec string
+  string collateral_ratio = 12;            // cosmos.Dec string at entry
+}
+
+message EventLeveragePositionClosed {
+  uint64 position_id = 1;
+  string user = 2;
+  uint64 pool_id = 3;
+  cosmos.base.v1beta1.Coin profit = 5 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin accrued_interest = 6
+      [ (gogoproto.nullable) = false ];
+}
+
+message EventLeverageCollateralAdded {
+  uint64 position_id = 1;
+  string user = 2;
+  uint64 pool_id = 3;
+  cosmos.base.v1beta1.Coin collateral_added = 4
+      [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin new_collateral = 5 [ (gogoproto.nullable) = false ];
+  string new_collateral_ratio = 6;
+}
+
+message EventLeverageLiquidationInitialized {
+  uint64 position_id = 1;
+  string user = 2;
+  uint64 pool_id = 3;
+  string collateral_ratio = 4;
+  string liquidation_threshold = 5;
+  uint64 block_height = 6;
+}
+
+message EventLeverageLiquidationFinalized {
+  uint64 position_id = 1;
+  string user = 2;
+  string liquidator = 3;
+  uint64 pool_id = 4;
+  cosmos.base.v1beta1.Coin collateral_received = 5
+      [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin repayment_amount = 6
+      [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin accrued_interest = 7
+      [ (gogoproto.nullable) = false ];
+}
+
+message EventLeveragePositionCovered {
+  uint64 position_id = 1;
+  string user = 2;
+  uint64 pool_id = 3;
+  cosmos.base.v1beta1.Coin interest_paid = 4 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin principal_paid = 5 [ (gogoproto.nullable) = false ];
+  string new_collateral_ratio = 6; // cosmos.Dec string
+  bool closed = 7;
+  cosmos.base.v1beta1.Coin refunded = 8 [ (gogoproto.nullable) = false ];
+  cosmos.base.v1beta1.Coin profit = 9 [ (gogoproto.nullable) = false ];
 }

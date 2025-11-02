@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useStorage } from '@vueuse/core'
 import { getProtobufRegistry } from '@/utils/protobufRegistry'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Any } from '@bufbuild/protobuf'
 
 const loading = ref(true)
 const error = ref<string>('')
@@ -13,8 +14,11 @@ const jsonInput = useStorage<string>('demo.protobuf.jsonInput', '{}')
 const binaryHex = ref<string>('')
 const binaryBase64 = ref<string>('')
 const packedTypeUrl = ref<string>('')
+const anyHex = ref<string>('')
+const anyBase64 = ref<string>('')
 
 const jsonError = ref<string>('')
+const isSyncing = ref(false)
 
 ;(async () => {
   try {
@@ -76,11 +80,132 @@ function bytesToHex(bytes: Uint8Array): string {
     .join('')
 }
 
-async function encodeRight() {
+async function onHexBlur() {
+  if (isSyncing.value) return
   jsonError.value = ''
-  binaryHex.value = ''
-  binaryBase64.value = ''
-  packedTypeUrl.value = ''
+  try {
+    const bytes = hexToBytes(binaryHex.value)
+    isSyncing.value = true
+    binaryBase64.value = bytesToBase64(bytes)
+    await refreshAnyOutputsFromMessageBytes(bytes)
+  } catch (e) {
+    console.error(e)
+    jsonError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    isSyncing.value = false
+  }
+}
+
+async function onBase64Blur() {
+  if (isSyncing.value) return
+  jsonError.value = ''
+  try {
+    const bytes = base64ToBytes(binaryBase64.value)
+    isSyncing.value = true
+    binaryHex.value = bytesToHex(bytes)
+    await refreshAnyOutputsFromMessageBytes(bytes)
+  } catch (e) {
+    console.error(e)
+    jsonError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    isSyncing.value = false
+  }
+}
+
+async function onAnyHexBlur() {
+  if (isSyncing.value) return
+  jsonError.value = ''
+  try {
+    const bytes = hexToBytes(anyHex.value)
+    isSyncing.value = true
+    anyBase64.value = bytesToBase64(bytes)
+    await decodeAnyBytes(bytes)
+  } catch (e) {
+    console.error(e)
+    jsonError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    isSyncing.value = false
+  }
+}
+
+async function onAnyBase64Blur() {
+  if (isSyncing.value) return
+  jsonError.value = ''
+  try {
+    const bytes = base64ToBytes(anyBase64.value)
+    isSyncing.value = true
+    anyHex.value = bytesToHex(bytes)
+    await decodeAnyBytes(bytes)
+  } catch (e) {
+    console.error(e)
+    jsonError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    isSyncing.value = false
+  }
+}
+
+function syncOutputs(
+  reg: Awaited<ReturnType<typeof getProtobufRegistry>>,
+  schema: Parameters<typeof reg.toBinary>[0],
+  message: Parameters<typeof reg.toBinary>[1]
+) {
+  const messageBytes = reg.toBinary(schema, message)
+  binaryHex.value = bytesToHex(messageBytes)
+  binaryBase64.value = bytesToBase64(messageBytes)
+  const packed = reg.pack(schema, message)
+  packedTypeUrl.value = packed.typeUrl
+  const anyBytes = new Any({ typeUrl: packed.typeUrl, value: packed.value }).toBinary()
+  anyHex.value = bytesToHex(anyBytes)
+  anyBase64.value = bytesToBase64(anyBytes)
+}
+
+async function refreshAnyOutputsFromMessageBytes(precomputed?: Uint8Array) {
+  if (!packedTypeUrl.value) return
+  try {
+    const reg = await getProtobufRegistry()
+    const bytes = precomputed ?? hexToBytes(binaryHex.value)
+    if (!bytes || bytes.length === 0) {
+      anyHex.value = ''
+      anyBase64.value = ''
+      return
+    }
+    const unpacked = reg.unpack({ typeUrl: packedTypeUrl.value, value: bytes })
+    if (!unpacked) {
+      jsonError.value = 'Unknown Any typeUrl or message not found in registry'
+      return
+    }
+    syncOutputs(reg, unpacked.schema, unpacked.message)
+  } catch (e) {
+    console.error(e)
+    jsonError.value = e instanceof Error ? e.message : String(e)
+  }
+}
+
+async function decodeAnyBytes(bytes: Uint8Array) {
+  if (!bytes || bytes.length === 0) {
+    jsonError.value = 'Any bytes empty'
+    return
+  }
+  const decoded = Any.fromBinary(bytes)
+  if (!decoded.typeUrl) {
+    jsonError.value = 'Packed Any missing typeUrl'
+    return
+  }
+  packedTypeUrl.value = decoded.typeUrl
+  const reg = await getProtobufRegistry()
+  const unpacked = reg.unpack({ typeUrl: decoded.typeUrl, value: decoded.value })
+  if (!unpacked) {
+    jsonError.value = 'Unknown Any typeUrl or message not found in registry'
+    return
+  }
+  syncOutputs(reg, unpacked.schema, unpacked.message)
+  const canonical = reg.toJsonAny(unpacked.schema, unpacked.message)
+  jsonInput.value = JSON.stringify(canonical, null, 2)
+}
+
+watch(jsonInput, async () => {
+  if (isSyncing.value) return
+  jsonError.value = ''
   try {
     const reg = await getProtobufRegistry()
     const parsed = JSON.parse(jsonInput.value || '{}')
@@ -89,74 +214,38 @@ async function encodeRight() {
       jsonError.value = 'Unknown Any typeUrl or message not found in registry'
       return
     }
-    const { schema, message } = decoded
-    const bin = reg.toBinary(schema, message)
-    binaryHex.value = Array.from(bin)
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-    binaryBase64.value = bytesToBase64(bin)
-    const any = reg.pack(schema, message)
-    packedTypeUrl.value = any.typeUrl
+    isSyncing.value = true
+    syncOutputs(reg, decoded.schema, decoded.message)
   } catch (e) {
     console.error(e)
     jsonError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    isSyncing.value = false
   }
-}
+})
 
-async function decodeLeft() {
-  jsonError.value = ''
+watch(packedTypeUrl, async () => {
+  if (isSyncing.value) return
+  if (!packedTypeUrl.value) return
   try {
     const reg = await getProtobufRegistry()
-    let typeUrl = packedTypeUrl.value
-    try {
-      const maybeAny = JSON.parse(jsonInput.value || '{}') as { typeUrl?: unknown }
-      if (maybeAny && typeof maybeAny.typeUrl === 'string' && maybeAny.typeUrl.length > 0)
-        typeUrl = maybeAny.typeUrl
-    } catch (e) {
-      console.warn('Left JSON is not parseable; falling back to existing typeUrl if any', e)
-    }
-    if (!typeUrl) {
-      jsonError.value =
-        'Missing typeUrl. Provide Any JSON with typeUrl on the left or run Encode first.'
-      return
-    }
-
     const bytes = hexToBytes(binaryHex.value)
-    const unpacked = reg.unpack({ typeUrl, value: bytes })
+    if (!bytes.length) return
+    const unpacked = reg.unpack({ typeUrl: packedTypeUrl.value, value: bytes })
     if (!unpacked) {
       jsonError.value = 'Unknown Any typeUrl or message not found in registry'
       return
     }
-    const asAnyJson = reg.toJsonAny(unpacked.schema, unpacked.message)
-    jsonInput.value = JSON.stringify(asAnyJson, null, 2)
-    packedTypeUrl.value = typeUrl
+    isSyncing.value = true
+    syncOutputs(reg, unpacked.schema, unpacked.message)
+    jsonInput.value = JSON.stringify(reg.toJsonAny(unpacked.schema, unpacked.message), null, 2)
   } catch (e) {
     console.error(e)
     jsonError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    isSyncing.value = false
   }
-}
-
-function onHexBlur() {
-  jsonError.value = ''
-  try {
-    const bytes = hexToBytes(binaryHex.value)
-    binaryBase64.value = bytesToBase64(bytes)
-  } catch (e) {
-    console.error(e)
-    jsonError.value = e instanceof Error ? e.message : String(e)
-  }
-}
-
-function onBase64Blur() {
-  jsonError.value = ''
-  try {
-    const bytes = base64ToBytes(binaryBase64.value)
-    binaryHex.value = bytesToHex(bytes)
-  } catch (e) {
-    console.error(e)
-    jsonError.value = e instanceof Error ? e.message : String(e)
-  }
-}
+})
 </script>
 
 <template>
@@ -179,8 +268,6 @@ function onBase64Blur() {
         </Card>
 
         <div class="flex flex-col items-center justify-center gap-2">
-          <Button @click="encodeRight">Encode →</Button>
-          <Button variant="secondary" @click="decodeLeft">Decode ←</Button>
           <div v-if="jsonError" class="text-sm text-destructive text-center px-2">
             {{ jsonError }}
           </div>
@@ -192,12 +279,32 @@ function onBase64Blur() {
           </CardHeader>
           <CardContent class="space-y-3">
             <div class="space-y-2">
+              <Label>Type URL</Label>
+              <Input v-model="packedTypeUrl" class="font-mono" placeholder="/package.Message" />
+            </div>
+            <div class="space-y-2">
               <Label>Hex input/output</Label>
               <Textarea v-model="binaryHex" class="font-mono min-h-48" @blur="onHexBlur" />
             </div>
             <div class="space-y-2">
               <Label>Base64 input/output</Label>
               <Textarea v-model="binaryBase64" class="font-mono min-h-48" @blur="onBase64Blur" />
+            </div>
+            <div class="space-y-2">
+              <Label>Any bytes (hex)</Label>
+              <Textarea
+                v-model="anyHex"
+                class="font-mono min-h-32"
+                @blur="onAnyHexBlur"
+              />
+            </div>
+            <div class="space-y-2">
+              <Label>Any bytes (base64)</Label>
+              <Textarea
+                v-model="anyBase64"
+                class="font-mono min-h-32"
+                @blur="onAnyBase64Blur"
+              />
             </div>
           </CardContent>
         </Card>

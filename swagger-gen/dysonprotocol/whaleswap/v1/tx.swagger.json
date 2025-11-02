@@ -11,8 +11,43 @@
     "application/json"
   ],
   "paths": {
+    "dysonprotocol.whaleswap.v1.MsgAddCollateral": {
+      "post": {
+        "summary": "*\nAddCollateral deposits additional collateral to a leveraged position and\nclears liquidation markers.",
+        "operationId": "dysonprotocol.whaleswap.v1.MsgAddCollateral",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgAddCollateralResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgAddCollateral"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
     "dysonprotocol.whaleswap.v1.MsgAddLiquidity": {
       "post": {
+        "summary": "*\nAddLiquidity (owner-only) escrows provided amounts, refunds any unused\namounts, mints shares, and asserts AMM invariants.",
+        "description": "Behavior:\n- Loads pool; validates signer majority ownership.\n- Escrows full provided amounts first, then refunds unused surplus.\n- Computes shares as floor(min(add1/R1, add2/R2) \u00d7 totalShares).\n- Updates pool reserves with used amounts.\n- Mints computed shares via nameservice and transfers to signer.\n- Persists pool with updated reserves/timestamp; emits events; asserts AMM\n  and module invariants.\n\nValidation:\n- Pool must exist and have exactly two positive reserves.\n- Signer must be valid address and hold majority of pool shares.\n- Amounts must contain exactly two positive coins matching pool denoms in\n  canonical order.\n\nEmits:\n- EventPoolUpdate (after persisting pool state)\n- EventPoolLiquidityAdded (pool_id, shares_minted)",
         "operationId": "dysonprotocol.whaleswap.v1.MsgAddLiquidity",
         "responses": {
           "200": {
@@ -45,6 +80,7 @@
     },
     "dysonprotocol.whaleswap.v1.MsgCancelOffer": {
       "post": {
+        "summary": "*\nCancelOffer (maker or authorized third party) cancels an open offer and\nrefunds escrowed assets to the maker while releasing PFAND to the closer.",
         "operationId": "dysonprotocol.whaleswap.v1.MsgCancelOffer",
         "responses": {
           "200": {
@@ -75,15 +111,15 @@
         ]
       }
     },
-    "dysonprotocol.whaleswap.v1.MsgConvertToLiquid": {
+    "dysonprotocol.whaleswap.v1.MsgClosePosition": {
       "post": {
-        "summary": "Wrapping (liquid conversions)",
-        "operationId": "dysonprotocol.whaleswap.v1.MsgConvertToLiquid",
+        "summary": "*\nClosePosition swaps held to borrowed, repays principal+interest, returns\nremaining collateral and any profit, updates pool accounting, and deletes\nthe position (respects block delay).",
+        "operationId": "dysonprotocol.whaleswap.v1.MsgClosePosition",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgConvertToLiquidResponse"
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgClosePositionResponse"
             }
           },
           "default": {
@@ -99,7 +135,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgConvertToLiquid"
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgClosePosition"
             }
           }
         ],
@@ -108,14 +144,15 @@
         ]
       }
     },
-    "dysonprotocol.whaleswap.v1.MsgConvertToSolid": {
+    "dysonprotocol.whaleswap.v1.MsgCoverPosition": {
       "post": {
-        "operationId": "dysonprotocol.whaleswap.v1.MsgConvertToSolid",
+        "summary": "*\nCoverPosition repays accrued interest; optionally reduces principal or\nauto-closes on full repayment.",
+        "operationId": "dysonprotocol.whaleswap.v1.MsgCoverPosition",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgConvertToSolidResponse"
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgCoverPositionResponse"
             }
           },
           "default": {
@@ -131,7 +168,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgConvertToSolid"
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgCoverPosition"
             }
           }
         ],
@@ -142,7 +179,8 @@
     },
     "dysonprotocol.whaleswap.v1.MsgCreatePool": {
       "post": {
-        "summary": "AMM",
+        "summary": "*\nCreatePool creates a two-asset pool with per-denom fee/interest/leverage\nparameters and optional directional bound_percent limits.",
+        "description": "Behavior:\n- Input normalization: canonicalizes `coins` (exactly two positive coins)\nto the pool's denom order.\n- Fees and rates: normalizes `fee_rate` and `interest_rate` to exactly two\n  DecCoins in pool order; requires 0 <= fee_rate < 1 per denom and\n  interest_rate >= 0 per denom.\n- Leverage configuration (required): `min_collateral_ratio` and\n  `max_leverage_ratio` must have exactly two entries (> 1) matching pool\n  denoms; `liquidation_threshold` must have exactly two entries (> 1);\n  `max_borrow_percent` must have exactly two entries with amounts in [0,1).\n- Bound percent (optional): when omitted defaults to 1 (unbounded) for both\n  denoms. When provided, must contain exactly two DecCoins matching pool\n  denoms with amounts in (0,1]; 1 disables the bound for that denom.\n- Funds and shares: sends initial reserves from `creator` \u2192 module;\nallocates a new pool_id; persists the pool; computes initial shares as\n  floor(sqrt(x*y)); ensures at least one share; mints pool shares and sends\n  them to the creator.\n- Invariants: asserts AMM and module invariants before returning.\n\nValidation:\n- coins must contain exactly two positive coins with valid denoms.\n- fee_rate amounts must satisfy 0 <= x < 1 for both denoms when provided.\n- interest_rate amounts must be >= 0 for both denoms when provided.\n- min_collateral_ratio must have exactly two entries (> 1) matching pool\n  denoms in canonical order.\n- max_leverage_ratio must have exactly two entries (> 1) matching pool\ndenoms in canonical order.\n- liquidation_threshold must have exactly two entries (> 1) matching pool\n  denoms in canonical order.\n- max_borrow_percent must have exactly two entries with amounts in [0,1)\n  matching pool denoms in canonical order.\n- bound_percent when provided must contain at most two entries with amounts\n  in (0,1] matching pool denoms.\n\nEmits:\n- EventPoolCreated(pool_id)\n- EventPoolUpdate(pool_id)\n\nReturns:\n- pool_id of the newly created pool (see response).",
         "operationId": "dysonprotocol.whaleswap.v1.MsgCreatePool",
         "responses": {
           "200": {
@@ -173,9 +211,75 @@
         ]
       }
     },
+    "dysonprotocol.whaleswap.v1.MsgFinalizeLiquidation": {
+      "post": {
+        "summary": "*\nFinalizeLiquidation (permissionless) completes leveraged position\nliquidation.",
+        "operationId": "dysonprotocol.whaleswap.v1.MsgFinalizeLiquidation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgFinalizeLiquidationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgFinalizeLiquidation"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
+    "dysonprotocol.whaleswap.v1.MsgInitializeLiquidation": {
+      "post": {
+        "summary": "*\nInitializeLiquidation (permissionless) marks a position liquidatable when\nits collateral ratio (with accrued interest at the snapshotted rate) falls\nbelow the pool's liquidation_threshold and starts the block-delay\ncountdown.",
+        "operationId": "dysonprotocol.whaleswap.v1.MsgInitializeLiquidation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgInitializeLiquidationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgInitializeLiquidation"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
     "dysonprotocol.whaleswap.v1.MsgMakeOffer": {
       "post": {
-        "summary": "Orderbook",
+        "summary": "*\nMakeOffer creates an orderbook offer. ESCROW: base \"have\" is escrowed.\nLIQUID: lock PFAND; settlement draws from maker balance at take. Units are\nderived via GCD for partial fills.",
         "operationId": "dysonprotocol.whaleswap.v1.MsgMakeOffer",
         "responses": {
           "200": {
@@ -208,7 +312,7 @@
     },
     "dysonprotocol.whaleswap.v1.MsgMakeTrade": {
       "post": {
-        "summary": "Mixed operations: combine orderbook takes and pool swaps in one tx",
+        "summary": "*\nMakeTrade combines AMM pool swaps and orderbook takes into a single\ntransaction with end-of-tx settlement.",
         "operationId": "dysonprotocol.whaleswap.v1.MsgMakeTrade",
         "responses": {
           "200": {
@@ -241,7 +345,7 @@
     },
     "dysonprotocol.whaleswap.v1.MsgOpenAuction": {
       "post": {
-        "summary": "Auctions",
+        "summary": "*\nOpenAuction escrows the sell coin and mints an NFT under a class keyed by\nbid_denom; class policy (listing/valuation/bid timeouts/allowed denoms) is\nset from module params.",
         "operationId": "dysonprotocol.whaleswap.v1.MsgOpenAuction",
         "responses": {
           "200": {
@@ -272,8 +376,42 @@
         ]
       }
     },
+    "dysonprotocol.whaleswap.v1.MsgOpenPosition": {
+      "post": {
+        "summary": "*\nOpenPosition creates a leveraged position by borrowing against collateral,\nswapping to held asset, and recording the position with interest snapshots.",
+        "operationId": "dysonprotocol.whaleswap.v1.MsgOpenPosition",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgOpenPositionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/grpc.gateway.runtime.Error"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/dysonprotocol.whaleswap.v1.MsgOpenPosition"
+            }
+          }
+        ],
+        "tags": [
+          "Msg"
+        ]
+      }
+    },
     "dysonprotocol.whaleswap.v1.MsgPoolSwap": {
       "post": {
+        "summary": "*\nPoolSwap executes one or more exact-in or exact-out pool swap legs with a\nsingle end-of-tx settlement. Applies output-side fees per leg and enforces\naggregate max_input caps and min_output guarantees.",
         "operationId": "dysonprotocol.whaleswap.v1.MsgPoolSwap",
         "responses": {
           "200": {
@@ -306,6 +444,7 @@
     },
     "dysonprotocol.whaleswap.v1.MsgRedeemAuction": {
       "post": {
+        "summary": "*\nRedeemAuction lets the current NFT owner redeem when no bid is active;\nburns the NFT and returns escrow. If owner != original seller and a\nvaluation exists in bid_denom, a trade record is emitted.",
         "operationId": "dysonprotocol.whaleswap.v1.MsgRedeemAuction",
         "responses": {
           "200": {
@@ -338,6 +477,7 @@
     },
     "dysonprotocol.whaleswap.v1.MsgRemoveLiquidity": {
       "post": {
+        "summary": "*\nRemoveLiquidity burns the caller's shares and returns the underlying\nreserves proportional to the share burned.",
         "operationId": "dysonprotocol.whaleswap.v1.MsgRemoveLiquidity",
         "responses": {
           "200": {
@@ -370,6 +510,7 @@
     },
     "dysonprotocol.whaleswap.v1.MsgTakeOffer": {
       "post": {
+        "summary": "*\nTakeOffer executes one or more orderbook takes with netting and settlement.",
         "operationId": "dysonprotocol.whaleswap.v1.MsgTakeOffer",
         "responses": {
           "200": {
@@ -402,7 +543,7 @@
     },
     "dysonprotocol.whaleswap.v1.MsgUpdateParams": {
       "post": {
-        "summary": "Params",
+        "summary": "*\nUpdateParams (authority-only) updates module parameters.",
         "operationId": "dysonprotocol.whaleswap.v1.MsgUpdateParams",
         "responses": {
           "200": {
@@ -435,6 +576,8 @@
     },
     "dysonprotocol.whaleswap.v1.MsgUpdatePoolConfig": {
       "post": {
+        "summary": "*\nUpdatePoolConfig updates pool fees, leverage/threshold params, interest,\noptional max_borrow_percent, and bound_percent; majority-owner only.",
+        "description": "Behavior:\n- Loads pool; validates signer and majority-ownership.\n- Fee rates: optional; normalizes to two DecCoins (pool order); 0 <= x < 1.\n- Leverage config: required `min_collateral_ratio` and `max_leverage_ratio`\n  with exactly two entries matching pool denoms; each > 1.\n- Liquidation threshold: required with exactly two entries; each > 1.\n- Interest rate: allows 0/1/2 entries; normalizes to two; each >= 0.\n- Max borrow percent: optional; if provided exactly two entries; 0 <= x\n< 1.\n- Bound percent: optional; when provided must contain exactly two DecCoins\n  matching pool denoms with amounts in (0,1]; 1 disables the bound. Omit to\n  leave existing bounds unchanged.\n- Persists pool with `updated` timestamp; emits EventPoolUpdate; asserts\nAMM and module invariants.\n\nValidation:\n- Pool must exist.\n- Signer must be valid address and hold majority of pool shares.\n- Fee rates when provided must satisfy 0 <= x < 1 for both denoms.\n- Leverage config (min_collateral_ratio, max_leverage_ratio) must have\n  exactly two entries (> 1) matching pool denoms in canonical order.\n- Liquidation threshold must have exactly two entries (> 1) matching pool\n  denoms in canonical order.\n- Interest rates when provided must be >= 0 for both denoms.\n- Max borrow percent when provided must have exactly two entries with\namounts in [0,1) matching pool denoms in canonical order.\n- Bound percent when provided must contain at most two entries with amounts\n  in (0,1] matching pool denoms.\n\nEmits:\n- EventPoolUpdate(pool_id)\n\nReturns:\n- Empty response.",
         "operationId": "dysonprotocol.whaleswap.v1.MsgUpdatePoolConfig",
         "responses": {
           "200": {
@@ -479,56 +622,9 @@
       },
       "description": "Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto."
     },
-    "dysonprotocol.whaleswap.v1.MsgAddLiquidity": {
+    "cosmos.base.v1beta1.DecCoin": {
       "type": "object",
       "properties": {
-        "signer": {
-          "type": "string"
-        },
-        "pool_id": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "amount1": {
-          "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
-        },
-        "amount2": {
-          "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
-        }
-      },
-      "description": "Add liquidity (owner-only). Behavior depends on v2/v3 mode."
-    },
-    "dysonprotocol.whaleswap.v1.MsgAddLiquidityResponse": {
-      "type": "object",
-      "properties": {
-        "shares": {
-          "type": "string",
-          "title": "minted shares amount (sdk.Int string)"
-        }
-      }
-    },
-    "dysonprotocol.whaleswap.v1.MsgCancelOffer": {
-      "type": "object",
-      "properties": {
-        "closer": {
-          "type": "string"
-        },
-        "offer_id": {
-          "type": "string",
-          "format": "uint64"
-        }
-      },
-      "description": "Cancel an offer (maker or eligible third-party for liquid offers).\n\n- Maker may always cancel open offers.\n- For liquid-have offers, a third party is eligible if the maker's balance of\n  the liquid have denom drops below one unit_have, enabling recovery via\n  PFAND."
-    },
-    "dysonprotocol.whaleswap.v1.MsgCancelOfferResponse": {
-      "type": "object"
-    },
-    "dysonprotocol.whaleswap.v1.MsgConvertToLiquid": {
-      "type": "object",
-      "properties": {
-        "caller": {
-          "type": "string"
-        },
         "denom": {
           "type": "string"
         },
@@ -536,39 +632,193 @@
           "type": "string"
         }
       },
-      "description": "Convert solid denom to liquid wrapper L(denom)."
+      "description": "DecCoin defines a token with a denomination and a decimal amount.\n\nNOTE: The amount field is an Dec which implements the custom method\nsignatures required by gogoproto."
     },
-    "dysonprotocol.whaleswap.v1.MsgConvertToLiquidResponse": {
+    "dysonprotocol.whaleswap.v1.AuctionRedeem": {
       "type": "object",
       "properties": {
-        "liquid_denom": {
-          "type": "string"
+        "auction_id": {
+          "type": "string",
+          "format": "uint64"
+        }
+      },
+      "title": "AuctionRedeem operation for recording auction redemption in Trade history"
+    },
+    "dysonprotocol.whaleswap.v1.MsgAddCollateral": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "string",
+          "description": "Account adding collateral; must be the position owner."
         },
-        "amount": {
-          "type": "string"
+        "pool_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Target pool id; must match the position's pool."
+        },
+        "position_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Target position id to add collateral to."
+        },
+        "collateral": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Additional collateral coin to deposit; denom must match position's\nexisting collateral; amount must be positive."
+        }
+      },
+      "description": "*\nAddCollateral deposits additional collateral to a leveraged position.\n\nBehavior:\n- Validates position ownership and pool/denom consistency.\n- Transfers additional collateral from the user to the module.\n- Adds the collateral to the position's existing collateral amount.\n- Clears any pending liquidation markers on the position.\n- Persists the updated position and computes the new collateral ratio.\n\nValidation:\n- Position must exist and be owned by `user`.\n- Pool ID must match the position's pool.\n- Collateral denom must match the position's existing collateral denom.\n- Collateral amount must be positive.\n\nEmits:\n- EventLeverageCollateralAdded with position_id, user, pool_id,\n  collateral_added, new_collateral, new_collateral_ratio.\n\nReturns:\n- new_collateral and new_collateral_ratio in the response."
+    },
+    "dysonprotocol.whaleswap.v1.MsgAddCollateralResponse": {
+      "type": "object",
+      "properties": {
+        "new_collateral": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Updated collateral coin after addition."
+        },
+        "new_collateral_ratio": {
+          "type": "string",
+          "description": "New collateral ratio after addition (LegacyDec string)."
         }
       }
     },
-    "dysonprotocol.whaleswap.v1.MsgConvertToSolid": {
+    "dysonprotocol.whaleswap.v1.MsgAddLiquidity": {
       "type": "object",
       "properties": {
-        "caller": {
-          "type": "string"
+        "signer": {
+          "type": "string",
+          "description": "Account adding liquidity; must be majority owner of pool shares."
         },
-        "liquid_denom": {
-          "type": "string"
+        "pool_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Target pool id."
         },
-        "amount": {
-          "type": "string"
+        "amounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+          },
+          "description": "Amounts to add: exactly two positive coins matching the pool denoms.\nCanonicalized to pool denom order. Full amounts are escrowed; surplus is\nrefunded (band mode: to match \u0394L; non-concentrated: to match minted\nshares)."
         }
       },
-      "description": "Convert liquid denom L(denom) to solid denom."
+      "title": "MsgAddLiquidity"
     },
-    "dysonprotocol.whaleswap.v1.MsgConvertToSolidResponse": {
+    "dysonprotocol.whaleswap.v1.MsgAddLiquidityResponse": {
       "type": "object",
       "properties": {
-        "amount_out": {
-          "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+        "shares": {
+          "type": "string",
+          "description": "Shares minted to signer (sdk.Int string)."
+        }
+      },
+      "description": "Empty response. See EventPoolLiquidityAdded for emitted details."
+    },
+    "dysonprotocol.whaleswap.v1.MsgCancelOffer": {
+      "type": "object",
+      "properties": {
+        "closer": {
+          "type": "string",
+          "description": "Account requesting cancellation; must be eligible (maker or authorized\nthird party)."
+        },
+        "offer_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "ID of the offer to cancel; offer must exist and be in open status."
+        }
+      },
+      "description": "*\nCancelOffer cancels an open offer, refunding escrowed assets to the maker and\nreleasing PFAND to the authorized closer (maker or eligible third party).\n\nBehavior:\n- Eligibility: maker may always cancel; for liquid-mode offers, third party\n  may cancel if maker's balance of the have-denom drops below one unit_have\n  (enables recovery when maker becomes insolvent).\n- State updates: sets offer status to cancelled, persists the offer, and\n  reindexes it for queries.\n- Refunds: for escrow-settlement offers, sends remaining have coins from\n  module to maker; sends any locked PFAND from module to closer.\n- Reindexing: updates reverse indexes (owner, status) via helper.\n\nValidation:\n- Offer must exist and be in open status.\n- Closer address must be valid.\n- Closer must be eligible (maker or authorized third party).\n- For third-party cancellation, unit_have_int must be valid and maker balance\n  must be insufficient.\n\nEmits:\n- EventOfferCancelled with offer_id\n- EventPfandReleased with amount, offer_id, trade_id=0 if PFAND was locked\n\nReturns:\n- MsgCancelOfferResponse (empty)."
+    },
+    "dysonprotocol.whaleswap.v1.MsgCancelOfferResponse": {
+      "type": "object"
+    },
+    "dysonprotocol.whaleswap.v1.MsgClosePosition": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "string",
+          "description": "Account closing the position; must be the position owner."
+        },
+        "position_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Target position id to close."
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional note carried into internal trade logs (opaque to the module)."
+        }
+      },
+      "description": "*\nClosePosition closes a synthetic leveraged position.\n\nBehavior:\n- Swaps held to the borrowed denom via the borrow vault, computes accrued\n  interest at the snapshotted rate, restores pool reserves by full\n  repayment, returns remaining collateral and any profit to the user,\n  updates pool accounting, and deletes the position.\n\nEmits: EventLeveragePositionClosed on success"
+    },
+    "dysonprotocol.whaleswap.v1.MsgClosePositionResponse": {
+      "type": "object",
+      "properties": {
+        "interest_paid": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Accrued interest paid (borrowed denom)."
+        },
+        "principal_paid": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Principal repaid (borrowed denom)."
+        },
+        "profit": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Profit returned to the user (borrowed denom)."
+        }
+      }
+    },
+    "dysonprotocol.whaleswap.v1.MsgCoverPosition": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "string"
+        },
+        "position_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Target position id to cover."
+        },
+        "payment": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Payment coin to cover the position. Must be positive and its denom must\nequal the borrowed denom."
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional note to use in trade logs."
+        }
+      },
+      "description": "*\nCover a leveraged position.\n\nBehavior:\n- If payment >= principal + accrued interest:\n  - Enforces the close block delay,\n  - Unwinds held \u2192 borrowed via a pool swap from the borrow vault,\n  - Repays principal + interest to pool reserves and accounting,\n  - Returns full collateral, refunds any unused portion of the user's\npayment, and sends any unwind PnL as profit,\n  - Deletes the position (auto-close).\n- If payment < total repayment:\n  - Pays all accrued interest and applies the remainder to reduce principal,\n  - Resets borrow_time and clears liquidation markers,\n  - Updates pool accounting and returns the new collateral ratio at the\n    current price; the position remains open.\n\nValidation:\n- Position must exist and be owned by `user`.\n- `payment` must be positive and its denom must equal the borrowed denom.\n- Position must have a two-entry interest_rate snapshot; payment must fully\n  cover accrued interest.\n- Auto-close path respects the close block delay and requires the unwind swap\n  to produce borrowed output.\n\nEmits:\n- EventLeveragePositionCovered (always; closed = true when fully repaid)\n- EventLeveragePositionClosed (auto-close only)\n\nReturns:\n- Auto-close: interest_paid, principal_paid = full borrowed, new_borrowed =\n0, new_collateral_ratio = 0, closed = true, refunded = unused payment, profit\n= unwind PnL.\n- Partial cover: interest_paid, principal_paid, new_borrowed (remaining),\n  new_collateral_ratio at current price, closed = false, refunded = 0, profit\n= 0."
+    },
+    "dysonprotocol.whaleswap.v1.MsgCoverPositionResponse": {
+      "type": "object",
+      "properties": {
+        "interest_paid": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Accrued interest paid (borrowed denom)."
+        },
+        "principal_paid": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Principal amount paid (borrowed denom)."
+        },
+        "new_borrowed": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "New borrowed principal after payment (0 if closed)."
+        },
+        "new_collateral_ratio": {
+          "type": "string",
+          "description": "New collateral ratio at current price; \"0\" when closed."
+        },
+        "closed": {
+          "type": "boolean",
+          "description": "True if the position was fully repaid and deleted."
+        },
+        "refunded": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Unused portion of the user's payment returned (auto-close path)."
+        },
+        "profit": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Swap PnL from unwinding held \u2192 borrowed during auto-close."
         }
       }
     },
@@ -576,40 +826,158 @@
       "type": "object",
       "properties": {
         "creator": {
-          "type": "string"
+          "type": "string",
+          "description": "Account creating the pool; receives the initial minted shares."
         },
         "coins": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           },
-          "description": "Two initial reserves as coins; order will be canonicalized internally (by\ndenom lexicographic order)."
-        },
-        "min_price": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
-          },
-          "description": "Optional price band expressed as ratios coin2/coin1 using two coins.\nEach must either be empty (unset) or contain exactly two coins whose\ndenoms match the two pool reserve denoms."
-        },
-        "max_price": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
-          }
+          "description": "Initial reserves. Required: exactly two coins with positive amounts.\nOrder is canonicalized internally to pool denom order (lexicographic)."
         },
         "fee_pct": {
-          "type": "string"
+          "type": "string",
+          "description": "Deprecated: fee_pct is the legacy pool swap fee percentage (cosmos.Dec\nstring in [0,1)). Use fee_rate field 11 instead. Migration logic should\nread this and convert to fee_rate format (two DecCoins, one per reserve\ndenom in canonical order)."
+        },
+        "min_collateral_ratio": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "description": "Required: minimum collateral ratio per reserve denom (exactly two,\ncanonical order). Each amount is a LegacyDec string (> 1)."
+        },
+        "max_leverage_ratio": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "description": "Required: maximum leverage ratio per reserve denom (exactly two,\ncanonical order). Each amount is a LegacyDec string (> 1)."
+        },
+        "interest_rate": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "description": "Annual interest rates per reserve denom (APR >= 0).\nInput may include 0, 1, or 2 entries; keeper normalizes to exactly two\nentries in canonical pool order."
+        },
+        "max_borrow_percent": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "description": "Required: maximum borrow capacity per reserve denom as DecCoins (exactly\ntwo, canonical order). Each amount is a LegacyDec in [0,1)."
+        },
+        "liquidation_threshold": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "title": "Required: collateral ratio liquidation threshold per reserve denom\n(exactly two, canonical order; each amount is a LegacyDec string > 1)"
+        },
+        "fee_rate": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "description": "Per-denom swap fee rates (amounts in [0,1)). Allow 0, 1, or 2 entries;\nkeeper normalizes to exactly two entries in canonical pool order.\nReplaces deprecated fee_pct field 5."
+        },
+        "bound_percent": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "description": "Optional: per-denom directional price-impact bounds keyed by the sold\ndenom. When omitted, defaults to 1 for both pool denoms (unbounded). When\nprovided, must contain exactly two entries in canonical pool order with\namounts satisfying 0 < x <= 1; x == 1 disables the bound for that denom."
         }
       },
-      "description": "Create a pool.\n\nBehavior:\n- If min_price/max_price are both unset (or effectively encode [0, +\u221e)), the\n  pool behaves as constant product (v2).\n- If a finite band is provided, concentrated-liquidity math applies within\n  [min_price, max_price] where price is coin_b / coin_a (see conventions)."
+      "title": "MsgCreatePool"
     },
     "dysonprotocol.whaleswap.v1.MsgCreatePoolResponse": {
       "type": "object",
       "properties": {
         "pool_id": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "Newly created pool id."
+        }
+      },
+      "description": "Empty response. See EventPoolCreated for emitted details."
+    },
+    "dysonprotocol.whaleswap.v1.MsgFinalizeLiquidation": {
+      "type": "object",
+      "properties": {
+        "liquidator": {
+          "type": "string",
+          "description": "Account finalizing liquidation; permissionless (any account)."
+        },
+        "user": {
+          "type": "string",
+          "description": "Position owner address; should match the position's user."
+        },
+        "pool_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Pool id; should match the position's pool."
+        },
+        "position_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Target position id to finalize liquidation for."
+        }
+      },
+      "description": "*\nFinalize liquidation of a leveraged position.\n\nBehavior:\n- Permissionless trigger: any `liquidator` may call this for any position\nwith initialized liquidation.\n- Accrues interest on borrowed amount using the snapshotted per-denom APR and\n  elapsed seconds since borrow_time.\n- Computes final repayment as principal + accrued interest.\n- Liquidator sends repayment to module and receives all collateral.\n- Updates pool accounting (repayment to reserves, subtract borrowed, accrue\n  interest earned); pool does not incur losses in liquidation.\n- Deletes the position and clears all state.\n\nSemantics:\n- Block delay: requires at least 1 block to have passed since initialization.\n- Settlement: full collateral goes to liquidator regardless of repayment\namount; pool absorbs any shortfall as loss.\n- Pool loss: when repayment > collateral, the difference is recorded as pool\n  loss (may be 0).\n\nValidation:\n- Position must exist with LIQUIDATION_STATUS_INITIALIZED.\n- Block delay must have passed (current_height > initialized_height).\n- Position must have a two-entry interest_rate snapshot.\n- Pool must exist.\n\nEmits:\n- EventLeverageLiquidationFinalized with position_id, user, liquidator,\npool_id, collateral_received, repayment_amount, accrued_interest.\n\nReturns:\n- collateral_received, repayment_amount, accrued_interest."
+    },
+    "dysonprotocol.whaleswap.v1.MsgFinalizeLiquidationResponse": {
+      "type": "object",
+      "properties": {
+        "collateral_received": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Collateral coin received by the liquidator."
+        },
+        "repayment_amount": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Total repayment amount sent by the liquidator (principal + interest)."
+        },
+        "accrued_interest": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Accrued interest portion of the repayment."
+        }
+      }
+    },
+    "dysonprotocol.whaleswap.v1.MsgInitializeLiquidation": {
+      "type": "object",
+      "properties": {
+        "initializer": {
+          "type": "string",
+          "description": "Account initializing liquidation; permissionless (any account)."
+        },
+        "user": {
+          "type": "string",
+          "description": "Position owner address; should match the position's user."
+        },
+        "pool_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Pool id; should match the position's pool."
+        },
+        "position_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Target position id to initialize."
+        }
+      },
+      "description": "*\nInitialize liquidation of a leveraged position.\n\nBehavior:\n- Permissionless trigger: any `initializer` may call this.\n- Accrues interest at the snapshotted APR since borrow_time and computes\n  the collateral ratio CR = collateral / (principal + interest).\n- Compares CR against the pool's per-denom liquidation_threshold for the\n  borrowed denom (> 1 required).\n- On CR < threshold, records liquidation markers (status and current block\n  height) and persists the updated position.\n\nValidation:\n- Position must exist; pool must exist.\n- Position must have a two-entry interest_rate snapshot.\n- Pool must have a two-entry liquidation_threshold; borrowed denom entry must\n  be > 1.\n- Position must be liquidatable at evaluation time (CR < threshold).\n\nEmits:\n- EventLeverageLiquidationInitialized with position_id, user, pool_id,\n  collateral_ratio, liquidation_threshold, block_height.\n\nReturns:\n- collateral_ratio and liquidation_threshold in the response."
+    },
+    "dysonprotocol.whaleswap.v1.MsgInitializeLiquidationResponse": {
+      "type": "object",
+      "properties": {
+        "collateral_ratio": {
+          "type": "string",
+          "description": "Collateral ratio at evaluation time (LegacyDec string)."
+        },
+        "liquidation_threshold": {
+          "type": "string",
+          "description": "Liquidation threshold used for comparison (LegacyDec string)."
         }
       }
     },
@@ -624,9 +992,13 @@
         },
         "want": {
           "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+        },
+        "settlement_mode": {
+          "$ref": "#/definitions/dysonprotocol.whaleswap.v1.SettlementMode",
+          "description": "settlement_mode determines whether base have is escrowed (ESCROW) or\nPFAND is locked and settlement occurs from maker balance at take (LIQUID).\nMaker must currently hold at least the full `have` amount."
         }
       },
-      "description": "Make an orderbook offer.\n\nConstraints and semantics:\n- have and want must be different denoms and strictly positive.\n- want denom must be a solid denom; liquid want is disallowed.\n- If have denom is liquid, the transaction locks PFAND per module params.\n- The keeper computes GCD(have.amount, want.amount) to establish integral\n  units for partial fills: unit_have = have/gcd, unit_want = want/gcd.\n- RemainingUnits starts at gcd and decreases as fills occur."
+      "description": "*\nMakeOffer creates an orderbook offer. ESCROW: base \"have\" is escrowed.\nLIQUID: lock PFAND; settlement draws from maker balance at take. Units are\nderived via GCD for partial fills.\n\nBehavior:\n- Validates maker address, have/want coins (different denoms, positive\namounts).\n- For ESCROW mode: escrows base have from maker to module.\n- For LIQUID mode: locks PFAND from maker to module (if configured).\n- Computes GCD of have/want amounts to establish unit_have/unit_want ratios.\n- Creates offer with remaining_units = GCD, status = open.\n- Persists offer and indexes it for queries.\n\nValidation:\n- Maker address must be valid.\n- Have/want denoms must be valid and different.\n- Have/want amounts must be positive.\n- Maker must hold sufficient have amount (for escrow check).\n- For LIQUID mode: maker must hold sufficient PFAND if configured.\n\nEmits:\n- EventOfferCreated with offer_id\n- EventPfandLocked with amount, offer_id (if PFAND locked)\n\nReturns:\n- offer_id of the newly created offer."
     },
     "dysonprotocol.whaleswap.v1.MsgMakeOfferResponse": {
       "type": "object",
@@ -641,42 +1013,58 @@
       "type": "object",
       "properties": {
         "trader": {
-          "type": "string"
+          "type": "string",
+          "description": "Account executing the trade operations; all operations execute as this\ntrader."
         },
         "max_input": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           },
-          "title": "End-of-tx debit caps per denom for the trader"
+          "description": "End-of-tx debit caps per denom for the trader; zero means no debits allowed\nfor that denom."
         },
         "operations": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/dysonprotocol.whaleswap.v1.TradeOperation"
           },
-          "title": "Mixed operations processed in-order"
+          "description": "Mixed operations processed in-order; must contain at least one operation."
         },
         "min_output": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           },
-          "title": "Final trader minimum outputs per denom after aggregation"
+          "description": "Final trader minimum outputs per denom after aggregation and netting."
         },
         "note": {
-          "type": "string"
+          "type": "string",
+          "description": "Optional note attached to the trade record."
         }
-      }
+      },
+      "description": "*\nMakeTrade combines AMM pool swaps and orderbook takes into a single\ntransaction.\n\nBehavior:\n- Processes SwapLeg (AMM pool swaps) and TakeItem (orderbook takes)\noperations in order.\n- Aggregates all inputs/outputs across operations, then performs\norderbook-style netting.\n- Trader credits offset maker wants; deficits covered from trader base\nbalance.\n- PFAND released to trader when offers close, applied pre-netting.\n- Enforces per-denom debit caps (max_input) and minimum outputs (min_output)\nafter netting.\n- Executes final settlement via multisend; all operations succeed or\ntransaction fails.\n- Enables circular trade dependencies through self-netting: trader\ndebit/credit pairs by denom are netted out, allowing complex arbitrage\nchains where intermediate results cancel (e.g., A\u2192B\u2192C\u2192A becomes net B+C\nprofit).\n\nValidation:\n- Trader address must be valid.\n- Operations must be non-empty.\n- Note length capped by module params.\n- Swap operations: pool must exist, denoms match pool, no duplicate pool_ids.\n- Take operations: offer must exist and be open, no duplicate offer_ids.\n- Auction operations currently rejected.\n\nState updates:\n- AMM pools: reserves updated, fees accrued, trade counters incremented.\n- Offers: remaining units/wants/haves updated; closed when fully taken.\n- Trade recorded with all operations, indexed by trader/pool/offer/auction.\n\nEmits:\n- EventPfandReleased for each closed offer (amount, offer_id, trade_id)\n- EventPoolSwap for each swap (pool_id, trade_id, operation_index)\n- EventOfferTaken for each take (offer_id, trade_id, units_taken)\n- EventTradeRecorded summary (trade_id, trader, num_operations, note)\n\nReturns:\n- trade_id and final net trader_inputs/outputs after\nnetting/coverage/self-net."
     },
     "dysonprotocol.whaleswap.v1.MsgMakeTradeResponse": {
       "type": "object",
       "properties": {
-        "amount_out": {
+        "trade_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Unique ID of the recorded trade containing all operations."
+        },
+        "trader_inputs": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
-          }
+          },
+          "description": "Final net debits from trader by denom after netting, coverage, and\nself-netting."
+        },
+        "trader_outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+          },
+          "description": "Final net credits to trader by denom after netting, coverage, and\nself-netting."
         }
       }
     },
@@ -684,17 +1072,19 @@
       "type": "object",
       "properties": {
         "seller": {
-          "type": "string"
+          "type": "string",
+          "description": "Account opening the auction (receives the minted NFT)."
         },
         "bid_denom": {
-          "type": "string"
+          "type": "string",
+          "description": "Quote denom for bids; must be a valid denom and differ from sell.denom."
         },
         "sell": {
           "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
-          "description": "Explicit solid sell coin to escrow from seller \u2192 module."
+          "description": "Sell coin to escrow from seller \u2192 module; amount must be > 0."
         }
       },
-      "description": "Open an auction by escrowing exactly one solid denom amount.\n\n- The escrowed `sell` coin is transferred from seller to module and marked by\n  an NFT for redemption logic. `bid_denom` defines the quote asset."
+      "description": "*\nOpenAuction escrows the sell coin from the seller and mints an NFT under a\nclass keyed by `bid_denom`. Class policy (always_listed, valuation\nfee/period, bid timeout, minimum bid percent increase, allowed denoms) is\nset from module params. The NFT is sent to the seller and the auction record\nwith reverse indexes is persisted.\n\nEmits: EventAuctionCreated on success"
     },
     "dysonprotocol.whaleswap.v1.MsgOpenAuctionResponse": {
       "type": "object",
@@ -705,25 +1095,67 @@
         }
       }
     },
+    "dysonprotocol.whaleswap.v1.MsgOpenPosition": {
+      "type": "object",
+      "properties": {
+        "trader": {
+          "type": "string",
+          "description": "Account opening the leveraged position; collateral escrowed from this\naddress."
+        },
+        "pool_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Target two-asset pool providing price reference and borrow caps."
+        },
+        "collateral": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Coin to escrow as security; must be positive and one of the pool denoms."
+        },
+        "borrow": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Liability coin; must be positive and one of the pool denoms. Interest\naccrues on this amount."
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional note for the position."
+        }
+      },
+      "description": "*\n v creates a leveraged position by borrowing against collateral.\n\nBehavior:\n- Validates pool (exactly 2 denoms), collateral/borrow amounts and denoms.\n- Computes collateral ratio CR = collateral_value / debt_value in borrow\n  units, accounting for current pool price.\n- Validates CR >= pool.min_collateral_ratio[borrow_denom] (> 1).\n- Validates leverage <= pool.max_leverage_ratio[borrow_denom] (> 1).\n- Reduces pool reserves by borrow amount, updates total_borrowed.\n- Moves borrowed amount to borrow vault, executes swap (borrowed \u2192 held).\n- Escrows collateral to whaleswap module after swap.\n- Creates position with interest rate and min_collateral_ratio snapshots.\n- Held denom is the pool denom not matching borrow denom.\n\nValidation:\n- Pool must exist with exactly 2 denoms.\n- Collateral/borrow amounts must be positive.\n- Collateral/borrow denoms must match pool denoms.\n- Collateral ratio must meet pool min_collateral_ratio for borrow denom.\n- Leverage must not exceed pool max_leverage_ratio for borrow denom.\n- Borrow amount must not exceed pool borrow cap (max_borrow_percent).\n- Swap must produce positive held output.\n\nEmits:\n- EventLeveragePositionOpened with position_id, user, pool_id,\n  collateral_denom, collateral_amount, borrowed_denom, borrowed_amount,\n  entry_price_held_per_borrow, collateral_ratio.\n\nReturns:\n- position_id and held coin in the response."
+    },
+    "dysonprotocol.whaleswap.v1.MsgOpenPositionResponse": {
+      "type": "object",
+      "properties": {
+        "position_id": {
+          "type": "string",
+          "format": "uint64",
+          "description": "Unique identifier for the newly created leveraged position."
+        },
+        "held": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "description": "Amount of held asset received from the AMM swap (borrow denom \u2192 held\ndenom)."
+        }
+      }
+    },
     "dysonprotocol.whaleswap.v1.MsgPoolSwap": {
       "type": "object",
       "properties": {
         "trader": {
-          "type": "string"
+          "type": "string",
+          "description": "Account initiating the swap; debited/credited on net settlement."
         },
         "max_input": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           },
-          "description": "End-of-tx debit caps per denom (vector cap). Missing denom implies 0."
+          "description": "End-of-tx debit caps per denom (vector cap). Missing denom implies 0.\nApplied after aggregating all legs; tx fails if any denom's required debit\nexceeds its cap."
         },
         "legs": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/dysonprotocol.whaleswap.v1.SwapLeg"
           },
-          "description": "Arbitrary set of swap legs; order does not need to be contiguous by denom."
+          "description": "Arbitrary set of swap legs; order does not need to be contiguous by denom.\nOutput-side fee is applied per leg based on the output denom."
         },
         "min_output": {
           "type": "array",
@@ -732,7 +1164,8 @@
           },
           "description": "Final minimum outputs required per denom after aggregation."
         }
-      }
+      },
+      "description": "*\nPoolSwap executes one or more exact-in or exact-out pool swap legs with a\nsingle end-of-tx settlement. Applies output-side fees per leg and enforces\naggregate max_input caps and min_output guarantees.\n\nBehavior:\n- Per-leg execution: for each leg, validates the pool/denoms and computes\n  the out amount using concentrated-liquidity band math (when configured) or\n  constant-product math, applies output-side fee based on the output denom,\n  and updates pool reserves.\n- Aggregate constraints: after all legs, enforces per-denom debit caps\n  (max_input) and minimum outputs (min_output), then performs a single bank\n  move between trader and module for the net debits/credits.\n- Invariants and recording: asserts AMM and module invariants and records a\n  single Trade containing all operations.\n\nValidation:\n- legs must be non-empty; each leg must specify exactly one of swap_in or\n  swap_out with a positive amount.\n- Pool must exist and have exactly two reserves; input/output denoms must be\n  present in the pool.\n- Concentrated-liquidity: resulting price must remain within [min_price,\n  max_price]; exact-out must not exceed band capacity.\n- Constant-product: swaps must not deplete any reserve; exact-out must not\n  exceed capacity.\n- Aggregate: required debits must not exceed max_input caps; final credits\n  must satisfy min_output per denom.\n\nEmits:\n- EventPoolSwap per executed leg (with pool_id, trade_id, operation_index)\n  via recordTradeWithOperations\n- EventTradeRecorded once after all legs are recorded\n\nReturns:\n- amount_out: total coins credited to the trader across all legs."
     },
     "dysonprotocol.whaleswap.v1.MsgPoolSwapResponse": {
       "type": "object",
@@ -741,7 +1174,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
-          }
+          },
+          "description": "Total coins credited to the trader after aggregation across all legs."
         }
       }
     },
@@ -749,34 +1183,39 @@
       "type": "object",
       "properties": {
         "caller": {
-          "type": "string"
+          "type": "string",
+          "description": "Account redeeming; must be the current NFT owner."
         },
         "auction_id": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "Auction to redeem."
         }
       },
-      "description": "Redeem auction escrow by NFT owner when no current bidder exists."
+      "description": "*\nRedeemAuction lets the current NFT owner redeem the auction escrow\nwhen no bid is active.\n\nBehavior:\n- Sends the escrowed sell coins from the module to the caller.\n- Burns the NFT and deletes the auction record and reverse indexes.\n- If owner != original seller and a positive valuation exists in `bid_denom`,\n  a Trade is recorded and its id is included in EventAuctionRedeemed.\n\nValidation:\n- Auction must exist.\n- `caller` must equal the current NFT owner.\n- No current bidder may exist.\n- Module escrow must contain at least the sell amount.\n\nEmits: EventAuctionRedeemed (trade_id = 0 when seller redeems without trade)"
     },
     "dysonprotocol.whaleswap.v1.MsgRedeemAuctionResponse": {
-      "type": "object"
+      "type": "object",
+      "description": "*\nEmpty response. See EventAuctionRedeemed for emitted details."
     },
     "dysonprotocol.whaleswap.v1.MsgRemoveLiquidity": {
       "type": "object",
       "properties": {
         "signer": {
-          "type": "string"
+          "type": "string",
+          "description": "Account burning shares; must hold at least this amount."
         },
         "pool_id": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "Target pool id."
         },
         "shares": {
           "type": "string",
-          "title": "shares to burn (sdk.Int string)"
+          "description": "Shares to burn (sdk.Int string). Must be > 0; equals total supply to fully\nexit (pool is deleted)."
         }
       },
-      "description": "Remove liquidity (anyone). Must respect price band and produce non-zero\noutputs."
+      "description": "*\nRemove liquidity from a pool by burning shares and returning underlying\nreserves.\n\nBehavior:\n- Supports full exit (burning all shares, deletes pool, returns all reserves)\n  and partial exit (burns subset, returns proportional reserves, pool\nremains).\n- Full exit: when shares = total_supply, deletes pool, pays out full\nreserves.\n- Partial exit: computes pro-rata payout using DecCoins math, ensures\nreserves don't go to zero (requires full exit for last liquidity).\n- Burns shares from signer, sends proportional reserves from module to\nsigner.\n- For partial exits: updates pool reserves, persists pool; asserts AMM\ninvariants.\n\nValidation:\n- Pool must exist.\n- Shares must be positive integer string.\n- Signer must hold at least shares amount.\n- Partial exits cannot deplete any reserve to zero.\n\nEmits:\n- EventPoolLiquidityRemoved with pool_id and shares\n\nReturns:\n- coins returned to the caller in the amount field."
     },
     "dysonprotocol.whaleswap.v1.MsgRemoveLiquidityResponse": {
       "type": "object",
@@ -786,7 +1225,7 @@
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           },
-          "title": "coins returned"
+          "description": "Coins returned to the caller proportional to the burned shares."
         }
       }
     },
@@ -794,15 +1233,18 @@
       "type": "object",
       "properties": {
         "taker": {
-          "type": "string"
+          "type": "string",
+          "description": "Account executing the takes; all takes execute as this trader."
         },
         "trades": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/dysonprotocol.whaleswap.v1.TakeItem"
-          }
+          },
+          "description": "List of take operations to execute; must contain at least one item."
         }
-      }
+      },
+      "description": "*\nTakeOffer executes one or more orderbook takes with netting and settlement.\n\nBehavior:\n- Processes multiple take operations in a single transaction with aggregated\nsettlement.\n- For each take: validates offer exists and is open, parses take_units\n(defaults to remaining), computes exchange amounts (required_want =\ntake_units \u00d7 unit_want, deliver_have = take_units \u00d7 unit_have), aggregates\noutputs by address, updates offer state (closes when fully taken), records\noperations.\n- Post-processing: computes maker wants and taker credits, nets taker credits\nagainst maker wants, covers deficits from taker base balance (uses module\nbacking for remaining solid deficits).\n- Settlement: executes batch coin movements via wsMoveCoins for all\nparticipants.\n- PFAND release: when offers close, locked PFAND flows from module to taker.\n- Trade recording: creates single Trade with all operations, indexed by\ntrader/offer.\n\nValidation:\n- Taker address must be valid.\n- Trades list must be non-empty.\n- Each offer must exist and be in open status.\n- Take_units must be valid integer string (positive, \u2264 remaining); empty\ndefaults to remaining.\n- For LIQUID settlement: maker must have sufficient balance for deliver_have.\n- Module must have sufficient backing for any uncovered solid deficits.\n\nEmits:\n- EventOfferTaken for each take (offer_id, trade_id, units_taken)\n- EventTradeRecorded for the batch (trade_id, trader, num_operations)\n- EventPfandReleased for each closed offer (amount, offer_id, trade_id)\n\nReturns:\n- aggregated sent/received totals across all executed takes."
     },
     "dysonprotocol.whaleswap.v1.MsgTakeOfferResponse": {
       "type": "object",
@@ -819,7 +1261,7 @@
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           },
-          "description": "Total coins the taker received across executed trades (usually have denom,\nbase denom when offers use liquid have)."
+          "description": "Total coins the taker received across executed trades (usually have denom)."
         }
       }
     },
@@ -827,13 +1269,15 @@
       "type": "object",
       "properties": {
         "authority": {
-          "type": "string"
+          "type": "string",
+          "description": "Authority address that must match the module's configured authority."
         },
         "params": {
-          "$ref": "#/definitions/dysonprotocol.whaleswap.v1.Params"
+          "$ref": "#/definitions/dysonprotocol.whaleswap.v1.Params",
+          "description": "New parameter values to set; must pass validation."
         }
       },
-      "description": "UpdateParams is the Msg/UpdateParams request type."
+      "description": "*\nUpdateParams updates module parameters.\n\nBehavior:\n- Authority-only: verifies msg.Authority matches the module's configured\nauthority.\n- Parameter validation: validates all parameter constraints (pfand amounts,\ntime durations, percentage bounds, block delays).\n- State update: persists validated parameters to the module's parameter\nstore.\n\nValidation:\n- Authority must match the module's configured authority address.\n- Parameters must pass Params.Validate() which checks:\n  - PfandPerOffer denom set when amount > 0\n  - ValuationPeriod > 0\n  - BidTimeout > 0\n  - ValuationFeePct in [0,1) if set\n  - MinimumBidPercentIncrease in [0,1) if set\n  - BlockDelayBeforeClose > 0\n  - BlockDelayBeforeLiquidation > 0\n\nReturns:\n- MsgUpdateParamsResponse (empty) on success."
     },
     "dysonprotocol.whaleswap.v1.MsgUpdateParamsResponse": {
       "type": "object"
@@ -842,33 +1286,73 @@
       "type": "object",
       "properties": {
         "signer": {
-          "type": "string"
+          "type": "string",
+          "description": "Signer address; must be the majority owner of pool shares."
         },
         "pool_id": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "Target pool id to update."
         },
         "fee_pct": {
           "type": "string",
-          "title": "Optional fields; empty string means no change"
+          "description": "Deprecated: fee_pct is the legacy pool swap fee percentage (cosmos.Dec\nstring in [0,1)). Use fee_rate field 11 instead. Migration logic should\nread this and convert to fee_rate format (two DecCoins, one per reserve\ndenom in canonical order)."
         },
-        "min_price": {
+        "min_collateral_ratio": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
-          }
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "title": "Leverage configuration (per-denom)\nRequired: minimum collateral ratio per reserve denom (exactly two,\ncanonical order; > 1)"
         },
-        "max_price": {
+        "max_leverage_ratio": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
-          }
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "title": "Required: maximum leverage ratio per reserve denom (exactly two,\ncanonical order; > 1)"
+        },
+        "interest_rate": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "description": "Required: annual interest rates per reserve denom (APR >= 0).\nInput may include 0, 1, or 2 entries; keeper normalizes to exactly two in\ncanonical pool order."
+        },
+        "max_borrow_percent": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "description": "Optional: maximum borrow capacity per reserve denom (exactly two,\ncanonical order). Amounts in [0,1)."
+        },
+        "liquidation_threshold": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "title": "Required: collateral ratio liquidation threshold per reserve denom\n(exactly two, canonical order; each amount is a LegacyDec string > 1)"
+        },
+        "fee_rate": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "description": "Per-denom swap fee rates (amounts in [0,1)). Allow 0, 1, or 2 entries;\nkeeper normalizes to exactly two entries in canonical pool order.\nReplaces deprecated fee_pct field 3."
+        },
+        "bound_percent": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin"
+          },
+          "description": "Optional: directional price-impact bounds keyed by the sold denom. When\nprovided, must contain exactly two entries in canonical pool order. Amounts\nmust satisfy 0 < x <= 1; x == 1 disables the bound for that denom. Omit the\nfield to leave bounds unchanged."
         }
       },
-      "description": "Update pool config (owner-only: majority of shares > 50%).\n\nNotes:\n- Empty string/empty arrays indicate no change for that field.\n- Price bands follow the same two-coin ratio rules as in MsgCreatePool."
+      "title": "MsgUpdatePoolConfig"
     },
     "dysonprotocol.whaleswap.v1.MsgUpdatePoolConfigResponse": {
-      "type": "object"
+      "type": "object",
+      "description": "Empty response. See EventPoolUpdate for emitted details."
     },
     "dysonprotocol.whaleswap.v1.Params": {
       "type": "object",
@@ -896,8 +1380,27 @@
         "max_note_length": {
           "type": "integer",
           "format": "int64"
+        },
+        "block_delay_before_close": {
+          "type": "string",
+          "format": "uint64",
+          "title": "\u2550\u2550\u2550\u2550\u2550 LEVERAGE PARAMETERS \u2550\u2550\u2550\u2550\u2550\nBlock delay before position owner can close position"
+        },
+        "block_delay_before_liquidation": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Block delay before liquidation can be finalized after initialization"
         }
       }
+    },
+    "dysonprotocol.whaleswap.v1.SettlementMode": {
+      "type": "string",
+      "enum": [
+        "SETTLEMENT_ESCROW",
+        "SETTLEMENT_LIQUID"
+      ],
+      "default": "SETTLEMENT_ESCROW",
+      "description": "SettlementMode selects how offers fund the \"have\" side:\n- ESCROW: Escrow base have in the module at offer creation.\n- LIQUID: Do not escrow base; lock PFAND and settle from maker balance at\ntake."
     },
     "dysonprotocol.whaleswap.v1.SwapLeg": {
       "type": "object",
@@ -908,7 +1411,7 @@
         },
         "swap_in": {
           "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
-          "title": "One of swap_in or swap_out must be set; both allowed for rate constraint"
+          "description": "Exactly one of swap_in (exact-in) or swap_out (exact-out) must be set.\nUse message-level min_output for rate constraints across legs."
         },
         "swap_out": {
           "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
@@ -920,11 +1423,12 @@
       "properties": {
         "offer_id": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "ID of the offer to take from; offer must exist and be in open status."
         },
         "take_units": {
           "type": "string",
-          "description": "units to take (sdk.Int string). If empty, take full remaining."
+          "description": "Units to take (sdk.Int string). If empty, take full remaining. Must be\npositive and \u2264 remaining."
         }
       }
     },
@@ -936,9 +1440,19 @@
         },
         "take": {
           "$ref": "#/definitions/dysonprotocol.whaleswap.v1.TakeItem"
+        },
+        "auction": {
+          "$ref": "#/definitions/dysonprotocol.whaleswap.v1.AuctionRedeem"
+        },
+        "sent": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+          "title": "Execution results (populated when recording Trade):"
+        },
+        "received": {
+          "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
         }
       },
-      "description": "TradeOperation allows mixing pool swap legs and orderbook takes."
+      "description": "TradeOperation allows mixing pool swap legs, orderbook takes, and auction\nredemptions. When stored in Trade.operations, sent/received fields are\npopulated with execution results. When used in MsgMakeTrade.operations,\nsent/received are empty (populated during execution)."
     },
     "google.protobuf.Any": {
       "type": "object",

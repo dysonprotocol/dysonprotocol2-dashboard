@@ -19,6 +19,9 @@
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^1.10.1",
+    "@connectrpc/connect": "^1.7.0",
+    "@connectrpc/connect-web": "^1.7.0",
     "@cosmjs/encoding": "^0.28.0",
     "@cosmjs/proto-signing": "^0.33.0",
     "@headlessui/vue": "^1.7.23",

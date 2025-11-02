@@ -22,12 +22,17 @@ Before we start, let's set up our environment by defining our test accounts:
 
 ```python
 # Get addresses of our test accounts
-[ALICE_ADDRESS] = ! dysond keys show -a alice
+out = ! dysond keys show -a alice
+print(out)  
+ALICE_ADDRESS = out[0]
 [BOB_ADDRESS] = ! dysond keys show -a bob
 
 print(f"Using alice address: {ALICE_ADDRESS}")
 print(f"Using bob address: {BOB_ADDRESS}")
 ```
+
+    ['dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej']
+
 
     Using alice address: dys21tvhkv3gqr90jpycaky02xa5ukhaxllu3jlwnej
     Using bob address: dys21fhhxp9xveswc4yhxekr32eqe80rkwpur3vu0el
@@ -474,9 +479,9 @@ print(f"- Time: {block_info['time']}")
 ```
 
     Block Information:
-    - Height: 9
+    - Height: 10
     - Chain ID: chain-a
-    - Time: 2025-10-13T13:00:12.293672Z
+    - Time: 2025-10-24T22:19:58.151985Z
 
 
 ## Transaction Data
@@ -597,7 +602,7 @@ assert events['dysonprotocol.script.v1.EventScriptEvent']['value'] == '"123123"'
 ```
 
     {
-      "height": "11",
+      "height": "12",
       "txhash": "07CA48632DAFD22BD80387C8E3236CF6ECFBD02CBC76D254FC95988B4D1FEDFB",
       "codespace": "",
       "code": 0,

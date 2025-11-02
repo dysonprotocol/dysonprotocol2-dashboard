@@ -5,7 +5,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { MsgCreateNewScript, MsgCreateNewScriptResponse, MsgExec, MsgExecResponse, MsgUpdateParams, MsgUpdateParamsResponse, MsgUpdateScript, MsgUpdateScriptResponse } from "./tx_pb.js";
+import { MsgCreateNewScript, MsgCreateNewScriptResponse, MsgExec, MsgExecResponse, MsgSudo, MsgSudoResponse, MsgUpdateParams, MsgUpdateParamsResponse, MsgUpdateScript, MsgUpdateScriptResponse } from "./tx_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -17,8 +17,10 @@ export const Msg = {
   typeName: "dysonprotocol.script.v1.Msg",
   methods: {
     /**
-     * Update Script updates the script of the given address and increments the
-     * the version.
+     *
+     * UpdateScript updates the script code at the given address and increments
+     * its version. Automatically formats code using DysFormat and handles script
+     * creation if address doesn't exist.
      *
      * @generated from rpc dysonprotocol.script.v1.Msg.UpdateScript
      */
@@ -29,7 +31,10 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
-     * ExecScript executes a script by calling a function with arguments.
+     *
+     * ExecScript executes a script function with arguments and handles attached
+     * messages. Supports script resolution via address or nameservice name with
+     * validation.
      *
      * @generated from rpc dysonprotocol.script.v1.Msg.ExecScript
      */
@@ -40,9 +45,10 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
-     * CreateNewScript | Create a new script with new address = hash(creator +
-     * content), a new authz updatescript permission will also be created for the
-     * creator
+     *
+     * CreateNewScript creates a new script with deterministic address and grants
+     * update permissions. Generates address from SHA256 hash of creator +
+     * formatted code, creates authz grant for updates.
      *
      * @generated from rpc dysonprotocol.script.v1.Msg.CreateNewScript
      */
@@ -53,8 +59,9 @@ export const Msg = {
       kind: MethodKind.Unary,
     },
     /**
-     * UpdateParams defines a governance operation for updating the x/script
-     * module parameters. The authority defaults to the x/gov module account.
+     *
+     * UpdateParams updates the module parameters via governance proposal.
+     * Authority validation ensures only governance can modify parameters.
      *
      * @generated from rpc dysonprotocol.script.v1.Msg.UpdateParams
      */
@@ -62,6 +69,20 @@ export const Msg = {
       name: "UpdateParams",
       I: MsgUpdateParams,
       O: MsgUpdateParamsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     *
+     * Sudo executes arbitrary messages with authority override and no signer
+     * validation. Governance operation that allows executing any messages
+     * atomically without validation.
+     *
+     * @generated from rpc dysonprotocol.script.v1.Msg.Sudo
+     */
+    sudo: {
+      name: "Sudo",
+      I: MsgSudo,
+      O: MsgSudoResponse,
       kind: MethodKind.Unary,
     },
   }

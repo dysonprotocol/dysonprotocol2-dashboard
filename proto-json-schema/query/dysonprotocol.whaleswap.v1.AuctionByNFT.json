@@ -6,33 +6,35 @@
             "dysonprotocol.whaleswap.v1.QueryAuctionByNFTRequest": {
                 "properties": {
                     "class_id": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "NFT class ID of the escrow marker"
                     },
                     "nft_id": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "NFT ID of the escrow marker"
                     }
                 },
                 "additionalProperties": false,
                 "type": "object",
-                "title": "Query Auction By NFT Request",
-                "description": "QueryAuctionByNFTRequest selects an auction by the escrow NFT identity."
+                "title": "Query Auction By NFT Request"
             }
         }
     },
     "response": {
         "$schema": "http://json-schema.org/draft-04/schema#",
-        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.QueryAuctionResponse",
+        "$ref": "#/definitions/dysonprotocol.whaleswap.v1.QueryAuctionByNFTResponse",
         "definitions": {
-            "dysonprotocol.whaleswap.v1.QueryAuctionResponse": {
+            "dysonprotocol.whaleswap.v1.QueryAuctionByNFTResponse": {
                 "properties": {
                     "auction": {
                         "$ref": "#/definitions/dysonprotocol.whaleswap.v1.AuctionRecord",
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "description": "The auction associated with the specified NFT escrow markers"
                     }
                 },
                 "additionalProperties": false,
                 "type": "object",
-                "title": "Query Auction Response"
+                "title": "Query Auction By NFT Response"
             },
             "cosmos.base.v1beta1.Coin": {
                 "properties": {
