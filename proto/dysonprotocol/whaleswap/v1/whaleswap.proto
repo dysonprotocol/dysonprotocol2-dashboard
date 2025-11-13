@@ -44,9 +44,19 @@ message Pool {
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
-  uint64 block_height = 10;
-  google.protobuf.Timestamp created = 11 [ (gogoproto.stdtime) = true ];
-  google.protobuf.Timestamp updated = 12 [ (gogoproto.stdtime) = true ];
+  // Deprecated legacy fields for backward-compatible JSON decoding of old
+  // genesis
+  uint64 block_height = 10 [ deprecated = true ];
+  google.protobuf.Timestamp created = 11
+      [ deprecated = true, (gogoproto.stdtime) = true ];
+  google.protobuf.Timestamp updated = 12
+      [ deprecated = true, (gogoproto.stdtime) = true ];
+
+  // New normalized fields
+  uint64 created_height = 28;
+  google.protobuf.Timestamp created_time = 29 [ (gogoproto.stdtime) = true ];
+  google.protobuf.Timestamp updated_time = 30 [ (gogoproto.stdtime) = true ];
+  uint64 updated_height = 27;
   uint64 num_trades = 13;
   // cumulative swap fees retained by the pool (accrue to LPs)
   repeated cosmos.base.v1beta1.Coin fees_earned = 14 [
@@ -138,8 +148,13 @@ message OfferData {
   string status = 2; // "open" | "closed" | "cancelled"
   string maker = 3 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
   uint64 updated_height = 4;
+  // Deprecated for backward-compatible JSON decoding of old genesis
   google.protobuf.Timestamp updated_timestamp = 5
-      [ (gogoproto.stdtime) = true ];
+      [ deprecated = true, (gogoproto.stdtime) = true ];
+  // New normalized timestamps
+  uint64 created_height = 15;
+  google.protobuf.Timestamp created_time = 16 [ (gogoproto.stdtime) = true ];
+  google.protobuf.Timestamp updated_time = 17 [ (gogoproto.stdtime) = true ];
   cosmos.base.v1beta1.Coin initial_have = 6 [ (gogoproto.nullable) = false ];
   cosmos.base.v1beta1.Coin initial_want = 7 [ (gogoproto.nullable) = false ];
   cosmos.base.v1beta1.Coin remaining_have = 8 [ (gogoproto.nullable) = false ];
@@ -250,6 +265,93 @@ message TradeMetrics {
   ];
   // Sum of fees_earned across all pools (accounted inside pool reserves)
   repeated cosmos.base.v1beta1.Coin fees_earned = 6 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+}
+
+// AddressMetrics aggregates lifetime whaleswap activity for a specific address.
+// All metrics are cumulative totals, not current state snapshots.
+//
+// NOTE: Only coins with existing denom metadata are tracked to prevent spam
+// and focus on relevant assets. Coins without metadata are excluded from all
+// volume and balance aggregations.
+message AddressMetrics {
+  // Core identity
+  string address = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  uint64 block_height = 2;
+
+  // ═════ TRADING ═════
+  // Total unique trades executed as trader
+  uint64 total_trades = 10;
+  // Total operations across all trades (swap legs + takes + auction redeems)
+  uint64 total_trade_ops = 11;
+  // Lifetime aggregate coins sent (denoms with metadata only)
+  repeated cosmos.base.v1beta1.Coin total_volume_sent = 12 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  // Lifetime aggregate coins received (denoms with metadata only)
+  repeated cosmos.base.v1beta1.Coin total_volume_received = 13 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+
+  // ═════ LP ACTIVITY ═════
+  // Total pools created by this address
+  uint64 pools_created = 20;
+  // Cumulative swap fees earned (denoms with metadata only)
+  repeated cosmos.base.v1beta1.Coin lp_fees_earned = 21 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  // Cumulative interest earned from leverage borrowers (denoms with metadata
+  // only)
+  repeated cosmos.base.v1beta1.Coin lp_interest_earned = 22 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  // Count of liquidity add operations
+  uint64 liquidity_adds = 23;
+  // Count of liquidity remove operations
+  uint64 liquidity_removes = 24;
+
+  // ═════ LEVERAGE (BORROWER) ═════
+  // Total leverage positions opened (lifetime)
+  uint64 positions_opened = 30;
+  // Total leverage positions closed (lifetime)
+  uint64 positions_closed = 31;
+  // Total interest paid (denoms with metadata only)
+  repeated cosmos.base.v1beta1.Coin interest_paid = 32 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  // Net PnL from closed leverage positions (denoms with metadata only)
+  repeated cosmos.base.v1beta1.Coin leverage_pnl = 33 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  // Count of positions liquidated (lifetime)
+  uint64 liquidations = 34;
+
+  // ═════ ORDERBOOK ═════
+  // Total offers created (lifetime)
+  uint64 offers_created = 40;
+  // Total offers closed via full execution (lifetime)
+  uint64 offers_closed = 41;
+  // Total offers cancelled before completion (lifetime)
+  uint64 offers_cancelled = 42;
+  // Cumulative volume traded as maker (denoms with metadata only)
+  repeated cosmos.base.v1beta1.Coin maker_volume = 43 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+
+  // ═════ AUCTIONS ═════
+  // Total auctions created as seller (lifetime)
+  uint64 auctions_created = 50;
+  // Total auction volume sold (denoms with metadata only)
+  repeated cosmos.base.v1beta1.Coin auction_volume = 51 [
     (gogoproto.nullable) = false,
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
