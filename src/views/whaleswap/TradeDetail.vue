@@ -8,6 +8,7 @@ import {
   formatTimestamp,
   formatTradeId,
   formatCoin,
+  getDisplayDenom,
 } from '@/whaleswap/utils/formatters'
 
 const route = useRoute()
@@ -115,7 +116,7 @@ const trade = computed(() => data.value?.trade)
                       {{ (parseFloat(op.received.amount) / parseFloat(op.sent.amount)).toFixed(6) }}
                     </div>
                     <div class="text-xs text-muted-foreground">
-                      {{ op.received.denom }}/{{ op.sent.denom }}
+                      {{ getDisplayDenom(op.received.denom) }}/{{ getDisplayDenom(op.sent.denom) }}
                     </div>
                   </td>
                   <td class="p-2 font-mono text-right">
@@ -123,7 +124,7 @@ const trade = computed(() => data.value?.trade)
                       {{ (parseFloat(op.sent.amount) / parseFloat(op.received.amount)).toFixed(6) }}
                     </div>
                     <div class="text-xs text-muted-foreground">
-                      {{ op.sent.denom }}/{{ op.received.denom }}
+                      {{ getDisplayDenom(op.sent.denom) }}/{{ getDisplayDenom(op.received.denom) }}
                     </div>
                   </td>
                 </tr>

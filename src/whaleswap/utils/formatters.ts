@@ -1,10 +1,17 @@
 import type { Coin } from './types'
+import { DenomMetadata } from '@/orm/models/bank/DenomMetadata'
 
 export function formatCoin(coin: Coin | undefined): string {
-  if (!coin) return ''
-  const amount = coin.amount || '0'
-  const denom = coin.denom || ''
-  return `${amount} ${denom}`
+  if (!coin || !coin.denom) return ''
+  try {
+    const normalized = DenomMetadata.normalize({ amount: coin.amount || '0', denom: coin.denom })
+    return `${normalized.display.amount} ${normalized.display.denom}`
+  } catch (e) {
+    console.error('[formatCoin] Failed to normalize coin:', e)
+    const amount = coin.amount || '0'
+    const denom = coin.denom || ''
+    return `${amount} ${denom}`
+  }
 }
 
 export function formatCoins(coins: Coin[] | undefined): string {
@@ -17,6 +24,17 @@ export function formatCoinsPrimary(coins: Coin[] | undefined): string {
   if (!coins || coins.length === 0) return ''
   const primary = coins.find((c) => c.amount && c.amount !== '0') || coins[0]
   return formatCoin(primary)
+}
+
+export function getDisplayDenom(denom: string): string {
+  if (!denom) return denom
+  try {
+    const normalized = DenomMetadata.normalize({ amount: '0', denom })
+    return normalized.display.denom
+  } catch (e) {
+    console.error('[getDisplayDenom] Failed to normalize denom:', e)
+    return denom
+  }
 }
 
 export function formatTimestamp(ts: string | undefined): string {

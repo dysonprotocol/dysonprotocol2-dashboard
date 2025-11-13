@@ -40,11 +40,17 @@ export type Trade = {
   note?: string
 }
 
+export type DecCoin = {
+  denom: string
+  amount: string // Decimal string
+}
+
 export type Pool = {
   pool_id: string
   coins: Coin[]
   shares_denom: string
-  fee_pct: string
+  fee_pct?: string // Deprecated: use fee_rate instead
+  fee_rate?: DecCoin[] // Per-denom fee rates (exactly 2 entries matching coins order)
   min_price?: Coin[]
   max_price?: Coin[]
   block_height: string

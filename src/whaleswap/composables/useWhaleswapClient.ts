@@ -1,7 +1,7 @@
 // REST API client for Cosmos SDK endpoints (not gRPC-Web)
 // Uses the google.api.http annotations from query.proto
 
-import type { Trade } from '../utils/types'
+import type { Trade, Pool } from '../utils/types'
 
 const BASE_URL = '/dysonprotocol/whaleswap/v1'
 
@@ -26,8 +26,15 @@ export type TradesResponse = {
   }
 }
 
+export type PoolResponse = {
+  pool: Pool
+}
+
 export function useWhaleswapClient() {
   return {
+    async pool(req: { poolId: bigint | string }): Promise<PoolResponse> {
+      return fetchJson<PoolResponse>(`/pools/${req.poolId}`)
+    },
     async trade(req: { tradeId: bigint | string }): Promise<TradeResponse> {
       return fetchJson<TradeResponse>(`/trades/${req.tradeId}`)
     },
