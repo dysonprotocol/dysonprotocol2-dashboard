@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { VueQueryPlugin } from '@tanstack/vue-query'
+import { VueQueryPlugin, type VueQueryPluginOptions } from '@tanstack/vue-query'
 import { setupPiniaOrm } from './orm/setup'
 import App from './App.vue'
 import router from './router'
@@ -23,12 +23,22 @@ type MonacoEnv = { MonacoEnvironment: { getWorker: (moduleId: unknown, label: st
   },
 }
 
+const vueQueryConfig: VueQueryPluginOptions = {
+  queryClientConfig: {
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+      },
+    },
+  },
+}
+
 const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
 setupPiniaOrm(pinia)
-app.use(VueQueryPlugin)
+app.use(VueQueryPlugin, vueQueryConfig)
 app.use(router)
 app.mount('#app')
 

@@ -148,7 +148,12 @@ export function useRemoveCollateralMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ positionId, poolId, collateral, executorAddress }: RemoveCollateralArgs) => {
+    mutationFn: async ({
+      positionId,
+      poolId,
+      collateral,
+      executorAddress,
+    }: RemoveCollateralArgs) => {
       const msg = {
         '@type': '/dysonprotocol.whaleswap.v1.MsgRemoveCollateral',
         user: executorAddress,

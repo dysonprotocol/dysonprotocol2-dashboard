@@ -22,6 +22,7 @@ import {
   useRemoveCollateralMutation,
   calculatePositionHealth,
 } from '@/whaleswap/composables/usePositionMutations'
+import { useWhaleswapPool } from '@/whaleswap/composables/useWhaleswapPool'
 import { useWallet } from '@/composables/useWallet'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
 const props = defineProps<{
@@ -102,8 +103,25 @@ const executorAddress = computed(() => {
 })
 
 const borrowedDisplayDenom = computed(() => getDisplayDenom(props.position.borrowed.denom))
+const heldDisplayDenom = computed(() => getDisplayDenom(props.position.held.denom))
 const collateralBaseDenoms = computed(() => [props.position.collateral.denom])
 const borrowedBaseDenoms = computed(() => [props.position.borrowed.denom])
+
+const poolQuery = useWhaleswapPool(() => props.poolId)
+const poolCoins = computed(() => poolQuery.data.value?.pool?.coins ?? [])
+const heldPoolCoin = computed(() =>
+  poolCoins.value.find((coin) => coin.denom === props.position.held.denom)
+)
+const borrowedPoolCoin = computed(() =>
+  poolCoins.value.find((coin) => coin.denom === props.position.borrowed.denom)
+)
+const heldPriceInBorrowed = computed(() => {
+  if (!heldPoolCoin.value || !borrowedPoolCoin.value) return null
+  const heldAmt = BigInt(heldPoolCoin.value.amount)
+  const borrowedAmt = BigInt(borrowedPoolCoin.value.amount)
+  if (heldAmt === 0n) return null
+  return Number(borrowedAmt) / Number(heldAmt)
+})
 
 const totalDebt = computed(() => {
   const borrowed = BigInt(props.position.borrowed.amount)
@@ -118,6 +136,22 @@ const isCloseFractionValid = computed(() => {
   const value = Number(closeFraction.value)
   if (!Number.isFinite(value)) return false
   return value > 0 && value <= 1
+})
+
+const distanceToLiquidationPercent = computed(() => {
+  if (!Number.isFinite(health.value.distanceToLiquidation)) return Infinity
+  if (!Number.isFinite(health.value.liqThreshold) || health.value.liqThreshold <= 0) return Infinity
+  return (health.value.distanceToLiquidation / health.value.liqThreshold) * 100
+})
+
+const liquidationPrice = computed(() => {
+  if (!heldPriceInBorrowed.value) return null
+  if (!Number.isFinite(health.value.ratio) || health.value.ratio <= 0) return null
+  if (!Number.isFinite(health.value.liqThreshold) || health.value.liqThreshold <= 0) return null
+  if (health.value.ratio <= health.value.liqThreshold) return heldPriceInBorrowed.value
+  const priceFactor = health.value.liqThreshold / health.value.ratio
+  if (priceFactor <= 0) return null
+  return heldPriceInBorrowed.value * priceFactor
 })
 
 const collateralAmountValidationMessage = computed(() =>
@@ -331,6 +365,24 @@ watch(closeFraction, () => {
               {{ health.ratio === Infinity ? '∞' : health.ratio.toFixed(2) }}
             </p>
           </div>
+          <div>
+            <Label class="text-xs text-muted-foreground">Distance to Liquidation</Label>
+            <p class="font-mono text-sm" :class="health.riskLevel === 'high' ? 'text-red-500' : ''">
+              <span v-if="Number.isFinite(distanceToLiquidationPercent)">
+                {{ distanceToLiquidationPercent.toFixed(2) }}%
+              </span>
+              <span v-else>∞</span>
+            </p>
+          </div>
+          <div>
+            <Label class="text-xs text-muted-foreground">Liquidation Price</Label>
+            <p class="font-mono text-sm">
+              <span v-if="liquidationPrice !== null">
+                {{ liquidationPrice.toFixed(6) }} {{ borrowedDisplayDenom }}/{{ heldDisplayDenom }}
+              </span>
+              <span v-else class="text-muted-foreground">Unavailable</span>
+            </p>
+          </div>
           <div v-if="position.initial_borrowed">
             <Label class="text-xs text-muted-foreground">Initial Borrowed</Label>
             <p class="font-mono text-sm">{{ formatCoin(position.initial_borrowed) }}</p>
@@ -344,28 +396,6 @@ watch(closeFraction, () => {
             <p class="font-mono text-sm">
               {{ formatTimestamp(position.last_interest_settlement_time) }}
             </p>
-          </div>
-        </div>
-
-        <!-- Health Metrics -->
-        <div class="rounded-lg border p-4 space-y-2">
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-muted-foreground">Min Collateral Ratio</span>
-            <span class="font-mono">{{ health.minRatio.toFixed(2) }}</span>
-          </div>
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-muted-foreground">Liquidation Threshold</span>
-            <span class="font-mono">{{ health.liqThreshold.toFixed(2) }}</span>
-          </div>
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-muted-foreground">Distance to Liquidation</span>
-            <span class="font-mono" :class="health.riskLevel === 'high' ? 'text-red-500' : ''">
-              {{
-                health.distanceToLiquidation === Infinity
-                  ? '∞'
-                  : health.distanceToLiquidation.toFixed(2)
-              }}
-            </span>
           </div>
         </div>
 
