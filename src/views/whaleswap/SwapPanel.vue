@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { useWallet } from '@/composables/useWallet'
@@ -25,7 +26,8 @@ const lastEdited = ref<'in' | 'out' | null>(null)
 console.log('[SwapPanel] pool:', props.pool)
 console.log('[SwapPanel] base:', props.base, 'quote:', props.quote)
 
-const selectedExecutor = ref('')
+// Persisted wallet selection per pool
+const selectedExecutor = useLocalStorage(`whaleswap:pool:${props.pool.pool_id}:swap:executor`, '')
 const selectedExecutorAddress = ref('')
 const selectedGranteeAddress = ref('')
 const isAuthz = ref(false)

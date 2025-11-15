@@ -251,40 +251,25 @@ export function startLatestBlockPoller() {
                         )
                       : []
                     const all: ChainEvent[] = [...listA, ...listB]
+                    // Skip generic event names that conflict with browser/IDE built-ins
+                    const SKIP_EVENTS = new Set(['message', 'error', 'load', 'unload'])
                     for (const ev of all) {
-                      const evtType = String(ev?.type || '').trim()
-                      const attrs = Array.isArray(ev?.attributes) ? ev.attributes : []
-                      if (!evtType || attrs.length === 0) continue
+                      const evtType = String(ev.type).trim()
+                      const attrs = ev.attributes
+                      if (!evtType || !attrs || !attrs.length || SKIP_EVENTS.has(evtType)) continue
                       const detail: Record<string, unknown> = {}
                       for (const a of attrs) {
-                        const k = String((a?.key as string | undefined) || '').trim()
+                        const k = String(a.key).trim()
                         if (!k) continue
-                        const v = (a as { value?: unknown })?.value
                         if (Object.prototype.hasOwnProperty.call(detail, k)) {
                           const cur = detail[k]
-                          detail[k] = Array.isArray(cur) ? [...(cur as unknown[]), v] : [cur, v]
+                          detail[k] = Array.isArray(cur) ? [...cur, a.value] : [cur, a.value]
                         } else {
-                          detail[k] = v
+                          detail[k] = a.value
                         }
                       }
-                      try {
-                        type CustomEventCtorLike = new (
-                          type: string,
-                          init?: { detail?: unknown }
-                        ) => unknown
-                        const CE = (globalThis as unknown as { CustomEvent?: CustomEventCtorLike })
-                          .CustomEvent
-                        if (CE) {
-                          ;(
-                            globalThis as unknown as { dispatchEvent: (e: unknown) => boolean }
-                          ).dispatchEvent(new CE(evtType, { detail }))
-                          //console.debug('[tm.ws] dispatched event', evtType, detail)
-                        } else {
-                          console.warn('[tm.ws] CustomEvent API unavailable in this environment')
-                        }
-                      } catch (e) {
-                        console.error('[tm.ws] dispatch event error', e)
-                      }
+                      const CE = globalThis.CustomEvent
+                      if (CE) globalThis.dispatchEvent(new CE(evtType, { detail }))
                     }
                   }
                 } catch (e) {

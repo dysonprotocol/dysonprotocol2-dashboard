@@ -43,6 +43,31 @@ export const whaleswapKeys = {
   // Params & Metrics
   params: () => [...whaleswapKeys.all, 'params'] as const,
   metrics: () => [...whaleswapKeys.all, 'metrics'] as const,
+
+  // Positions
+  positions: () => [...whaleswapKeys.all, 'positions'] as const,
+  positionsByPool: (poolId: string | bigint, status?: string, limit?: string, offset?: string) =>
+    [...whaleswapKeys.positions(), 'by-pool', poolId, status, limit, offset] as const,
+  positionsByAddress: (
+    address: string,
+    poolId?: string | bigint,
+    status?: string,
+    borrowedDenom?: string,
+    collateralDenom?: string,
+    limit?: string,
+    offset?: string
+  ) =>
+    [
+      ...whaleswapKeys.positions(),
+      'by-address',
+      address,
+      poolId,
+      status,
+      borrowedDenom,
+      collateralDenom,
+      limit,
+      offset,
+    ] as const,
 }
 
 // Usage examples:

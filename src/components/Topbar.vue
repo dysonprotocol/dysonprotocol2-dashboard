@@ -3,7 +3,7 @@
     id="layout-topbar"
     role="navigation"
     aria-label="Navbar"
-    class="flex items-center justify-between px-3 bg-background text-foreground border-b border-border"
+    class="flex items-center p-3 justify-between bg-background text-foreground border-b border-border"
   >
     <div class="inline-flex items-center gap-3">
       <label
@@ -14,15 +14,20 @@
         <span class="iconify lucide--panel-left size-5" />
       </label>
     </div>
-    <div class="flex min-h-16 items-center justify-between gap-3 ps-5 pe-4">
+    <div class="flex items-center justify-between gap-3 ps-5 pe-4">
       <img :src="dysLogoInverted" alt="Dyson logo" class="h-6 w-auto block dark:hidden" />
       <img :src="dysLogo" alt="Dyson logo inverted" class="h-6 w-auto hidden dark:block" />
       <a href="/" class="font-semibold">Dyson Protocol 2</a>
     </div>
     <div class="inline-flex items-center gap-1">
-      <Button variant="outline" size="icon" aria-label="Toggle theme" @click="cycleTheme">
+      <button
+        class="btn btn-square btn-ghost btn-sm"
+        size="icon"
+        aria-label="Toggle theme"
+        @click="cycleTheme"
+      >
         <span class="iconify size-4.5" :class="icon" />
-      </Button>
+      </button>
     </div>
   </div>
 </template>

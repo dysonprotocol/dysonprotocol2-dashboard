@@ -7,7 +7,9 @@ import { DialogClose, DialogContent, DialogPortal, useForwardPropsEmits } from '
 import { cn } from '@/lib/utils'
 import DialogOverlay from './DialogOverlay.vue'
 
-const props = defineProps<DialogContentProps & { class?: HTMLAttributes['class'] }>()
+const props = defineProps<
+  DialogContentProps & { class?: HTMLAttributes['class']; overlayClass?: HTMLAttributes['class'] }
+>()
 const emits = defineEmits<DialogContentEmits>()
 
 const delegatedProps = reactiveOmit(props, 'class')
@@ -17,7 +19,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
 
 <template>
   <DialogPortal>
-    <DialogOverlay />
+    <DialogOverlay :class="props.overlayClass" />
     <DialogContent
       data-slot="dialog-content"
       v-bind="forwarded"

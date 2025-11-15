@@ -47,9 +47,9 @@ export function ensureGlobalBankTransferSync(args: {
   globalInitialized = true
   const { isKnownAddress } = args
 
-  const handler = (ev: Event) => {
+  const handler = (ev: CustomEvent<Record<string, unknown>>) => {
     try {
-      const detail = (ev as CustomEvent)?.detail as Record<string, unknown> | undefined
+      const detail = ev.detail
       if (!detail) return
       const senders = toArray(detail.sender).map(unwrap)
       const recipients = toArray(detail.recipient).map(unwrap)

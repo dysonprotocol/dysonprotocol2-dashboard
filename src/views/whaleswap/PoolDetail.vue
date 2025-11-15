@@ -1,14 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMediaQuery } from '@vueuse/core'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Spinner } from '@/components/ui/spinner'
 import { useWhaleswapPool } from '@/whaleswap/composables/useWhaleswapPool'
 import { useWhaleswapTradesByPool } from '@/whaleswap/composables/useWhaleswapTrades'
+import { useWhaleswapPositions } from '@/whaleswap/composables/useWhaleswapPositions'
 import { useWallet } from '@/composables/useWallet'
 import SwapPanel from './SwapPanel.vue'
+import LeverageForm from './LeverageForm.vue'
 import TradeHistoryChart from './TradeHistoryChart.vue'
 import TradesTable from './TradesTable.vue'
+import PositionsTable from './PositionsTable.vue'
 
 const route = useRoute()
 const poolId = computed(() => String(route.params.poolId || ''))
@@ -51,6 +62,43 @@ const { data: tradesData } = useWhaleswapTradesByPool(poolId, {
   options: { staleTime: 5000 },
 })
 const trades = computed(() => tradesData.value?.trades || [])
+const traderFilter = ref('all')
+const activeTab = ref<'trades' | 'positions'>('trades')
+const traderAddress = computed(() => (traderFilter.value === 'all' ? '' : traderFilter.value))
+
+interface LocalWalletEntry {
+  name: string
+  address: string
+}
+
+const traderOptions = computed(() => {
+  const wallets = Array.isArray(wallet.localCosmJsWallets?.value)
+    ? (wallet.localCosmJsWallets.value as LocalWalletEntry[])
+    : []
+  const walletOptions = wallets.map((entry) => ({
+    value: entry.address,
+    label: `${entry.name} ${entry.address}`,
+  }))
+  return [{ value: 'all', label: 'All' }, ...walletOptions]
+})
+
+const filteredTrades = computed(() => {
+  if (traderAddress.value === '') return trades.value
+  return trades.value.filter((trade) => trade.trader === traderAddress.value)
+})
+
+// Positions query - fetch all positions for pool
+const positionsQuery = useWhaleswapPositions({
+  poolId,
+  enabled: computed(() => activeTab.value === 'positions'),
+})
+
+const activePositions = computed(() => positionsQuery.data.value?.positions || [])
+const positionsLoading = computed(
+  () =>
+    activeTab.value === 'positions' &&
+    (positionsQuery.isLoading.value || positionsQuery.isFetching.value)
+)
 
 const coins = computed(() => pool.value?.coins || [])
 const coin0 = computed(() => coins.value[0] || null)
@@ -120,59 +168,188 @@ const normalizedCoins = computed(() => {
 const displayBase = computed(() => getDisplayDenom(base.value))
 const displayQuote = computed(() => getDisplayDenom(quote.value))
 
+// Pool leverage limits
+const poolLimits = computed(() => {
+  if (!pool.value) return null
+
+  const limits = {
+    minCollateralRatio: pool.value.min_initial_collateral_ratio || null,
+    maxBorrowPercent: pool.value.max_borrow_percent || null,
+    liquidationThreshold: pool.value.liquidation_threshold || null,
+    interestRate: pool.value.interest_rate || null,
+  }
+
+  const hasAnyLimits = Object.values(limits).some((v) => v && Array.isArray(v) && v.length > 0)
+  return hasAnyLimits ? limits : null
+})
+
 onMounted(async () => {
   await wallet.loadDenomMetadata()
 })
 </script>
 
 <template>
-  <div class="h-[calc(100vh-4rem)] overflow-y-auto md:overflow-hidden">
-    <h2 class="text-2xl font-semibold mb-4">Pool #{{ poolId }}</h2>
-
-    <div v-if="poolLoading" class="h-full flex items-center justify-center">
+  <div class="flex flex-col" style="height: calc(100vh - 70px)">
+    <div v-if="poolLoading" class="flex-1 flex items-center justify-center">
       <div class="text-center text-muted-foreground">Loading pool...</div>
     </div>
 
-    <div v-else-if="poolError" class="h-full flex items-center justify-center">
+    <div v-else-if="poolError" class="flex-1 flex items-center justify-center">
       <div class="text-center text-destructive">Error: {{ poolError.message }}</div>
     </div>
 
-    <div v-else-if="!pool" class="h-full flex items-center justify-center">
+    <div v-else-if="!pool" class="flex-1 flex items-center justify-center">
       <div class="text-center text-muted-foreground">Pool not found</div>
     </div>
 
-    <template v-else>
-      <ResizablePanelGroup
-        :direction="panelDirection"
-        class="pool-detail-layout md:h-[calc(100%-3rem)]"
-        auto-save-id="pool-detail:main"
-      >
-        <!-- Left Column -->
-        <ResizablePanel :default-size="50" class="pool-detail-panel">
-          <div class="h-full flex flex-col overflow-y-auto">
-            <!-- Pool Info -->
-            <div class="flex-shrink-0 p-4">
-              <h3 class="text-lg font-semibold mb-4">Pool Information</h3>
-              <div class="space-y-3">
-                <div class="grid grid-cols-[140px_1fr] gap-2 text-sm">
-                  <div class="text-muted-foreground">Pool ID:</div>
-                  <div class="font-mono">{{ pool.pool_id }}</div>
+    <ResizablePanelGroup
+      v-else
+      :direction="panelDirection"
+      class="flex-1 pool-detail-layout"
+      auto-save-id="pool-detail:main"
+    >
+      <!-- Right Column -->
+      <ResizablePanel :default-size="50" class="pool-detail-panel">
+        <ResizablePanelGroup
+          direction="vertical"
+          class="pool-detail-layout"
+          auto-save-id="pool-detail:right"
+        >
+          <!-- Trade History Chart -->
+          <ResizablePanel :default-size="60" class="pool-detail-panel">
+            <div class="h-full flex flex-col px-4">
+              <div class="flex-1 min-h-[300px]">
+                <TradeHistoryChart
+                  v-if="trades.length > 0"
+                  :trades="trades"
+                  :pool-id="poolId"
+                  :base="base"
+                  :quote="quote"
+                  :current-price="price"
+                />
+                <div
+                  v-else
+                  class="text-center py-8 text-muted-foreground h-full flex items-center justify-center"
+                >
+                  No trades yet
+                </div>
+              </div>
+            </div>
+          </ResizablePanel>
 
-                  <div class="text-muted-foreground">Reserves:</div>
-                  <div class="font-mono">
-                    <div v-for="coin in normalizedCoins" :key="coin.denom">
-                      {{ coin.displayAmount }} {{ coin.displayDenom }}
-                    </div>
+          <ResizableHandle with-handle class="hover:bg-green-500" />
+
+          <!-- Trades Table -->
+          <ResizablePanel :default-size="40" class="pool-detail-panel">
+            <div class="h-full flex flex-col p-4">
+              <div class="flex flex-col gap-3 mb-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-semibold">
+                    {{ activeTab === 'trades' ? 'Trades' : 'Positions' }}
+                  </h3>
+                </div>
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div class="inline-flex rounded-md border border-border p-1 text-sm font-medium">
+                    <button
+                      type="button"
+                      class="px-4 py-1.5 rounded-md transition"
+                      :class="
+                        activeTab === 'trades'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground'
+                      "
+                      @click="activeTab = 'trades'"
+                    >
+                      Trades
+                    </button>
+                    <button
+                      type="button"
+                      class="px-4 py-1.5 rounded-md transition"
+                      :class="
+                        activeTab === 'positions'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground'
+                      "
+                      @click="activeTab = 'positions'"
+                    >
+                      Positions
+                    </button>
                   </div>
-
-                  <div class="text-muted-foreground">Price:</div>
-                  <div class="font-mono" v-if="price !== null && isFinite(price)">
-                    {{ price.toFixed(6) }} {{ displayQuote }}/{{ displayBase }}
+                  <div v-if="activeTab === 'trades'" class="w-full sm:w-64">
+                    <Select v-model="traderFilter">
+                      <SelectTrigger class="w-full">
+                        <SelectValue placeholder="Filter trader" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem
+                          v-for="option in traderOptions"
+                          :key="option.value"
+                          :value="option.value"
+                        >
+                          {{ option.label }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div v-else class="text-muted-foreground">Price unavailable</div>
+                </div>
+              </div>
+              <div class="flex-1 overflow-hidden min-h-[300px]">
+                <template v-if="activeTab === 'trades'">
+                  <TradesTable
+                    v-if="filteredTrades.length > 0"
+                    :trades="filteredTrades"
+                    :pool-id="poolId"
+                    :base="base"
+                    :quote="quote"
+                  />
+                  <div v-else class="text-center py-8 text-muted-foreground">No trades found</div>
+                </template>
+                <template v-else>
+                  <div
+                    v-if="positionsLoading"
+                    class="flex h-full items-center justify-center gap-2 py-8 text-muted-foreground"
+                  >
+                    <Spinner class="size-5" />
+                    <span>Loading positions...</span>
+                  </div>
+                  <PositionsTable v-else :positions="activePositions" :pool-id="poolId" />
+                </template>
+              </div>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ResizablePanel>
 
-                  <div class="text-muted-foreground">Fee:</div>
-                  <div class="font-mono">
+      <ResizableHandle with-handle class="hover:bg-green-500" />
+
+      <!-- Left Column -->
+      <ResizablePanel :default-size="50" class="pool-detail-panel">
+        <div class="h-full flex flex-col overflow-y-auto">
+          <!-- Pool Info -->
+          <div class="flex-shrink-0 p-4">
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Left Column -->
+              <div class="space-y-3 text-xs">
+                <div>
+                  <h3 class="text-lg font-semibold">Pool: {{ pool.pool_id }}</h3>
+                  <div class="text-lg font-semibold">
+                    <span v-if="price !== null && isFinite(price)">
+                      {{ price.toFixed(6) }} {{ displayQuote }}/{{ displayBase }}
+                    </span>
+                    <span v-else class="text-muted-foreground">Price unavailable</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="text-muted-foreground mb-1">Reserves:</div>
+                  <div v-for="coin in normalizedCoins" :key="coin.denom" class="font-mono ml-2">
+                    {{ coin.displayAmount }} {{ coin.displayDenom }}
+                  </div>
+                </div>
+
+                <div>
+                  <div class="text-muted-foreground mb-1">Fee:</div>
+                  <div class="font-mono ml-2">
                     <div
                       v-if="
                         pool.fee_rate && Array.isArray(pool.fee_rate) && pool.fee_rate.length > 0
@@ -188,72 +365,73 @@ onMounted(async () => {
                     </div>
                     <div v-else>N/A</div>
                   </div>
+                </div>
 
-                  <div class="text-muted-foreground">Trades:</div>
-                  <div class="font-mono">{{ pool.num_trades || '0' }}</div>
+                <div>
+                  <div class="text-muted-foreground mb-1">Trades:</div>
+                  <div class="font-mono ml-2">{{ pool.num_trades || '0' }}</div>
                 </div>
               </div>
-            </div>
 
-            <!-- Swap Panel -->
-            <div class="flex-shrink-0">
-              <SwapPanel :pool="pool" :base="base" :quote="quote" />
-            </div>
-          </div>
-        </ResizablePanel>
-
-        <ResizableHandle class="pool-detail-handle" />
-
-        <!-- Right Column -->
-        <ResizablePanel :default-size="50" class="pool-detail-panel">
-          <ResizablePanelGroup
-            direction="vertical"
-            class="pool-detail-layout"
-            auto-save-id="pool-detail:right"
-          >
-            <!-- Trade History Chart -->
-            <ResizablePanel :default-size="60" class="pool-detail-panel">
-              <div class="h-full flex flex-col p-4">
-                <h3 class="text-lg font-semibold mb-4">Trade History Chart</h3>
-                <div class="flex-1 min-h-[300px]">
-                  <TradeHistoryChart
-                    v-if="trades.length > 0"
-                    :trades="trades"
-                    :pool-id="poolId"
-                    :base="base"
-                    :quote="quote"
-                  />
+              <!-- Right Column - Pool Limits -->
+              <div v-if="poolLimits" class="space-y-3 text-xs">
+                <div v-if="poolLimits.minCollateralRatio?.length">
+                  <div class="text-muted-foreground mb-1">Min Initial Collateral Ratio:</div>
                   <div
-                    v-else
-                    class="text-center py-8 text-muted-foreground h-full flex items-center justify-center"
+                    v-for="item in poolLimits.minCollateralRatio"
+                    :key="item.denom"
+                    class="font-mono ml-2"
                   >
-                    No trades yet
+                    {{ getDisplayDenom(item.denom) }}: {{ parseFloat(item.amount).toFixed(2) }}x
+                  </div>
+                </div>
+                <div v-if="poolLimits.liquidationThreshold?.length">
+                  <div class="text-muted-foreground mb-1">Liquidation Threshold:</div>
+                  <div
+                    v-for="item in poolLimits.liquidationThreshold"
+                    :key="item.denom"
+                    class="font-mono ml-2"
+                  >
+                    {{ getDisplayDenom(item.denom) }}: {{ parseFloat(item.amount).toFixed(2) }}x
+                  </div>
+                </div>
+                <div v-if="poolLimits.maxBorrowPercent?.length">
+                  <div class="text-muted-foreground mb-1">Max Borrow Percent:</div>
+                  <div
+                    v-for="item in poolLimits.maxBorrowPercent"
+                    :key="item.denom"
+                    class="font-mono ml-2"
+                  >
+                    {{ getDisplayDenom(item.denom) }}:
+                    {{ (parseFloat(item.amount) * 100).toFixed(1) }}%
+                  </div>
+                </div>
+                <div v-if="poolLimits.interestRate?.length">
+                  <div class="text-muted-foreground mb-1">Interest Rate:</div>
+                  <div
+                    v-for="item in poolLimits.interestRate"
+                    :key="item.denom"
+                    class="font-mono ml-2"
+                  >
+                    {{ getDisplayDenom(item.denom) }}:
+                    {{ (parseFloat(item.amount) * 100).toFixed(2) }}% APR
                   </div>
                 </div>
               </div>
-            </ResizablePanel>
+            </div>
+          </div>
 
-            <ResizableHandle class="pool-detail-handle" />
+          <!-- Swap Panel -->
+          <div class="flex-shrink-0 border-t pt-4">
+            <SwapPanel :pool="pool" :base="base" :quote="quote" />
+          </div>
 
-            <!-- Trades Table -->
-            <ResizablePanel :default-size="40" class="pool-detail-panel">
-              <div class="h-full flex flex-col p-4">
-                <h3 class="text-lg font-semibold mb-4">Recent Trades</h3>
-                <div class="flex-1 overflow-hidden min-h-[300px]">
-                  <TradesTable
-                    v-if="trades.length > 0"
-                    :trades="trades"
-                    :pool-id="poolId"
-                    :base="base"
-                    :quote="quote"
-                  />
-                  <div v-else class="text-center py-8 text-muted-foreground">No trades found</div>
-                </div>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </template>
+          <!-- Leverage Form -->
+          <div class="flex-shrink-0 border-t pt-4">
+            <LeverageForm :pool="pool" :base="base" :quote="quote" />
+          </div>
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   </div>
 </template>

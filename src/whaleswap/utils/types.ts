@@ -58,6 +58,43 @@ export type Pool = {
   updated: string
   num_trades: string
   fees_earned: Coin[]
+  // Leverage fields
+  interest_rate?: DecCoin[] // Annual interest rates per reserve denom
+  interest_earned?: Coin[] // Total accrued interest
+  total_borrowed?: Coin[] // Total borrowed per denom
+  min_initial_collateral_ratio?: DecCoin[] // Minimum initial collateral ratio per denom
+  liquidation_threshold?: DecCoin[] // Liquidation threshold per denom
+  max_borrow_percent?: DecCoin[] // Maximum borrow capacity per denom
+}
+
+export type PositionStatus =
+  | 'POSITION_STATUS_UNSPECIFIED'
+  | 'POSITION_STATUS_OPEN'
+  | 'POSITION_STATUS_CLOSED'
+  | 'POSITION_STATUS_LIQUIDATING'
+  | 'POSITION_STATUS_LIQUIDATED'
+
+export type LeveragePosition = {
+  position_id: string
+  pool_id: string
+  user: string
+  status: PositionStatus
+  borrowed: Coin
+  held: Coin
+  collateral: Coin
+  created_height?: string
+  created_time?: string
+  updated_height?: string
+  updated_time?: string
+  liquidation_initialized_block_height?: string
+  liquidation_status?: string
+  accrued_interest: Coin
+  interest_rate?: DecCoin[]
+  min_collateral_ratio?: string
+  liquidation_threshold?: string
+  initial_borrowed?: Coin
+  total_interest_paid?: Coin
+  last_interest_settlement_time?: string
 }
 
 export type OfferData = {

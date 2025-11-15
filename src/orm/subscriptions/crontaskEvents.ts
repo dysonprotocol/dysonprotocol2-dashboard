@@ -16,16 +16,6 @@ const EVENTS = [
 
 export type CrontaskEventName = (typeof EVENTS)[number]
 
-interface CrontaskEventLike {
-  type: CrontaskEventName
-  detail?: Record<string, unknown>
-}
-
-interface GlobalWithEventListeners {
-  addEventListener: (name: CrontaskEventName, handler: (ev: CrontaskEventLike) => void) => void
-  removeEventListener: (name: CrontaskEventName, handler: (ev: CrontaskEventLike) => void) => void
-}
-
 let globalInitialized = false
 
 export function unwrap(val: unknown): string {
@@ -60,9 +50,9 @@ export function ensureGlobalCrontaskEventSync(args: {
   globalInitialized = true
   const { isKnownCreator } = args
 
-  const handler = (ev: CrontaskEventLike) => {
+  const handler = (ev: CustomEvent<Record<string, unknown>>) => {
     try {
-      const detail = ev.detail || undefined
+      const detail = ev.detail
       if (ev.type === 'dysonprotocol.crontask.v1.EventCrontaskMetrics') {
         // Save metrics singleton directly from event detail
         try {
@@ -157,25 +147,29 @@ export function ensureGlobalCrontaskEventSync(args: {
     }
   }
 
-  const g = globalThis as unknown as GlobalWithEventListeners
-  for (const name of EVENTS) g.addEventListener(name, handler)
+  for (const name of EVENTS) {
+    globalThis.addEventListener(name, handler as EventListener)
+  }
 }
 
 export function subscribeAllCrontaskEvents(
   onEvent: (name: CrontaskEventName, detail: Record<string, unknown>) => void
 ): () => void {
-  const handler = (ev: CrontaskEventLike) => {
+  const handler = (ev: CustomEvent<Record<string, unknown>>) => {
     try {
-      const detail = ev.detail || undefined
+      const detail = ev.detail
       if (!detail) return
-      onEvent(ev.type, detail)
+      onEvent(ev.type as CrontaskEventName, detail)
     } catch (e) {
       console.error('[crontask.view] handler error', e)
     }
   }
-  const g = globalThis as unknown as GlobalWithEventListeners
-  for (const name of EVENTS) g.addEventListener(name, handler)
+  for (const name of EVENTS) {
+    globalThis.addEventListener(name, handler as EventListener)
+  }
   return () => {
-    for (const name of EVENTS) g.removeEventListener(name, handler)
+    for (const name of EVENTS) {
+      globalThis.removeEventListener(name, handler as EventListener)
+    }
   }
 }

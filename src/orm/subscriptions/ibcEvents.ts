@@ -24,25 +24,15 @@ const EVENTS = [
 
 type IbcEventName = (typeof EVENTS)[number]
 
-interface IbcEventLike {
-  type: IbcEventName
-  detail?: Record<string, unknown>
-}
-
-interface GlobalWithEventListeners {
-  addEventListener: (name: IbcEventName, handler: (ev: IbcEventLike) => void) => void
-  removeEventListener: (name: IbcEventName, handler: (ev: IbcEventLike) => void) => void
-}
-
 let globalInitialized = false
 
 export function ensureGlobalIbcEventSync(): void {
   if (globalInitialized) return
   globalInitialized = true
 
-  const handler = (ev: IbcEventLike) => {
+  const handler = (ev: CustomEvent<Record<string, unknown>>) => {
     try {
-      const detail = ev.detail || undefined
+      const detail = ev.detail
       if (!detail) return
 
       const clientId = unwrap(detail.client_id)
@@ -71,6 +61,7 @@ export function ensureGlobalIbcEventSync(): void {
     }
   }
 
-  const g = globalThis as unknown as GlobalWithEventListeners
-  for (const name of EVENTS) g.addEventListener(name, handler)
+  for (const name of EVENTS) {
+    globalThis.addEventListener(name, handler as EventListener)
+  }
 }

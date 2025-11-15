@@ -116,71 +116,11 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  max-height: 4rem;
-  min-height: 4rem;
   border-bottom: 1px solid var(--fallback-b2, oklch(var(--b2) / 1));
 }
 
 /* Mobile: Disable resizing and make panels stack naturally */
 @media (max-width: 768px) {
-  .pool-detail-layout,
-  .pool-detail-layout[data-slot="resizable-panel-group"] {
-    flex-direction: column !important;
-    height: auto !important;
-    min-height: auto !important;
-    overflow: visible !important;
-    display: flex !important;
-  }
-
-  .pool-detail-panel,
-  .pool-detail-panel[data-slot="resizable-panel"] {
-    width: 100% !important;
-    height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
-    flex-shrink: 0 !important;
-    flex-grow: 0 !important;
-    flex-basis: auto !important;
-    display: block !important;
-    position: relative !important;
-  }
-
-  .pool-detail-panel > div,
-  .pool-detail-panel[data-slot="resizable-panel"] > div {
-    height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
-  }
-
-  .pool-detail-panel .h-full,
-  .pool-detail-panel[data-slot="resizable-panel"] .h-full {
-    height: auto !important;
-    min-height: auto !important;
-  }
-
-  .pool-detail-panel .flex-1,
-  .pool-detail-panel[data-slot="resizable-panel"] .flex-1 {
-    flex: none !important;
-    height: auto !important;
-    min-height: auto !important;
-  }
-
-  .pool-detail-panel .flex-col,
-  .pool-detail-panel[data-slot="resizable-panel"] .flex-col {
-    height: auto !important;
-    min-height: auto !important;
-  }
-
-  .pool-detail-handle,
-  .pool-detail-handle[data-slot="resizable-handle"] {
-    display: none !important;
-  }
-
-  /* Ensure nested ResizablePanelGroup also stacks */
-  .pool-detail-panel .pool-detail-layout,
-  .pool-detail-panel[data-slot="resizable-panel"] .pool-detail-layout {
-    height: auto !important;
-  }
 }
 /*---break---*/
 @theme inline {

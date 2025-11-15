@@ -903,7 +903,12 @@ export function collectLeadingZeroAmounts(data) {
     if (node && typeof node === 'object') {
       for (const [k, v] of Object.entries(node)) {
         const path = p ? `${p}.${k}` : k
-        if (k === 'amount' && String(v).trim().startsWith('0') && String(v).trim().length > 1) {
+        if (
+          k === 'amount' &&
+          String(v).trim().startsWith('0') &&
+          String(v).trim().length > 1 &&
+          !String(v).trim().includes('.')
+        ) {
           results.push({ path, amount: v })
         }
         walk(v, path)

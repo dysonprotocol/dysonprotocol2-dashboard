@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model:open="isOpen" @update:open="onOpenChange">
-    <DialogContent class="max-w-3xl w-full md:max-w-3xl">
+    <DialogContent class="max-w-3xl w-full md:max-w-3xl z-[70]" overlay-class="z-[60]">
       <DialogHeader>
         <DialogTitle>Confirm Transaction</DialogTitle>
         <DialogDescription> Review and edit the transaction before signing. </DialogDescription>
