@@ -34,7 +34,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  refresh: []
 }>()
 
 const wallet = useWallet()
@@ -179,29 +178,19 @@ function resetDialogState() {
   closeFraction.value = '1'
 }
 
-function handleDialogOpenChange(nextOpen: boolean) {
-  console.log('[PositionDetailModal] Dialog open change:', nextOpen)
-  emit('update:open', nextOpen)
-}
-
-function handleCloseRequest() {
-  console.log('[PositionDetailModal] Close requested by user')
-  emit('update:open', false)
+function handleDialogOpenChange(isOpen: boolean) {
+  emit('update:open', isOpen)
 }
 
 async function submitClosePosition() {
   if (!executorAddress.value || !isCloseFractionValid.value) return
 
-  const fraction = closeFraction.value
-
   await closePositionMutation.mutateAsync({
     positionId: props.position.position_id,
     executorAddress: executorAddress.value,
-    fraction,
+    fraction: closeFraction.value,
   })
 
-  emit('refresh')
-  // Reset fraction input after successful close
   closeFraction.value = '1'
 }
 
@@ -209,22 +198,16 @@ async function submitAddCollateral() {
   if (!executorAddress.value) return
   if (!collateralInput.value.amount || collateralAmountValidationMessage.value) return
 
-  const positionId = props.position.position_id
-  const poolId = props.poolId
   const denom = collateralInput.value.denom
   const amount = collateralInput.value.amount
 
-  console.log('[PositionDetailModal] Add collateral starting:', { positionId, amount, denom })
-
   await addCollateralMutation.mutateAsync({
-    positionId,
-    poolId,
+    positionId: props.position.position_id,
+    poolId: props.poolId,
     collateral: { denom, amount },
     executorAddress: executorAddress.value,
   })
 
-  console.log('[PositionDetailModal] Add collateral completed, emitting refresh')
-  emit('refresh')
   collateralInput.value = { amount: '', denom }
 }
 
@@ -232,19 +215,16 @@ async function submitRemoveCollateral() {
   if (!executorAddress.value) return
   if (!collateralInput.value.amount || collateralAmountValidationMessage.value) return
 
-  const positionId = props.position.position_id
-  const poolId = props.poolId
   const denom = collateralInput.value.denom
   const amount = collateralInput.value.amount
 
   await removeCollateralMutation.mutateAsync({
-    positionId,
-    poolId,
+    positionId: props.position.position_id,
+    poolId: props.poolId,
     collateral: { denom, amount },
     executorAddress: executorAddress.value,
   })
 
-  emit('refresh')
   collateralInput.value = { amount: '', denom }
 }
 
@@ -252,17 +232,15 @@ async function submitCoverPosition() {
   if (!executorAddress.value) return
   if (!coverPaymentInput.value.amount || coverPaymentValidationMessage.value) return
 
-  const positionId = props.position.position_id
   const denom = coverPaymentInput.value.denom
   const amount = coverPaymentInput.value.amount
 
   await coverPositionMutation.mutateAsync({
-    positionId,
+    positionId: props.position.position_id,
     payment: { denom, amount },
     executorAddress: executorAddress.value,
   })
 
-  emit('refresh')
   coverPaymentInput.value = { amount: '', denom }
 }
 
@@ -289,12 +267,20 @@ function extractErrorMessage(error: unknown) {
   return 'Unexpected error occurred'
 }
 
-// Only reset denoms if they actually change (not on every position object update)
+// Reset dialog state when closed
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (!isOpen) resetDialogState()
+  }
+)
+
+// Sync denoms when position changes
 watch(
   () => props.position.collateral.denom,
   (denom, oldDenom) => {
     if (denom !== oldDenom) {
-      collateralInput.value = { amount: collateralInput.value.amount, denom }
+      collateralInput.value.denom = denom
     }
   }
 )
@@ -303,59 +289,30 @@ watch(
   () => props.position.borrowed.denom,
   (denom, oldDenom) => {
     if (denom !== oldDenom) {
-      coverPaymentInput.value = { amount: coverPaymentInput.value.amount, denom }
+      coverPaymentInput.value.denom = denom
     }
   }
 )
 
-// Debug: watch open prop FIRST to catch all changes
-watch(
-  () => props.open,
-  (isOpen, wasOpen) => {
-    console.log('[PositionDetailModal] Open prop changed:', {
-      isOpen,
-      wasOpen,
-      positionId: props.position.position_id,
-    })
-    if (!isOpen) resetDialogState()
-  }
-)
-
+// Reset mutation errors when inputs change
 watch(
   () => collateralInput.value.amount,
   () => {
-    if (addCollateralMutation.error.value) addCollateralMutation.reset()
-    if (removeCollateralMutation.error.value) removeCollateralMutation.reset()
+    addCollateralMutation.reset()
+    removeCollateralMutation.reset()
   }
 )
 
 watch(
   () => coverPaymentInput.value.amount,
   () => {
-    if (coverPositionMutation.error.value) coverPositionMutation.reset()
+    coverPositionMutation.reset()
   }
 )
 
 watch(closeFraction, () => {
-  if (closePositionMutation.error.value) closePositionMutation.reset()
+  closePositionMutation.reset()
 })
-
-// Debug: watch position prop changes
-watch(
-  () => props.position,
-  (newPos, oldPos) => {
-    console.log('[PositionDetailModal] Position prop changed:', {
-      positionId: newPos.position_id,
-      sameId: newPos.position_id === oldPos?.position_id,
-      collateral: newPos.collateral.amount,
-      oldCollateral: oldPos?.collateral.amount,
-      borrowed: newPos.borrowed.amount,
-      oldBorrowed: oldPos?.borrowed.amount,
-      modalOpen: props.open,
-    })
-  },
-  { deep: true }
-)
 </script>
 
 <template>
@@ -599,7 +556,7 @@ watch(
       </div>
 
       <DialogFooter>
-        <Button @click="handleCloseRequest" variant="outline">Close</Button>
+        <Button @click="handleDialogOpenChange(false)" variant="outline">Close</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

@@ -41,7 +41,7 @@ const wallet = useWallet()
 
 const selectedPositionId = ref<string | null>(null)
 const showDetailModal = ref(false)
-const stableSelectedPosition = ref<LeveragePosition | null>(null)
+const selectedPosition = ref<LeveragePosition | null>(null)
 const sorting = ref<SortingState>([{ id: 'position_id', desc: true }])
 const columnFilters = ref<ColumnFiltersState>([])
 const statusFilter = ref('all')
@@ -56,47 +56,38 @@ function isOwnPosition(position: LeveragePosition): boolean {
 
 function openPositionDetail(position: LeveragePosition) {
   selectedPositionId.value = position.position_id
-  stableSelectedPosition.value = position
+  selectedPosition.value = position
   showDetailModal.value = true
 }
 
-function closeDetailModal() {
-  showDetailModal.value = false
-  selectedPositionId.value = null
-  stableSelectedPosition.value = null
-}
-
-async function handlePositionRefresh() {
-  console.log('[PositionsTable] Manual refresh requested')
-  // Position data will auto-update via the parent's query invalidation
-  // Just log for debugging
-}
-
-// Compute selectedPosition from current positions array by ID
-// This ensures we always have the latest position data even after refresh
-const selectedPosition = computed(() => {
-  if (!selectedPositionId.value) return null
-  return props.positions.find((p) => p.position_id === selectedPositionId.value) || null
-})
-
-// Update stable position and handle auto-close on status change
-watch(selectedPosition, (position) => {
-  if (position) {
-    stableSelectedPosition.value = position
-
-    // Auto-close if position is now closed/liquidated
-    if (
-      showDetailModal.value &&
-      (position.status === 'POSITION_STATUS_CLOSED' ||
-        position.status === 'POSITION_STATUS_LIQUIDATED')
-    ) {
-      console.log('[PositionsTable] Position closed/liquidated, closing modal')
-      showDetailModal.value = false
-      selectedPositionId.value = null
-      stableSelectedPosition.value = null
-    }
+function handleModalClose(isOpen: boolean) {
+  showDetailModal.value = isOpen
+  if (!isOpen) {
+    selectedPositionId.value = null
+    selectedPosition.value = null
   }
-})
+}
+
+// Update selected position with fresh data from positions array
+watch(
+  () => props.positions,
+  (positions) => {
+    if (!selectedPositionId.value) return
+
+    const updated = positions.find((p) => p.position_id === selectedPositionId.value)
+    if (!updated) return
+
+    selectedPosition.value = updated
+
+    // Auto-close if position moved to closed/liquidated status
+    const isClosed =
+      updated.status === 'POSITION_STATUS_CLOSED' || updated.status === 'POSITION_STATUS_LIQUIDATED'
+    if (showDetailModal.value && isClosed) {
+      handleModalClose(false)
+    }
+  },
+  { deep: true }
+)
 
 const enrichedPositions = computed<PositionWithOwnership[]>(() =>
   props.positions.map((p) => ({ ...p, isOwn: isOwnPosition(p) }))
@@ -171,30 +162,6 @@ const userFilterOptions = computed(() => {
     { value: 'mine', label: 'My Positions' },
     ...walletOptions,
   ]
-})
-
-// Debug: watch positions updates
-watch(
-  () => props.positions,
-  (newPositions) => {
-    console.log('[PositionsTable] Positions updated:', {
-      count: newPositions.length,
-      selectedId: selectedPositionId.value,
-      stillExists: selectedPositionId.value
-        ? newPositions.some((p) => p.position_id === selectedPositionId.value)
-        : false,
-    })
-  },
-  { deep: true }
-)
-
-// Debug: watch modal state
-watch(showDetailModal, (isOpen, wasOpen) => {
-  console.log('[PositionsTable] Modal state changed:', {
-    isOpen,
-    wasOpen,
-    selectedId: selectedPositionId.value,
-  })
 })
 </script>
 
@@ -329,13 +296,12 @@ watch(showDetailModal, (isOpen, wasOpen) => {
 
     <!-- Position Detail Modal -->
     <PositionDetailModal
-      v-if="showDetailModal && selectedPositionId && stableSelectedPosition"
-      :key="selectedPositionId"
-      :position="stableSelectedPosition"
+      v-if="showDetailModal && selectedPosition"
+      :key="selectedPositionId || 'none'"
+      :position="selectedPosition"
       :pool-id="poolId || ''"
       :open="showDetailModal"
-      @update:open="(v: boolean) => (showDetailModal = v)"
-      @refresh="handlePositionRefresh"
+      @update:open="handleModalClose"
     />
   </div>
 </template>
