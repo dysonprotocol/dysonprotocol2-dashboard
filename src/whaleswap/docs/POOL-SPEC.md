@@ -22,10 +22,11 @@
 
 - Input fields: amount in/out, base/quote selector
 - Show current price, estimated output, fee
-- Execute via `MsgPoolSwap`:
-  - `legs: [{ pool_id, swap_in: { denom, amount } }]`
+- Execute via `MsgMakeTrade`:
+  - `operations: [{ swap: { pool_id, swap_in: { denom, amount } } }]`
   - `max_input: [{ denom, amount }]`
   - `min_output: [{ denom, amount }]` (slippage protection)
+  - `note: ""` (optional metadata)
 
 ### 4. **Historical Trades Chart**
 

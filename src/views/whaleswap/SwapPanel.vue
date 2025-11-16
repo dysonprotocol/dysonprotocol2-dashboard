@@ -15,6 +15,10 @@ const props = defineProps<{
   quote: string
 }>()
 
+const emit = defineEmits<{
+  swapSuccess: []
+}>()
+
 const wallet = useWallet()
 const swapIn = ref({ amount: '', denom: '' })
 const swapOut = ref({ amount: '', denom: '' })
@@ -493,8 +497,8 @@ function msgTypeFilter(grant: any) {
   const auth = grant?.authorization
   if (!auth || !auth['@type']) return { valid: false, notes: 'No authorization' }
   if (auth['@type'] === '/cosmos.authz.v1beta1.GenericAuthorization') {
-    const ok = auth.msg === '/dysonprotocol.whaleswap.v1.MsgPoolSwap'
-    return { valid: ok, notes: ok ? 'GenericAuthorization for MsgPoolSwap' : 'Wrong msg' }
+    const ok = auth.msg === '/dysonprotocol.whaleswap.v1.MsgMakeTrade'
+    return { valid: ok, notes: ok ? 'GenericAuthorization for MsgMakeTrade' : 'Wrong msg' }
   }
   return { valid: false, notes: 'Unsupported authz type' }
 }
@@ -546,16 +550,19 @@ async function executeSwap() {
         minOutput.value || BigInt(Math.floor(Number(expected) * (1 - slippageTolerance.value)))
 
       msg = {
-        '@type': '/dysonprotocol.whaleswap.v1.MsgPoolSwap',
+        '@type': '/dysonprotocol.whaleswap.v1.MsgMakeTrade',
         trader: selectedExecutorAddress.value,
         max_input: [{ denom: swapIn.value.denom, amount: swapIn.value.amount }],
-        legs: [
+        operations: [
           {
-            pool_id: props.pool.pool_id,
-            swap_in: { denom: swapIn.value.denom, amount: swapIn.value.amount },
+            swap: {
+              pool_id: props.pool.pool_id,
+              swap_in: { denom: swapIn.value.denom, amount: swapIn.value.amount },
+            },
           },
         ],
         min_output: [{ denom: swapOut.value.denom, amount: String(min) }],
+        note: '',
       }
     } else if (isExactOut) {
       // Exact-out: swap_out is exact, max_input has slippage tolerance
@@ -564,16 +571,19 @@ async function executeSwap() {
         BigInt(Math.ceil(Number(swapIn.value.amount) * (1 + slippageTolerance.value)))
 
       msg = {
-        '@type': '/dysonprotocol.whaleswap.v1.MsgPoolSwap',
+        '@type': '/dysonprotocol.whaleswap.v1.MsgMakeTrade',
         trader: selectedExecutorAddress.value,
         max_input: [{ denom: swapIn.value.denom, amount: String(max) }],
-        legs: [
+        operations: [
           {
-            pool_id: props.pool.pool_id,
-            swap_out: { denom: swapOut.value.denom, amount: swapOut.value.amount },
+            swap: {
+              pool_id: props.pool.pool_id,
+              swap_out: { denom: swapOut.value.denom, amount: swapOut.value.amount },
+            },
           },
         ],
         min_output: [{ denom: swapOut.value.denom, amount: swapOut.value.amount }],
+        note: '',
       }
     } else {
       // Fallback: default to exact-in if neither was edited
@@ -584,20 +594,23 @@ async function executeSwap() {
         minOutput.value || BigInt(Math.floor(Number(expected) * (1 - slippageTolerance.value)))
 
       msg = {
-        '@type': '/dysonprotocol.whaleswap.v1.MsgPoolSwap',
+        '@type': '/dysonprotocol.whaleswap.v1.MsgMakeTrade',
         trader: selectedExecutorAddress.value,
         max_input: [{ denom: swapIn.value.denom, amount: swapIn.value.amount }],
-        legs: [
+        operations: [
           {
-            pool_id: props.pool.pool_id,
-            swap_in: { denom: swapIn.value.denom, amount: swapIn.value.amount },
+            swap: {
+              pool_id: props.pool.pool_id,
+              swap_in: { denom: swapIn.value.denom, amount: swapIn.value.amount },
+            },
           },
         ],
         min_output: [{ denom: swapOut.value.denom, amount: String(min) }],
+        note: '',
       }
     }
 
-    console.log('[SwapPanel] Swap message:', msg)
+    console.log('[SwapPanel] Trade message:', msg)
 
     const executor = selectedExecutorAddress.value
     const result = await wallet.sendMsg({
@@ -607,12 +620,14 @@ async function executeSwap() {
       gasLimit: 'auto',
     } as any)
 
-    console.log('[SwapPanel] Swap result:', result)
+    console.log('[SwapPanel] Trade result:', result)
 
     if (result?.success) {
-      swapIn.value = { amount: '', denom: '' }
-      swapOut.value = { amount: '', denom: '' }
+      // Clear amounts but preserve selected denoms for next swap
+      swapIn.value = { amount: '', denom: swapIn.value.denom }
+      swapOut.value = { amount: '', denom: swapOut.value.denom }
       swapError.value = ''
+      emit('swapSuccess')
     } else {
       swapError.value = result?.rawLog || 'Swap failed'
     }
@@ -702,10 +717,10 @@ async function executeSwap() {
       <div v-if="slippageInfo" class="text-sm space-y-1 p-2 bg-muted rounded">
         <template v-if="slippageInfo.mode === 'exact-in'">
           <div class="text-muted-foreground">
-            Expected: ~{{ slippageInfo.expectedDisplay }} {{ slippageInfo.displayDenom }}
+            Expected output: ~{{ slippageInfo.expectedDisplay }} {{ slippageInfo.displayDenom }}
           </div>
           <div class="text-muted-foreground">
-            Protected minimum: {{ slippageInfo.minDisplay }} {{ slippageInfo.displayDenom }}
+            Protected minimum output: {{ slippageInfo.minDisplay }} {{ slippageInfo.displayDenom }}
           </div>
           <div class="text-xs text-muted-foreground">
             The swap will fail if you'd receive less than {{ slippageInfo.minDisplay }}
@@ -714,11 +729,11 @@ async function executeSwap() {
         </template>
         <template v-else-if="slippageInfo.mode === 'exact-out'">
           <div class="text-muted-foreground">
-            Required input: ~{{ slippageInfo.calculatedInputDisplay }}
+            Expected input: ~{{ slippageInfo.calculatedInputDisplay }}
             {{ slippageInfo.inputDisplayDenom }}
           </div>
           <div class="text-muted-foreground">
-            Protected maximum: {{ slippageInfo.maxInputDisplay }}
+            Protected maximum input: {{ slippageInfo.maxInputDisplay }}
             {{ slippageInfo.inputDisplayDenom }}
           </div>
           <div class="text-xs text-muted-foreground">
@@ -727,6 +742,13 @@ async function executeSwap() {
             {{ slippageInfo.exactOutputDisplay }} {{ slippageInfo.outputDisplayDenom }}
           </div>
         </template>
+      </div>
+      <div v-else class="text-sm space-y-1 p-2 bg-muted rounded">
+        <div class="text-muted-foreground">Expected: -</div>
+        <div class="text-muted-foreground">Protected amount: -</div>
+        <div class="text-xs text-muted-foreground">
+          The swap will fail if the protected amount is less than the expected amount.
+        </div>
       </div>
 
       <div v-if="swapError" class="text-sm text-destructive">

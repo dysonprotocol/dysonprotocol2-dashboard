@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
-import {
-  createChart,
-  CandlestickSeries,
-  BarSeries,
-  AreaSeries,
-  LineSeries,
-} from 'lightweight-charts'
+import { createChart, CandlestickSeries } from 'lightweight-charts'
 import type { Trade } from '@/whaleswap/utils/types'
 import { useChartTheme } from '@/composables/useChartTheme'
 
@@ -15,12 +9,13 @@ const props = defineProps<{
   poolId: string
   base: string
   quote: string
+  displayBase?: string
+  displayQuote?: string
   currentPrice: number | null
 }>()
 
 const chartContainerRef = ref<HTMLDivElement | null>(null)
-const chartType = ref<'line' | 'candlestick' | 'area' | 'bar'>('candlestick')
-const interval = ref<'1m' | '5m' | '15m' | '1h' | '4h' | '1d'>('5m')
+const interval = ref<'1m' | '5m' | '15m' | '1h' | '4h' | '1d'>('1m')
 
 const { chartOptions, seriesColors, isDark } = useChartTheme()
 
@@ -112,15 +107,9 @@ function aggregateToCandles(data: Array<{ time: number; price: number }>, interv
 
 const chartData = computed(() => {
   const raw = rawPriceData.value
-
-  if (chartType.value === 'candlestick' || chartType.value === 'bar') {
-    const intervalSec = INTERVAL_SECONDS[interval.value]
-    console.log('[TradeHistoryChart] aggregating to', interval.value, 'candles')
-    return aggregateToCandles(raw, intervalSec)
-  }
-
-  console.log('[TradeHistoryChart] using raw data for', chartType.value)
-  return raw.map(({ time, price }) => ({ time, value: price }))
+  const intervalSec = INTERVAL_SECONDS[interval.value]
+  console.log('[TradeHistoryChart] aggregating to', interval.value, 'candles')
+  return aggregateToCandles(raw, intervalSec)
 })
 
 function createSeries() {
@@ -131,40 +120,18 @@ function createSeries() {
     series = null
   }
 
-  console.log('[TradeHistoryChart] Creating series type:', chartType.value)
+  console.log('[TradeHistoryChart] Creating candlestick series')
 
   const colors = seriesColors.value
 
-  if (chartType.value === 'candlestick') {
-    series = chart.addSeries(CandlestickSeries, {
-      upColor: colors.upColor,
-      downColor: colors.downColor,
-      borderVisible: false,
-      wickUpColor: colors.wickUpColor,
-      wickDownColor: colors.wickDownColor,
-      priceFormat: { type: 'price', precision: 6, minMove: 0.000001 },
-    })
-  } else if (chartType.value === 'bar') {
-    series = chart.addSeries(BarSeries, {
-      upColor: colors.upColor,
-      downColor: colors.downColor,
-      priceFormat: { type: 'price', precision: 6, minMove: 0.000001 },
-    })
-  } else if (chartType.value === 'area') {
-    series = chart.addSeries(AreaSeries, {
-      lineColor: colors.lineColor,
-      topColor: colors.areaTopColor,
-      bottomColor: colors.areaBottomColor,
-      lineWidth: 2,
-      priceFormat: { type: 'price', precision: 6, minMove: 0.000001 },
-    })
-  } else {
-    series = chart.addSeries(LineSeries, {
-      color: colors.lineColor,
-      lineWidth: 2,
-      priceFormat: { type: 'price', precision: 6, minMove: 0.000001 },
-    })
-  }
+  series = chart.addSeries(CandlestickSeries, {
+    upColor: colors.upColor,
+    downColor: colors.downColor,
+    borderVisible: false,
+    wickUpColor: colors.wickUpColor,
+    wickDownColor: colors.wickDownColor,
+    priceFormat: { type: 'price', precision: 6, minMove: 0.000001 },
+  })
 
   console.log('[TradeHistoryChart] Series created')
 }
@@ -292,13 +259,6 @@ onUnmounted(() => {
   }
 })
 
-watch(chartType, () => {
-  console.log('[TradeHistoryChart] chartType changed to:', chartType.value)
-  priceLine = null
-  createSeries()
-  updateChart()
-})
-
 watch(interval, () => {
   console.log('[TradeHistoryChart] interval changed to:', interval.value)
   updateChart()
@@ -320,29 +280,12 @@ watch(isDark, () => {
   }
   if (series) {
     const colors = seriesColors.value
-    if (chartType.value === 'candlestick') {
-      series.applyOptions({
-        upColor: colors.upColor,
-        downColor: colors.downColor,
-        wickUpColor: colors.wickUpColor,
-        wickDownColor: colors.wickDownColor,
-      })
-    } else if (chartType.value === 'bar') {
-      series.applyOptions({
-        upColor: colors.upColor,
-        downColor: colors.downColor,
-      })
-    } else if (chartType.value === 'area') {
-      series.applyOptions({
-        lineColor: colors.lineColor,
-        topColor: colors.areaTopColor,
-        bottomColor: colors.areaBottomColor,
-      })
-    } else {
-      series.applyOptions({
-        color: colors.lineColor,
-      })
-    }
+    series.applyOptions({
+      upColor: colors.upColor,
+      downColor: colors.downColor,
+      wickUpColor: colors.wickUpColor,
+      wickDownColor: colors.wickDownColor,
+    })
     updatePriceLine()
   }
 })
@@ -352,28 +295,17 @@ watch(() => props.currentPrice, updatePriceLine)
 
 <template>
   <div class="flex flex-col gap-3 h-full">
-    <div class="flex flex-wrap gap-3 items-center">
-      <div class="flex gap-1 border border-border rounded-md p-1">
-        <button
-          v-for="type in ['line', 'candlestick', 'area', 'bar']"
-          :key="type"
-          type="button"
-          class="px-3 py-1 rounded text-sm transition"
-          :class="
-            chartType === type
-              ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-          @click="chartType = type as any"
-        >
-          {{ type.charAt(0).toUpperCase() + type.slice(1) }}
-        </button>
+    <div class="flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <h3 class="text-lg font-semibold">Pool: {{ poolId }}</h3>
+        <div class="text-sm">
+          <span v-if="currentPrice !== null && isFinite(currentPrice)" class="font-mono">
+            {{ currentPrice.toFixed(6) }} {{ displayQuote || quote }}/{{ displayBase || base }}
+          </span>
+          <span v-else class="text-muted-foreground">Price unavailable</span>
+        </div>
       </div>
-
-      <div
-        v-if="chartType === 'candlestick' || chartType === 'bar'"
-        class="flex gap-1 border border-border rounded-md p-1"
-      >
+      <div class="flex gap-1 border border-border rounded-md p-1">
         <button
           v-for="int in ['1m', '5m', '15m', '1h', '4h', '1d']"
           :key="int"

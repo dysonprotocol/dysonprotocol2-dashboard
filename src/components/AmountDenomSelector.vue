@@ -190,7 +190,11 @@ watch(
       if (hasValidDenom) selectedBaseDenom.value = baseDenom
       const exp = Number(options.value.find((o) => o.base === baseDenom)?.exponent || 0)
       const baseAmount = props.base?.amount
-      if (baseAmount == null || baseAmount === '') return
+      if (baseAmount == null || baseAmount === '') {
+        amountDisplay.value = ''
+        computeAndEmit()
+        return
+      }
       const s = String(baseAmount)
       if (exp <= 0) amountDisplay.value = s
       else if (s.length <= exp) {

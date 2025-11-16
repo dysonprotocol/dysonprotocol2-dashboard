@@ -37,74 +37,46 @@ const emit = defineEmits<{
 }>()
 
 const wallet = useWallet()
-type WalletAddressEntry = { address: string }
-const unlockedWalletEntries = computed(() => wallet.unlockedWallets.value as WalletAddressEntry[])
 
 const collateralInput = ref({ amount: '', denom: props.position.collateral.denom })
 const coverPaymentInput = ref({ amount: '', denom: props.position.borrowed.denom })
 const closeFraction = ref('1')
 
-// Mutations
 const closePositionMutation = useClosePositionMutation()
 const addCollateralMutation = useAddCollateralMutation()
 const coverPositionMutation = useCoverPositionMutation()
 const removeCollateralMutation = useRemoveCollateralMutation()
 
-const closeFractionPresets: Array<{ label: string; value: string }> = [
+const closeFractionPresets = [
   { label: 'Max', value: '1' },
   { label: '50%', value: '0.5' },
   { label: '25%', value: '0.25' },
 ]
 
-// Position health calculation
 const health = computed(() => calculatePositionHealth(props.position))
 
-const healthColor = computed(() => {
-  switch (health.value.riskLevel) {
-    case 'safe':
-      return 'bg-green-500'
-    case 'medium':
-      return 'bg-yellow-500'
-    case 'high':
-      return 'bg-red-500'
-    default:
-      return 'bg-gray-500'
-  }
-})
+const healthStyles = {
+  safe: { color: 'bg-green-500', text: 'Safe' },
+  medium: { color: 'bg-yellow-500', text: 'Medium Risk' },
+  high: { color: 'bg-red-500', text: 'High Risk' },
+}
 
-const healthText = computed(() => {
-  switch (health.value.riskLevel) {
-    case 'safe':
-      return 'Safe'
-    case 'medium':
-      return 'Medium Risk'
-    case 'high':
-      return 'High Risk'
-    default:
-      return 'Unknown'
-  }
-})
+const healthColor = computed(() => healthStyles[health.value.riskLevel]?.color || 'bg-gray-500')
+const healthText = computed(() => healthStyles[health.value.riskLevel]?.text || 'Unknown')
 
-const isOwnPosition = computed(() => {
-  const unlockedAddresses = unlockedWalletEntries.value.map((walletEntry) => walletEntry.address)
-  return unlockedAddresses.includes(props.position.user)
-})
+const unlockedAddresses = computed(() =>
+  (wallet.unlockedWallets.value as { address: string }[]).map((w) => w.address)
+)
 
-const canManage = computed(() => {
-  return isOwnPosition.value && props.position.status === 'POSITION_STATUS_OPEN'
-})
+const isOwnPosition = computed(() => unlockedAddresses.value.includes(props.position.user))
 
-const executorAddress = computed(() => {
-  const unlocked = unlockedWalletEntries.value.find(
-    (walletEntry) => walletEntry.address === props.position.user
-  )
-  return unlocked?.address || ''
-})
+const canManage = computed(
+  () => isOwnPosition.value && props.position.status === 'POSITION_STATUS_OPEN'
+)
 
-const borrowedDisplayDenom = computed(() => getDisplayDenom(props.position.borrowed.denom))
-const heldDisplayDenom = computed(() => getDisplayDenom(props.position.held.denom))
-const collateralBaseDenoms = computed(() => [props.position.collateral.denom])
-const borrowedBaseDenoms = computed(() => [props.position.borrowed.denom])
+const executorAddress = computed(() =>
+  unlockedAddresses.value.includes(props.position.user) ? props.position.user : ''
+)
 
 const poolQuery = useWhaleswapPool(() => props.poolId)
 const poolCoins = computed(() => poolQuery.data.value?.pool?.coins ?? [])
@@ -153,25 +125,34 @@ const liquidationPrice = computed(() => {
   return heldPriceInBorrowed.value * priceFactor
 })
 
-const collateralAmountValidationMessage = computed(() =>
-  validatePositiveWholeAmount(collateralInput.value.amount)
-)
-const coverPaymentValidationMessage = computed(() =>
-  validatePositiveWholeAmount(coverPaymentInput.value.amount)
+const validateAmount = (value: string) => {
+  if (!value) return ''
+  if (!/^\d+$/.test(value)) return 'Use whole numbers only'
+  if (BigInt(value) <= 0n) return 'Enter an amount greater than zero'
+  return ''
+}
+
+const getErrorMessage = (error: unknown) => {
+  if (!error) return ''
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  return 'Unexpected error occurred'
+}
+
+const collateralError = computed(
+  () =>
+    validateAmount(collateralInput.value.amount) ||
+    getErrorMessage(addCollateralMutation.error.value) ||
+    getErrorMessage(removeCollateralMutation.error.value)
 )
 
-const addCollateralActionError = computed(() =>
-  extractErrorMessage(addCollateralMutation.error.value)
+const coverError = computed(
+  () =>
+    validateAmount(coverPaymentInput.value.amount) ||
+    getErrorMessage(coverPositionMutation.error.value)
 )
-const removeCollateralActionError = computed(() =>
-  extractErrorMessage(removeCollateralMutation.error.value)
-)
-const coverPositionActionError = computed(() =>
-  extractErrorMessage(coverPositionMutation.error.value)
-)
-const closePositionActionError = computed(() =>
-  extractErrorMessage(closePositionMutation.error.value)
-)
+
+const closeError = computed(() => getErrorMessage(closePositionMutation.error.value))
 
 function resetDialogState() {
   resetAmountInputs()
@@ -195,53 +176,56 @@ async function submitClosePosition() {
 }
 
 async function submitAddCollateral() {
-  if (!executorAddress.value) return
-  if (!collateralInput.value.amount || collateralAmountValidationMessage.value) return
-
-  const denom = collateralInput.value.denom
-  const amount = collateralInput.value.amount
+  if (
+    !executorAddress.value ||
+    !collateralInput.value.amount ||
+    validateAmount(collateralInput.value.amount)
+  )
+    return
 
   await addCollateralMutation.mutateAsync({
     positionId: props.position.position_id,
     poolId: props.poolId,
-    collateral: { denom, amount },
+    collateral: collateralInput.value,
     executorAddress: executorAddress.value,
   })
 
-  collateralInput.value = { amount: '', denom }
+  collateralInput.value.amount = ''
 }
 
 async function submitRemoveCollateral() {
-  if (!executorAddress.value) return
-  if (!collateralInput.value.amount || collateralAmountValidationMessage.value) return
-
-  const denom = collateralInput.value.denom
-  const amount = collateralInput.value.amount
+  if (
+    !executorAddress.value ||
+    !collateralInput.value.amount ||
+    validateAmount(collateralInput.value.amount)
+  )
+    return
 
   await removeCollateralMutation.mutateAsync({
     positionId: props.position.position_id,
     poolId: props.poolId,
-    collateral: { denom, amount },
+    collateral: collateralInput.value,
     executorAddress: executorAddress.value,
   })
 
-  collateralInput.value = { amount: '', denom }
+  collateralInput.value.amount = ''
 }
 
 async function submitCoverPosition() {
-  if (!executorAddress.value) return
-  if (!coverPaymentInput.value.amount || coverPaymentValidationMessage.value) return
-
-  const denom = coverPaymentInput.value.denom
-  const amount = coverPaymentInput.value.amount
+  if (
+    !executorAddress.value ||
+    !coverPaymentInput.value.amount ||
+    validateAmount(coverPaymentInput.value.amount)
+  )
+    return
 
   await coverPositionMutation.mutateAsync({
     positionId: props.position.position_id,
-    payment: { denom, amount },
+    payment: coverPaymentInput.value,
     executorAddress: executorAddress.value,
   })
 
-  coverPaymentInput.value = { amount: '', denom }
+  coverPaymentInput.value.amount = ''
 }
 
 function resetAmountInputs() {
@@ -249,52 +233,25 @@ function resetAmountInputs() {
   coverPaymentInput.value = { amount: '', denom: props.position.borrowed.denom }
 }
 
-function selectCloseFraction(value: string) {
-  closeFraction.value = value
-}
-
-function validatePositiveWholeAmount(value: string) {
-  if (!value) return ''
-  if (!/^\d+$/.test(value)) return 'Use whole numbers only'
-  if (BigInt(value) <= 0n) return 'Enter an amount greater than zero'
-  return ''
-}
-
-function extractErrorMessage(error: unknown) {
-  if (!error) return ''
-  if (error instanceof Error) return error.message
-  if (typeof error === 'string') return error
-  return 'Unexpected error occurred'
-}
-
-// Reset dialog state when closed
 watch(
   () => props.open,
-  (isOpen) => {
-    if (!isOpen) resetDialogState()
-  }
+  (isOpen) => !isOpen && resetDialogState()
 )
 
-// Sync denoms when position changes
 watch(
   () => props.position.collateral.denom,
-  (denom, oldDenom) => {
-    if (denom !== oldDenom) {
-      collateralInput.value.denom = denom
-    }
+  (denom, old) => {
+    if (denom !== old) collateralInput.value.denom = denom
   }
 )
 
 watch(
   () => props.position.borrowed.denom,
-  (denom, oldDenom) => {
-    if (denom !== oldDenom) {
-      coverPaymentInput.value.denom = denom
-    }
+  (denom, old) => {
+    if (denom !== old) coverPaymentInput.value.denom = denom
   }
 )
 
-// Reset mutation errors when inputs change
 watch(
   () => collateralInput.value.amount,
   () => {
@@ -305,14 +262,9 @@ watch(
 
 watch(
   () => coverPaymentInput.value.amount,
-  () => {
-    coverPositionMutation.reset()
-  }
+  () => coverPositionMutation.reset()
 )
-
-watch(closeFraction, () => {
-  closePositionMutation.reset()
-})
+watch(closeFraction, () => closePositionMutation.reset())
 </script>
 
 <template>
@@ -368,7 +320,9 @@ watch(closeFraction, () => {
             <Label class="text-xs text-muted-foreground">Liquidation Price</Label>
             <p class="font-mono text-sm">
               <span v-if="liquidationPrice !== null">
-                {{ liquidationPrice.toFixed(6) }} {{ borrowedDisplayDenom }}/{{ heldDisplayDenom }}
+                {{ liquidationPrice.toFixed(6) }} {{ getDisplayDenom(position.borrowed.denom) }}/{{
+                  getDisplayDenom(position.held.denom)
+                }}
               </span>
               <span v-else class="text-muted-foreground">Unavailable</span>
             </p>
@@ -417,7 +371,7 @@ watch(closeFraction, () => {
                     size="sm"
                     variant="secondary"
                     :disabled="closePositionMutation.isPending.value"
-                    @click="selectCloseFraction(preset.value)"
+                    @click="closeFraction = preset.value"
                     :class="
                       closeFraction === preset.value ? 'bg-primary text-primary-foreground' : ''
                     "
@@ -431,8 +385,8 @@ watch(closeFraction, () => {
                 <p v-if="!isCloseFractionValid" class="text-xs text-destructive">
                   Enter a valid fraction between 0 and 1.
                 </p>
-                <p v-else-if="closePositionActionError" class="text-xs text-destructive">
-                  {{ closePositionActionError }}
+                <p v-else-if="closeError" class="text-xs text-destructive">
+                  {{ closeError }}
                 </p>
               </div>
               <Button
@@ -452,31 +406,22 @@ watch(closeFraction, () => {
                 <Label>Collateral Amount</Label>
                 <AmountDenomSelector
                   v-model:base="collateralInput"
-                  :base-denoms="collateralBaseDenoms"
+                  :base-denoms="[props.position.collateral.denom]"
                   :default-base-denom="props.position.collateral.denom"
                   :disabled="
                     addCollateralMutation.isPending.value ||
                     removeCollateralMutation.isPending.value
                   "
                 />
-                <p v-if="collateralAmountValidationMessage" class="text-xs text-destructive mt-1">
-                  {{ collateralAmountValidationMessage }}
-                </p>
-                <p v-else-if="addCollateralActionError" class="text-xs text-destructive mt-1">
-                  {{ addCollateralActionError }}
-                </p>
-                <p v-else-if="removeCollateralActionError" class="text-xs text-destructive mt-1">
-                  {{ removeCollateralActionError }}
+                <p v-if="collateralError" class="text-xs text-destructive mt-1">
+                  {{ collateralError }}
                 </p>
               </div>
               <div class="grid gap-3 sm:grid-cols-2">
                 <Button
                   @click="submitAddCollateral"
                   :disabled="
-                    !collateralInput.amount ||
-                    !!collateralAmountValidationMessage ||
-                    addCollateralMutation.isPending.value ||
-                    !executorAddress
+                    !!collateralError || addCollateralMutation.isPending.value || !executorAddress
                   "
                   class="w-full"
                 >
@@ -486,8 +431,7 @@ watch(closeFraction, () => {
                 <Button
                   @click="submitRemoveCollateral"
                   :disabled="
-                    !collateralInput.amount ||
-                    !!collateralAmountValidationMessage ||
+                    !!collateralError ||
                     removeCollateralMutation.isPending.value ||
                     !executorAddress
                   "
@@ -506,30 +450,24 @@ watch(closeFraction, () => {
 
             <TabsContent value="cover" class="space-y-4">
               <div>
-                <Label>Cover Amount ({{ borrowedDisplayDenom }})</Label>
+                <Label>Cover Amount ({{ getDisplayDenom(position.borrowed.denom) }})</Label>
                 <AmountDenomSelector
                   v-model:base="coverPaymentInput"
-                  :base-denoms="borrowedBaseDenoms"
+                  :base-denoms="[props.position.borrowed.denom]"
                   :default-base-denom="props.position.borrowed.denom"
                   :disabled="coverPositionMutation.isPending.value"
                 />
                 <p class="text-xs text-muted-foreground mt-1">
                   Total debt: {{ formatCoin(totalDebt) }}
                 </p>
-                <p v-if="coverPaymentValidationMessage" class="text-xs text-destructive mt-1">
-                  {{ coverPaymentValidationMessage }}
-                </p>
-                <p v-else-if="coverPositionActionError" class="text-xs text-destructive mt-1">
-                  {{ coverPositionActionError }}
+                <p v-if="coverError" class="text-xs text-destructive mt-1">
+                  {{ coverError }}
                 </p>
               </div>
               <Button
                 @click="submitCoverPosition"
                 :disabled="
-                  !coverPaymentInput.amount ||
-                  !!coverPaymentValidationMessage ||
-                  coverPositionMutation.isPending.value ||
-                  !executorAddress
+                  !!coverError || coverPositionMutation.isPending.value || !executorAddress
                 "
                 class="w-full"
               >

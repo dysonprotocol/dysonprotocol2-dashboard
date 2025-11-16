@@ -1944,12 +1944,19 @@
           },
           "title": "Total interest paid (denoms with metadata only)"
         },
-        "leverage_pnl": {
+        "profit": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           },
-          "title": "Net PnL from closed leverage positions (denoms with metadata only)"
+          "title": "Profit from closed leverage positions (denoms with metadata only)"
+        },
+        "losses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+          },
+          "title": "Losses from closed leverage positions (denoms with metadata only)"
         },
         "liquidations": {
           "type": "string",
@@ -2130,6 +2137,10 @@
           "type": "string",
           "format": "date-time",
           "description": "Timestamp of the last time interest was settled into accrued_interest."
+        },
+        "accrued_interest_remainder": {
+          "type": "string",
+          "description": "Fractional interest remainder (<1 borrowed coin) preserved between\nsettlements."
         }
       },
       "description": "LeveragePosition represents an active leverage position for a trader."

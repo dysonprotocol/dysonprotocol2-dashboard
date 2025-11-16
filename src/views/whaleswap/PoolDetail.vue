@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useWhaleswapPool, useWhaleswapPoolsLive } from '@/whaleswap/composables/useWhaleswapPool'
 import { usePoolChainEvents } from '@/whaleswap/composables/usePoolChainEvents'
 import { useWhaleswapTradesByPool } from '@/whaleswap/composables/useWhaleswapTrades'
@@ -86,13 +87,14 @@ watch(
   { deep: true }
 )
 
-const { data: tradesData } = useWhaleswapTradesByPool(poolId, {
+const { data: tradesData, refetch: refetchTrades } = useWhaleswapTradesByPool(poolId, {
   limit: '100',
   options: { staleTime: 5000 },
 })
 const trades = computed(() => tradesData.value?.trades || [])
 const traderFilter = ref('all')
 const activeTab = ref<'trades' | 'positions'>('trades')
+const actionTab = ref<'swap' | 'leverage'>('swap')
 const traderAddress = computed(() => (traderFilter.value === 'all' ? '' : traderFilter.value))
 
 interface LocalWalletEntry {
@@ -230,6 +232,11 @@ const poolLimits = computed(() => {
   return hasAnyLimits ? limits : null
 })
 
+function handleSwapSuccess() {
+  console.log('[PoolDetail] Swap successful, refetching trades and pool data')
+  refetchTrades()
+}
+
 onMounted(async () => {
   await wallet.loadDenomMetadata()
 })
@@ -272,6 +279,8 @@ onMounted(async () => {
                   :pool-id="poolId"
                   :base="base"
                   :quote="quote"
+                  :display-base="displayBase"
+                  :display-quote="displayQuote"
                   :current-price="price"
                 />
                 <div
@@ -286,42 +295,17 @@ onMounted(async () => {
 
           <ResizableHandle with-handle class="hover:bg-green-500" />
 
-          <!-- Trades Table -->
+          <!-- Trades/Positions Tabs -->
           <ResizablePanel :default-size="40" class="pool-detail-panel">
             <div class="h-full flex flex-col p-4">
-              <div class="flex flex-col gap-3 mb-4">
-                <div class="flex items-center justify-between">
-                  <h3 class="text-lg font-semibold">
-                    {{ activeTab === 'trades' ? 'Trades' : 'Positions' }}
-                  </h3>
-                </div>
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div class="inline-flex rounded-md border border-border p-1 text-sm font-medium">
-                    <button
-                      type="button"
-                      class="px-4 py-1.5 rounded-md transition"
-                      :class="
-                        activeTab === 'trades'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground'
-                      "
-                      @click="activeTab = 'trades'"
-                    >
-                      Trades
-                    </button>
-                    <button
-                      type="button"
-                      class="px-4 py-1.5 rounded-md transition"
-                      :class="
-                        activeTab === 'positions'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground'
-                      "
-                      @click="activeTab = 'positions'"
-                    >
-                      Positions
-                    </button>
-                  </div>
+              <Tabs v-model="activeTab" default-value="trades" class="flex flex-col flex-1">
+                <div
+                  class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <TabsList>
+                    <TabsTrigger value="trades">Trades</TabsTrigger>
+                    <TabsTrigger value="positions">Positions</TabsTrigger>
+                  </TabsList>
                   <div v-if="activeTab === 'trades'" class="w-full sm:w-64">
                     <Select v-model="traderFilter">
                       <SelectTrigger class="w-full">
@@ -339,9 +323,7 @@ onMounted(async () => {
                     </Select>
                   </div>
                 </div>
-              </div>
-              <div class="flex-1 overflow-hidden min-h-[300px]">
-                <template v-if="activeTab === 'trades'">
+                <TabsContent value="trades" class="flex-1 overflow-hidden min-h-[300px]">
                   <TradesTable
                     v-if="filteredTrades.length > 0"
                     :trades="filteredTrades"
@@ -350,8 +332,8 @@ onMounted(async () => {
                     :quote="quote"
                   />
                   <div v-else class="text-center py-8 text-muted-foreground">No trades found</div>
-                </template>
-                <template v-else>
+                </TabsContent>
+                <TabsContent value="positions" class="flex-1 overflow-hidden min-h-[300px]">
                   <div
                     v-if="positionsLoading"
                     class="flex h-full items-center justify-center gap-2 py-8 text-muted-foreground"
@@ -360,8 +342,8 @@ onMounted(async () => {
                     <span>Loading positions...</span>
                   </div>
                   <PositionsTable v-else :positions="activePositions" :pool-id="poolId" />
-                </template>
-              </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -468,14 +450,25 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Swap Panel -->
-          <div class="flex-shrink-0 border-t pt-4">
-            <SwapPanel :pool="pool" :base="base" :quote="quote" />
-          </div>
-
-          <!-- Leverage Form -->
-          <div class="flex-shrink-0 border-t pt-4">
-            <LeverageForm :pool="pool" :base="base" :quote="quote" />
+          <!-- Action Tabs: Swap and Leverage -->
+          <div class="flex-shrink-0 border-t pt-4 px-4">
+            <Tabs v-model="actionTab" default-value="swap">
+              <TabsList class="w-full">
+                <TabsTrigger value="swap" class="flex-1">Swap</TabsTrigger>
+                <TabsTrigger value="leverage" class="flex-1">Leverage</TabsTrigger>
+              </TabsList>
+              <TabsContent value="swap">
+                <SwapPanel
+                  :pool="pool"
+                  :base="base"
+                  :quote="quote"
+                  @swap-success="handleSwapSuccess"
+                />
+              </TabsContent>
+              <TabsContent value="leverage">
+                <LeverageForm :pool="pool" :base="base" :quote="quote" />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </ResizablePanel>

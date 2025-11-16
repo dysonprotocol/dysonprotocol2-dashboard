@@ -3,12 +3,10 @@ import { ref, computed, watch } from 'vue'
 import {
   FlexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getSortedRowModel,
   getPaginationRowModel,
   useVueTable,
   type SortingState,
-  type ColumnFiltersState,
 } from '@tanstack/vue-table'
 import {
   Table,
@@ -39,66 +37,59 @@ const props = defineProps<{
 
 const wallet = useWallet()
 
-const selectedPositionId = ref<string | null>(null)
-const showDetailModal = ref(false)
 const selectedPosition = ref<LeveragePosition | null>(null)
+const showDetailModal = ref(false)
 const sorting = ref<SortingState>([{ id: 'position_id', desc: true }])
-const columnFilters = ref<ColumnFiltersState>([])
 const statusFilter = ref('all')
 const userFilter = ref('all')
 const healthFilter = ref('all')
 
-function isOwnPosition(position: LeveragePosition): boolean {
-  const wallets = Array.isArray(wallet.unlockedWallets.value) ? wallet.unlockedWallets.value : []
-  const unlockedAddresses = wallets.map((w: { address: string }) => w.address)
-  return unlockedAddresses.includes(position.user)
-}
+const unlockedAddresses = computed(() =>
+  (wallet.unlockedWallets.value as { address: string }[]).map((w) => w.address)
+)
 
 function openPositionDetail(position: LeveragePosition) {
-  selectedPositionId.value = position.position_id
   selectedPosition.value = position
   showDetailModal.value = true
 }
 
 function handleModalClose(isOpen: boolean) {
   showDetailModal.value = isOpen
-  if (!isOpen) {
-    selectedPositionId.value = null
-    selectedPosition.value = null
-  }
+  if (!isOpen) selectedPosition.value = null
 }
 
-// Update selected position with fresh data from positions array
+// Update selected position with fresh data
 watch(
   () => props.positions,
   (positions) => {
-    if (!selectedPositionId.value) return
+    const posId = selectedPosition.value?.position_id
+    if (!posId) return
 
-    const updated = positions.find((p) => p.position_id === selectedPositionId.value)
+    const updated = positions.find((p) => p.position_id === posId)
     if (!updated) return
 
     selectedPosition.value = updated
 
-    // Auto-close if position moved to closed/liquidated status
-    const isClosed =
-      updated.status === 'POSITION_STATUS_CLOSED' || updated.status === 'POSITION_STATUS_LIQUIDATED'
-    if (showDetailModal.value && isClosed) {
+    // Auto-close if closed/liquidated
+    if (
+      showDetailModal.value &&
+      (updated.status === 'POSITION_STATUS_CLOSED' ||
+        updated.status === 'POSITION_STATUS_LIQUIDATED')
+    ) {
       handleModalClose(false)
     }
   },
   { deep: true }
 )
 
-const enrichedPositions = computed<PositionWithOwnership[]>(() =>
-  props.positions.map((p) => ({ ...p, isOwn: isOwnPosition(p) }))
-)
-
 const filteredData = computed(() => {
-  let data = enrichedPositions.value
+  let data = props.positions.map((p) => ({
+    ...p,
+    isOwn: unlockedAddresses.value.includes(p.user),
+  })) as PositionWithOwnership[]
 
   if (statusFilter.value !== 'all') {
-    const targetStatus = `POSITION_STATUS_${statusFilter.value.toUpperCase()}`
-    data = data.filter((p) => p.status === targetStatus)
+    data = data.filter((p) => p.status === `POSITION_STATUS_${statusFilter.value.toUpperCase()}`)
   }
 
   if (userFilter.value === 'mine') {
@@ -108,10 +99,7 @@ const filteredData = computed(() => {
   }
 
   if (healthFilter.value !== 'all') {
-    data = data.filter((p) => {
-      const health = calculatePositionHealth(p)
-      return health.riskLevel === healthFilter.value
-    })
+    data = data.filter((p) => calculatePositionHealth(p).riskLevel === healthFilter.value)
   }
 
   return data
@@ -128,24 +116,15 @@ const table = useVueTable({
     get sorting() {
       return sorting.value
     },
-    get columnFilters() {
-      return columnFilters.value
-    },
   },
   onSortingChange: (updater) => {
     sorting.value = typeof updater === 'function' ? updater(sorting.value) : updater
   },
-  onColumnFiltersChange: (updater) => {
-    columnFilters.value = typeof updater === 'function' ? updater(columnFilters.value) : updater
-  },
   getCoreRowModel: getCoreRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
   getSortedRowModel: getSortedRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
   initialState: {
-    pagination: {
-      pageSize: 25,
-    },
+    pagination: { pageSize: 25 },
   },
 })
 
@@ -297,7 +276,7 @@ const userFilterOptions = computed(() => {
     <!-- Position Detail Modal -->
     <PositionDetailModal
       v-if="showDetailModal && selectedPosition"
-      :key="selectedPositionId || 'none'"
+      :key="selectedPosition.position_id"
       :position="selectedPosition"
       :pool-id="poolId || ''"
       :open="showDetailModal"
