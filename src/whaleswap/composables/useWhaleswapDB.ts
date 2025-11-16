@@ -17,6 +17,7 @@ import type { Trade, Pool, OfferData, AuctionRecord } from '../utils/types'
 export const tradesCollection = createCollection<Trade, string>({
   id: 'whaleswap_trades',
   getKey: (trade) => trade.trade_id,
+  startSync: true,
   sync: {
     sync: async () => {
       // Sync logic is handled externally via TanStack Query + watchEffect
@@ -38,6 +39,7 @@ export const tradesCollection = createCollection<Trade, string>({
     console.log('[TanStack DB] Deleted trade from local DB:', key)
   },
 })
+startCollectionSync(tradesCollection)
 
 /**
  * Pools Collection
@@ -45,11 +47,13 @@ export const tradesCollection = createCollection<Trade, string>({
 export const poolsCollection = createCollection<Pool, string>({
   id: 'whaleswap_pools',
   getKey: (pool) => pool.pool_id,
+  startSync: true,
   sync: { sync: async () => {} },
   onInsert: async () => {},
   onUpdate: async () => {},
   onDelete: async () => {},
 })
+startCollectionSync(poolsCollection)
 
 /**
  * Offers Collection
@@ -57,11 +61,13 @@ export const poolsCollection = createCollection<Pool, string>({
 export const offersCollection = createCollection<OfferData, string>({
   id: 'whaleswap_offers',
   getKey: (offer) => offer.offer_id,
+  startSync: true,
   sync: { sync: async () => {} },
   onInsert: async () => {},
   onUpdate: async () => {},
   onDelete: async () => {},
 })
+startCollectionSync(offersCollection)
 
 /**
  * Auctions Collection
@@ -69,8 +75,18 @@ export const offersCollection = createCollection<OfferData, string>({
 export const auctionsCollection = createCollection<AuctionRecord, string>({
   id: 'whaleswap_auctions',
   getKey: (auction) => auction.auction_id,
+  startSync: true,
   sync: { sync: async () => {} },
   onInsert: async () => {},
   onUpdate: async () => {},
   onDelete: async () => {},
 })
+startCollectionSync(auctionsCollection)
+
+function startCollectionSync(collection: { startSyncImmediate?: () => void }) {
+  try {
+    collection.startSyncImmediate?.()
+  } catch (error) {
+    console.warn('[TanStack DB] failed to start collection sync', error)
+  }
+}

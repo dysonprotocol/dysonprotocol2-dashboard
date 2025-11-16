@@ -63,6 +63,11 @@ export const explorerRoutes: RouteRecordRaw[] = [
     props: true,
   },
   {
+    path: '/whaleswap/pools/create',
+    name: 'WhaleswapCreatePool',
+    component: () => import('@/views/whaleswap/PoolCreate.vue'),
+  },
+  {
     path: '/whaleswap/pools/:poolId(\\d+)',
     name: 'WhaleswapPool',
     component: () => import('@/views/whaleswap/PoolDetail.vue'),

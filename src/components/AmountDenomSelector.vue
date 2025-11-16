@@ -76,13 +76,21 @@ function computeAndEmit() {
   const opt = options.value.find((o) => o.base === selectedBaseDenom.value)
   const displayDenom = opt?.display || ''
   const amountStr = String(amountDisplay.value || '')
+  const baseDenom = selectedBaseDenom.value || ''
 
   // Always emit current display state
-  emit('update:display', { amount: amountStr, denom: displayDenom })
+  emit('update:display', { amount: amountStr, denom: displayDenom || baseDenom })
 
   // Do not emit base-clearing updates; preserve user input on denom changes
   if (isSyncingFromProps.value) return
-  if (!displayDenom || amountStr === '') return
+  if (!baseDenom) {
+    emit('update:base', { amount: amountStr, denom: '' })
+    return
+  }
+  if (amountStr === '') {
+    emit('update:base', { amount: '', denom: baseDenom })
+    return
+  }
 
   // Convert display -> base using exponent from options (no metadata lookup ambiguity)
   const exponent = Number(opt?.exponent || 0)
@@ -97,7 +105,7 @@ function computeAndEmit() {
 
   emit('update:base', {
     amount: baseAmountStr || '0',
-    denom: selectedBaseDenom.value || '',
+    denom: baseDenom,
   })
 }
 
@@ -120,6 +128,12 @@ watch(options, () => {
   const hasValidDenom = baseDenom && options.value.some((o) => o.base === baseDenom)
   isSyncingFromProps.value = true
   try {
+    if (!baseDenom) {
+      selectedBaseDenom.value = ''
+      amountDisplay.value = ''
+      computeAndEmit()
+      return
+    }
     if (hasValidDenom) selectedBaseDenom.value = baseDenom
     const exp = Number(options.value.find((o) => o.base === baseDenom)?.exponent || 0)
     const baseAmount = props.base?.amount
@@ -164,6 +178,12 @@ watch(
     const hasValidDenom = baseDenom && options.value.some((o) => o.base === baseDenom)
     isSyncingFromProps.value = true
     try {
+      if (!baseDenom) {
+        selectedBaseDenom.value = ''
+        amountDisplay.value = ''
+        computeAndEmit()
+        return
+      }
       if (hasValidDenom) selectedBaseDenom.value = baseDenom
       const exp = Number(options.value.find((o) => o.base === baseDenom)?.exponent || 0)
       const baseAmount = props.base?.amount

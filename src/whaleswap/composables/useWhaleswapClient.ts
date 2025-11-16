@@ -30,6 +30,14 @@ export type PoolResponse = {
   pool: Pool
 }
 
+export type PoolsResponse = {
+  pools: Pool[]
+  pagination?: {
+    next_key?: string
+    total?: string
+  }
+}
+
 export type PositionsResponse = {
   positions: LeveragePosition[]
   pagination?: {
@@ -59,6 +67,12 @@ export function useWhaleswapClient() {
   return {
     async pool(req: { poolId: bigint | string }): Promise<PoolResponse> {
       return fetchJson<PoolResponse>(`/pools/${req.poolId}`)
+    },
+    async pools(req?: { pagination?: PaginationParams }): Promise<PoolsResponse> {
+      const params = new URLSearchParams()
+      appendPagination(params, req?.pagination)
+      const query = params.toString() ? `?${params}` : ''
+      return fetchJson<PoolsResponse>(`/pools${query}`)
     },
     async trade(req: { tradeId: bigint | string }): Promise<TradeResponse> {
       return fetchJson<TradeResponse>(`/trades/${req.tradeId}`)

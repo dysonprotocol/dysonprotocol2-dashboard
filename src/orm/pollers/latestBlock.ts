@@ -16,6 +16,17 @@ let wsFailures = 0
 // wsActive no longer needed when polling disabled
 // removed unused wsPushSeenAt/WS_STALE_MS
 
+function parseEventAttributeValue(raw: unknown): unknown {
+  if (typeof raw !== 'string') return raw
+  const trimmed = raw.trim()
+  if (!trimmed) return ''
+  try {
+    return JSON.parse(trimmed)
+  } catch (e: unknown) {
+    return trimmed
+  }
+}
+
 export function startLatestBlockPoller() {
   if (started) return
   started = true
@@ -261,11 +272,14 @@ export function startLatestBlockPoller() {
                       for (const a of attrs) {
                         const k = String(a.key).trim()
                         if (!k) continue
+                        const parsedValue = parseEventAttributeValue(a.value)
                         if (Object.prototype.hasOwnProperty.call(detail, k)) {
                           const cur = detail[k]
-                          detail[k] = Array.isArray(cur) ? [...cur, a.value] : [cur, a.value]
+                          detail[k] = Array.isArray(cur)
+                            ? [...cur, parsedValue]
+                            : [cur, parsedValue]
                         } else {
-                          detail[k] = a.value
+                          detail[k] = parsedValue
                         }
                       }
                       const CE = globalThis.CustomEvent

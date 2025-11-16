@@ -56,6 +56,10 @@ export type Pool = {
   block_height: string
   created: string
   updated: string
+  created_height?: string
+  updated_height?: string
+  created_time?: string
+  updated_time?: string
   num_trades: string
   fees_earned: Coin[]
   // Leverage fields

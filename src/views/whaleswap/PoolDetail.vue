@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMediaQuery } from '@vueuse/core'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
@@ -11,7 +11,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
-import { useWhaleswapPool } from '@/whaleswap/composables/useWhaleswapPool'
+import { useWhaleswapPool, useWhaleswapPoolsLive } from '@/whaleswap/composables/useWhaleswapPool'
+import { usePoolChainEvents } from '@/whaleswap/composables/usePoolChainEvents'
 import { useWhaleswapTradesByPool } from '@/whaleswap/composables/useWhaleswapTrades'
 import { useWhaleswapPositions } from '@/whaleswap/composables/useWhaleswapPositions'
 import { useWallet } from '@/composables/useWallet'
@@ -54,8 +55,36 @@ console.log(
   quoteDenom.value
 )
 
-const { data: poolData, isLoading: poolLoading, error: poolError } = useWhaleswapPool(poolId)
-const pool = computed(() => poolData.value?.pool)
+const { data: poolData, isLoading: poolQueryLoading, error: poolError } = useWhaleswapPool(poolId)
+const { data: poolsLiveData } = useWhaleswapPoolsLive()
+usePoolChainEvents(poolId)
+const pool = computed(() => {
+  const targetId = poolId.value
+  if (!targetId) return poolData.value?.pool || null
+  const liveMatch = poolsLiveData.value.find((p) => p.pool_id === targetId)
+  return liveMatch || poolData.value?.pool || null
+})
+const poolLoading = computed(() => poolQueryLoading.value && !pool.value)
+
+watch(
+  () => poolsLiveData.value,
+  (next) => {
+    const match = next?.find((p) => p.pool_id === poolId.value)
+    console.debug('[PoolDetail] poolsLiveData updated', {
+      total: next?.length,
+      match,
+    })
+  },
+  { deep: true }
+)
+
+watch(
+  () => pool.value,
+  (next, prev) => {
+    console.debug('[PoolDetail] pool computed changed', { prev, next })
+  },
+  { deep: true }
+)
 
 const { data: tradesData } = useWhaleswapTradesByPool(poolId, {
   limit: '100',

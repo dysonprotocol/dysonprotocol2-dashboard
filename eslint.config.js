@@ -4,6 +4,12 @@ import vueParser from 'vue-eslint-parser'
 import typescript from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
 import playwright from 'eslint-plugin-playwright'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const tsconfigPath = resolve(__dirname, 'tsconfig.json')
 
 export default [
   // Apply to all files
@@ -30,6 +36,8 @@ export default [
         parser: typescriptParser,
         ecmaVersion: 'latest',
         sourceType: 'module',
+        project: tsconfigPath,
+        tsconfigRootDir: __dirname,
       },
     },
     plugins: {
@@ -62,6 +70,8 @@ export default [
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
+        project: tsconfigPath,
+        tsconfigRootDir: __dirname,
       },
     },
     plugins: {
