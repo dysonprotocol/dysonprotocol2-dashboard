@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
 import { useWallet } from '@/composables/useWallet'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
@@ -28,6 +28,18 @@ const collateralAmount = ref('')
 
 const isPending = ref(false)
 const leverageError = ref('')
+
+// Computed wrapper for slider (expects array format)
+const leverageSliderValue = computed({
+  get: () => {
+    const val = parseFloat(leverageMultiplier.value)
+    return isNaN(val) || val < 1 ? [1] : [val]
+  },
+  set: (val: number[]) => {
+    // Keep full precision to avoid validation mismatches
+    leverageMultiplier.value = val[0].toString()
+  },
+})
 
 console.log('[LeverageForm] pool:', props.pool)
 console.log('[LeverageForm] base:', props.base, 'quote:', props.quote)
@@ -373,7 +385,7 @@ const validationErrors = computed(() => {
   if (collateralRatio.value !== null && limits.minCollateralRatio !== null) {
     if (collateralRatio.value < limits.minCollateralRatio) {
       errors.push(
-        `Collateral ratio ${collateralRatio.value.toFixed(2)}x is below minimum ${limits.minCollateralRatio.toFixed(2)}x`
+        `Collateral ratio ${collateralRatio.value.toFixed(4)}x is below minimum ${limits.minCollateralRatio.toFixed(2)}x`
       )
     }
   }
@@ -381,7 +393,7 @@ const validationErrors = computed(() => {
   if (leverageRatio.value !== null && limits.maxLeverageRatio !== null) {
     if (leverageRatio.value > limits.maxLeverageRatio) {
       errors.push(
-        `Leverage ${leverageRatio.value.toFixed(2)}x exceeds maximum ${limits.maxLeverageRatio.toFixed(2)}x`
+        `Leverage ${leverageRatio.value.toFixed(4)}x exceeds maximum ${limits.maxLeverageRatio.toFixed(4)}x (calculated from min collateral ratio ${limits.minCollateralRatio?.toFixed(2)}x)`
       )
     }
   }
@@ -620,23 +632,29 @@ function handleShortClick() {
         </div>
       </div>
 
-      <!-- Leverage Input -->
+      <!-- Leverage Slider -->
       <div class="space-y-2">
-        <Label>
-          Leverage
-          <span v-if="maxLeverage" class="text-xs text-muted-foreground ml-2">
-            (Max: {{ maxLeverage.toFixed(2) }}x)
+        <div class="flex items-center justify-between">
+          <Label>Leverage</Label>
+          <span class="text-sm font-medium">
+            {{ parseFloat(leverageMultiplier.value || '1').toFixed(2) }}x
+            <span v-if="maxLeverage" class="text-xs text-muted-foreground ml-1">
+              / {{ maxLeverage.toFixed(2) }}x max
+            </span>
           </span>
-        </Label>
-        <Input
-          v-model="leverageMultiplier"
-          type="number"
-          step="0.1"
-          min="1"
-          :max="maxLeverage?.toString()"
-          placeholder="2.0"
-          :disabled="isPending"
+        </div>
+        <Slider
+          v-model="leverageSliderValue"
+          :min="1"
+          :max="maxLeverage || 10"
+          :step="0.01"
+          :disabled="isPending || !maxLeverage"
+          class="w-full"
         />
+        <div class="flex justify-between text-xs text-muted-foreground">
+          <span>1.00x (No leverage)</span>
+          <span>{{ maxLeverage?.toFixed(2) || '10.00' }}x</span>
+        </div>
       </div>
 
       <!-- Borrow Amount Display (Read-only) -->
@@ -724,6 +742,16 @@ function handleShortClick() {
         </div>
         <div v-if="borrowDenomLimits.liquidationThreshold" class="text-muted-foreground">
           Liquidation Threshold: {{ borrowDenomLimits.liquidationThreshold.toFixed(2) }}x
+        </div>
+        <div
+          v-if="borrowDenomLimits.minCollateralRatio && borrowDenomLimits.maxLeverageRatio"
+          class="text-muted-foreground pt-1 border-t border-border/50"
+        >
+          Max Leverage: {{ borrowDenomLimits.maxLeverageRatio.toFixed(4) }}x = 1 + (1 /
+          {{ borrowDenomLimits.minCollateralRatio.toFixed(2) }})
+        </div>
+        <div v-if="borrowDenomLimits.maxLeverageRatio" class="text-muted-foreground text-[10px]">
+          Formula: Max Leverage = 1 + (1 / Min Collateral Ratio)
         </div>
       </div>
 

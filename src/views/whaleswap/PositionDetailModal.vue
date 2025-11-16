@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,7 +34,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  close: []
   refresh: []
 }>()
 
@@ -175,16 +175,17 @@ const closePositionActionError = computed(() =>
 )
 
 function resetDialogState() {
-  emit('close')
   resetAmountInputs()
   closeFraction.value = '1'
 }
 
 function handleDialogOpenChange(nextOpen: boolean) {
+  console.log('[PositionDetailModal] Dialog open change:', nextOpen)
   emit('update:open', nextOpen)
 }
 
 function handleCloseRequest() {
+  console.log('[PositionDetailModal] Close requested by user')
   emit('update:open', false)
 }
 
@@ -200,7 +201,8 @@ async function submitClosePosition() {
   })
 
   emit('refresh')
-  handleCloseRequest()
+  // Reset fraction input after successful close
+  closeFraction.value = '1'
 }
 
 async function submitAddCollateral() {
@@ -212,6 +214,8 @@ async function submitAddCollateral() {
   const denom = collateralInput.value.denom
   const amount = collateralInput.value.amount
 
+  console.log('[PositionDetailModal] Add collateral starting:', { positionId, amount, denom })
+
   await addCollateralMutation.mutateAsync({
     positionId,
     poolId,
@@ -219,6 +223,7 @@ async function submitAddCollateral() {
     executorAddress: executorAddress.value,
   })
 
+  console.log('[PositionDetailModal] Add collateral completed, emitting refresh')
   emit('refresh')
   collateralInput.value = { amount: '', denom }
 }
@@ -284,24 +289,35 @@ function extractErrorMessage(error: unknown) {
   return 'Unexpected error occurred'
 }
 
+// Only reset denoms if they actually change (not on every position object update)
 watch(
   () => props.position.collateral.denom,
-  (denom) => {
-    collateralInput.value = { amount: '', denom }
+  (denom, oldDenom) => {
+    if (denom !== oldDenom) {
+      collateralInput.value = { amount: collateralInput.value.amount, denom }
+    }
   }
 )
 
 watch(
   () => props.position.borrowed.denom,
-  (denom) => {
-    coverPaymentInput.value = { amount: '', denom }
+  (denom, oldDenom) => {
+    if (denom !== oldDenom) {
+      coverPaymentInput.value = { amount: coverPaymentInput.value.amount, denom }
+    }
   }
 )
 
+// Debug: watch open prop FIRST to catch all changes
 watch(
   () => props.open,
-  (next) => {
-    if (!next) resetDialogState()
+  (isOpen, wasOpen) => {
+    console.log('[PositionDetailModal] Open prop changed:', {
+      isOpen,
+      wasOpen,
+      positionId: props.position.position_id,
+    })
+    if (!isOpen) resetDialogState()
   }
 )
 
@@ -323,6 +339,23 @@ watch(
 watch(closeFraction, () => {
   if (closePositionMutation.error.value) closePositionMutation.reset()
 })
+
+// Debug: watch position prop changes
+watch(
+  () => props.position,
+  (newPos, oldPos) => {
+    console.log('[PositionDetailModal] Position prop changed:', {
+      positionId: newPos.position_id,
+      sameId: newPos.position_id === oldPos?.position_id,
+      collateral: newPos.collateral.amount,
+      oldCollateral: oldPos?.collateral.amount,
+      borrowed: newPos.borrowed.amount,
+      oldBorrowed: oldPos?.borrowed.amount,
+      modalOpen: props.open,
+    })
+  },
+  { deep: true }
+)
 </script>
 
 <template>
@@ -399,144 +432,155 @@ watch(closeFraction, () => {
           </div>
         </div>
 
-        <div v-if="canManage" class="space-y-4">
-          <section class="space-y-4 rounded-lg border p-4">
-            <div>
-              <Label class="text-xs text-muted-foreground">Fraction to close (0 &lt; f ≤ 1)</Label>
-              <Input
-                v-model="closeFraction"
-                type="number"
-                step="0.01"
-                min="0"
-                max="1"
-                :disabled="closePositionMutation.isPending.value"
-              />
-              <div class="flex flex-wrap gap-2 mt-2">
-                <Button
-                  v-for="preset in closeFractionPresets"
-                  :key="preset.value"
-                  size="sm"
-                  variant="secondary"
-                  :disabled="closePositionMutation.isPending.value"
-                  @click="selectCloseFraction(preset.value)"
-                  :class="
-                    closeFraction === preset.value ? 'bg-primary text-primary-foreground' : ''
-                  "
+        <div v-if="canManage">
+          <Tabs default-value="close" class="w-full">
+            <TabsList class="grid w-full grid-cols-3">
+              <TabsTrigger value="close">Close</TabsTrigger>
+              <TabsTrigger value="collateral">Collateral</TabsTrigger>
+              <TabsTrigger value="cover">Cover</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="close" class="space-y-4">
+              <div>
+                <Label class="text-xs text-muted-foreground"
+                  >Fraction to close (0 &lt; f ≤ 1)</Label
                 >
-                  {{ preset.label }}
+                <Input
+                  v-model="closeFraction"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  :disabled="closePositionMutation.isPending.value"
+                />
+                <div class="flex flex-wrap gap-2 mt-2">
+                  <Button
+                    v-for="preset in closeFractionPresets"
+                    :key="preset.value"
+                    size="sm"
+                    variant="secondary"
+                    :disabled="closePositionMutation.isPending.value"
+                    @click="selectCloseFraction(preset.value)"
+                    :class="
+                      closeFraction === preset.value ? 'bg-primary text-primary-foreground' : ''
+                    "
+                  >
+                    {{ preset.label }}
+                  </Button>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">
+                  Use 1 to close fully, 0.5 for half, 0.25 for a quarter, etc.
+                </p>
+                <p v-if="!isCloseFractionValid" class="text-xs text-destructive">
+                  Enter a valid fraction between 0 and 1.
+                </p>
+                <p v-else-if="closePositionActionError" class="text-xs text-destructive">
+                  {{ closePositionActionError }}
+                </p>
+              </div>
+              <Button
+                @click="submitClosePosition"
+                :disabled="
+                  !isCloseFractionValid || closePositionMutation.isPending.value || !executorAddress
+                "
+                class="w-full"
+              >
+                <Spinner v-if="closePositionMutation.isPending.value" class="mr-2 size-4" />
+                Confirm Close
+              </Button>
+            </TabsContent>
+
+            <TabsContent value="collateral" class="space-y-4">
+              <div>
+                <Label>Collateral Amount</Label>
+                <AmountDenomSelector
+                  v-model:base="collateralInput"
+                  :base-denoms="collateralBaseDenoms"
+                  :default-base-denom="props.position.collateral.denom"
+                  :disabled="
+                    addCollateralMutation.isPending.value ||
+                    removeCollateralMutation.isPending.value
+                  "
+                />
+                <p v-if="collateralAmountValidationMessage" class="text-xs text-destructive mt-1">
+                  {{ collateralAmountValidationMessage }}
+                </p>
+                <p v-else-if="addCollateralActionError" class="text-xs text-destructive mt-1">
+                  {{ addCollateralActionError }}
+                </p>
+                <p v-else-if="removeCollateralActionError" class="text-xs text-destructive mt-1">
+                  {{ removeCollateralActionError }}
+                </p>
+              </div>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <Button
+                  @click="submitAddCollateral"
+                  :disabled="
+                    !collateralInput.amount ||
+                    !!collateralAmountValidationMessage ||
+                    addCollateralMutation.isPending.value ||
+                    !executorAddress
+                  "
+                  class="w-full"
+                >
+                  <Spinner v-if="addCollateralMutation.isPending.value" class="mr-2 size-4" />
+                  Confirm Add
+                </Button>
+                <Button
+                  @click="submitRemoveCollateral"
+                  :disabled="
+                    !collateralInput.amount ||
+                    !!collateralAmountValidationMessage ||
+                    removeCollateralMutation.isPending.value ||
+                    !executorAddress
+                  "
+                  variant="secondary"
+                  class="w-full"
+                >
+                  <Spinner v-if="removeCollateralMutation.isPending.value" class="mr-2 size-4" />
+                  Confirm Remove
                 </Button>
               </div>
-              <p class="text-xs text-muted-foreground mt-1">
-                Use 1 to close fully, 0.5 for half, 0.25 for a quarter, etc.
+              <p class="text-xs text-muted-foreground">
+                Withdraw only excess collateral—on-chain checks keep the position above its minimum
+                ratio.
               </p>
-              <p v-if="!isCloseFractionValid" class="text-xs text-destructive">
-                Enter a valid fraction between 0 and 1.
-              </p>
-              <p v-else-if="closePositionActionError" class="text-xs text-destructive">
-                {{ closePositionActionError }}
-              </p>
-            </div>
-            <Button
-              @click="submitClosePosition"
-              :disabled="
-                !isCloseFractionValid || closePositionMutation.isPending.value || !executorAddress
-              "
-              class="w-full"
-            >
-              <Spinner v-if="closePositionMutation.isPending.value" class="mr-2 size-4" />
-              Confirm Close
-            </Button>
-          </section>
+            </TabsContent>
 
-          <section class="space-y-4 rounded-lg border p-4">
-            <div>
-              <Label>Collateral Amount</Label>
-              <AmountDenomSelector
-                v-model:base="collateralInput"
-                :base-denoms="collateralBaseDenoms"
-                :default-base-denom="props.position.collateral.denom"
-                :disabled="
-                  addCollateralMutation.isPending.value || removeCollateralMutation.isPending.value
-                "
-              />
-              <p v-if="collateralAmountValidationMessage" class="text-xs text-destructive mt-1">
-                {{ collateralAmountValidationMessage }}
-              </p>
-              <p v-else-if="addCollateralActionError" class="text-xs text-destructive mt-1">
-                {{ addCollateralActionError }}
-              </p>
-              <p v-else-if="removeCollateralActionError" class="text-xs text-destructive mt-1">
-                {{ removeCollateralActionError }}
-              </p>
-            </div>
-            <div class="grid gap-3 sm:grid-cols-2">
+            <TabsContent value="cover" class="space-y-4">
+              <div>
+                <Label>Cover Amount ({{ borrowedDisplayDenom }})</Label>
+                <AmountDenomSelector
+                  v-model:base="coverPaymentInput"
+                  :base-denoms="borrowedBaseDenoms"
+                  :default-base-denom="props.position.borrowed.denom"
+                  :disabled="coverPositionMutation.isPending.value"
+                />
+                <p class="text-xs text-muted-foreground mt-1">
+                  Total debt: {{ formatCoin(totalDebt) }}
+                </p>
+                <p v-if="coverPaymentValidationMessage" class="text-xs text-destructive mt-1">
+                  {{ coverPaymentValidationMessage }}
+                </p>
+                <p v-else-if="coverPositionActionError" class="text-xs text-destructive mt-1">
+                  {{ coverPositionActionError }}
+                </p>
+              </div>
               <Button
-                @click="submitAddCollateral"
+                @click="submitCoverPosition"
                 :disabled="
-                  !collateralInput.amount ||
-                  !!collateralAmountValidationMessage ||
-                  addCollateralMutation.isPending.value ||
+                  !coverPaymentInput.amount ||
+                  !!coverPaymentValidationMessage ||
+                  coverPositionMutation.isPending.value ||
                   !executorAddress
                 "
                 class="w-full"
               >
-                <Spinner v-if="addCollateralMutation.isPending.value" class="mr-2 size-4" />
-                Confirm Add
+                <Spinner v-if="coverPositionMutation.isPending.value" class="mr-2 size-4" />
+                Confirm Cover
               </Button>
-              <Button
-                @click="submitRemoveCollateral"
-                :disabled="
-                  !collateralInput.amount ||
-                  !!collateralAmountValidationMessage ||
-                  removeCollateralMutation.isPending.value ||
-                  !executorAddress
-                "
-                variant="secondary"
-                class="w-full"
-              >
-                <Spinner v-if="removeCollateralMutation.isPending.value" class="mr-2 size-4" />
-                Confirm Remove
-              </Button>
-            </div>
-            <p class="text-xs text-muted-foreground">
-              Withdraw only excess collateral—on-chain checks keep the position above its minimum
-              ratio.
-            </p>
-          </section>
-
-          <section class="space-y-4 rounded-lg border p-4">
-            <div>
-              <Label>Cover Amount ({{ borrowedDisplayDenom }})</Label>
-              <AmountDenomSelector
-                v-model:base="coverPaymentInput"
-                :base-denoms="borrowedBaseDenoms"
-                :default-base-denom="props.position.borrowed.denom"
-                :disabled="coverPositionMutation.isPending.value"
-              />
-              <p class="text-xs text-muted-foreground mt-1">
-                Total debt: {{ formatCoin(totalDebt) }}
-              </p>
-              <p v-if="coverPaymentValidationMessage" class="text-xs text-destructive mt-1">
-                {{ coverPaymentValidationMessage }}
-              </p>
-              <p v-else-if="coverPositionActionError" class="text-xs text-destructive mt-1">
-                {{ coverPositionActionError }}
-              </p>
-            </div>
-            <Button
-              @click="submitCoverPosition"
-              :disabled="
-                !coverPaymentInput.amount ||
-                !!coverPaymentValidationMessage ||
-                coverPositionMutation.isPending.value ||
-                !executorAddress
-              "
-              class="w-full"
-            >
-              <Spinner v-if="coverPositionMutation.isPending.value" class="mr-2 size-4" />
-              Confirm Cover
-            </Button>
-          </section>
+            </TabsContent>
+          </Tabs>
         </div>
 
         <div v-else-if="!isOwnPosition" class="text-center text-sm text-muted-foreground py-4">

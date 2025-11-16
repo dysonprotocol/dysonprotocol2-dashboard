@@ -116,17 +116,35 @@ const filteredTrades = computed(() => {
   return trades.value.filter((trade) => trade.trader === traderAddress.value)
 })
 
-// Positions query - fetch all positions for pool
+// Positions query - always fetch (not just when tab is active) so modal updates work
 const positionsQuery = useWhaleswapPositions({
   poolId,
-  enabled: computed(() => activeTab.value === 'positions'),
+  enabled: computed(() => true),
 })
+
+// Debug: watch positions query state
+watch(
+  () => positionsQuery.data.value,
+  (newData) => {
+    console.log('[PoolDetail] Positions query data updated:', {
+      count: newData?.positions?.length || 0,
+      isFetching: positionsQuery.isFetching.value,
+    })
+  },
+  { deep: true }
+)
+
+watch(
+  () => positionsQuery.isFetching.value,
+  (fetching) => {
+    console.log('[PoolDetail] Positions query fetching state:', fetching)
+  }
+)
 
 const activePositions = computed(() => positionsQuery.data.value?.positions || [])
 const positionsLoading = computed(
   () =>
-    activeTab.value === 'positions' &&
-    (positionsQuery.isLoading.value || positionsQuery.isFetching.value)
+    activeTab.value === 'positions' && positionsQuery.isLoading.value && !positionsQuery.data.value
 )
 
 const coins = computed(() => pool.value?.coins || [])

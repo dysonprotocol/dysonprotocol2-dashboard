@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   FlexRender,
   getCoreRowModel,
@@ -39,8 +39,9 @@ const props = defineProps<{
 
 const wallet = useWallet()
 
-const selectedPosition = ref<LeveragePosition | null>(null)
+const selectedPositionId = ref<string | null>(null)
 const showDetailModal = ref(false)
+const stableSelectedPosition = ref<LeveragePosition | null>(null)
 const sorting = ref<SortingState>([{ id: 'position_id', desc: true }])
 const columnFilters = ref<ColumnFiltersState>([])
 const statusFilter = ref('all')
@@ -54,14 +55,48 @@ function isOwnPosition(position: LeveragePosition): boolean {
 }
 
 function openPositionDetail(position: LeveragePosition) {
-  selectedPosition.value = position
+  selectedPositionId.value = position.position_id
+  stableSelectedPosition.value = position
   showDetailModal.value = true
 }
 
 function closeDetailModal() {
   showDetailModal.value = false
-  selectedPosition.value = null
+  selectedPositionId.value = null
+  stableSelectedPosition.value = null
 }
+
+async function handlePositionRefresh() {
+  console.log('[PositionsTable] Manual refresh requested')
+  // Position data will auto-update via the parent's query invalidation
+  // Just log for debugging
+}
+
+// Compute selectedPosition from current positions array by ID
+// This ensures we always have the latest position data even after refresh
+const selectedPosition = computed(() => {
+  if (!selectedPositionId.value) return null
+  return props.positions.find((p) => p.position_id === selectedPositionId.value) || null
+})
+
+// Update stable position and handle auto-close on status change
+watch(selectedPosition, (position) => {
+  if (position) {
+    stableSelectedPosition.value = position
+
+    // Auto-close if position is now closed/liquidated
+    if (
+      showDetailModal.value &&
+      (position.status === 'POSITION_STATUS_CLOSED' ||
+        position.status === 'POSITION_STATUS_LIQUIDATED')
+    ) {
+      console.log('[PositionsTable] Position closed/liquidated, closing modal')
+      showDetailModal.value = false
+      selectedPositionId.value = null
+      stableSelectedPosition.value = null
+    }
+  }
+})
 
 const enrichedPositions = computed<PositionWithOwnership[]>(() =>
   props.positions.map((p) => ({ ...p, isOwn: isOwnPosition(p) }))
@@ -131,7 +166,35 @@ const userFilterOptions = computed(() => {
     value: w.address,
     label: `${w.name} ${w.address}`,
   }))
-  return [{ value: 'all', label: 'All Users' }, { value: 'mine', label: 'My Positions' }, ...walletOptions]
+  return [
+    { value: 'all', label: 'All Users' },
+    { value: 'mine', label: 'My Positions' },
+    ...walletOptions,
+  ]
+})
+
+// Debug: watch positions updates
+watch(
+  () => props.positions,
+  (newPositions) => {
+    console.log('[PositionsTable] Positions updated:', {
+      count: newPositions.length,
+      selectedId: selectedPositionId.value,
+      stillExists: selectedPositionId.value
+        ? newPositions.some((p) => p.position_id === selectedPositionId.value)
+        : false,
+    })
+  },
+  { deep: true }
+)
+
+// Debug: watch modal state
+watch(showDetailModal, (isOpen, wasOpen) => {
+  console.log('[PositionsTable] Modal state changed:', {
+    isOpen,
+    wasOpen,
+    selectedId: selectedPositionId.value,
+  })
 })
 </script>
 
@@ -266,12 +329,13 @@ const userFilterOptions = computed(() => {
 
     <!-- Position Detail Modal -->
     <PositionDetailModal
-      v-if="selectedPosition"
-      :position="selectedPosition"
+      v-if="showDetailModal && selectedPositionId && stableSelectedPosition"
+      :key="selectedPositionId"
+      :position="stableSelectedPosition"
       :pool-id="poolId || ''"
       :open="showDetailModal"
       @update:open="(v: boolean) => (showDetailModal = v)"
-      @close="closeDetailModal"
+      @refresh="handlePositionRefresh"
     />
   </div>
 </template>

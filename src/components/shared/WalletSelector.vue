@@ -308,6 +308,30 @@ watch(groupedOptions, () => ensureDefaultSelection())
 // Track selected authz locally for label and checks
 const selectedAuthz = ref(null)
 
+// Initialize executor addresses when modelValue is already set (e.g., from persistence)
+function initializeFromModelValue() {
+  if (!props.modelValue) return
+  
+  // Check if this is an authz selection (would need both granter and grantee)
+  // For now, assume direct selection if modelValue is set but no selectedAuthz
+  if (!selectedAuthz.value) {
+    const group = groupedOptions.value.find((g) => g.wallet.address === props.modelValue)
+    if (group?.wallet.isUnlocked && group.directAllowed) {
+      // Emit addresses without opening modal or changing modelValue
+      emit('update:executorAddress', props.modelValue)
+      emit('update:granteeAddress', null)
+      emit('update:isAuthz', false)
+      emit('update:authzNotes', '')
+      emit('update:selectedGrant', null)
+    }
+  }
+}
+
+// Initialize on mount and when modelValue or groupedOptions change
+onMounted(() => initializeFromModelValue())
+watch(() => props.modelValue, initializeFromModelValue)
+watch(groupedOptions, initializeFromModelValue)
+
 const selectedLabel = computed(() => {
   if (selectedAuthz.value) {
     const signer = unlockedWallets.value.find((u) => u.address === selectedAuthz.value.grantee)

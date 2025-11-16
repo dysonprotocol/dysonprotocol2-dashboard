@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch, type Ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch, type Ref, type ComputedRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLocalStorage } from '@vueuse/core'
 import {
@@ -21,6 +21,7 @@ import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
 import { toast } from 'vue-sonner'
 import api from '@/orm/http'
 import { useWallet } from '@/composables/useWallet'
+import { DenomMetadata } from '@/orm/models/bank/DenomMetadata'
 
 type AmountDenomPair = { amount: string; denom: string }
 type DisplayAmount = { amount: string; denom: string }
@@ -60,9 +61,6 @@ const {
   onExecutorUpdate,
   onGranteeUpdate,
   onAuthzUpdate,
-  onDisplayUpdate,
-  handleBaseUpdate,
-  handleDisplayUpdate,
   handleCreatePool,
 } = usePoolCreateForm()
 
@@ -84,8 +82,29 @@ function usePoolCreateForm() {
 
   const assetOne = ref<AmountDenomPair>({ amount: '', denom: '' })
   const assetTwo = ref<AmountDenomPair>({ amount: '', denom: '' })
-  const assetOneDisplay = ref<DisplayAmount>({ amount: '', denom: '' })
-  const assetTwoDisplay = ref<DisplayAmount>({ amount: '', denom: '' })
+
+  // Computed display values using DenomMetadata.normalize()
+  const assetOneDisplay = computed<DisplayAmount>(() => {
+    const denom = assetOne.value.denom
+    if (!denom) return { amount: '', denom: '' }
+    try {
+      const norm = DenomMetadata.normalize({ amount: assetOne.value.amount || '0', denom })
+      return { amount: norm.display.amount, denom: norm.display.denom }
+    } catch (e) {
+      return { amount: assetOne.value.amount, denom }
+    }
+  })
+
+  const assetTwoDisplay = computed<DisplayAmount>(() => {
+    const denom = assetTwo.value.denom
+    if (!denom) return { amount: '', denom: '' }
+    try {
+      const norm = DenomMetadata.normalize({ amount: assetTwo.value.amount || '0', denom })
+      return { amount: norm.display.amount, denom: norm.display.denom }
+    } catch (e) {
+      return { amount: assetTwo.value.amount, denom }
+    }
+  })
 
   const slotKeys = ['first', 'second'] as const
   type SlotKey = (typeof slotKeys)[number]
@@ -94,7 +113,7 @@ function usePoolCreateForm() {
     key: SlotKey
     label: string
     base: Ref<AmountDenomPair>
-    display: Ref<DisplayAmount>
+    display: Ref<DisplayAmount> | ComputedRef<DisplayAmount>
     defaultIndex: number
   }
 
@@ -135,9 +154,9 @@ function usePoolCreateForm() {
     balances.value = []
     createError.value = ''
     assetSections.forEach((section) => {
-      if (!section?.base || !section.display) return
+      if (!section?.base) return
       section.base.value = { amount: '', denom: '' }
-      section.display.value = { amount: '', denom: '' }
+      // display values are computed, no need to reset them
     })
     if (!addr) return
     await fetchBalances(addr)
@@ -351,9 +370,9 @@ function usePoolCreateForm() {
     return slot === 'first' ? 'Asset A' : 'Asset B'
   }
 
-  function getSlotDisplayDenom(slot: SlotKey) {
-    const display = slot === 'first' ? assetOneDisplay.value.denom : assetTwoDisplay.value.denom
-    return display || (slot === 'first' ? assetOne.value.denom : assetTwo.value.denom) || ''
+  function getSlotDisplayDenom(slot: SlotKey): string {
+    const display = slot === 'first' ? assetOneDisplay.value : assetTwoDisplay.value
+    return display.denom || ''
   }
 
   function createPerSlot(initial: string) {
@@ -465,22 +484,6 @@ function usePoolCreateForm() {
     return { valid: false, notes: 'Unsupported authz type' }
   }
 
-  function onDisplayUpdate(slot: SlotKey, payload: DisplayAmount) {
-    if (slot === 'first') assetOneDisplay.value = payload
-    else assetTwoDisplay.value = payload
-  }
-
-  function handleDisplayUpdate(slot: SlotKey) {
-    return (value: DisplayAmount) => onDisplayUpdate(slot, value)
-  }
-
-  function handleBaseUpdate(slot: SlotKey) {
-    const target = slot === 'first' ? assetOne : assetTwo
-    return (value: AmountDenomPair) => {
-      target.value = value
-    }
-  }
-
   function onExecutorUpdate(addr: string) {
     executorAddress.value = addr || ''
   }
@@ -522,9 +525,6 @@ function usePoolCreateForm() {
     onExecutorUpdate,
     onGranteeUpdate,
     onAuthzUpdate,
-    onDisplayUpdate,
-    handleDisplayUpdate,
-    handleBaseUpdate,
     handleCreatePool,
   }
 }
@@ -618,21 +618,24 @@ function usePoolCreateForm() {
           </div>
           <AmountDenomSelector
             :base="section.base.value"
+            @update:base="
+              (val: AmountDenomPair) => {
+                section.base.value = val
+              }
+            "
             :base-denoms="availableBaseDenoms"
             :default-base-denom="
               availableBaseDenoms[section.defaultIndex] || availableBaseDenoms[0] || ''
             "
             :disabled="isSubmitting || balancesLoading || !executorAddress"
-            @update:base="handleBaseUpdate(section.key)"
-            @update:display="handleDisplayUpdate(section.key)"
           />
           <div class="text-xs text-muted-foreground">
             Available:
             {{
-              balancesMap.get(section.base?.value?.denom || '')?.displayAmount ||
+              balancesMap.get(section.base.value?.denom || '')?.displayAmount ||
               (balancesLoading ? '— (loading)' : '0')
             }}
-            {{ balancesMap.get(section.base?.value?.denom || '')?.displayDenom || '' }}
+            {{ balancesMap.get(section.base.value?.denom || '')?.displayDenom || '' }}
           </div>
 
           <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">

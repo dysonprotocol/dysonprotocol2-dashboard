@@ -126,14 +126,17 @@ watch(options, () => {
   // Recompute display from current base after metadata/options change
   const baseDenom = String(props.base?.denom || '')
   const hasValidDenom = baseDenom && options.value.some((o) => o.base === baseDenom)
+
+  if (!baseDenom) {
+    // Parent has no denom yet - emit our selection directly without setting sync flag
+    if (selectedBaseDenom.value) {
+      emit('update:base', { amount: '', denom: selectedBaseDenom.value })
+    }
+    return
+  }
+
   isSyncingFromProps.value = true
   try {
-    if (!baseDenom) {
-      selectedBaseDenom.value = ''
-      amountDisplay.value = ''
-      computeAndEmit()
-      return
-    }
     if (hasValidDenom) selectedBaseDenom.value = baseDenom
     const exp = Number(options.value.find((o) => o.base === baseDenom)?.exponent || 0)
     const baseAmount = props.base?.amount

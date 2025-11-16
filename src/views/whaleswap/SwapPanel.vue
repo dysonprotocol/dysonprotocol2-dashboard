@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
 import { useWallet } from '@/composables/useWallet'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
 import AmountDenomSelector from '@/components/AmountDenomSelector.vue'
@@ -27,7 +28,7 @@ console.log('[SwapPanel] pool:', props.pool)
 console.log('[SwapPanel] base:', props.base, 'quote:', props.quote)
 
 // Persisted wallet selection per pool
-const selectedExecutor = useLocalStorage(`whaleswap:pool:${props.pool.pool_id}:swap:executor`, '')
+const selectedExecutor = useLocalStorage(`whaleswap:pool:swap:executor`, '')
 const selectedExecutorAddress = ref('')
 const selectedGranteeAddress = ref('')
 const isAuthz = ref(false)
@@ -102,15 +103,22 @@ function calculateSwapInput(outputAmount: string, outputDenom: string): string {
 
   const outputAmt = BigInt(outputAmount)
   if (outputAmt === 0n) return ''
-  if (outputAmt >= outputReserve) return ''
 
-  // Fee is applied to output denom
+  // For exact-out with output-side fees:
+  // outputAmt is what user wants to receive (after fee)
+  // We need to calculate rawOutputAmt (amount removed from pool before fee)
   const feeRate = getFeeRate(outputDenom)
   const feeMultiplier = 1 - feeRate
   const feeMultiplierInt = BigInt(Math.floor(feeMultiplier * 1000000))
 
-  const numerator = outputAmt * inputReserve * BigInt(1000000)
-  const denominator = (outputReserve - outputAmt) * feeMultiplierInt
+  // rawOutputAmt = outputAmt / feeMultiplier
+  const rawOutputAmt = (outputAmt * BigInt(1000000)) / feeMultiplierInt
+
+  if (rawOutputAmt >= outputReserve) return ''
+
+  // Constant product formula: inputAmt = (rawOutputAmt * inputReserve) / (outputReserve - rawOutputAmt)
+  const numerator = rawOutputAmt * inputReserve
+  const denominator = outputReserve - rawOutputAmt
 
   if (denominator === 0n) return ''
 
@@ -118,7 +126,9 @@ function calculateSwapInput(outputAmount: string, outputDenom: string): string {
   return String(inputAmt)
 }
 
-const slippageTolerance = 0.005
+// Slippage tolerance: user-configurable from 0-10%, persisted per pool
+const slippagePercent = useLocalStorage(`whaleswap:pool:${props.pool.pool_id}:slippage`, [0.5])
+const slippageTolerance = computed(() => slippagePercent.value[0] / 100)
 
 // Fee is applied to the OUTPUT denom of each swap leg
 // This means the fee rate depends on which direction you're swapping
@@ -150,27 +160,37 @@ const swapFeeDisplay = computed(() => {
 
 const expectedOutput = computed(() => {
   if (lastEdited.value === 'in' && swapIn.value.amount && swapIn.value.denom) {
+    // Recalculate expected output (before slippage)
     return calculateSwapOutput(swapIn.value.amount, swapIn.value.denom)
   }
   if (lastEdited.value === 'out' && swapOut.value.amount && swapOut.value.denom) {
+    // swapOut is exact output, no slippage calculation needed
     return swapOut.value.amount
   }
   return null
 })
 
 const minOutput = computed(() => {
+  if (lastEdited.value === 'in' && swapOut.value.amount) {
+    // swapOut already contains the minimum (expected - slippage)
+    return BigInt(swapOut.value.amount)
+  }
+  if (lastEdited.value === 'out' && swapOut.value.amount) {
+    // Exact-out: minimum equals exact output
+    return BigInt(swapOut.value.amount)
+  }
   if (!expectedOutput.value) return null
   const expected = BigInt(expectedOutput.value)
-  return BigInt(Math.floor(Number(expected) * (1 - slippageTolerance)))
+  return BigInt(Math.floor(Number(expected) * (1 - slippageTolerance.value)))
 })
 
 const maxInput = computed(() => {
   if (lastEdited.value === 'out' && swapIn.value.amount) {
-    const calculated = BigInt(swapIn.value.amount)
-    // Add 5% buffer for exact-out swaps
-    return BigInt(Math.ceil(Number(calculated) * 1.05))
+    // swapIn already contains the maximum (expected + slippage)
+    return BigInt(swapIn.value.amount)
   }
   if (lastEdited.value === 'in' && swapIn.value.amount) {
+    // Exact-in: maximum equals exact input
     return BigInt(swapIn.value.amount)
   }
   return null
@@ -226,21 +246,25 @@ const slippageInfo = computed(() => {
       }
     }
   } else if (isExactOut) {
-    // Exact-out: show exact output and max input with buffer
+    // Exact-out: show exact output and max input with slippage
     if (!swapIn.value.amount || !swapOut.value.amount) return null
 
     const exactOutput = BigInt(swapOut.value.amount)
-    const calculatedInput = BigInt(swapIn.value.amount)
-    const max = maxInput.value || BigInt(Math.ceil(Number(calculatedInput) * 1.05))
-    const bufferPct = Number(((max - calculatedInput) * 10000n) / calculatedInput) / 100
+    // Recalculate expected input (before slippage)
+    const expectedInputStr = calculateSwapInput(swapOut.value.amount, swapOut.value.denom)
+    if (!expectedInputStr) return null
+    const expectedInput = BigInt(expectedInputStr)
+    // swapIn already contains the maximum (expected + slippage)
+    const max = BigInt(swapIn.value.amount)
+    const bufferPct = Number(((max - expectedInput) * 10000n) / expectedInput) / 100
 
     try {
       const outputNormalized = wallet.normalizeCoin({
         amount: exactOutput.toString(),
         denom: swapOut.value.denom,
       })
-      const inputNormalized = wallet.normalizeCoin({
-        amount: calculatedInput.toString(),
+      const expectedInputNormalized = wallet.normalizeCoin({
+        amount: expectedInput.toString(),
         denom: swapIn.value.denom,
       })
       const maxNormalized = wallet.normalizeCoin({
@@ -251,13 +275,13 @@ const slippageInfo = computed(() => {
       return {
         mode: 'exact-out',
         exactOutput: exactOutput.toString(),
-        calculatedInput: calculatedInput.toString(),
+        calculatedInput: expectedInput.toString(),
         maxInput: max.toString(),
         exactOutputDisplay: outputNormalized.display.amount,
-        calculatedInputDisplay: inputNormalized.display.amount,
+        calculatedInputDisplay: expectedInputNormalized.display.amount,
         maxInputDisplay: maxNormalized.display.amount,
         outputDisplayDenom: outputNormalized.display.denom,
-        inputDisplayDenom: inputNormalized.display.denom,
+        inputDisplayDenom: expectedInputNormalized.display.denom,
         bufferPct,
       }
     } catch (e) {
@@ -265,10 +289,10 @@ const slippageInfo = computed(() => {
       return {
         mode: 'exact-out',
         exactOutput: exactOutput.toString(),
-        calculatedInput: calculatedInput.toString(),
+        calculatedInput: expectedInput.toString(),
         maxInput: max.toString(),
         exactOutputDisplay: exactOutput.toString(),
-        calculatedInputDisplay: calculatedInput.toString(),
+        calculatedInputDisplay: expectedInput.toString(),
         maxInputDisplay: max.toString(),
         outputDisplayDenom: swapOut.value.denom,
         inputDisplayDenom: swapIn.value.denom,
@@ -289,25 +313,39 @@ watch(
 
     updatingFromSwapIn.value = true
     lastEdited.value = 'in'
+    swapError.value = ''
 
     try {
+      const outputDenom = swapIn.value.denom === props.base ? props.quote : props.base
+
       if (!swapIn.value.amount || swapIn.value.denom === '') {
-        if (swapOut.value.amount || swapOut.value.denom) {
-          swapOut.value = { amount: '', denom: '' }
+        // Clear amount but set opposite denom if input denom is selected
+        if (swapIn.value.denom && outputDenom) {
+          if (swapOut.value.denom !== outputDenom || swapOut.value.amount !== '') {
+            swapOut.value = { amount: '', denom: outputDenom }
+          }
+        } else {
+          if (swapOut.value.amount || swapOut.value.denom) {
+            swapOut.value = { amount: '', denom: '' }
+          }
         }
         lastEdited.value = null
         return
       }
 
-      const outputDenom = swapIn.value.denom === props.base ? props.quote : props.base
-      const outputAmount = calculateSwapOutput(swapIn.value.amount, swapIn.value.denom)
+      const expectedOutput = calculateSwapOutput(swapIn.value.amount, swapIn.value.denom)
 
-      if (!outputAmount) {
+      if (!expectedOutput) {
         return
       }
 
+      // Apply slippage: show minimum output (expected - slippage%)
+      const minOutputAmount = BigInt(
+        Math.floor(Number(expectedOutput) * (1 - slippageTolerance.value))
+      )
+
       const newOutput = {
-        amount: outputAmount,
+        amount: String(minOutputAmount),
         denom: outputDenom,
       }
 
@@ -318,7 +356,9 @@ watch(
       console.log('[SwapPanel] Updating swapOut from swapIn:', {
         input: swapIn.value,
         outputDenom,
-        outputAmount,
+        expectedOutput,
+        minOutputAmount: String(minOutputAmount),
+        slippage: slippageTolerance.value,
       })
 
       swapOut.value = newOutput
@@ -340,25 +380,39 @@ watch(
 
     updatingFromSwapOut.value = true
     lastEdited.value = 'out'
+    swapError.value = ''
 
     try {
+      const inputDenom = swapOut.value.denom === props.base ? props.quote : props.base
+
       if (!swapOut.value.amount || swapOut.value.denom === '') {
-        if (swapIn.value.amount || swapIn.value.denom) {
-          swapIn.value = { amount: '', denom: '' }
+        // Clear amount but set opposite denom if output denom is selected
+        if (swapOut.value.denom && inputDenom) {
+          if (swapIn.value.denom !== inputDenom || swapIn.value.amount !== '') {
+            swapIn.value = { amount: '', denom: inputDenom }
+          }
+        } else {
+          if (swapIn.value.amount || swapIn.value.denom) {
+            swapIn.value = { amount: '', denom: '' }
+          }
         }
         lastEdited.value = null
         return
       }
 
-      const inputDenom = swapOut.value.denom === props.base ? props.quote : props.base
-      const inputAmount = calculateSwapInput(swapOut.value.amount, swapOut.value.denom)
+      const expectedInput = calculateSwapInput(swapOut.value.amount, swapOut.value.denom)
 
-      if (!inputAmount) {
+      if (!expectedInput) {
         return
       }
 
+      // Apply slippage: show maximum input (expected + slippage%)
+      const maxInputAmount = BigInt(
+        Math.ceil(Number(expectedInput) * (1 + slippageTolerance.value))
+      )
+
       const newInput = {
-        amount: inputAmount,
+        amount: String(maxInputAmount),
         denom: inputDenom,
       }
 
@@ -369,7 +423,9 @@ watch(
       console.log('[SwapPanel] Updating swapIn from swapOut:', {
         output: swapOut.value,
         inputDenom,
-        inputAmount,
+        expectedInput,
+        maxInputAmount: String(maxInputAmount),
+        slippage: slippageTolerance.value,
       })
 
       swapIn.value = newInput
@@ -380,6 +436,45 @@ watch(
     }
   },
   { flush: 'post' }
+)
+
+// Watch slippage changes and update the corresponding field
+watch(
+  slippagePercent,
+  () => {
+    if (updatingFromSwapIn.value || updatingFromSwapOut.value) return
+
+    if (lastEdited.value === 'in' && swapIn.value.amount && swapIn.value.denom) {
+      // Recalculate minimum output with new slippage
+      const expectedOutput = calculateSwapOutput(swapIn.value.amount, swapIn.value.denom)
+      if (expectedOutput) {
+        const minOutputAmount = BigInt(
+          Math.floor(Number(expectedOutput) * (1 - slippageTolerance.value))
+        )
+        const outputDenom = swapIn.value.denom === props.base ? props.quote : props.base
+        updatingFromSwapIn.value = true
+        swapOut.value = { amount: String(minOutputAmount), denom: outputDenom }
+        nextTick(() => {
+          updatingFromSwapIn.value = false
+        })
+      }
+    } else if (lastEdited.value === 'out' && swapOut.value.amount && swapOut.value.denom) {
+      // Recalculate maximum input with new slippage
+      const expectedInput = calculateSwapInput(swapOut.value.amount, swapOut.value.denom)
+      if (expectedInput) {
+        const maxInputAmount = BigInt(
+          Math.ceil(Number(expectedInput) * (1 + slippageTolerance.value))
+        )
+        const inputDenom = swapOut.value.denom === props.base ? props.quote : props.base
+        updatingFromSwapOut.value = true
+        swapIn.value = { amount: String(maxInputAmount), denom: inputDenom }
+        nextTick(() => {
+          updatingFromSwapOut.value = false
+        })
+      }
+    }
+  },
+  { deep: true }
 )
 
 const canSwap = computed(() => {
@@ -447,7 +542,8 @@ async function executeSwap() {
       const expected = expectedOutput.value
         ? BigInt(expectedOutput.value)
         : BigInt(swapOut.value.amount)
-      const min = minOutput.value || BigInt(Math.floor(Number(expected) * (1 - slippageTolerance)))
+      const min =
+        minOutput.value || BigInt(Math.floor(Number(expected) * (1 - slippageTolerance.value)))
 
       msg = {
         '@type': '/dysonprotocol.whaleswap.v1.MsgPoolSwap',
@@ -462,8 +558,10 @@ async function executeSwap() {
         min_output: [{ denom: swapOut.value.denom, amount: String(min) }],
       }
     } else if (isExactOut) {
-      // Exact-out: swap_out is exact, max_input has buffer
-      const max = maxInput.value || BigInt(Math.ceil(Number(swapIn.value.amount) * 1.05))
+      // Exact-out: swap_out is exact, max_input has slippage tolerance
+      const max =
+        maxInput.value ||
+        BigInt(Math.ceil(Number(swapIn.value.amount) * (1 + slippageTolerance.value)))
 
       msg = {
         '@type': '/dysonprotocol.whaleswap.v1.MsgPoolSwap',
@@ -482,7 +580,8 @@ async function executeSwap() {
       const expected = expectedOutput.value
         ? BigInt(expectedOutput.value)
         : BigInt(swapOut.value.amount)
-      const min = minOutput.value || BigInt(Math.floor(Number(expected) * (1 - slippageTolerance)))
+      const min =
+        minOutput.value || BigInt(Math.floor(Number(expected) * (1 - slippageTolerance.value)))
 
       msg = {
         '@type': '/dysonprotocol.whaleswap.v1.MsgPoolSwap',
@@ -545,11 +644,9 @@ async function executeSwap() {
 
       <div class="space-y-2">
         <Label>
-          Swap In
-          <span v-if="lastEdited === 'in'" class="text-xs text-muted-foreground ml-2">(Exact)</span>
-          <span v-else-if="lastEdited === 'out'" class="text-xs text-muted-foreground ml-2"
-            >(Max)</span
-          >
+          <span v-if="lastEdited === 'in'">Exact swap in</span>
+          <span v-else-if="lastEdited === 'out'">Maximum swap in</span>
+          <span v-else>Swap In</span>
         </Label>
         <AmountDenomSelector
           v-model:base="swapIn"
@@ -561,13 +658,9 @@ async function executeSwap() {
 
       <div class="space-y-2">
         <Label>
-          Swap Out
-          <span v-if="lastEdited === 'out'" class="text-xs text-muted-foreground ml-2"
-            >(Exact)</span
-          >
-          <span v-else-if="lastEdited === 'in'" class="text-xs text-muted-foreground ml-2"
-            >(Min)</span
-          >
+          <span v-if="lastEdited === 'out'">Exact swap out</span>
+          <span v-else-if="lastEdited === 'in'">Minimum swap out</span>
+          <span v-else>Swap Out</span>
         </Label>
         <AmountDenomSelector
           v-model:base="swapOut"
@@ -575,6 +668,25 @@ async function executeSwap() {
           :default-base-denom="quote"
           :disabled="isPending"
         />
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <Label>Slippage Tolerance</Label>
+          <span class="text-sm text-muted-foreground">{{ slippagePercent[0].toFixed(2) }}%</span>
+        </div>
+        <Slider
+          v-model="slippagePercent"
+          :min="0"
+          :max="10"
+          :step="0.1"
+          :disabled="isPending"
+          class="w-full"
+        />
+        <div class="flex justify-between text-xs text-muted-foreground">
+          <span>0%</span>
+          <span>10%</span>
+        </div>
       </div>
 
       <div v-if="swapFeeDisplay" class="text-sm space-y-1 p-2 bg-muted rounded">
@@ -590,30 +702,24 @@ async function executeSwap() {
       <div v-if="slippageInfo" class="text-sm space-y-1 p-2 bg-muted rounded">
         <template v-if="slippageInfo.mode === 'exact-in'">
           <div class="text-muted-foreground">
-            Expected output: {{ slippageInfo.expectedDisplay }} {{ slippageInfo.displayDenom }}
+            Expected: ~{{ slippageInfo.expectedDisplay }} {{ slippageInfo.displayDenom }}
           </div>
           <div class="text-muted-foreground">
-            Minimum output ({{ (slippageTolerance * 100).toFixed(2) }}% slippage tolerance):
-            {{ slippageInfo.minDisplay }} {{ slippageInfo.displayDenom }}
+            Protected minimum: {{ slippageInfo.minDisplay }} {{ slippageInfo.displayDenom }}
           </div>
           <div class="text-xs text-muted-foreground">
-            You'll receive at least {{ slippageInfo.minDisplay }}
-            {{ slippageInfo.displayDenom }} ({{ slippageInfo.slippagePct?.toFixed(2) || '0.00' }}%
-            protection)
+            The swap will fail if you'd receive less than {{ slippageInfo.minDisplay }}
+            {{ slippageInfo.displayDenom }}
           </div>
         </template>
         <template v-else-if="slippageInfo.mode === 'exact-out'">
           <div class="text-muted-foreground">
-            Exact output: {{ slippageInfo.exactOutputDisplay }}
-            {{ slippageInfo.outputDisplayDenom }}
-          </div>
-          <div class="text-muted-foreground">
-            Calculated input: {{ slippageInfo.calculatedInputDisplay }}
+            Required input: ~{{ slippageInfo.calculatedInputDisplay }}
             {{ slippageInfo.inputDisplayDenom }}
           </div>
           <div class="text-muted-foreground">
-            Maximum input ({{ slippageInfo.bufferPct?.toFixed(2) || '5.00' }}% buffer):
-            {{ slippageInfo.maxInputDisplay }} {{ slippageInfo.inputDisplayDenom }}
+            Protected maximum: {{ slippageInfo.maxInputDisplay }}
+            {{ slippageInfo.inputDisplayDenom }}
           </div>
           <div class="text-xs text-muted-foreground">
             You'll send at most {{ slippageInfo.maxInputDisplay }}
