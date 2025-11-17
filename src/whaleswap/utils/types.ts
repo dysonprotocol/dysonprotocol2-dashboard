@@ -4,6 +4,19 @@ export type Coin = {
   amount: string
 }
 
+export type PaginationInfo = {
+  next_key?: string
+  total?: string
+}
+
+export type PaginationParams = {
+  limit?: string | number | bigint
+  offset?: string | number | bigint
+  key?: string
+  countTotal?: boolean
+  reverse?: boolean
+}
+
 // TradeOperation oneof types
 export type SwapLeg = {
   pool_id: string
@@ -106,7 +119,10 @@ export type OfferData = {
   status: string
   maker: string
   updated_height: string
-  updated_timestamp: string
+  updated_timestamp?: string
+  updated_time?: string
+  created_height?: string
+  created_time?: string
   initial_have: Coin
   initial_want: Coin
   remaining_have: Coin
@@ -115,6 +131,8 @@ export type OfferData = {
   unit_want_int: string
   remaining_units: string
   pfand_locked: Coin
+  pfand_per_offer?: Coin
+  settlement_mode?: string
 }
 
 export type AuctionRecord = {
@@ -134,4 +152,53 @@ export type TradeMetrics = {
   escrowed_auction_coins: Coin[]
   escrowed_liquid_coins: Coin[]
   fees_earned: Coin[]
+}
+
+export type OffersResponse = {
+  offers: OfferData[]
+  pagination?: PaginationInfo
+}
+
+export type AuctionsResponse = {
+  auctions: AuctionRecord[]
+  pagination?: PaginationInfo
+}
+
+export type MetricsResponse = {
+  metrics: TradeMetrics
+}
+
+export type DenomUnit = {
+  denom: string
+  exponent: number
+  aliases?: string[]
+}
+
+export type DenomMetadata = {
+  description?: string
+  denom_units: DenomUnit[]
+  base: string
+  display: string
+  name?: string
+  symbol?: string
+  uri?: string
+  uri_hash?: string
+}
+
+export type DenomsMetadataResponse = {
+  metadatas: DenomMetadata[]
+  pagination?: PaginationInfo
+}
+
+export type DenomMetadataResponse = {
+  metadata?: DenomMetadata
+}
+
+export type TotalSupplyResponse = {
+  supply: Coin[]
+  pagination?: PaginationInfo
+}
+
+export type SupplyOfResponse = {
+  amount?: Coin
 }

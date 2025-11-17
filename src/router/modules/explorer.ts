@@ -46,9 +46,19 @@ export const explorerRoutes: RouteRecordRaw[] = [
   },
   // whaleswap
   {
+    path: '/whaleswap',
+    name: 'WhaleswapIndex',
+    component: () => import('@/views/whaleswap/WhaleswapIndex.vue'),
+  },
+  {
+    path: '/whaleswap/trade',
+    name: 'WhaleswapTradePair',
+    component: () => import('@/views/whaleswap/TradePair.vue'),
+  },
+  {
     path: '/whaleswap/trades',
     name: 'WhaleswapTrades',
-    component: () => import('@/whaleswap/views/TradesList.vue'),
+    component: () => import('@/whaleswap/views/TradesTable.vue'),
   },
   {
     path: '/whaleswap/trades/:tradeId(\\d+)',

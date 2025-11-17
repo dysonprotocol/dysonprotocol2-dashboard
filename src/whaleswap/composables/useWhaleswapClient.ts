@@ -1,7 +1,18 @@
 // REST API client for Cosmos SDK endpoints (not gRPC-Web)
 // Uses the google.api.http annotations from query.proto
 
-import type { Trade, Pool, LeveragePosition } from '../utils/types'
+import type {
+  Trade,
+  Pool,
+  LeveragePosition,
+  OfferData,
+  PaginationParams,
+  PaginationInfo,
+  OffersResponse as OffersListResponse,
+  AuctionsResponse,
+  MetricsResponse,
+} from '../utils/types'
+import { appendPagination } from '../utils/http'
 
 const BASE_URL = '/dysonprotocol/whaleswap/v1'
 
@@ -32,36 +43,25 @@ export type PoolResponse = {
 
 export type PoolsResponse = {
   pools: Pool[]
-  pagination?: {
-    next_key?: string
-    total?: string
-  }
+  pagination?: PaginationInfo
 }
 
 export type PositionsResponse = {
   positions: LeveragePosition[]
-  pagination?: {
-    next_key?: string
-    total?: string
-  }
+  pagination?: PaginationInfo
 }
 
-type PaginationParams = {
-  limit?: string | number | bigint
-  offset?: string | number | bigint
-  key?: string
-  countTotal?: boolean
-  reverse?: boolean
+export type OfferResponse = {
+  offer: OfferData
 }
 
-function appendPagination(params: URLSearchParams, pagination?: PaginationParams) {
-  if (!pagination) return
-  if (pagination.key) params.set('pagination.key', pagination.key)
-  if (pagination.limit !== undefined) params.set('pagination.limit', String(pagination.limit))
-  if (pagination.offset !== undefined) params.set('pagination.offset', String(pagination.offset))
-  if (pagination.countTotal) params.set('pagination.count_total', 'true')
-  if (pagination.reverse) params.set('pagination.reverse', 'true')
+export type OffersResponse = OffersListResponse
+
+export type OffersBestResponse = {
+  offers: OfferData[]
 }
+
+export type AuctionsByPairResponse = AuctionsResponse
 
 export function useWhaleswapClient() {
   return {
@@ -73,6 +73,28 @@ export function useWhaleswapClient() {
       appendPagination(params, req?.pagination)
       const query = params.toString() ? `?${params}` : ''
       return fetchJson<PoolsResponse>(`/pools${query}`)
+    },
+    async poolsByDenom(req: {
+      denom: string
+      pagination?: PaginationParams
+    }): Promise<PoolsResponse> {
+      const params = new URLSearchParams()
+      params.set('denom', req.denom)
+      appendPagination(params, req.pagination)
+      const query = params.toString() ? `?${params}` : ''
+      return fetchJson<PoolsResponse>(`/pools/by_denom${query}`)
+    },
+    async poolsByPair(req: {
+      baseDenom: string
+      quoteDenom: string
+      pagination?: PaginationParams
+    }): Promise<PoolsResponse> {
+      const params = new URLSearchParams()
+      params.set('base_denom', req.baseDenom)
+      params.set('quote_denom', req.quoteDenom)
+      appendPagination(params, req.pagination)
+      const query = params.toString() ? `?${params}` : ''
+      return fetchJson<PoolsResponse>(`/pools/by_pair${query}`)
     },
     async trade(req: { tradeId: bigint | string }): Promise<TradeResponse> {
       return fetchJson<TradeResponse>(`/trades/${req.tradeId}`)
@@ -131,6 +153,103 @@ export function useWhaleswapClient() {
       if (req.status) params.set('status', req.status)
       const query = params.toString() ? `?${params}` : ''
       return fetchJson<PositionsResponse>(`/positions/address/${req.address}${query}`)
+    },
+    async offers(req?: {
+      haveDenom?: string
+      wantDenom?: string
+      pagination?: PaginationParams
+    }): Promise<OffersResponse> {
+      const params = new URLSearchParams()
+      if (req?.haveDenom) params.set('have_denom', req.haveDenom)
+      if (req?.wantDenom) params.set('want_denom', req.wantDenom)
+      appendPagination(params, req?.pagination)
+      const query = params.toString() ? `?${params}` : ''
+      return fetchJson<OffersResponse>(`/offers${query}`)
+    },
+    async offer(req: { offerId: string | number | bigint }): Promise<OfferResponse> {
+      return fetchJson<OfferResponse>(`/offers/${req.offerId}`)
+    },
+    async offersByDenom(req: {
+      denom: string
+      role?: 'have' | 'want'
+      pagination?: PaginationParams
+    }): Promise<OffersResponse> {
+      const params = new URLSearchParams()
+      params.set('denom', req.denom)
+      if (req.role) params.set('role', req.role)
+      appendPagination(params, req.pagination)
+      const query = params.toString() ? `?${params}` : ''
+      return fetchJson<OffersResponse>(`/offers/by_denom${query}`)
+    },
+    async offersByOwner(req: {
+      owner: string
+      status?: string
+      pagination?: PaginationParams
+    }): Promise<OffersResponse> {
+      const params = new URLSearchParams()
+      if (req.status) params.set('status', req.status)
+      appendPagination(params, req.pagination)
+      const query = params.toString() ? `?${params}` : ''
+      return fetchJson<OffersResponse>(`/offers/owner/${req.owner}${query}`)
+    },
+    async offersBest(req: {
+      haveDenom: string
+      wantDenom: string
+      limit?: number
+    }): Promise<OffersBestResponse> {
+      const params = new URLSearchParams()
+      params.set('have_denom', req.haveDenom)
+      params.set('want_denom', req.wantDenom)
+      if (req.limit !== undefined) params.set('limit', String(req.limit))
+      const query = params.toString() ? `?${params}` : ''
+      return fetchJson<OffersBestResponse>(`/offers/best${query}`)
+    },
+    async offersByPairPriceRange(req: {
+      haveDenom: string
+      wantDenom: string
+      minPrice?: string
+      maxPrice?: string
+      pagination?: PaginationParams
+    }): Promise<OffersResponse> {
+      const params = new URLSearchParams()
+      params.set('have_denom', req.haveDenom)
+      params.set('want_denom', req.wantDenom)
+      if (req.minPrice) params.set('min_price', req.minPrice)
+      if (req.maxPrice) params.set('max_price', req.maxPrice)
+      appendPagination(params, req.pagination)
+      const query = params.toString() ? `?${params}` : ''
+      return fetchJson<OffersResponse>(`/offers/by_pair_price${query}`)
+    },
+    async auctions(req?: {
+      sellDenom?: string
+      bidDenom?: string
+      pagination?: PaginationParams
+    }): Promise<AuctionsResponse> {
+      const params = new URLSearchParams()
+      if (req?.sellDenom) params.set('sell_denom', req.sellDenom)
+      if (req?.bidDenom) params.set('bid_denom', req.bidDenom)
+      appendPagination(params, req?.pagination)
+      const query = params.toString() ? `?${params}` : ''
+      return fetchJson<AuctionsResponse>(`/auctions${query}`)
+    },
+    async auctionsByPairPriceRange(req: {
+      sellDenom: string
+      bidDenom: string
+      minPrice?: string
+      maxPrice?: string
+      pagination?: PaginationParams
+    }): Promise<AuctionsResponse> {
+      const params = new URLSearchParams()
+      params.set('sell_denom', req.sellDenom)
+      params.set('bid_denom', req.bidDenom)
+      if (req.minPrice) params.set('min_price', req.minPrice)
+      if (req.maxPrice) params.set('max_price', req.maxPrice)
+      appendPagination(params, req.pagination)
+      const query = params.toString() ? `?${params}` : ''
+      return fetchJson<AuctionsResponse>(`/auctions/by_pair_price${query}`)
+    },
+    async metrics(): Promise<MetricsResponse> {
+      return fetchJson<MetricsResponse>('/metrics')
     },
   }
 }

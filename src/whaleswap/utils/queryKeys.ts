@@ -37,6 +37,8 @@ export const whaleswapKeys = {
   auctions: () => [...whaleswapKeys.all, 'auctions'] as const,
   auction: (id: string | bigint) => [...whaleswapKeys.auctions(), id] as const,
   auctionsBySeller: (seller: string) => [...whaleswapKeys.auctions(), 'by-seller', seller] as const,
+  auctionsByPair: (sellDenom: string, bidDenom: string) =>
+    [...whaleswapKeys.auctions(), 'by-pair', sellDenom, bidDenom] as const,
   auctionByNFT: (classId: string, nftId: string) =>
     [...whaleswapKeys.auctions(), 'by-nft', classId, nftId] as const,
 
