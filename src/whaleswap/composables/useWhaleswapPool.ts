@@ -7,6 +7,10 @@ import type { MaybeRefOrGetter } from 'vue'
 import { toValue, computed, watchEffect, shallowRef } from 'vue'
 import { poolsCollection } from './useWhaleswapDB'
 import type { Pool } from '../utils/types'
+import type { MaybeRefOrGetter } from 'vue'
+import { useQuery, type UseQueryOptions } from '@tanstack/vue-query'
+import { useWhaleswapClient } from './useWhaleswapClient'
+import { whaleswapKeys } from '../utils/queryKeys'
 
 const poolsStore = shallowRef<Pool[]>([])
 
@@ -164,4 +168,29 @@ async function persistPoolCollectionEntry(pool: Pool) {
       throw error
     }
   }
+}
+
+export function useWhaleswapPairPools(
+  baseDenom: MaybeRefOrGetter<string>,
+  quoteDenom: MaybeRefOrGetter<string>,
+  options?: Partial<UseQueryOptions<Pool[]>>
+) {
+  const client = useWhaleswapClient()
+  const baseDenomVal = computed(() => toValue(baseDenom))
+  const quoteDenomVal = computed(() => toValue(quoteDenom))
+
+  return useQuery({
+    queryKey: whaleswapKeys.poolsByPair(baseDenomVal.value, quoteDenomVal.value),
+    queryFn: async () => {
+      const result = await client.poolsByPair({
+        baseDenom: baseDenomVal.value,
+        quoteDenom: quoteDenomVal.value,
+      })
+      return result.pools
+    },
+    staleTime: 5000,
+    gcTime: 10 * 60 * 1000,
+    enabled: computed(() => Boolean(baseDenomVal.value && quoteDenomVal.value)),
+    ...options,
+  })
 }

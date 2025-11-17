@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWhaleswapPairPools } from '@/whaleswap/composables/useWhaleswapPool'
 import { useWhaleswapPairOffers } from '@/whaleswap/composables/useWhaleswapOffer'
@@ -23,23 +23,107 @@ const route = useRoute()
 const router = useRouter()
 const metadata = useDenomMetadata()
 
-// Parse query params
+// Debug all reactive state
+watchEffect(() => {
+  console.log('[TradePair:INIT] Route params:', route.query)
+  console.log('[TradePair:INIT] Metadata state:', {
+    isLoading: metadata.isLoading.value,
+    dataLength: metadata.data.value?.length ?? 0,
+    data: metadata.data.value,
+  })
+})
+
+// Parse query params as display denoms
+const baseDisplayParam = computed(() => {
+  const value = route.query.base as string
+  console.log('[baseDisplayParam] computed:', value)
+  return value
+})
+const quoteDisplayParam = computed(() => {
+  const value = route.query.quote as string
+  console.log('[quoteDisplayParam] computed:', value)
+  return value
+})
+
+// Resolve to base denoms for internal use (API calls, etc.)
 const baseDenom = computed(() => {
-  const base = route.query.base as string
-  return base ? metadata.resolveBaseDenom(base) : ''
+  const display = baseDisplayParam.value
+  // Force dependency on metadata.data to ensure reactivity
+  const _metadataLength = metadata.data.value?.length ?? 0
+  const result = display ? metadata.resolveBaseDenom(display) : ''
+  console.log('[baseDenom] computed:', { display, result, metadataLength: _metadataLength })
+  return result
 })
 
 const quoteDenom = computed(() => {
-  const quote = route.query.quote as string
-  return quote ? metadata.resolveBaseDenom(quote) : ''
+  const display = quoteDisplayParam.value
+  // Force dependency on metadata.data to ensure reactivity
+  const _metadataLength = metadata.data.value?.length ?? 0
+  const result = display ? metadata.resolveBaseDenom(display) : ''
+  console.log('[quoteDenom] computed:', { display, result, metadataLength: _metadataLength })
+  return result
 })
 
 // Display names
-const baseDisplay = computed(() => metadata.resolveDisplayDenom(baseDenom.value))
-const quoteDisplay = computed(() => metadata.resolveDisplayDenom(quoteDenom.value))
+const baseDisplay = computed(() => {
+  const base = baseDenom.value
+  // Force dependency on metadata.data to ensure reactivity
+  const _metadataLength = metadata.data.value?.length ?? 0
+  const result = metadata.resolveDisplayDenom(base)
+  console.log('[baseDisplay] computed:', { base, result, metadataLength: _metadataLength })
+  return result
+})
+const quoteDisplay = computed(() => {
+  const base = quoteDenom.value
+  // Force dependency on metadata.data to ensure reactivity
+  const _metadataLength = metadata.data.value?.length ?? 0
+  const result = metadata.resolveDisplayDenom(base)
+  console.log('[quoteDisplay] computed:', { base, result, metadataLength: _metadataLength })
+  return result
+})
+
+// Redirect base denom URLs to display denom URLs once metadata is loaded
+watchEffect(() => {
+  if (metadata.isLoading.value) return // Wait for metadata to load
+
+  const currentBase = route.query.base as string
+  const currentQuote = route.query.quote as string
+
+  if (!currentBase || !currentQuote) return // Wait for both params
+
+  const baseDisplayDenom = metadata.resolveDisplayDenom(currentBase)
+  const quoteDisplayDenom = metadata.resolveDisplayDenom(currentQuote)
+
+  // If either param is not already a display denom, redirect
+  if (currentBase !== baseDisplayDenom || currentQuote !== quoteDisplayDenom) {
+    router.replace({
+      path: '/whaleswap/trade',
+      query: {
+        base: baseDisplayDenom,
+        quote: quoteDisplayDenom,
+      },
+    })
+  }
+})
 
 // Pair ready check
-const pairReady = computed(() => Boolean(baseDenom.value && quoteDenom.value))
+const pairReady = computed(() => {
+  // Force dependency on metadata.data to ensure reactivity
+  const _metadataLength = metadata.data.value?.length ?? 0
+  const hasMetadata = !metadata.isLoading.value && _metadataLength > 0
+  const hasDenoms = Boolean(baseDenom.value && quoteDenom.value)
+  const result = hasMetadata && hasDenoms
+  console.log('[pairReady] computed:', {
+    result,
+    hasMetadata,
+    hasDenoms,
+    baseDenom: baseDenom.value,
+    quoteDenom: quoteDenom.value,
+    metadataLength: _metadataLength,
+    metadataLoading: metadata.isLoading.value,
+  })
+  return result
+})
 
 // Data fetching
 const poolsQuery = useWhaleswapPairPools(baseDenom, quoteDenom, {
@@ -53,16 +137,100 @@ const auctionsQuery = useWhaleswapPairAuctions(baseDenom, quoteDenom, {
 })
 
 // Computed data
-const pools = computed(() => poolsQuery.data.value ?? [])
-const offersForward = computed(() => offersQuery.forward.data.value ?? [])
-const offersReverse = computed(() => offersQuery.reverse.data.value ?? [])
-const auctionsForward = computed(() => auctionsQuery.forward.data.value ?? [])
-const auctionsReverse = computed(() => auctionsQuery.reverse.data.value ?? [])
+const pools = computed(() => {
+  const result = poolsQuery.data.value ?? []
+  console.log('[pools] computed:', {
+    length: result.length,
+    isLoading: poolsQuery.isLoading.value,
+    hasError: poolsQuery.isError.value,
+  })
+  return result
+})
+const offersForward = computed(() => {
+  const result = offersQuery.forward.data.value ?? []
+  console.log('[offersForward] computed:', {
+    length: result.length,
+    isLoading: offersQuery.isLoading.value,
+  })
+  return result
+})
+const offersReverse = computed(() => {
+  const result = offersQuery.reverse.data.value ?? []
+  console.log('[offersReverse] computed:', {
+    length: result.length,
+    isLoading: offersQuery.isLoading.value,
+  })
+  return result
+})
+const auctionsForward = computed(() => {
+  const result = auctionsQuery.forward.data.value ?? []
+  console.log('[auctionsForward] computed:', {
+    length: result.length,
+    isLoading: auctionsQuery.isLoading.value,
+  })
+  return result
+})
+const auctionsReverse = computed(() => {
+  const result = auctionsQuery.reverse.data.value ?? []
+  console.log('[auctionsReverse] computed:', {
+    length: result.length,
+    isLoading: auctionsQuery.isLoading.value,
+  })
+  return result
+})
 
-// Loading states
-const anyLoading = computed(
-  () => poolsQuery.isLoading.value || offersQuery.isLoading.value || auctionsQuery.isLoading.value
-)
+// Reactive state
+const hasPools = computed(() => {
+  const result = pools.value.length > 0
+  console.log('[hasPools] computed:', {
+    result,
+    poolsLength: pools.value.length,
+    poolsQueryData: poolsQuery.data.value,
+  })
+  return result
+})
+
+// Computed pool prices for current pair (reactive)
+const poolPrices = computed(() => {
+  const prices: Record<string, string> = {}
+
+  for (const pool of pools.value) {
+    const poolId = pool.pool_id.toString()
+
+    if (!pool || !pool.coins || pool.coins.length !== 2) {
+      prices[poolId] = 'N/A'
+      continue
+    }
+
+    const [coinA, coinB] = pool.coins
+
+    // Find which coin corresponds to base vs quote for current pair
+    const baseCoin = coinA.denom === baseDenom.value ? coinA : coinB
+    const quoteCoin = coinA.denom === quoteDenom.value ? coinA : coinB
+
+    // Normalize amounts
+    const normalizedBase = metadata.normalize({
+      amount: baseCoin.amount,
+      denom: baseCoin.denom,
+    })
+    const normalizedQuote = metadata.normalize({
+      amount: quoteCoin.amount,
+      denom: quoteCoin.denom,
+    })
+
+    const baseAmount = parseFloat(normalizedBase.display.amount)
+    const quoteAmount = parseFloat(normalizedQuote.display.amount)
+
+    if (baseAmount === 0) {
+      prices[poolId] = '∞'
+    } else {
+      const price = quoteAmount / baseAmount
+      prices[poolId] = price.toFixed(6)
+    }
+  }
+
+  return prices
+})
 
 // Helper functions
 function formatDisplayCoin(coin: Coin): string {
@@ -74,27 +242,24 @@ function formatDisplayCoin(coin: Coin): string {
 }
 
 function poolPrice(poolId: string): string {
-  const pool = pools.value.find((p) => p.pool_id === poolId)
-  if (!pool || !pool.coins || pool.coins.length !== 2) return 'N/A'
-
-  // Assume coins are ordered as [base, quote] for this pair
-  const [coin0, coin1] = pool.coins
-
-  // Calculate price as coin1/coin0 (quote per base)
-  const amount0 = parseFloat(coin0.amount)
-  const amount1 = parseFloat(coin1.amount)
-
-  if (amount0 === 0) return '∞'
-
-  const price = amount1 / amount0
-  return price.toFixed(6)
+  return poolPrices.value[poolId] || 'N/A'
 }
 
 function offerPrice(offer: any): string {
   if (!offer.remaining_have || !offer.remaining_want) return 'N/A'
 
-  const haveAmount = parseFloat(offer.remaining_have.amount)
-  const wantAmount = parseFloat(offer.remaining_want.amount)
+  // Normalize to display amounts before calculating price
+  const normalizedHave = metadata.normalize({
+    amount: offer.remaining_have.amount,
+    denom: offer.remaining_have.denom,
+  })
+  const normalizedWant = metadata.normalize({
+    amount: offer.remaining_want.amount,
+    denom: offer.remaining_want.denom,
+  })
+
+  const haveAmount = parseFloat(normalizedHave.display.amount)
+  const wantAmount = parseFloat(normalizedWant.display.amount)
 
   if (haveAmount === 0) return '∞'
 
@@ -124,8 +289,8 @@ function swapPair(): void {
           <div>
             <CardTitle>{{ baseDisplay }} / {{ quoteDisplay }}</CardTitle>
             <CardDescription>
-              Pools, orderbook offers, and auctions referencing the pair {{ baseDenom }} /
-              {{ quoteDenom }}.
+              Pools, orderbook offers, and auctions for the {{ baseDisplay }} /
+              {{ quoteDisplay }} trading pair.
             </CardDescription>
           </div>
           <div class="flex gap-2">
@@ -138,26 +303,28 @@ function swapPair(): void {
       </CardHeader>
       <CardContent>
         <div v-if="!pairReady" class="text-muted-foreground">
-          Provide both base and quote query params, e.g.
-          <code>?base=foo.dys&amp;quote=dys2</code>.
+          Provide both base and quote query params with display denoms, e.g.
+          <code>?base=FOO&amp;quote=DYS</code>.
         </div>
-        <div v-else-if="anyLoading" class="flex items-center gap-2 text-muted-foreground">
+        <div
+          v-else-if="poolsQuery.isLoading.value"
+          class="flex items-center gap-2 text-muted-foreground"
+        >
           <Spinner class="h-4 w-4" />
-          <span>Loading pair data…</span>
+          <span>Loading pools…</span>
         </div>
       </CardContent>
     </Card>
 
-    <Card v-if="pairReady">
+    <Card v-if="hasPools">
       <CardHeader>
         <CardTitle>AMM Pools</CardTitle>
         <CardDescription
-          >Pools escrowing both {{ baseDisplay }} and {{ quoteDisplay }}.</CardDescription
+          >Pools containing both {{ baseDisplay }} and {{ quoteDisplay }}.</CardDescription
         >
       </CardHeader>
       <CardContent>
-        <div v-if="pools.length === 0" class="text-muted-foreground text-sm">No pools yet.</div>
-        <Table v-else>
+        <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Pool</TableHead>
@@ -185,7 +352,7 @@ function swapPair(): void {
     </Card>
 
     <div class="grid gap-6 md:grid-cols-2" v-if="pairReady">
-      <Card>
+      <Card v-if="offersForward.length > 0">
         <CardHeader>
           <CardTitle>Offers (Sell {{ baseDisplay }})</CardTitle>
           <CardDescription>
@@ -193,10 +360,7 @@ function swapPair(): void {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div v-if="offersForward.length === 0" class="text-sm text-muted-foreground">
-            No offers currently.
-          </div>
-          <Table v-else>
+          <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
@@ -224,7 +388,7 @@ function swapPair(): void {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card v-if="offersReverse.length > 0">
         <CardHeader>
           <CardTitle>Offers (Sell {{ quoteDisplay }})</CardTitle>
           <CardDescription>
@@ -232,10 +396,7 @@ function swapPair(): void {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div v-if="offersReverse.length === 0" class="text-sm text-muted-foreground">
-            No offers currently.
-          </div>
-          <Table v-else>
+          <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>

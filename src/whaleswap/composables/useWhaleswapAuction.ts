@@ -20,7 +20,7 @@ export function useWhaleswapAuction(
         // We fetch all auctions and filter by ID
         pagination: { limit: '1000' },
       })
-      const auction = result.auctions.find(a => a.auction_id === auctionIdVal.value)
+      const auction = result.auctions.find((a) => a.auction_id === auctionIdVal.value)
       if (!auction) {
         throw new Error(`Auction ${auctionIdVal.value} not found`)
       }

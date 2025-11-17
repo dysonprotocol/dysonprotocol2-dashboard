@@ -38,7 +38,12 @@ export function useDenomMetadata() {
 
   watchEffect(() => {
     const metadatas = metadataQuery.data.value
-    log('data:watch', metadatas?.length ?? 0)
+    console.log(
+      '[useDenomMetadata:watchEffect] metadatas:',
+      metadatas?.length ?? 0,
+      'isLoading:',
+      metadataQuery.isLoading.value
+    )
     if (!Array.isArray(metadatas) || metadatas.length === 0) return
     const timestamp = new Date().toISOString()
     for (const metadata of metadatas) {
@@ -47,26 +52,29 @@ export function useDenomMetadata() {
         primary_unit: metadata.display,
         updated_time: timestamp,
       }
-      log('upsert', { base: metadata.base, display: metadata.display })
+      console.log('[useDenomMetadata:upsert] base:', metadata.base, 'display:', metadata.display)
       void upsertCollectionRow(denomMetadataCollection, metadata.base, row)
     }
   })
 
-  const metadataLive = useLiveQuery((q) =>
-    q.from({ meta: denomMetadataCollection }).select(({ meta }) => meta)
-  )
-
+  // Use query data directly instead of live query for reactivity
   const baseIndex = computed(() => {
     const map = new Map<string, DenomMetadataRow>()
-    for (const metadata of metadataLive.data.value ?? []) {
-      map.set(metadata.base, metadata)
+    const metadatas = metadataQuery.data.value ?? []
+    for (const metadata of metadatas) {
+      map.set(metadata.base, {
+        ...metadata,
+        primary_unit: metadata.display,
+        updated_time: new Date().toISOString(),
+      })
     }
     return map
   })
 
   const aliasIndex = computed(() => {
     const map = new Map<string, string>()
-    for (const metadata of metadataLive.data.value ?? []) {
+    const metadatas = metadataQuery.data.value ?? []
+    for (const metadata of metadatas) {
       map.set(metadata.base, metadata.base)
       if (metadata.display) map.set(metadata.display, metadata.base)
       for (const unit of metadata.denom_units ?? []) {
@@ -178,8 +186,8 @@ export function useDenomMetadata() {
   }
 
   return {
-    data: computed(() => metadataLive.data.value ?? []),
-    isLoading: computed(() => metadataQuery.isLoading.value && !metadataLive.isReady.value),
+    data: computed(() => metadataQuery.data.value ?? []),
+    isLoading: metadataQuery.isLoading,
     error: metadataQuery.error,
     resolveDisplayDenom,
     resolveBaseDenom: toBaseDenom,

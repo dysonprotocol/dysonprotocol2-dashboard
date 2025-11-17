@@ -1,0 +1,1 @@
+import{bS as t,i as a,bT as s}from"./index-C-QkGlaN.js";function l(){const e=t({attribute:"class",selector:"html",storageKey:"vueuse-color-scheme",initialValue:"auto",emitAuto:!0}),o=s(),r=a(()=>e.value==="dark"||e.value==="auto"&&o.value);return{mode:e,prefersDark:o,isDark:r}}export{l as u};
