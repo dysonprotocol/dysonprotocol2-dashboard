@@ -47,9 +47,7 @@ export function createPositionsColumns(
       cell: ({ row }) =>
         h('div', { class: 'font-mono text-sm' }, [
           truncateAddress(row.original.user),
-          row.original.isOwn
-            ? h('span', { class: 'ml-1 text-xs text-primary' }, '(You)')
-            : null,
+          row.original.isOwn ? h('span', { class: 'ml-1 text-xs text-primary' }, '(You)') : null,
         ]),
       filterFn: 'includesString',
     },
@@ -78,6 +76,36 @@ export function createPositionsColumns(
         Number(
           BigInt(a.original.accrued_interest.amount) - BigInt(b.original.accrued_interest.amount)
         ),
+    },
+    {
+      id: 'pnl',
+      header: 'P&L',
+      cell: ({ row }) => {
+        const profit = BigInt(row.original.total_realized_profit?.amount || '0')
+        const loss = BigInt(row.original.total_realized_loss?.amount || '0')
+        const netPnl = profit - loss
+        const denom = row.original.total_realized_profit?.denom || row.original.borrowed.denom
+        const pnlText =
+          netPnl >= 0n
+            ? `+${formatCoin({ amount: netPnl.toString(), denom })}`
+            : formatCoin({ amount: (-netPnl).toString(), denom })
+        return h(
+          'span',
+          {
+            class: `font-mono text-sm ${netPnl >= 0n ? 'text-green-600' : 'text-red-600'}`,
+          },
+          pnlText
+        )
+      },
+      sortingFn: (a, b) => {
+        const aProfit = BigInt(a.original.total_realized_profit?.amount || '0')
+        const aLoss = BigInt(a.original.total_realized_loss?.amount || '0')
+        const aNet = aProfit - aLoss
+        const bProfit = BigInt(b.original.total_realized_profit?.amount || '0')
+        const bLoss = BigInt(b.original.total_realized_loss?.amount || '0')
+        const bNet = bProfit - bLoss
+        return Number(aNet - bNet)
+      },
     },
     {
       id: 'health',
@@ -115,7 +143,3 @@ export function createPositionsColumns(
     },
   ]
 }
-
-
-
-

@@ -212,10 +212,13 @@ const slippageInfo = computed(() => {
 
     const expected = BigInt(expectedOutput.value)
     const min = minOutput.value
+    const inputAmount = BigInt(swapIn.value.amount)
 
-    if (!min) return null
+    if (!min || inputAmount === 0n) return null
 
     const slippagePct = Number(((expected - min) * 10000n) / expected) / 100
+    const expectedPrice = Number(expected) / Number(inputAmount)
+    const protectedPrice = Number(min) / Number(inputAmount)
 
     try {
       const expectedNormalized = wallet.normalizeCoin({
@@ -226,7 +229,12 @@ const slippageInfo = computed(() => {
         amount: min.toString(),
         denom: swapOut.value.denom,
       })
+      const inputNormalized = wallet.normalizeCoin({
+        amount: swapIn.value.amount,
+        denom: swapIn.value.denom,
+      })
       const displayDenom = expectedNormalized.display.denom
+      const inputDisplayDenom = inputNormalized.display.denom
 
       return {
         mode: 'exact-in',
@@ -235,7 +243,10 @@ const slippageInfo = computed(() => {
         expectedDisplay: expectedNormalized.display.amount,
         minDisplay: minNormalized.display.amount,
         displayDenom,
+        inputDisplayDenom,
         slippagePct,
+        expectedPrice,
+        protectedPrice,
       }
     } catch (e) {
       console.error('[SwapPanel] Failed to normalize slippage info:', e)
@@ -246,7 +257,10 @@ const slippageInfo = computed(() => {
         expectedDisplay: expected.toString(),
         minDisplay: min.toString(),
         displayDenom: swapOut.value.denom,
+        inputDisplayDenom: swapIn.value.denom,
         slippagePct,
+        expectedPrice,
+        protectedPrice,
       }
     }
   } else if (isExactOut) {
@@ -261,6 +275,9 @@ const slippageInfo = computed(() => {
     // swapIn already contains the maximum (expected + slippage)
     const max = BigInt(swapIn.value.amount)
     const bufferPct = Number(((max - expectedInput) * 10000n) / expectedInput) / 100
+
+    const expectedPrice = Number(exactOutput) / Number(expectedInput)
+    const protectedPrice = Number(exactOutput) / Number(max)
 
     try {
       const outputNormalized = wallet.normalizeCoin({
@@ -287,6 +304,8 @@ const slippageInfo = computed(() => {
         outputDisplayDenom: outputNormalized.display.denom,
         inputDisplayDenom: expectedInputNormalized.display.denom,
         bufferPct,
+        expectedPrice,
+        protectedPrice,
       }
     } catch (e) {
       console.error('[SwapPanel] Failed to normalize slippage info:', e)
@@ -301,6 +320,8 @@ const slippageInfo = computed(() => {
         outputDisplayDenom: swapOut.value.denom,
         inputDisplayDenom: swapIn.value.denom,
         bufferPct,
+        expectedPrice,
+        protectedPrice,
       }
     }
   }
@@ -722,6 +743,14 @@ async function executeSwap() {
           <div class="text-muted-foreground">
             Protected minimum output: {{ slippageInfo.minDisplay }} {{ slippageInfo.displayDenom }}
           </div>
+          <div class="text-muted-foreground">
+            Expected price: {{ slippageInfo.expectedPrice.toFixed(6) }}
+            {{ slippageInfo.displayDenom }}/{{ slippageInfo.inputDisplayDenom }}
+          </div>
+          <div class="text-muted-foreground">
+            Protected price: {{ slippageInfo.protectedPrice.toFixed(6) }}
+            {{ slippageInfo.displayDenom }}/{{ slippageInfo.inputDisplayDenom }}
+          </div>
           <div class="text-xs text-muted-foreground">
             The swap will fail if you'd receive less than {{ slippageInfo.minDisplay }}
             {{ slippageInfo.displayDenom }}
@@ -736,6 +765,14 @@ async function executeSwap() {
             Protected maximum input: {{ slippageInfo.maxInputDisplay }}
             {{ slippageInfo.inputDisplayDenom }}
           </div>
+          <div class="text-muted-foreground">
+            Expected price: {{ slippageInfo.expectedPrice.toFixed(6) }}
+            {{ slippageInfo.outputDisplayDenom }}/{{ slippageInfo.inputDisplayDenom }}
+          </div>
+          <div class="text-muted-foreground">
+            Protected price: {{ slippageInfo.protectedPrice.toFixed(6) }}
+            {{ slippageInfo.outputDisplayDenom }}/{{ slippageInfo.inputDisplayDenom }}
+          </div>
           <div class="text-xs text-muted-foreground">
             You'll send at most {{ slippageInfo.maxInputDisplay }}
             {{ slippageInfo.inputDisplayDenom }} to receive exactly
@@ -746,8 +783,10 @@ async function executeSwap() {
       <div v-else class="text-sm space-y-1 p-2 bg-muted rounded">
         <div class="text-muted-foreground">Expected: -</div>
         <div class="text-muted-foreground">Protected amount: -</div>
+        <div class="text-muted-foreground">Expected price: -</div>
+        <div class="text-muted-foreground">Protected price: -</div>
         <div class="text-xs text-muted-foreground">
-          The swap will fail if the protected amount is less than the expected amount.
+          The swap will fail if the the protected price cannot be met.
         </div>
       </div>
 

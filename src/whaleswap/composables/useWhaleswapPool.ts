@@ -39,18 +39,27 @@ async function fetchAllPools(
   client: ReturnType<typeof useWhaleswapClient>,
   pageSize: number
 ): Promise<Pool[]> {
-  const pools: Pool[] = []
-  let nextKey: string | undefined
-  do {
-    const response: PoolsResponse = await client.pools({
-      pagination: {
-        key: nextKey,
-        limit: String(pageSize),
-      },
-    })
-    if (Array.isArray(response.pools)) pools.push(...response.pools)
-    nextKey = response.pagination?.next_key
-  } while (nextKey)
+  console.log('[fetchAllPools] Starting pool fetch using /pools/all endpoint')
+
+  // Use the /pools/all endpoint which should return all pools at once
+  const response: PoolsResponse = await client.poolsAll({
+    pagination: {
+      limit: String(pageSize),
+    },
+  })
+
+  console.log('[fetchAllPools] Response received:', {
+    poolsLength: response.pools?.length ?? 0,
+    fullResponse: response,
+  })
+
+  const pools = Array.isArray(response.pools) ? response.pools : []
+  console.log(
+    '[fetchAllPools] Completed fetch, total pools:',
+    pools.length,
+    'sample:',
+    pools.slice(0, 3)
+  )
   return pools
 }
 
@@ -72,8 +81,19 @@ export function useWhaleswapPoolsLive(options?: PoolsLiveOptions) {
   })
 
   watchEffect(() => {
+    console.log('[useWhaleswapPoolsLive] serverQuery watchEffect triggered')
     const pools = serverQuery.data.value
-    if (!pools || pools.length === 0) return
+    console.log('[useWhaleswapPoolsLive] serverQuery data:', {
+      poolsLength: pools?.length ?? 0,
+      poolsSample: pools?.slice(0, 2),
+      isLoading: serverQuery.isLoading.value,
+      isError: serverQuery.isError.value,
+      error: serverQuery.error.value,
+    })
+    if (!pools || pools.length === 0) {
+      console.log('[useWhaleswapPoolsLive] No pools from server query, skipping sync')
+      return
+    }
     console.debug('[useWhaleswapPoolsLive] syncing server pools to DB', { count: pools.length })
     for (const pool of pools) {
       mergePoolIntoStore(pool)
@@ -94,24 +114,41 @@ export function useWhaleswapPoolsLive(options?: PoolsLiveOptions) {
   })
 
   const livePools = computed(() => {
+    console.log('[useWhaleswapPoolsLive] livePools computed: checking data sources')
+    console.log('[useWhaleswapPoolsLive] livePools: poolsStore length:', poolsStore.value.length)
+    console.log(
+      '[useWhaleswapPoolsLive] livePools: localQuery ready:',
+      localQuery.isReady.value,
+      'data length:',
+      localQuery.data.value?.length ?? 0
+    )
+    console.log(
+      '[useWhaleswapPoolsLive] livePools: serverQuery data length:',
+      serverQuery.data.value?.length ?? 0
+    )
+
     if (poolsStore.value.length) {
-      console.debug('[useWhaleswapPoolsLive] returning store pools', {
+      console.log('[useWhaleswapPoolsLive] returning store pools', {
         count: poolsStore.value.length,
+        sample: poolsStore.value.slice(0, 2),
       })
       return poolsStore.value
     }
     if (localQuery.data.value && localQuery.data.value.length) {
-      console.debug('[useWhaleswapPoolsLive] returning local pools', {
+      console.log('[useWhaleswapPoolsLive] returning local pools', {
         count: localQuery.data.value.length,
+        sample: localQuery.data.value.slice(0, 2),
       })
       return localQuery.data.value
     }
     if (serverQuery.data.value) {
-      console.debug('[useWhaleswapPoolsLive] returning server pools (fallback)', {
+      console.log('[useWhaleswapPoolsLive] returning server pools (fallback)', {
         count: serverQuery.data.value.length,
+        sample: serverQuery.data.value.slice(0, 2),
       })
       return serverQuery.data.value
     }
+    console.log('[useWhaleswapPoolsLive] returning empty array - no pools available')
     return []
   })
 

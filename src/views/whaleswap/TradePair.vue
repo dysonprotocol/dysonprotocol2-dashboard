@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWhaleswapPairPools } from '@/whaleswap/composables/useWhaleswapPool'
 import { useWhaleswapPairOffers } from '@/whaleswap/composables/useWhaleswapOffer'
@@ -23,106 +23,53 @@ const route = useRoute()
 const router = useRouter()
 const metadata = useDenomMetadata()
 
-// Debug all reactive state
-watchEffect(() => {
-  console.log('[TradePair:INIT] Route params:', route.query)
-  console.log('[TradePair:INIT] Metadata state:', {
-    isLoading: metadata.isLoading.value,
-    dataLength: metadata.data.value?.length ?? 0,
-    data: metadata.data.value,
-  })
-})
+// Reactive refs for route parameters - updated when route changes
+const baseParam = ref('')
+const quoteParam = ref('')
 
-// Parse query params as display denoms
-const baseDisplayParam = computed(() => {
-  const value = route.query.base as string
-  console.log('[baseDisplayParam] computed:', value)
-  return value
-})
-const quoteDisplayParam = computed(() => {
-  const value = route.query.quote as string
-  console.log('[quoteDisplayParam] computed:', value)
-  return value
-})
+// Watch individual query params for reliable reactivity during navigation
+watch(
+  () => route.query.base,
+  (base) => {
+    baseParam.value = (base as string) || ''
+  },
+  { immediate: true }
+)
+
+watch(
+  () => route.query.quote,
+  (quote) => {
+    quoteParam.value = (quote as string) || ''
+  },
+  { immediate: true }
+)
 
 // Resolve to base denoms for internal use (API calls, etc.)
 const baseDenom = computed(() => {
-  const display = baseDisplayParam.value
-  // Force dependency on metadata.data to ensure reactivity
-  const _metadataLength = metadata.data.value?.length ?? 0
-  const result = display ? metadata.resolveBaseDenom(display) : ''
-  console.log('[baseDenom] computed:', { display, result, metadataLength: _metadataLength })
-  return result
+  return baseParam.value ? metadata.resolveBaseDenom(baseParam.value) : ''
 })
 
 const quoteDenom = computed(() => {
-  const display = quoteDisplayParam.value
-  // Force dependency on metadata.data to ensure reactivity
-  const _metadataLength = metadata.data.value?.length ?? 0
-  const result = display ? metadata.resolveBaseDenom(display) : ''
-  console.log('[quoteDenom] computed:', { display, result, metadataLength: _metadataLength })
-  return result
+  return quoteParam.value ? metadata.resolveBaseDenom(quoteParam.value) : ''
 })
 
 // Display names
 const baseDisplay = computed(() => {
   const base = baseDenom.value
-  // Force dependency on metadata.data to ensure reactivity
-  const _metadataLength = metadata.data.value?.length ?? 0
-  const result = metadata.resolveDisplayDenom(base)
-  console.log('[baseDisplay] computed:', { base, result, metadataLength: _metadataLength })
-  return result
+  return metadata.resolveDisplayDenom(base)
 })
+
 const quoteDisplay = computed(() => {
   const base = quoteDenom.value
-  // Force dependency on metadata.data to ensure reactivity
-  const _metadataLength = metadata.data.value?.length ?? 0
-  const result = metadata.resolveDisplayDenom(base)
-  console.log('[quoteDisplay] computed:', { base, result, metadataLength: _metadataLength })
-  return result
-})
-
-// Redirect base denom URLs to display denom URLs once metadata is loaded
-watchEffect(() => {
-  if (metadata.isLoading.value) return // Wait for metadata to load
-
-  const currentBase = route.query.base as string
-  const currentQuote = route.query.quote as string
-
-  if (!currentBase || !currentQuote) return // Wait for both params
-
-  const baseDisplayDenom = metadata.resolveDisplayDenom(currentBase)
-  const quoteDisplayDenom = metadata.resolveDisplayDenom(currentQuote)
-
-  // If either param is not already a display denom, redirect
-  if (currentBase !== baseDisplayDenom || currentQuote !== quoteDisplayDenom) {
-    router.replace({
-      path: '/whaleswap/trade',
-      query: {
-        base: baseDisplayDenom,
-        quote: quoteDisplayDenom,
-      },
-    })
-  }
+  return metadata.resolveDisplayDenom(base)
 })
 
 // Pair ready check
 const pairReady = computed(() => {
-  // Force dependency on metadata.data to ensure reactivity
-  const _metadataLength = metadata.data.value?.length ?? 0
-  const hasMetadata = !metadata.isLoading.value && _metadataLength > 0
-  const hasDenoms = Boolean(baseDenom.value && quoteDenom.value)
-  const result = hasMetadata && hasDenoms
-  console.log('[pairReady] computed:', {
-    result,
-    hasMetadata,
-    hasDenoms,
-    baseDenom: baseDenom.value,
-    quoteDenom: quoteDenom.value,
-    metadataLength: _metadataLength,
-    metadataLoading: metadata.isLoading.value,
-  })
-  return result
+  const hasMetadata =
+    !metadata.isLoading.value && metadata.data.value && metadata.data.value.length > 0
+  const hasDenoms = Boolean(baseParam.value && quoteParam.value)
+  return hasMetadata && hasDenoms
 })
 
 // Data fetching
@@ -268,14 +215,11 @@ function offerPrice(offer: any): string {
 }
 
 function swapPair(): void {
-  const currentBase = route.query.base as string
-  const currentQuote = route.query.quote as string
-
-  router.push({
+  router.replace({
     path: '/whaleswap/trade',
     query: {
-      base: currentQuote,
-      quote: currentBase,
+      base: quoteParam.value,
+      quote: baseParam.value,
     },
   })
 }
@@ -335,15 +279,22 @@ function swapPair(): void {
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="pool in pools" :key="pool.pool_id">
+            <TableRow
+              v-for="pool in pools"
+              :key="pool.pool_id"
+              class="cursor-pointer hover:bg-muted/50"
+              @click="
+                router.replace(
+                  `/whaleswap/pools/${pool.pool_id}?base=${baseDisplay}&quote=${quoteDisplay}`
+                )
+              "
+            >
               <TableCell class="font-semibold">#{{ pool.pool_id }}</TableCell>
               <TableCell>{{ pool.coins.map(formatDisplayCoin).join(' / ') }}</TableCell>
               <TableCell>{{ poolPrice(pool.pool_id) }}</TableCell>
               <TableCell>{{ pool.num_trades }}</TableCell>
               <TableCell class="text-right">
-                <RouterLink :to="`/whaleswap/pools/${pool.pool_id}`">
-                  <Button size="sm" variant="outline">View Pool</Button>
-                </RouterLink>
+                <span class="text-muted-foreground text-sm">Click to view</span>
               </TableCell>
             </TableRow>
           </TableBody>
@@ -352,7 +303,7 @@ function swapPair(): void {
     </Card>
 
     <div class="grid gap-6 md:grid-cols-2" v-if="pairReady">
-      <Card v-if="offersForward.length > 0">
+      <Card>
         <CardHeader>
           <CardTitle>Offers (Sell {{ baseDisplay }})</CardTitle>
           <CardDescription>
@@ -360,7 +311,10 @@ function swapPair(): void {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div v-if="offersForward.length === 0" class="text-sm text-muted-foreground">
+            No offers yet.
+          </div>
+          <Table v-else>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
@@ -388,7 +342,7 @@ function swapPair(): void {
         </CardContent>
       </Card>
 
-      <Card v-if="offersReverse.length > 0">
+      <Card>
         <CardHeader>
           <CardTitle>Offers (Sell {{ quoteDisplay }})</CardTitle>
           <CardDescription>
@@ -396,7 +350,10 @@ function swapPair(): void {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div v-if="offersReverse.length === 0" class="text-sm text-muted-foreground">
+            No offers yet.
+          </div>
+          <Table v-else>
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>

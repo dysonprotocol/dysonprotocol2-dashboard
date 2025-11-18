@@ -66,13 +66,13 @@ export type AuctionsByPairResponse = AuctionsResponse
 export function useWhaleswapClient() {
   return {
     async pool(req: { poolId: bigint | string }): Promise<PoolResponse> {
-      return fetchJson<PoolResponse>(`/pools/${req.poolId}`)
+      return fetchJson<PoolResponse>(`/pool/${req.poolId}`)
     },
-    async pools(req?: { pagination?: PaginationParams }): Promise<PoolsResponse> {
+    async poolsAll(req?: { pagination?: PaginationParams }): Promise<PoolsResponse> {
       const params = new URLSearchParams()
       appendPagination(params, req?.pagination)
       const query = params.toString() ? `?${params}` : ''
-      return fetchJson<PoolsResponse>(`/pools${query}`)
+      return fetchJson<PoolsResponse>(`/pools/all${query}`)
     },
     async poolsByDenom(req: {
       denom: string

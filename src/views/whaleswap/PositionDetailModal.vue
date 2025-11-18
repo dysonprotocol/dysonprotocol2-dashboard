@@ -308,6 +308,14 @@ watch(closeFraction, () => closePositionMutation.reset())
             </p>
           </div>
           <div>
+            <Label class="text-xs text-muted-foreground">Realized Profit</Label>
+            <p class="font-mono text-sm">{{ formatCoin(position.total_realized_profit) }}</p>
+          </div>
+          <div>
+            <Label class="text-xs text-muted-foreground">Realized Loss</Label>
+            <p class="font-mono text-sm">{{ formatCoin(position.total_realized_loss) }}</p>
+          </div>
+          <div>
             <Label class="text-xs text-muted-foreground">Distance to Liquidation</Label>
             <p class="font-mono text-sm" :class="health.riskLevel === 'high' ? 'text-red-500' : ''">
               <span v-if="Number.isFinite(distanceToLiquidationPercent)">

@@ -11,7 +11,7 @@ const props = defineProps<{
   quote: string
   displayBase?: string
   displayQuote?: string
-  currentPrice: number | null
+  currentPrice?: number | null
 }>()
 
 const chartContainerRef = ref<HTMLDivElement | null>(null)
@@ -21,7 +21,6 @@ const { chartOptions, seriesColors, isDark } = useChartTheme()
 
 let chart: any = null
 let series: any = null
-let priceLine: any = null
 let resizeObserver: ResizeObserver | null = null
 
 console.log('[TradeHistoryChart] trades:', props.trades.length)
@@ -184,26 +183,6 @@ async function initChart() {
   updateChart()
 }
 
-function updatePriceLine() {
-  if (!series) return
-
-  if (priceLine) {
-    series.removePriceLine(priceLine)
-    priceLine = null
-  }
-
-  if (props.currentPrice !== null && isFinite(props.currentPrice) && props.currentPrice > 0) {
-    priceLine = series.createPriceLine({
-      price: props.currentPrice,
-      color: isDark.value ? '#10b981' : '#059669',
-      lineWidth: 2,
-      lineStyle: 3,
-      axisLabelVisible: true,
-      title: 'Price',
-    })
-  }
-}
-
 function updateChart() {
   if (!series || !chart) return
 
@@ -214,7 +193,6 @@ function updateChart() {
 
   series.setData(data)
   chart.timeScale().fitContent()
-  updatePriceLine()
 }
 
 function handleResize() {
@@ -255,7 +233,6 @@ onUnmounted(() => {
     chart.remove()
     chart = null
     series = null
-    priceLine = null
   }
 })
 
@@ -286,11 +263,8 @@ watch(isDark, () => {
       wickUpColor: colors.wickUpColor,
       wickDownColor: colors.wickDownColor,
     })
-    updatePriceLine()
   }
 })
-
-watch(() => props.currentPrice, updatePriceLine)
 </script>
 
 <template>
@@ -298,13 +272,18 @@ watch(() => props.currentPrice, updatePriceLine)
     <div class="flex items-center justify-between gap-4">
       <div class="flex items-center gap-4">
         <h3 class="text-lg font-semibold">Pool: {{ poolId }}</h3>
-        <div class="text-sm">
-          <span v-if="currentPrice !== null && isFinite(currentPrice)" class="font-mono">
-            {{ currentPrice.toFixed(6) }} {{ displayQuote || quote }}/{{ displayBase || base }}
-          </span>
-          <span v-else class="text-muted-foreground">Price unavailable</span>
+
+        <div
+          v-if="currentPrice !== null && currentPrice !== undefined && isFinite(currentPrice)"
+          class="text-lg font-bold"
+        >
+          {{ currentPrice.toFixed(6) }} {{ displayQuote }}
+          <span class="font-extrabold">/</span>
+          {{ displayBase }}
         </div>
+        <div v-else class="text-muted-foreground">Price data unavailable</div>
       </div>
+
       <div class="flex gap-1 border border-border rounded-md p-1">
         <button
           v-for="int in ['1m', '5m', '15m', '1h', '4h', '1d']"

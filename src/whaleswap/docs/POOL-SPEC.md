@@ -5,7 +5,7 @@
 ### 1. **Route & Data Fetching**
 
 - Route: `/pools/:poolId?base={denom}&quote={denom}`
-- Fetch pool: `GET /dysonprotocol/whaleswap/v1/pools/{poolId}`
+- Fetch pool: `GET /dysonprotocol/whaleswap/v1/pool/{poolId}`
 - Fetch trades: `GET /dysonprotocol/whaleswap/v1/trades/pool/{poolId}?pagination.limit=100&pagination.reverse=true`
 - Use TanStack Query for caching/refetching (existing pattern)
 

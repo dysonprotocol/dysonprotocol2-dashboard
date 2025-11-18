@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMediaQuery } from '@vueuse/core'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
 import { useWhaleswapPool, useWhaleswapPoolsLive } from '@/whaleswap/composables/useWhaleswapPool'
 import { usePoolChainEvents } from '@/whaleswap/composables/usePoolChainEvents'
 import { useWhaleswapTradesByPool } from '@/whaleswap/composables/useWhaleswapTrades'
@@ -24,9 +25,41 @@ import TradesTable from './TradesTable.vue'
 import PositionsTable from './PositionsTable.vue'
 
 const route = useRoute()
-const poolId = computed(() => String(route.params.poolId || ''))
-const baseDenomRaw = computed(() => String(route.query.base || ''))
-const quoteDenomRaw = computed(() => String(route.query.quote || ''))
+const router = useRouter()
+
+// Reactive refs for route parameters - updated when route changes
+const poolIdParam = ref('')
+const baseParam = ref('')
+const quoteParam = ref('')
+
+// Watch route changes and update reactive refs
+watch(
+  () => route.params.poolId,
+  (poolId) => {
+    poolIdParam.value = String(poolId || '')
+  },
+  { immediate: true }
+)
+
+watch(
+  () => route.query.base,
+  (base) => {
+    baseParam.value = String(base || '')
+  },
+  { immediate: true }
+)
+
+watch(
+  () => route.query.quote,
+  (quote) => {
+    quoteParam.value = String(quote || '')
+  },
+  { immediate: true }
+)
+
+const poolId = computed(() => poolIdParam.value)
+const baseDenomRaw = computed(() => baseParam.value)
+const quoteDenomRaw = computed(() => quoteParam.value)
 
 const isMobile = useMediaQuery('(max-width: 768px)')
 const panelDirection = computed(() => (isMobile.value ? 'vertical' : 'horizontal'))
@@ -154,16 +187,64 @@ const coin0 = computed(() => coins.value[0] || null)
 const coin1 = computed(() => coins.value[1] || null)
 
 const base = computed(() => {
-  if (baseDenom.value && coins.value.some((c) => c.denom === baseDenom.value)) {
+  // If both query params are specified and valid, use base as specified
+  if (
+    baseDenom.value &&
+    quoteDenom.value &&
+    coins.value.some((c) => c.denom === baseDenom.value) &&
+    coins.value.some((c) => c.denom === quoteDenom.value)
+  ) {
     return baseDenom.value
   }
+
+  // If only quote is specified, use the other denom as base
+  if (
+    quoteDenom.value &&
+    coins.value.some((c) => c.denom === quoteDenom.value) &&
+    coins.value.length === 2
+  ) {
+    return coins.value.find((c) => c.denom !== quoteDenom.value)?.denom || coin0.value?.denom || ''
+  }
+
+  // If no query params, prefer udys as quote if present
+  const hasUdys = coins.value.some((c) => c.denom === 'udys')
+  if (hasUdys && coins.value.length === 2) {
+    // Use the non-udys denom as base
+    return coins.value.find((c) => c.denom !== 'udys')?.denom || coin0.value?.denom || ''
+  }
+
+  // Default: use first coin as base
   return coin0.value?.denom || ''
 })
 
 const quote = computed(() => {
-  if (quoteDenom.value && coins.value.some((c) => c.denom === quoteDenom.value)) {
+  // If both query params are specified and valid, use quote as specified
+  if (
+    baseDenom.value &&
+    quoteDenom.value &&
+    coins.value.some((c) => c.denom === baseDenom.value) &&
+    coins.value.some((c) => c.denom === quoteDenom.value)
+  ) {
     return quoteDenom.value
   }
+
+  // If only base is specified, use the other denom as quote
+  if (
+    baseDenom.value &&
+    coins.value.some((c) => c.denom === baseDenom.value) &&
+    coins.value.length === 2
+  ) {
+    return coins.value.find((c) => c.denom !== baseDenom.value)?.denom || coin1.value?.denom || ''
+  }
+
+  // If no query params, prefer udys as quote if present
+  const hasUdys = coins.value.some((c) => c.denom === 'udys')
+  if (hasUdys && coins.value.length === 2) {
+    // Use udys as quote
+    return 'udys'
+  }
+
+  // Default: use second coin as quote
   return coin1.value?.denom || ''
 })
 
@@ -176,12 +257,23 @@ const price = computed(() => {
   const quoteAmt = BigInt(quoteCoin.value.amount)
   if (baseAmt === 0n) return null
   const p = Number(quoteAmt) / Number(baseAmt)
-  if (base.value === coin0.value?.denom && quote.value === coin1.value?.denom) {
-    return p
-  }
-  if (p === 0) return null
-  return 1 / p
+  return p
 })
+
+function getFeeRate(outputDenom: string): number {
+  // Use fee_rate if available (per-denom), fallback to fee_pct (deprecated)
+  if (pool.value?.fee_rate && Array.isArray(pool.value.fee_rate)) {
+    const feeCoin = pool.value.fee_rate.find((f) => f.denom === outputDenom)
+    if (feeCoin) {
+      return parseFloat(feeCoin.amount)
+    }
+  }
+  // Fallback to deprecated fee_pct
+  if (pool.value?.fee_pct) {
+    return parseFloat(pool.value.fee_pct)
+  }
+  return 0
+}
 
 function getDisplayDenom(denom: string): string {
   if (!denom) return denom
@@ -235,6 +327,16 @@ const poolLimits = computed(() => {
 function handleSwapSuccess() {
   console.log('[PoolDetail] Swap successful, refetching trades and pool data')
   refetchTrades()
+}
+
+function swapPair(): void {
+  router.replace({
+    path: `/whaleswap/pools/${poolId.value}`,
+    query: {
+      base: quoteParam.value || displayQuote.value,
+      quote: baseParam.value || displayBase.value,
+    },
+  })
 }
 
 onMounted(async () => {
@@ -359,14 +461,16 @@ onMounted(async () => {
             <div class="grid grid-cols-2 gap-4">
               <!-- Left Column -->
               <div class="space-y-3 text-xs">
-                <div>
-                  <h3 class="text-lg font-semibold">Pool: {{ pool.pool_id }}</h3>
-                  <div class="text-lg font-semibold">
-                    <span v-if="price !== null && isFinite(price)">
-                      {{ price.toFixed(6) }} {{ displayQuote }}/{{ displayBase }}
-                    </span>
-                    <span v-else class="text-muted-foreground">Price unavailable</span>
+                <div class="">
+                  <div>
+                    <div class="text-lg font-semibold">
+                      <span v-if="price !== null && isFinite(price)">
+                        {{ price.toFixed(6) }} {{ displayBase }}/{{ displayQuote }}
+                      </span>
+                      <span v-else class="text-muted-foreground">Price unavailable</span>
+                    </div>
                   </div>
+                  <Button variant="outline" size="sm" @click="swapPair">Swap Pair</Button>
                 </div>
 
                 <div>

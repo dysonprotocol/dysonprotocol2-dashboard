@@ -9,7 +9,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatTradeId, formatCoinsPrimary, formatTimestamp, truncateAddress } from '@/whaleswap/utils/formatters'
+import {
+  formatTradeId,
+  formatCoinsPrimary,
+  formatTimestamp,
+  truncateAddress,
+  getDisplayDenom,
+} from '@/whaleswap/utils/formatters'
 import type { Trade } from '@/whaleswap/utils/types'
 
 const props = defineProps<{
@@ -27,6 +33,40 @@ const filteredTrades = computed(() => {
     )
   })
 })
+
+function getTradeSide(trade: Trade): string | null {
+  for (const op of trade.operations || []) {
+    if (!op.swap || String(op.swap.pool_id) !== String(props.poolId)) continue
+    if (!op.sent || !op.received) continue
+
+    const receivedDenom = op.received.denom
+    const sentDenom = op.sent.denom
+
+    if (receivedDenom === props.quote) {
+      return 'Buy'
+    } else if (sentDenom === props.quote) {
+      return 'Sell'
+    }
+  }
+  return null
+}
+
+function getTradeAmount(trade: Trade): string | null {
+  for (const op of trade.operations || []) {
+    if (!op.swap || String(op.swap.pool_id) !== String(props.poolId)) continue
+    if (!op.sent || !op.received) continue
+
+    const receivedDenom = op.received.denom
+    const sentDenom = op.sent.denom
+
+    if (receivedDenom === props.quote) {
+      return formatCoinsPrimary([op.received])
+    } else if (sentDenom === props.quote) {
+      return formatCoinsPrimary([op.sent])
+    }
+  }
+  return null
+}
 
 function getPrice(trade: Trade): string | null {
   for (const op of trade.operations || []) {
@@ -63,8 +103,8 @@ function getPrice(trade: Trade): string | null {
         <TableRow>
           <TableHead class="w-[100px]">Trade ID</TableHead>
           <TableHead>Trader</TableHead>
-          <TableHead>Sent</TableHead>
-          <TableHead>Received</TableHead>
+          <TableHead>Side</TableHead>
+          <TableHead>Amount</TableHead>
           <TableHead class="text-right">Price</TableHead>
           <TableHead class="text-right">Time</TableHead>
         </TableRow>
@@ -73,7 +113,11 @@ function getPrice(trade: Trade): string | null {
         <TableRow
           v-for="trade in filteredTrades"
           :key="trade.trade_id"
-          class="cursor-pointer hover:bg-accent/50"
+          :class="[
+            'hover:bg-accent/50',
+            getTradeSide(trade) === 'Buy' ? 'bg-green-50/50 dark:bg-green-900/20' : '',
+            getTradeSide(trade) === 'Sell' ? 'bg-red-50/50 dark:bg-red-900/20' : '',
+          ]"
         >
           <TableCell class="font-mono">
             <RouterLink
@@ -87,13 +131,13 @@ function getPrice(trade: Trade): string | null {
             {{ truncateAddress(trade.trader) }}
           </TableCell>
           <TableCell class="font-mono text-sm">
-            {{ formatCoinsPrimary(trade.total_sent) }}
+            {{ getTradeSide(trade) || '—' }}
           </TableCell>
           <TableCell class="font-mono text-sm">
-            {{ formatCoinsPrimary(trade.total_received) }}
+            {{ getTradeAmount(trade) || '—' }}
           </TableCell>
           <TableCell class="text-right font-mono text-sm">
-            {{ getPrice(trade) || '—' }}
+            {{ getPrice(trade) ? `${getPrice(trade)} ${getDisplayDenom(props.quote)}` : '—' }}
           </TableCell>
           <TableCell class="text-right text-xs text-muted-foreground">
             {{ formatTimestamp(trade.timestamp) }}
@@ -108,4 +152,3 @@ function getPrice(trade: Trade): string | null {
     </Table>
   </div>
 </template>
-

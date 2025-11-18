@@ -1,4 +1,5 @@
 <script setup lang="ts">
+1 / 0 // TODO: remove this file
 import { computed, h, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { FlexRender, getCoreRowModel, getSortedRowModel, useVueTable } from '@tanstack/vue-table'

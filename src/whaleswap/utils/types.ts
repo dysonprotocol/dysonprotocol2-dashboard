@@ -112,6 +112,9 @@ export type LeveragePosition = {
   initial_borrowed?: Coin
   total_interest_paid?: Coin
   last_interest_settlement_time?: string
+  total_realized_profit: Coin
+  total_realized_loss: Coin
+  trade_ids?: string[]
 }
 
 export type OfferData = {

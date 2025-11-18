@@ -12,7 +12,7 @@
       <div class="flex min-w-0 grow flex-col min-h-0 overflow-auto">
         <Topbar />
         <div id="layout-content" class="pl-2 pr-2">
-          <router-view />
+          <router-view :key="$route.path + JSON.stringify($route.query)" />
         </div>
       </div>
       <label id="layout-sidebar-backdrop" for="layout-sidebar-toggle-trigger" />

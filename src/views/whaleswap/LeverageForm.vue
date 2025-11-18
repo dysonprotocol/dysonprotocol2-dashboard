@@ -713,14 +713,14 @@ function handleShortClick() {
           </div>
           <div class="text-muted-foreground">Entry Price:</div>
           <div class="font-mono">
-            {{ poolPrice.toFixed(6) }} {{ displayQuote }}/{{ displayBase }}
+            {{ poolPrice.toFixed(6) }} {{ displayBase }}/{{ displayQuote }}
           </div>
 
           <div v-if="liquidationPrice !== null" class="text-muted-foreground">
             Liquidation Price (approx):
           </div>
           <div v-if="liquidationPrice !== null" class="font-mono font-semibold">
-            {{ liquidationPrice.toFixed(6) }} {{ displayQuote }}/{{ displayBase }}
+            {{ liquidationPrice.toFixed(6) }} {{ displayBase }}/{{ displayQuote }}
           </div>
 
           <div v-if="borrowDenomLimits?.interestRate" class="text-muted-foreground">
