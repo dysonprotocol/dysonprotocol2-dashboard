@@ -1,0 +1,1 @@
+import{d as t,c as o,y as r,g as n,ad as c,a7 as l,o as p}from"./index-DC_223Px.js";const i=t({__name:"CardDescription",props:{class:{}},setup(s){const e=s;return(a,d)=>(p(),o("p",{"data-slot":"card-description",class:r(n(c)("text-muted-foreground text-sm",e.class))},[l(a.$slots,"default")],2))}});export{i as _};

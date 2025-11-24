@@ -1,1 +1,0 @@
-import{d as e,c as l,y as n,g as o,ad as r,a7 as c,o as i}from"./index-CJnpPSht.js";const d=e({__name:"AlertTitle",props:{class:{}},setup(a){const s=a;return(t,m)=>(i(),l("div",{"data-slot":"alert-title",class:n(o(r)("col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight",s.class))},[c(t.$slots,"default")],2))}});export{d as _};
