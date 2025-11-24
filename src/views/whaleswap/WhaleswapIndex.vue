@@ -167,7 +167,7 @@ function formatDisplayAmount(value: string, opts?: Intl.NumberFormatOptions) {
 }
 
 function goToTrade(denom: string) {
-  router.replace({
+  router.push({
     path: '/whaleswap/trade',
     query: {
       base: denom,

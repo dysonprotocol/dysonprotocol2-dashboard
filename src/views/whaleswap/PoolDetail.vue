@@ -514,7 +514,7 @@ onMounted(async () => {
                   <div class="font-mono ml-2">{{ pool.num_trades || '0' }}</div>
                 </div>
 
-                <Button variant="outline" size="sm" @click="swapPair">Swap Pair</Button>
+                <Button variant="outline" size="sm" @click="swapPair">Reverse base/quote</Button>
               </div>
 
               <!-- Right Column - Pool Limits -->

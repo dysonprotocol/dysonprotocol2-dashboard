@@ -238,7 +238,7 @@ function swapPair(): void {
             </CardDescription>
           </div>
           <div class="flex gap-2">
-            <Button variant="outline" @click="swapPair">Swap Pair</Button>
+            <Button variant="outline" @click="swapPair">Reverse base/quote</Button>
             <RouterLink to="/whaleswap">
               <Button variant="secondary">Back to Markets</Button>
             </RouterLink>
@@ -284,7 +284,7 @@ function swapPair(): void {
               :key="pool.pool_id"
               class="cursor-pointer hover:bg-muted/50"
               @click="
-                router.replace(
+                router.push(
                   `/whaleswap/pools/${pool.pool_id}?base=${baseDisplay}&quote=${quoteDisplay}`
                 )
               "
