@@ -185,12 +185,16 @@ export function useWhaleswapTradesByPool(
   opts?: {
     limit?: MaybeRefOrGetter<string>
     offset?: MaybeRefOrGetter<string>
+    reverse?: MaybeRefOrGetter<boolean>
+    countTotal?: MaybeRefOrGetter<boolean>
     options?: Partial<UseQueryOptions<TradesResponse>>
   }
 ) {
   const client = useWhaleswapClient()
   const limitVal = computed(() => toValue(opts?.limit))
   const offsetVal = computed(() => toValue(opts?.offset))
+  const reverseVal = computed(() => toValue(opts?.reverse) ?? true)
+  const countTotalVal = computed(() => toValue(opts?.countTotal) ?? true)
   const poolIdVal = computed(() => String(toValue(poolId)))
 
   const serverQuery = useQuery({
@@ -199,7 +203,8 @@ export function useWhaleswapTradesByPool(
       const pagination = {
         limit: BigInt(limitVal.value || '50'),
         offset: BigInt(offsetVal.value || '0'),
-        reverse: true,
+        reverse: reverseVal.value,
+        countTotal: countTotalVal.value,
       }
       return await client.tradesByPool({ poolId: poolIdVal.value, pagination })
     },

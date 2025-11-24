@@ -3,13 +3,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMediaQuery } from '@vueuse/core'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -125,31 +118,8 @@ const { data: tradesData, refetch: refetchTrades } = useWhaleswapTradesByPool(po
   options: { staleTime: 5000 },
 })
 const trades = computed(() => tradesData.value?.trades || [])
-const traderFilter = ref('all')
 const activeTab = ref<'trades' | 'positions'>('trades')
 const actionTab = ref<'swap' | 'leverage'>('swap')
-const traderAddress = computed(() => (traderFilter.value === 'all' ? '' : traderFilter.value))
-
-interface LocalWalletEntry {
-  name: string
-  address: string
-}
-
-const traderOptions = computed(() => {
-  const wallets = Array.isArray(wallet.localCosmJsWallets?.value)
-    ? (wallet.localCosmJsWallets.value as LocalWalletEntry[])
-    : []
-  const walletOptions = wallets.map((entry) => ({
-    value: entry.address,
-    label: `${entry.name} ${entry.address}`,
-  }))
-  return [{ value: 'all', label: 'All' }, ...walletOptions]
-})
-
-const filteredTrades = computed(() => {
-  if (traderAddress.value === '') return trades.value
-  return trades.value.filter((trade) => trade.trader === traderAddress.value)
-})
 
 // Positions query - always fetch (not just when tab is active) so modal updates work
 const positionsQuery = useWhaleswapPositions({
@@ -414,37 +384,21 @@ onMounted(async () => {
           <ResizableHandle with-handle class="hover:bg-green-500" />
 
           <!-- Trades/Positions Tabs -->
-          <ResizablePanel :default-size="40" class="pool-detail-panel">
-            <div class="h-full flex flex-col p-4">
-              <Tabs v-model="activeTab" default-value="trades" class="flex flex-col flex-1">
-                <div
-                  class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <TabsList>
-                    <TabsTrigger value="trades">Trades</TabsTrigger>
-                    <TabsTrigger value="positions">Positions</TabsTrigger>
-                  </TabsList>
-                  <div v-if="activeTab === 'trades'" class="w-full sm:w-64">
-                    <Select v-model="traderFilter">
-                      <SelectTrigger class="w-full">
-                        <SelectValue placeholder="Filter trader" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem
-                          v-for="option in traderOptions"
-                          :key="option.value"
-                          :value="option.value"
-                        >
-                          {{ option.label }}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+          <ResizablePanel :default-size="40" class="pool-detail-panel overflow-hidden">
+            <div class="h-full flex flex-col p-4 overflow-hidden">
+              <Tabs
+                v-model="activeTab"
+                default-value="trades"
+                class="flex flex-col flex-1 overflow-hidden"
+              >
+                <TabsList class="mb-4">
+                  <TabsTrigger value="trades">Trades</TabsTrigger>
+                  <TabsTrigger value="positions">Positions</TabsTrigger>
+                </TabsList>
                 <TabsContent value="trades" class="flex-1 overflow-hidden min-h-[300px]">
                   <TradesTable
-                    v-if="filteredTrades.length > 0"
-                    :trades="filteredTrades"
+                    v-if="trades.length > 0"
+                    :trades="trades"
                     :pool-id="poolId"
                     :base="base"
                     :quote="quote"
