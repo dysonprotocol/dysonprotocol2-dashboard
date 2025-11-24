@@ -79,7 +79,7 @@ export function createPositionsColumns(
     },
     {
       id: 'pnl',
-      header: 'P&L',
+      header: 'Realized Equity',
       cell: ({ row }) => {
         const profit = BigInt(row.original.total_realized_profit?.amount || '0')
         const loss = BigInt(row.original.total_realized_loss?.amount || '0')

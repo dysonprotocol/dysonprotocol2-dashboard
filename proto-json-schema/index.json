@@ -114,13 +114,13 @@
       {"type":"file","name":"dysonprotocol.crontask.v1.TasksByAddress.json"},
       {"type":"file","name":"dysonprotocol.crontask.v1.TasksByStatusGasPrice.json"},
       {"type":"file","name":"dysonprotocol.crontask.v1.TasksByStatusTimestamp.json"},
+      {"type":"file","name":"dysonprotocol.nameservice.v1.BidsByBidder.json"},
+      {"type":"file","name":"dysonprotocol.nameservice.v1.BidsForNFT.json"},
       {"type":"file","name":"dysonprotocol.nameservice.v1.ComputeHash.json"},
+      {"type":"file","name":"dysonprotocol.nameservice.v1.DenomByName.json"},
+      {"type":"file","name":"dysonprotocol.nameservice.v1.NFTClassesByName.json"},
+      {"type":"file","name":"dysonprotocol.nameservice.v1.NamesByDestination.json"},
       {"type":"file","name":"dysonprotocol.nameservice.v1.Params.json"},
-      {"type":"file","name":"dysonprotocol.nameservice.v1.QueryBidsByBidder.json"},
-      {"type":"file","name":"dysonprotocol.nameservice.v1.QueryBidsForNFT.json"},
-      {"type":"file","name":"dysonprotocol.nameservice.v1.QueryDenomByName.json"},
-      {"type":"file","name":"dysonprotocol.nameservice.v1.QueryNFTClassesByName.json"},
-      {"type":"file","name":"dysonprotocol.nameservice.v1.QueryNamesByDestination.json"},
       {"type":"file","name":"dysonprotocol.nameservice.v1.ResolveName.json"},
       {"type":"file","name":"dysonprotocol.nft.v1beta1.Balance.json"},
       {"type":"file","name":"dysonprotocol.nft.v1beta1.Class.json"},
@@ -343,11 +343,9 @@
       {"type":"file","name":"dysonprotocol.whaleswap.v1.MakeTrade.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.OpenAuction.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.OpenPosition.json"},
-      {"type":"file","name":"dysonprotocol.whaleswap.v1.PoolSwap.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.RedeemAuction.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.RemoveCollateral.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.RemoveLiquidity.json"},
-      {"type":"file","name":"dysonprotocol.whaleswap.v1.TakeOffer.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.UpdateParams.json"},
       {"type":"file","name":"dysonprotocol.whaleswap.v1.UpdatePoolConfig.json"},
       {"type":"file","name":"ibc.applications.interchain_accounts.controller.v1.RegisterInterchainAccount.json"},
@@ -389,5 +387,5 @@
     ]}
   ]}
 ,
-  {"type":"report","directories":3,"files":383}
+  {"type":"report","directories":3,"files":381}
 ]

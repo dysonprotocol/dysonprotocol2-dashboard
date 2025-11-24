@@ -43,9 +43,9 @@ function getTradeSide(trade: Trade): string | null {
     const sentDenom = op.sent.denom
 
     if (receivedDenom === props.quote) {
-      return 'Buy'
-    } else if (sentDenom === props.quote) {
       return 'Sell'
+    } else if (sentDenom === props.quote) {
+      return 'Buy'
     }
   }
   return null
@@ -60,9 +60,9 @@ function getTradeAmount(trade: Trade): string | null {
     const sentDenom = op.sent.denom
 
     if (receivedDenom === props.quote) {
-      return formatCoinsPrimary([op.received])
-    } else if (sentDenom === props.quote) {
       return formatCoinsPrimary([op.sent])
+    } else if (sentDenom === props.quote) {
+      return formatCoinsPrimary([op.received])
     }
   }
   return null

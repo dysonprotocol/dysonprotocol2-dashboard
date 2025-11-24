@@ -186,7 +186,46 @@ const coins = computed(() => pool.value?.coins || [])
 const coin0 = computed(() => coins.value[0] || null)
 const coin1 = computed(() => coins.value[1] || null)
 
+function getDisplayDenom(denom: string): string {
+  if (!denom) return denom
+  try {
+    const normalized = wallet.normalizeCoin({ amount: '0', denom })
+    return normalized.display.denom
+  } catch (e) {
+    console.error('[PoolDetail] Failed to get display denom:', e)
+    return denom
+  }
+}
+
+const normalizedCoins = computed(() => {
+  return coins.value.map((coin) => {
+    try {
+      const normalized = wallet.normalizeCoin({ amount: coin.amount, denom: coin.denom })
+      return {
+        ...coin,
+        displayAmount: normalized.display.amount,
+        displayDenom: normalized.display.denom,
+      }
+    } catch (e) {
+      console.error('[PoolDetail] Failed to normalize coin:', e)
+      return {
+        ...coin,
+        displayAmount: coin.amount,
+        displayDenom: coin.denom,
+      }
+    }
+  })
+})
+
 const base = computed(() => {
+  // Try to resolve baseParam using normalizedCoins (handles display denoms)
+  if (baseParam.value && normalizedCoins.value.length > 0) {
+    const match = normalizedCoins.value.find(
+      (c) => c.denom === baseParam.value || c.displayDenom === baseParam.value
+    )
+    if (match) return match.denom
+  }
+
   // If both query params are specified and valid, use base as specified
   if (
     baseDenom.value &&
@@ -218,6 +257,14 @@ const base = computed(() => {
 })
 
 const quote = computed(() => {
+  // Try to resolve quoteParam using normalizedCoins (handles display denoms)
+  if (quoteParam.value && normalizedCoins.value.length > 0) {
+    const match = normalizedCoins.value.find(
+      (c) => c.denom === quoteParam.value || c.displayDenom === quoteParam.value
+    )
+    if (match) return match.denom
+  }
+
   // If both query params are specified and valid, use quote as specified
   if (
     baseDenom.value &&
@@ -274,37 +321,6 @@ function getFeeRate(outputDenom: string): number {
   }
   return 0
 }
-
-function getDisplayDenom(denom: string): string {
-  if (!denom) return denom
-  try {
-    const normalized = wallet.normalizeCoin({ amount: '0', denom })
-    return normalized.display.denom
-  } catch (e) {
-    console.error('[PoolDetail] Failed to get display denom:', e)
-    return denom
-  }
-}
-
-const normalizedCoins = computed(() => {
-  return coins.value.map((coin) => {
-    try {
-      const normalized = wallet.normalizeCoin({ amount: coin.amount, denom: coin.denom })
-      return {
-        ...coin,
-        displayAmount: normalized.display.amount,
-        displayDenom: normalized.display.denom,
-      }
-    } catch (e) {
-      console.error('[PoolDetail] Failed to normalize coin:', e)
-      return {
-        ...coin,
-        displayAmount: coin.amount,
-        displayDenom: coin.denom,
-      }
-    }
-  })
-})
 
 const displayBase = computed(() => getDisplayDenom(base.value))
 const displayQuote = computed(() => getDisplayDenom(quote.value))
@@ -443,7 +459,12 @@ onMounted(async () => {
                     <Spinner class="size-5" />
                     <span>Loading positions...</span>
                   </div>
-                  <PositionsTable v-else :positions="activePositions" :pool-id="poolId" />
+                  <PositionsTable
+                    v-else
+                    :positions="activePositions"
+                    :pool-id="poolId"
+                    :pool="pool"
+                  />
                 </TabsContent>
               </Tabs>
             </div>
@@ -461,18 +482,6 @@ onMounted(async () => {
             <div class="grid grid-cols-2 gap-4">
               <!-- Left Column -->
               <div class="space-y-3 text-xs">
-                <div class="">
-                  <div>
-                    <div class="text-lg font-semibold">
-                      <span v-if="price !== null && isFinite(price)">
-                        {{ price.toFixed(6) }} {{ displayBase }}/{{ displayQuote }}
-                      </span>
-                      <span v-else class="text-muted-foreground">Price unavailable</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" @click="swapPair">Swap Pair</Button>
-                </div>
-
                 <div>
                   <div class="text-muted-foreground mb-1">Reserves:</div>
                   <div v-for="coin in normalizedCoins" :key="coin.denom" class="font-mono ml-2">
@@ -504,6 +513,8 @@ onMounted(async () => {
                   <div class="text-muted-foreground mb-1">Trades:</div>
                   <div class="font-mono ml-2">{{ pool.num_trades || '0' }}</div>
                 </div>
+
+                <Button variant="outline" size="sm" @click="swapPair">Swap Pair</Button>
               </div>
 
               <!-- Right Column - Pool Limits -->

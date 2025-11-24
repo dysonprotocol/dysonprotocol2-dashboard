@@ -17,12 +17,17 @@ const props = defineProps<{
 
 const wallet = useWallet()
 
+// Minimum leverage must be > 1.0 since borrow amount must be positive
+const MIN_LEVERAGE = 1.01
+
 // Direction: 'long' or 'short'
 const direction = ref<'long' | 'short'>('long')
 // Target asset to long/short
 const targetAsset = ref('')
-// Leverage multiplier (e.g., 2x, 3x, 5x)
-const leverageMultiplier = ref('')
+// Collateral denom (which asset to use as collateral)
+const selectedCollateralDenom = ref('')
+// Leverage multiplier (e.g., 2x, 3x, 5x) - initialize to minimum
+const leverageMultiplier = ref(MIN_LEVERAGE.toString())
 // Collateral amount
 const collateralAmount = ref('')
 
@@ -33,7 +38,7 @@ const leverageError = ref('')
 const leverageSliderValue = computed({
   get: () => {
     const val = parseFloat(leverageMultiplier.value)
-    return isNaN(val) || val < 1 ? [1] : [val]
+    return isNaN(val) || val < MIN_LEVERAGE ? [MIN_LEVERAGE] : [val]
   },
   set: (val: number[]) => {
     // Keep full precision to avoid validation mismatches
@@ -60,12 +65,15 @@ const baseDenoms = computed(() => {
   return denoms
 })
 
-// Initialize target asset to base
+// Initialize target asset to base and collateral to base
 watch(
   () => props.base,
   (newBase) => {
     if (newBase && !targetAsset.value) {
       targetAsset.value = newBase
+    }
+    if (newBase && !selectedCollateralDenom.value) {
+      selectedCollateralDenom.value = newBase
     }
   },
   { immediate: true }
@@ -121,31 +129,30 @@ const poolPrice = computed(() => {
   return 1 / p
 })
 
-// Determine collateral and borrow denoms based on direction and target asset
-// Key: held_denom = pool denom NOT matching borrow_denom
-// Long target: want held = target, so borrow = opposite
-// Short target: want held = opposite, so borrow = target
+// Collateral denom is user-selected
+const collateralDenom = computed(() => selectedCollateralDenom.value)
+
+// Determine borrow denom based on direction, target asset, and collateral
+// The strategy depends on what you're trying to achieve:
+//
+// Long target with target collateral: borrow opposite, buy more target
+// Long target with opposite collateral: borrow more opposite, buy target
+// Short target with target collateral: borrow target, sell for opposite
+// Short target with opposite collateral: borrow target, sell for more opposite
 const borrowDenom = computed(() => {
-  if (!targetAsset.value) return ''
+  if (!targetAsset.value || !collateralDenom.value) return ''
+
   if (direction.value === 'long') {
-    // To go LONG target, borrow the OTHER denom so held = target
+    // Going LONG target: want to end up holding more target
+    // If collateral = target: borrow opposite to buy more target
+    // If collateral = opposite: borrow more opposite to buy target
+    // Either way, borrow the opposite of target
     return targetAsset.value === props.base ? props.quote : props.base
   } else {
-    // To go SHORT target, borrow target so held = other
+    // Going SHORT target: want to borrow target and sell it
+    // Always borrow the target asset to short it
     return targetAsset.value
   }
-})
-
-const collateralDenom = computed(() => {
-  if (!targetAsset.value) return ''
-  // Collateral can be either pool denom. For UX simplicity, use held denom
-  // (the asset user wants exposure to)
-  // For long: collateral = target (held); for short: collateral = opposite (held)
-  return direction.value === 'long'
-    ? targetAsset.value
-    : targetAsset.value === props.base
-      ? props.quote
-      : props.base
 })
 
 // Calculate borrow amount from leverage multiplier
@@ -156,11 +163,12 @@ const calculatedBorrowAmount = computed(() => {
   if (isNaN(collateralAmt) || collateralAmt <= 0) return null
 
   const leverage = parseFloat(leverageMultiplier.value)
-  if (isNaN(leverage) || leverage < 1) return null
+  if (isNaN(leverage) || leverage < MIN_LEVERAGE) return null
 
   // Leverage = (collateral + borrowed) / collateral
   // So: borrowed = collateral * (leverage - 1)
-  // But we need to account for price conversion if denoms differ
+  // Must be > 1.0 since protocol requires positive borrow amount
+  // We need to account for price conversion if denoms differ
   if (collateralDenom.value === borrowDenom.value) {
     // Same denom: simple calculation
     const borrowAmt = collateralAmt * (leverage - 1)
@@ -199,6 +207,10 @@ const collateral = computed({
   }),
   set: (val: { amount: string; denom: string }) => {
     collateralAmount.value = val.amount
+    // Update selected collateral denom when user changes it in the selector
+    if (val.denom && val.denom !== selectedCollateralDenom.value) {
+      selectedCollateralDenom.value = val.denom
+    }
   },
 })
 
@@ -256,7 +268,7 @@ const collateralValueInBorrowDenom = computed(() => {
 
 // Calculate collateral ratio: CR = collateral_value / debt_value
 const collateralRatio = computed(() => {
-  if (!calculatedBorrowAmount.value || !collateralValueInBorrowDenom.value) return null
+  if (calculatedBorrowAmount.value === null || !collateralValueInBorrowDenom.value) return null
 
   const debtValue = parseFloat(calculatedBorrowAmount.value)
   if (debtValue === 0) return null
@@ -371,12 +383,19 @@ const validationErrors = computed(() => {
     return errors
   }
 
-  if (!leverageMultiplier.value || !calculatedBorrowAmount.value) {
+  if (!leverageMultiplier.value || calculatedBorrowAmount.value === null) {
     return errors
   }
 
   if (!borrowDenomLimits.value) {
     errors.push('Pool leverage parameters not configured')
+    return errors
+  }
+
+  // Protocol requires positive borrow amount
+  const borrowAmtFloat = parseFloat(calculatedBorrowAmount.value || '0')
+  if (borrowAmtFloat <= 0) {
+    errors.push(`Borrow amount must be positive (leverage must be > ${MIN_LEVERAGE.toFixed(2)}x)`)
     return errors
   }
 
@@ -398,6 +417,7 @@ const validationErrors = computed(() => {
     }
   }
 
+  const borrowAmt = BigInt(calculatedBorrowAmount.value || '0')
   if (limits.maxBorrowPercent !== null && baseCoin.value && quoteCoin.value) {
     const borrowReserve = borrowDenom.value === props.base ? baseCoin.value : quoteCoin.value
     const reserveAmount = BigInt(borrowReserve.amount)
@@ -411,7 +431,6 @@ const validationErrors = computed(() => {
       reserveAmount > outstandingBorrow ? reserveAmount - outstandingBorrow : 0n
 
     const maxBorrowAmount = BigInt(Math.floor(Number(effectiveAvailable) * limits.maxBorrowPercent))
-    const borrowAmt = BigInt(calculatedBorrowAmount.value || '0')
 
     if (borrowAmt > maxBorrowAmount) {
       errors.push(
@@ -430,7 +449,7 @@ const canOpenPosition = computed(() => {
     collateralAmount.value &&
     collateralDenom.value &&
     leverageMultiplier.value &&
-    calculatedBorrowAmount.value &&
+    calculatedBorrowAmount.value !== null &&
     borrowDenom.value &&
     validationErrors.value.length === 0
   )
@@ -481,8 +500,8 @@ async function executeOpenPosition() {
       return
     }
 
-    if (!calculatedBorrowAmount.value) {
-      leverageError.value = 'Invalid borrow amount calculation'
+    if (!calculatedBorrowAmount.value || parseFloat(calculatedBorrowAmount.value) <= 0) {
+      leverageError.value = 'Borrow amount must be positive'
       return
     }
 
@@ -542,6 +561,25 @@ function getDisplayDenom(denom: string): string {
 // Extract display denoms to reduce AST nodes
 const displayBase = computed(() => getDisplayDenom(props.base))
 const displayQuote = computed(() => getDisplayDenom(props.quote))
+
+// Strategy explanation based on direction, target, and collateral
+const strategyExplanation = computed(() => {
+  if (!targetAsset.value || !collateralDenom.value || !borrowDenom.value) return ''
+
+  const target = getDisplayDenom(targetAsset.value)
+  const collateral = getDisplayDenom(collateralDenom.value)
+  const borrow = getDisplayDenom(borrowDenom.value)
+
+  if (direction.value === 'long') {
+    if (collateralDenom.value === targetAsset.value) {
+      return `Put ${collateral}, borrow ${borrow}, buy more ${target}`
+    } else {
+      return `Put ${collateral}, borrow more ${borrow}, buy ${target}`
+    }
+  } else {
+    return `Put ${collateral}, borrow ${borrow}, sell for ${collateral === target ? borrow : 'more ' + collateral}`
+  }
+})
 
 // Extract click handlers per user preference
 function handleLongClick() {
@@ -614,21 +652,18 @@ function handleShortClick() {
 
       <!-- Collateral Input -->
       <div class="space-y-2">
-        <Label>
-          Collateral
-          <span class="text-xs text-muted-foreground ml-2">
-            ({{ getDisplayDenom(collateralDenom) }})
-          </span>
-        </Label>
+        <Label>Collateral</Label>
         <AmountDenomSelector
-          v-if="collateralDenom"
           v-model:base="collateral"
           :base-denoms="baseDenoms"
-          :default-base-denom="collateralDenom"
+          :default-base-denom="selectedCollateralDenom"
           :disabled="isPending"
         />
-        <div v-else class="text-sm text-muted-foreground p-2 bg-muted rounded">
-          Select direction and asset first
+        <div
+          v-if="strategyExplanation"
+          class="text-xs text-muted-foreground p-2 bg-muted/50 rounded"
+        >
+          Strategy: {{ strategyExplanation }}
         </div>
       </div>
 
@@ -637,7 +672,7 @@ function handleShortClick() {
         <div class="flex items-center justify-between">
           <Label>Leverage</Label>
           <span class="text-sm font-medium">
-            {{ parseFloat(leverageMultiplier.value || '1').toFixed(2) }}x
+            {{ parseFloat(leverageMultiplier || '1').toFixed(2) }}x
             <span v-if="maxLeverage" class="text-xs text-muted-foreground ml-1">
               / {{ maxLeverage.toFixed(2) }}x max
             </span>
@@ -645,14 +680,14 @@ function handleShortClick() {
         </div>
         <Slider
           v-model="leverageSliderValue"
-          :min="1"
+          :min="MIN_LEVERAGE"
           :max="maxLeverage || 10"
           :step="0.01"
           :disabled="isPending || !maxLeverage"
           class="w-full"
         />
         <div class="flex justify-between text-xs text-muted-foreground">
-          <span>1.00x (No leverage)</span>
+          <span>{{ MIN_LEVERAGE.toFixed(2) }}x (Min)</span>
           <span>{{ maxLeverage?.toFixed(2) || '10.00' }}x</span>
         </div>
       </div>

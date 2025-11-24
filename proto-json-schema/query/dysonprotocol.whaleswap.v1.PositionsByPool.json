@@ -253,6 +253,16 @@
                         "additionalProperties": false,
                         "description": "Opening principal snapshot for analytics/limits (borrowed denom)."
                     },
+                    "initial_held": {
+                        "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+                        "additionalProperties": false,
+                        "description": "Opening principal snapshot for analytics/limits (held denom)."
+                    },
+                    "initial_collateral": {
+                        "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+                        "additionalProperties": false,
+                        "description": "Opening principal snapshot for analytics/limits (collateral denom)."
+                    },
                     "total_interest_paid": {
                         "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
                         "additionalProperties": false,
@@ -264,7 +274,8 @@
                         "format": "date-time"
                     },
                     "accrued_interest_remainder": {
-                        "type": "string",
+                        "$ref": "#/definitions/cosmos.base.v1beta1.DecCoin",
+                        "additionalProperties": false,
                         "description": "Fractional interest remainder (<1 borrowed coin) preserved between settlements."
                     },
                     "trade_ids": {
@@ -283,6 +294,11 @@
                         "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
                         "additionalProperties": false,
                         "description": "Cumulative realized loss from this position over its lifetime, denominated in the borrowed denom. Includes: - Losses realized in ClosePosition (full and partial closes) - Losses realized during liquidation flows (if any)"
+                    },
+                    "collateral_returned": {
+                        "$ref": "#/definitions/cosmos.base.v1beta1.Coin",
+                        "additionalProperties": false,
+                        "description": "\u2550\u2550\u2550\u2550\u2550 FINAL COLLATERAL RETURNED \u2550\u2550\u2550\u2550\u2550 The amount of collateral returned to the user when the position was fully closed. For partial closes, this accumulates the returned amount."
                     }
                 },
                 "additionalProperties": false,

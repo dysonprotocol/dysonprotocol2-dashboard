@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { LeveragePosition } from '@/whaleswap/utils/types'
+import type { LeveragePosition, Pool } from '@/whaleswap/utils/types'
 import { createPositionsColumns, type PositionWithOwnership } from './positionsTableColumns'
 import PositionDetailModal from './PositionDetailModal.vue'
 import { useWallet } from '@/composables/useWallet'
@@ -33,6 +33,7 @@ import { calculatePositionHealth } from '@/whaleswap/composables/usePositionMuta
 const props = defineProps<{
   positions: LeveragePosition[]
   poolId?: string
+  pool?: Pool | null
 }>()
 
 const wallet = useWallet()

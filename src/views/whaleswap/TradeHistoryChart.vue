@@ -277,9 +277,7 @@ watch(isDark, () => {
           v-if="currentPrice !== null && currentPrice !== undefined && isFinite(currentPrice)"
           class="text-lg font-bold"
         >
-          {{ currentPrice.toFixed(6) }} {{ displayQuote }}
-          <span class="font-extrabold">/</span>
-          {{ displayBase }}
+          1 {{ displayBase }} ≈ {{ currentPrice.toFixed(6) }} {{ displayQuote }}
         </div>
         <div v-else class="text-muted-foreground">Price data unavailable</div>
       </div>
