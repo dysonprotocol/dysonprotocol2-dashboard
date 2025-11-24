@@ -85,7 +85,7 @@
     "tailwindcss": "4.1.11",
     "tailwindcss-motion": "^1.1.1",
     "typescript": "^5.7.3",
-    "vite": "^7.0.6",
+    "vite": "^7.1.11",
     "vite-plugin-html-inject": "^1.1.2",
     "vitest": "^3.2.4",
     "vue-tsc": "^2.1.10"
