@@ -69,6 +69,14 @@
               </span>
             </div>
           </div>
+          <!-- Migration CTA -->
+          <router-link to="/migrate" custom v-slot="{ href, navigate, isActive }">
+            <a :href="href" @click="navigate" :class="migrateLinkClass(isActive)">
+              <span class="iconify size-5" :class="'lucide--arrow-right-left'" />
+              <span>Convert old DYS to DYS2</span>
+            </a>
+          </router-link>
+
           <KeplrCard />
           <CosmjsWallets />
 
@@ -150,6 +158,13 @@ function linkClass(isActive) {
   const base =
     'w-full inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm justify-start transition-colors text-muted-foreground hover:text-foreground hover:bg-muted'
   if (isActive) return base + ' bg-muted text-foreground'
+  return base
+}
+
+function migrateLinkClass(isActive) {
+  const base =
+    'w-full inline-flex items-center gap-2 rounded-lg px-3 py-3 text-sm font-semibold transition-all bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm hover:shadow-md'
+  if (isActive) return base + ' ring-2 ring-emerald-500/50 bg-emerald-600'
   return base
 }
 

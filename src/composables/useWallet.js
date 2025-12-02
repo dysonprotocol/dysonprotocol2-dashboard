@@ -161,25 +161,47 @@ export function useWallet() {
   }
 
   const connectExtension = async (type) => {
+    console.log('[connectExtension] Starting connection for type:', type)
     const provider = type === 'keplr' ? (typeof window !== 'undefined' ? window.keplr : null) : null
     if (!provider) throw new Error(`Extension not found: ${type}`)
+    console.log('[connectExtension] Provider found, loading chain ID...')
     await loadChainIdFromApi()
+    console.log('[connectExtension] Chain ID loaded:', chainId.value, 'RPC:', rpcUrl.value)
     await suggestChainIfNeeded(provider)
+    console.log('[connectExtension] Chain suggested/enabled, getting signer...')
 
     const offlineSigner = provider.getOfflineSigner(chainId.value)
+    console.log('[connectExtension] Got signer, getting key...')
     let { name, bech32Address: address } = await provider.getKey(chainId.value)
+    console.log('[connectExtension] Got key - name:', name, 'address:', address)
 
     const existingIndex = unlockedWallets.value.findIndex((w) => w.address === address)
     state.activeWalletInstance = offlineSigner
 
     if (existingIndex === -1) {
+      console.log('[connectExtension] Adding new wallet to unlockedWallets')
       unlockedWallets.value.push({
         name: String(name),
         address: String(address),
         type: String(type),
       })
+      console.log('[connectExtension] unlockedWallets now:', JSON.stringify(unlockedWallets.value))
+    } else {
+      // Upgrade existing wallet to Keplr (preferred signer)
+      const existing = unlockedWallets.value[existingIndex]
+      if (existing.type !== type) {
+        console.log('[connectExtension] Upgrading wallet from', existing.type, 'to', type)
+        unlockedWallets.value.splice(existingIndex, 1, {
+          name: String(name),
+          address: String(address),
+          type: String(type),
+        })
+      } else {
+        console.log('[connectExtension] Wallet already connected via', type)
+      }
     }
     state.addressNames = {}
+    console.log('[connectExtension] Connection complete')
   }
 
   // UTILITIES
@@ -244,7 +266,8 @@ export function useWallet() {
 
     try {
       await provider.enable(chainId.value)
-    } catch {
+    } catch (enableError) {
+      console.log('[suggestChainIfNeeded] Initial enable failed, suggesting chain:', enableError?.message)
       await provider.experimentalSuggestChain(chainInfo)
       await provider.enable(chainId.value)
     }

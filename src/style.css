@@ -81,8 +81,8 @@ body {
   scrollbar-gutter: stable;
 }
 
-/* Desktop: checkbox hides sidebar */
-#layout-sidebar-toggle-trigger:checked ~ #layout-sidebar {
+/* Desktop: unchecked hides sidebar (collapsed by default) */
+#layout-sidebar-toggle-trigger:not(:checked) ~ #layout-sidebar {
   margin-inline-start: calc(var(--layout-sidebar-width) * -1);
 }
 

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
-import { createChart, CandlestickSeries } from 'lightweight-charts'
+import { createChart, CandlestickSeries, AreaSeries } from 'lightweight-charts'
 import type { Trade } from '@/whaleswap/utils/types'
 import { useChartTheme } from '@/composables/useChartTheme'
+import { useWallet } from '@/composables/useWallet'
+import { CandlestickChart, TrendingUp } from 'lucide-vue-next'
 
 const props = defineProps<{
   trades: Trade[]
@@ -16,8 +18,10 @@ const props = defineProps<{
 
 const chartContainerRef = ref<HTMLDivElement | null>(null)
 const interval = ref<'1m' | '5m' | '15m' | '1h' | '4h' | '1d'>('1m')
+const chartType = ref<'candles' | 'line'>('candles')
 
 const { chartOptions, seriesColors, isDark } = useChartTheme()
+const wallet = useWallet()
 
 let chart: any = null
 let series: any = null
@@ -48,17 +52,24 @@ const rawPriceData = computed(() => {
 
       const sentDenom = op.sent.denom
       const receivedDenom = op.received.denom
-      const sentAmount = BigInt(op.sent.amount)
-      const receivedAmount = BigInt(op.received.amount)
 
-      if (sentAmount === 0n || receivedAmount === 0n) continue
+      // Normalize amounts to account for different decimal exponents
+      const normalizedSent = wallet.normalizeCoin({ amount: op.sent.amount, denom: sentDenom })
+      const normalizedReceived = wallet.normalizeCoin({
+        amount: op.received.amount,
+        denom: receivedDenom,
+      })
+      const sentAmount = parseFloat(normalizedSent.display.amount)
+      const receivedAmount = parseFloat(normalizedReceived.display.amount)
+
+      if (sentAmount === 0 || receivedAmount === 0) continue
 
       let price: number | null = null
 
       if (sentDenom === props.base && receivedDenom === props.quote) {
-        price = Number(receivedAmount) / Number(sentAmount)
+        price = receivedAmount / sentAmount
       } else if (sentDenom === props.quote && receivedDenom === props.base) {
-        price = Number(sentAmount) / Number(receivedAmount)
+        price = sentAmount / receivedAmount
       }
 
       if (price !== null && isFinite(price) && price > 0) {
@@ -119,18 +130,28 @@ function createSeries() {
     series = null
   }
 
-  console.log('[TradeHistoryChart] Creating candlestick series')
-
   const colors = seriesColors.value
 
-  series = chart.addSeries(CandlestickSeries, {
-    upColor: colors.upColor,
-    downColor: colors.downColor,
-    borderVisible: false,
-    wickUpColor: colors.wickUpColor,
-    wickDownColor: colors.wickDownColor,
-    priceFormat: { type: 'price', precision: 6, minMove: 0.000001 },
-  })
+  if (chartType.value === 'candles') {
+    console.log('[TradeHistoryChart] Creating candlestick series')
+    series = chart.addSeries(CandlestickSeries, {
+      upColor: colors.upColor,
+      downColor: colors.downColor,
+      borderVisible: false,
+      wickUpColor: colors.wickUpColor,
+      wickDownColor: colors.wickDownColor,
+      priceFormat: { type: 'price', precision: 6, minMove: 0.000001 },
+    })
+  } else {
+    console.log('[TradeHistoryChart] Creating area series')
+    series = chart.addSeries(AreaSeries, {
+      lineColor: colors.upColor,
+      topColor: `${colors.upColor}40`,
+      bottomColor: `${colors.upColor}05`,
+      lineWidth: 2,
+      priceFormat: { type: 'price', precision: 6, minMove: 0.000001 },
+    })
+  }
 
   console.log('[TradeHistoryChart] Series created')
 }
@@ -191,7 +212,12 @@ function updateChart() {
 
   if (data.length === 0) return
 
-  series.setData(data)
+  if (chartType.value === 'candles') {
+    series.setData(data)
+  } else {
+    // Area series uses { time, value } format - use close price
+    series.setData(data.map((d) => ({ time: d.time, value: d.close })))
+  }
   chart.timeScale().fitContent()
 }
 
@@ -241,6 +267,12 @@ watch(interval, () => {
   updateChart()
 })
 
+watch(chartType, () => {
+  console.log('[TradeHistoryChart] chartType changed to:', chartType.value)
+  createSeries()
+  updateChart()
+})
+
 watch(
   chartData,
   () => {
@@ -271,32 +303,63 @@ watch(isDark, () => {
   <div class="flex flex-col gap-3 h-full">
     <div class="flex items-center justify-between gap-4">
       <div class="flex items-center gap-4">
-        <h3 class="text-lg font-semibold">Pool: {{ poolId }}</h3>
-
         <div
           v-if="currentPrice !== null && currentPrice !== undefined && isFinite(currentPrice)"
           class="text-lg font-bold"
         >
-          1 {{ displayBase }} ≈ {{ currentPrice.toFixed(6) }} {{ displayQuote }}
+          <span class="font-mono text-sm">
+            1&nbsp;{{ displayBase }} ≈&nbsp;{{ currentPrice.toFixed(6) }}&nbsp;{{ displayQuote }}
+          </span>
         </div>
         <div v-else class="text-muted-foreground">Price data unavailable</div>
       </div>
 
-      <div class="flex gap-1 border border-border rounded-md p-1">
-        <button
-          v-for="int in ['1m', '5m', '15m', '1h', '4h', '1d']"
-          :key="int"
-          type="button"
-          class="px-3 py-1 rounded text-sm transition"
-          :class="
-            interval === int
-              ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-          @click="interval = int as any"
-        >
-          {{ int }}
-        </button>
+      <div class="flex items-center gap-2">
+        <div class="flex gap-1 border border-border rounded-md p-1">
+          <button
+            v-for="int in ['1m', '5m', '15m', '1h', '4h', '1d']"
+            :key="int"
+            type="button"
+            class="px-3 py-1 rounded text-xs transition"
+            :class="
+              interval === int
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            "
+            @click="interval = int as any"
+          >
+            {{ int }}
+          </button>
+        </div>
+
+        <div class="flex gap-1 border border-border rounded-md p-1">
+          <button
+            type="button"
+            class="p-1.5 rounded transition"
+            :class="
+              chartType === 'line'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            "
+            title="Line chart"
+            @click="chartType = 'line'"
+          >
+            <TrendingUp class="size-4" />
+          </button>
+          <button
+            type="button"
+            class="p-1.5 rounded transition"
+            :class="
+              chartType === 'candles'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            "
+            title="Candlestick chart"
+            @click="chartType = 'candles'"
+          >
+            <CandlestickChart class="size-4" />
+          </button>
+        </div>
       </div>
     </div>
 

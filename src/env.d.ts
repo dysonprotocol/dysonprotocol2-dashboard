@@ -6,6 +6,24 @@ declare module '*.vue' {
   export default component
 }
 
+interface KeplrKey {
+  name: string
+  bech32Address: string
+  pubKey: Uint8Array
+  isNanoLedger: boolean
+}
+
+interface Keplr {
+  enable(chainId: string): Promise<void>
+  getKey(chainId: string): Promise<KeplrKey>
+  getOfflineSigner(chainId: string): any
+  experimentalSuggestChain(chainInfo: unknown): Promise<void>
+}
+
+interface Window {
+  keplr?: Keplr
+}
+
 interface ImportMetaEnv {
   readonly VITE_APP_NAME?: string
 }

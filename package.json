@@ -42,6 +42,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cosmjs-types": "^0.9.0",
+    "d3-delaunay": "^6.0.4",
     "decimal.js-light": "^2.5.1",
     "dompurify": "^3.1.6",
     "lightweight-charts": "^5.0.9",

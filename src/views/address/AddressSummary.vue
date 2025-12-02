@@ -279,7 +279,6 @@ const bankRows = computed(() => {
         amount: entry.spend.toString(),
         denom: base,
       }).display
-      if (String(disp.denom || '').includes('/')) continue
       withSpend.push({
         key: base,
         amount: disp.amount,

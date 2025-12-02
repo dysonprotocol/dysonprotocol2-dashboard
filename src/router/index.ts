@@ -6,12 +6,14 @@ import miscRoutes from './modules/misc'
 import redirectRoutes from './modules/redirects'
 import ibcRoutes from './modules/ibc'
 import ibcTransfersRoutes from './modules/ibcTransfers'
+import migrationRoutes from './modules/migration'
 
 const Index = () => import('@/views/Index.vue')
+const MigrationWizard = () => import('@/views/migration/MigrationWizard.vue')
 const DemoProtobuf = () => import('@/views/DemoProtobuf.vue')
 
 const routes: RouteRecordRaw[] = [
-  { path: '/', name: 'Index', component: Index },
+  { path: '/', name: 'Index', component: MigrationWizard, meta: { title: 'Convert old DYS to DYS2' } },
   { path: '/demo/protobuf', name: 'DemoProtobuf', component: DemoProtobuf },
   {
     path: '/demo-pinia-orm',
@@ -23,6 +25,7 @@ const routes: RouteRecordRaw[] = [
   ...explorerRoutes,
   ...ibcRoutes,
   ...ibcTransfersRoutes,
+  ...migrationRoutes,
   ...addressRoutes,
   ...miscRoutes,
 ]

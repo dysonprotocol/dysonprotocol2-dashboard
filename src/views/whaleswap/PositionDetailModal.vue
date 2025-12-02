@@ -88,10 +88,19 @@ const borrowedPoolCoin = computed(() =>
 )
 const heldPriceInBorrowed = computed(() => {
   if (!heldPoolCoin.value || !borrowedPoolCoin.value) return null
-  const heldAmt = BigInt(heldPoolCoin.value.amount)
-  const borrowedAmt = BigInt(borrowedPoolCoin.value.amount)
-  if (heldAmt === 0n) return null
-  return Number(borrowedAmt) / Number(heldAmt)
+  // Normalize amounts to account for different decimal exponents
+  const normalizedHeld = wallet.normalizeCoin({
+    amount: heldPoolCoin.value.amount,
+    denom: heldPoolCoin.value.denom,
+  })
+  const normalizedBorrowed = wallet.normalizeCoin({
+    amount: borrowedPoolCoin.value.amount,
+    denom: borrowedPoolCoin.value.denom,
+  })
+  const heldAmt = parseFloat(normalizedHeld.display.amount)
+  const borrowedAmt = parseFloat(normalizedBorrowed.display.amount)
+  if (heldAmt === 0) return null
+  return borrowedAmt / heldAmt
 })
 
 const totalDebt = computed(() => {

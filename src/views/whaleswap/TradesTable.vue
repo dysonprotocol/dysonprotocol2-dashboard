@@ -100,17 +100,24 @@ function getPrice(trade: Trade): string | null {
 
     const sentDenom = op.sent.denom
     const receivedDenom = op.received.denom
-    const sentAmount = BigInt(op.sent.amount)
-    const receivedAmount = BigInt(op.received.amount)
 
-    if (sentAmount === 0n || receivedAmount === 0n) continue
+    // Normalize amounts to account for different decimal exponents
+    const normalizedSent = wallet.normalizeCoin({ amount: op.sent.amount, denom: sentDenom })
+    const normalizedReceived = wallet.normalizeCoin({
+      amount: op.received.amount,
+      denom: receivedDenom,
+    })
+    const sentAmount = parseFloat(normalizedSent.display.amount)
+    const receivedAmount = parseFloat(normalizedReceived.display.amount)
+
+    if (sentAmount === 0 || receivedAmount === 0) continue
 
     let price: number | null = null
 
     if (sentDenom === props.base && receivedDenom === props.quote) {
-      price = Number(receivedAmount) / Number(sentAmount)
+      price = receivedAmount / sentAmount
     } else if (sentDenom === props.quote && receivedDenom === props.base) {
-      price = Number(sentAmount) / Number(receivedAmount)
+      price = sentAmount / receivedAmount
     }
 
     if (price !== null && isFinite(price) && price > 0) {

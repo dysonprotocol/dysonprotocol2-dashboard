@@ -10,11 +10,32 @@ import {
   formatCoin,
   getDisplayDenom,
 } from '@/whaleswap/utils/formatters'
+import { useWallet } from '@/composables/useWallet'
 
 const route = useRoute()
+const wallet = useWallet()
 const tradeId = computed(() => String(route.params.tradeId || ''))
 const { data, isLoading, error } = useWhaleswapTrade(tradeId)
 const trade = computed(() => data.value?.trade)
+
+// Calculate price with normalized amounts (accounting for different decimal exponents)
+function getOperationPrice(
+  op: { sent?: { amount: string; denom: string }; received?: { amount: string; denom: string } },
+  direction: 'received-per-sent' | 'sent-per-received'
+): string {
+  if (!op.sent || !op.received) return 'N/A'
+  const normalizedSent = wallet.normalizeCoin({ amount: op.sent.amount, denom: op.sent.denom })
+  const normalizedReceived = wallet.normalizeCoin({
+    amount: op.received.amount,
+    denom: op.received.denom,
+  })
+  const sentAmt = parseFloat(normalizedSent.display.amount)
+  const receivedAmt = parseFloat(normalizedReceived.display.amount)
+  if (direction === 'received-per-sent') {
+    return sentAmt > 0 ? (receivedAmt / sentAmt).toFixed(6) : 'N/A'
+  }
+  return receivedAmt > 0 ? (sentAmt / receivedAmt).toFixed(6) : 'N/A'
+}
 </script>
 
 <template>
@@ -113,7 +134,7 @@ const trade = computed(() => data.value?.trade)
                   <td class="p-2 font-mono">{{ formatCoin(op.received) }}</td>
                   <td class="p-2 font-mono text-right">
                     <div>
-                      {{ (parseFloat(op.received.amount) / parseFloat(op.sent.amount)).toFixed(6) }}
+                      {{ getOperationPrice(op, 'received-per-sent') }}
                     </div>
                     <div class="text-xs text-muted-foreground">
                       {{ getDisplayDenom(op.received.denom) }}/{{ getDisplayDenom(op.sent.denom) }}
@@ -121,7 +142,7 @@ const trade = computed(() => data.value?.trade)
                   </td>
                   <td class="p-2 font-mono text-right">
                     <div>
-                      {{ (parseFloat(op.sent.amount) / parseFloat(op.received.amount)).toFixed(6) }}
+                      {{ getOperationPrice(op, 'sent-per-received') }}
                     </div>
                     <div class="text-xs text-muted-foreground">
                       {{ getDisplayDenom(op.sent.denom) }}/{{ getDisplayDenom(op.received.denom) }}

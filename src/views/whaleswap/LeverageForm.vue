@@ -115,13 +115,22 @@ const interestRate = computed(() => {
   return props.pool.interest_rate
 })
 
-// Calculate current pool price (quote/base)
+// Calculate current pool price (quote/base) using normalized amounts
 const poolPrice = computed(() => {
   if (!baseCoin.value || !quoteCoin.value) return null
-  const baseAmt = BigInt(baseCoin.value.amount)
-  const quoteAmt = BigInt(quoteCoin.value.amount)
-  if (baseAmt === 0n) return null
-  const p = Number(quoteAmt) / Number(baseAmt)
+  // Normalize amounts to account for different decimal exponents
+  const normalizedBase = wallet.normalizeCoin({
+    amount: baseCoin.value.amount,
+    denom: baseCoin.value.denom,
+  })
+  const normalizedQuote = wallet.normalizeCoin({
+    amount: quoteCoin.value.amount,
+    denom: quoteCoin.value.denom,
+  })
+  const baseAmt = parseFloat(normalizedBase.display.amount)
+  const quoteAmt = parseFloat(normalizedQuote.display.amount)
+  if (baseAmt === 0) return null
+  const p = quoteAmt / baseAmt
   if (props.base === baseCoin.value?.denom && props.quote === quoteCoin.value?.denom) {
     return p
   }

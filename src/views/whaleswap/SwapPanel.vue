@@ -217,8 +217,6 @@ const slippageInfo = computed(() => {
     if (!min || inputAmount === 0n) return null
 
     const slippagePct = Number(((expected - min) * 10000n) / expected) / 100
-    const expectedPrice = Number(expected) / Number(inputAmount)
-    const protectedPrice = Number(min) / Number(inputAmount)
 
     try {
       const expectedNormalized = wallet.normalizeCoin({
@@ -236,6 +234,13 @@ const slippageInfo = computed(() => {
       const displayDenom = expectedNormalized.display.denom
       const inputDisplayDenom = inputNormalized.display.denom
 
+      // Use normalized amounts for price calculation
+      const normalizedExpected = parseFloat(expectedNormalized.display.amount)
+      const normalizedMin = parseFloat(minNormalized.display.amount)
+      const normalizedInput = parseFloat(inputNormalized.display.amount)
+      const expectedPrice = normalizedInput > 0 ? normalizedExpected / normalizedInput : 0
+      const protectedPrice = normalizedInput > 0 ? normalizedMin / normalizedInput : 0
+
       return {
         mode: 'exact-in',
         expected: expected.toString(),
@@ -250,6 +255,9 @@ const slippageInfo = computed(() => {
       }
     } catch (e) {
       console.error('[SwapPanel] Failed to normalize slippage info:', e)
+      // Fallback: use raw amounts (may be incorrect for different decimal exponents)
+      const expectedPrice = Number(inputAmount) > 0 ? Number(expected) / Number(inputAmount) : 0
+      const protectedPrice = Number(inputAmount) > 0 ? Number(min) / Number(inputAmount) : 0
       return {
         mode: 'exact-in',
         expected: expected.toString(),
@@ -276,9 +284,6 @@ const slippageInfo = computed(() => {
     const max = BigInt(swapIn.value.amount)
     const bufferPct = Number(((max - expectedInput) * 10000n) / expectedInput) / 100
 
-    const expectedPrice = Number(exactOutput) / Number(expectedInput)
-    const protectedPrice = Number(exactOutput) / Number(max)
-
     try {
       const outputNormalized = wallet.normalizeCoin({
         amount: exactOutput.toString(),
@@ -292,6 +297,14 @@ const slippageInfo = computed(() => {
         amount: max.toString(),
         denom: swapIn.value.denom,
       })
+
+      // Use normalized amounts for price calculation
+      const normalizedOutput = parseFloat(outputNormalized.display.amount)
+      const normalizedExpectedInput = parseFloat(expectedInputNormalized.display.amount)
+      const normalizedMax = parseFloat(maxNormalized.display.amount)
+      const expectedPrice =
+        normalizedExpectedInput > 0 ? normalizedOutput / normalizedExpectedInput : 0
+      const protectedPrice = normalizedMax > 0 ? normalizedOutput / normalizedMax : 0
 
       return {
         mode: 'exact-out',
@@ -309,6 +322,9 @@ const slippageInfo = computed(() => {
       }
     } catch (e) {
       console.error('[SwapPanel] Failed to normalize slippage info:', e)
+      // Fallback: use raw amounts (may be incorrect for different decimal exponents)
+      const expectedPrice = Number(expectedInput) > 0 ? Number(exactOutput) / Number(expectedInput) : 0
+      const protectedPrice = Number(max) > 0 ? Number(exactOutput) / Number(max) : 0
       return {
         mode: 'exact-out',
         exactOutput: exactOutput.toString(),

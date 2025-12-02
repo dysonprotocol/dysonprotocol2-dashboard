@@ -10,9 +10,24 @@ export interface IbcTransferPeer {
   remoteChannelId: string
   chainId?: string
   chainName?: string
+  ibcDenom?: string // IBC denom hash when tokens arrive on local chain
 }
 
 export const IBC_TRANSFER_PEERS: IbcTransferPeer[] = [
+  {
+    id: 'dyson-mainnet-01',
+    name: 'Dyson Protocol (Old Chain)',
+    description: 'Original Dyson mainnet for token migration',
+    rest_address: 'https://dys-api.dysonprotocol.com',
+    rpc_addr: 'https://dys-tm.dysonprotocol.com',
+    account_prefix: 'dys',
+    localChannelId: 'channel-1', // Channel on new chain (dysonprotocol-testnet-2)
+    remoteChannelId: 'channel-3', // Channel on old chain (dyson-mainnet-01)
+    chainId: 'dyson-mainnet-01',
+    chainName: 'Dyson Protocol',
+    // IBC denom = ibc/SHA256("transfer/channel-1/dys")
+    ibcDenom: 'ibc/2ED385C0A97745B42B6A82A1CDECA206C005037E5FF620D12D0CEADCC6F35141',
+  },
   {
     id: 'dysonprotocol-testnet-2',
     name: 'Dyson Protocol Testnet 2',

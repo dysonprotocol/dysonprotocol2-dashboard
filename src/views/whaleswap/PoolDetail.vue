@@ -6,6 +6,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
+import { ArrowLeftRight } from 'lucide-vue-next'
 import { useWhaleswapPool, useWhaleswapPoolsLive } from '@/whaleswap/composables/useWhaleswapPool'
 import { usePoolChainEvents } from '@/whaleswap/composables/usePoolChainEvents'
 import { useWhaleswapTradesByPool } from '@/whaleswap/composables/useWhaleswapTrades'
@@ -270,11 +271,14 @@ const quoteCoin = computed(() => coins.value.find((c) => c.denom === quote.value
 
 const price = computed(() => {
   if (!baseCoin.value || !quoteCoin.value) return null
-  const baseAmt = BigInt(baseCoin.value.amount)
-  const quoteAmt = BigInt(quoteCoin.value.amount)
-  if (baseAmt === 0n) return null
-  const p = Number(quoteAmt) / Number(baseAmt)
-  return p
+  // Use normalized amounts to account for different decimal exponents
+  const normalizedBase = normalizedCoins.value.find((c) => c.denom === base.value)
+  const normalizedQuote = normalizedCoins.value.find((c) => c.denom === quote.value)
+  if (!normalizedBase || !normalizedQuote) return null
+  const baseAmt = parseFloat(normalizedBase.displayAmount)
+  const quoteAmt = parseFloat(normalizedQuote.displayAmount)
+  if (baseAmt === 0) return null
+  return quoteAmt / baseAmt
 })
 
 function getFeeRate(outputDenom: string): number {
@@ -428,10 +432,17 @@ onMounted(async () => {
 
       <ResizableHandle with-handle class="hover:bg-green-500" />
 
-      <!-- Left Column -->
       <ResizablePanel :default-size="50" class="pool-detail-panel">
         <div class="h-full flex flex-col overflow-y-auto">
           <!-- Pool Info -->
+          <Button
+            variant="outline"
+            size="sm"
+            @click="swapPair"
+            class="flex items-center gap-1 mx-4"
+          >
+            {{ displayBase }} <ArrowLeftRight class="size-4" /> {{ displayQuote }}
+          </Button>
           <div class="flex-shrink-0 p-4">
             <div class="grid grid-cols-2 gap-4">
               <!-- Left Column -->
@@ -467,8 +478,6 @@ onMounted(async () => {
                   <div class="text-muted-foreground mb-1">Trades:</div>
                   <div class="font-mono ml-2">{{ pool.num_trades || '0' }}</div>
                 </div>
-
-                <Button variant="outline" size="sm" @click="swapPair">Reverse base/quote</Button>
               </div>
 
               <!-- Right Column - Pool Limits -->

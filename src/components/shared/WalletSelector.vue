@@ -268,6 +268,9 @@ const groupedOptions = computed(() => {
 
 // Prefer Authz when both defaults are provided; fall back to direct if none selected
 function ensureDefaultSelection() {
+  // If already selected, don't override
+  if (props.modelValue || selectedAuthz.value) return
+
   // Try Authz first
   if (props.defaultAddress && props.defaultGrantee) {
     const groups = groupedOptions.value
@@ -276,20 +279,28 @@ function ensureDefaultSelection() {
     )
     const auth = signerGroup?.authzOptions.find((a) => a.granterAddress === props.defaultAddress)
     if (signerGroup && auth) {
-      const already =
-        !!selectedAuthz.value &&
-        selectedAuthz.value.granter === auth.granterAddress &&
-        selectedAuthz.value.grantee === signerGroup.wallet.address
-      if (!already) selectAuthz(signerGroup.wallet, auth)
+      selectAuthz(signerGroup.wallet, auth)
       return
     }
   }
-  // Then direct only if no explicit selection
-  if (!props.modelValue && props.defaultAddress) {
+
+  // Then explicit direct default
+  if (props.defaultAddress) {
     const canDefault = groupedOptions.value.some(
       (g) => g.wallet.isUnlocked && g.wallet.address === props.defaultAddress && g.directAllowed
     )
-    if (canDefault) emit('update:modelValue', props.defaultAddress)
+    if (canDefault) {
+      emit('update:modelValue', props.defaultAddress)
+      return
+    }
+  }
+
+  // Auto-select if only one unlocked wallet with directAllowed
+  const selectableWallets = groupedOptions.value.filter(
+    (g) => g.wallet.isUnlocked && g.directAllowed
+  )
+  if (selectableWallets.length === 1) {
+    emit('update:modelValue', selectableWallets[0].wallet.address)
   }
 }
 
