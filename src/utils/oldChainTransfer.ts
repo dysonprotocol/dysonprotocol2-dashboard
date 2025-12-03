@@ -15,9 +15,9 @@ import {
 const SOURCE_PORT = 'transfer'
 
 interface TransferParams {
-  sender: string      // Old chain address (dys1...)
-  receiver: string    // New chain address (dys2...)
-  amount: string      // Amount in base denom (dys)
+  sender: string // Old chain address (dys1...)
+  receiver: string // New chain address (dys2...)
+  amount: string // Amount in base denom (dys)
   memo?: string
   timeoutSeconds?: number
 }
@@ -45,8 +45,8 @@ export async function transferFromOldChain(params: TransferParams): Promise<Tran
   // Get the offline signer for the old chain
   const offlineSigner = window.keplr.getOfflineSigner(OLD_CHAIN_ID)
   const accounts = await offlineSigner.getAccounts()
-  const account = accounts.find(a => a.address === sender)
-  
+  const account = accounts.find((a) => a.address === sender)
+
   if (!account) {
     return { success: false, error: `Address ${sender} not found in Keplr` }
   }
@@ -138,17 +138,19 @@ export async function transferFromOldChain(params: TransferParams): Promise<Tran
   return broadcastResult
 }
 
-async function fetchAccountInfo(address: string): Promise<{ accountNumber: string; sequence: string } | null> {
+async function fetchAccountInfo(
+  address: string
+): Promise<{ accountNumber: string; sequence: string } | null> {
   const res = await fetch(`${OLD_CHAIN_REST}/cosmos/auth/v1beta1/accounts/${address}`)
   if (!res.ok) return null
-  
+
   const data = await res.json()
   const account = data.account
-  
+
   // Handle different account types
   const accountNumber = account.account_number || account.base_account?.account_number || '0'
   const sequence = account.sequence || account.base_account?.sequence || '0'
-  
+
   return { accountNumber, sequence }
 }
 
@@ -162,7 +164,7 @@ function calculateTimeoutNs(seconds: number): string {
 async function encodeBody(txBody: any): Promise<Uint8Array> {
   const { TxBody } = await import('cosmjs-types/cosmos/tx/v1beta1/tx')
   const { MsgTransfer } = await import('cosmjs-types/ibc/applications/transfer/v1/tx')
-  
+
   const msg = txBody.messages[0]
   const msgTransfer = MsgTransfer.fromPartial({
     sourcePort: msg.source_port,
@@ -214,7 +216,9 @@ async function encodeAuthInfo(authInfo: any): Promise<Uint8Array> {
   })
 
   const fee = Fee.fromPartial({
-    amount: authInfo.fee.amount.map((c: any) => Coin.fromPartial({ denom: c.denom, amount: c.amount })),
+    amount: authInfo.fee.amount.map((c: any) =>
+      Coin.fromPartial({ denom: c.denom, amount: c.amount })
+    ),
     gasLimit: BigInt(authInfo.fee.gas_limit),
   })
 
@@ -228,13 +232,13 @@ async function encodeAuthInfo(authInfo: any): Promise<Uint8Array> {
 
 async function broadcastTx(txRaw: any): Promise<TransferResult> {
   const { TxRaw } = await import('cosmjs-types/cosmos/tx/v1beta1/tx')
-  
+
   const txRawProto = TxRaw.fromPartial({
     bodyBytes: txRaw.body_bytes,
     authInfoBytes: txRaw.auth_info_bytes,
     signatures: txRaw.signatures,
   })
-  
+
   const txBytes = TxRaw.encode(txRawProto).finish()
   const txBytesBase64 = toBase64(txBytes)
 
@@ -248,37 +252,52 @@ async function broadcastTx(txRaw: any): Promise<TransferResult> {
   })
 
   const data = await res.json()
-  
-  if (data.tx_response?.code === 0) {
+
+  // SYNC mode only checks CheckTx passed (tx in mempool), not block inclusion
+  if (data.tx_response?.code !== 0) {
     return {
-      success: true,
-      txHash: data.tx_response.txhash,
+      success: false,
+      error: data.tx_response?.raw_log || 'Broadcast failed',
+      rawLog: data.tx_response?.raw_log,
+    }
+  }
+
+  const txHash = data.tx_response.txhash
+
+  // Wait for tx to be included in a block
+  const confirmed = await waitForTxConfirmation(txHash)
+  if (!confirmed) {
+    return {
+      success: false,
+      error: 'Transaction was broadcast but not confirmed in time. It may still succeed.',
+      txHash,
     }
   }
 
   return {
-    success: false,
-    error: data.tx_response?.raw_log || 'Broadcast failed',
-    rawLog: data.tx_response?.raw_log,
+    success: true,
+    txHash,
   }
 }
 
-/**
- * Wait for IBC transfer to complete by polling for the packet
- */
-export async function waitForTransfer(txHash: string, timeoutMs = 60000): Promise<boolean> {
-  const start = Date.now()
-  
-  while (Date.now() - start < timeoutMs) {
+async function waitForTxConfirmation(txHash: string, maxAttempts = 30): Promise<boolean> {
+  for (let i = 0; i < maxAttempts; i++) {
     const res = await fetch(`${OLD_CHAIN_REST}/cosmos/tx/v1beta1/txs/${txHash}`)
     if (res.ok) {
       const data = await res.json()
-      if (data.tx_response?.code === 0) {
+      // Transaction included in block with success code
+      if (data.tx_response?.height && data.tx_response?.code === 0) {
+        console.log(`[Migration] Tx confirmed at height ${data.tx_response.height}`)
         return true
       }
+      // Transaction included but failed
+      if (data.tx_response?.height && data.tx_response?.code !== 0) {
+        console.error(`[Migration] Tx failed:`, data.tx_response.raw_log)
+        return false
+      }
     }
-    await new Promise(r => setTimeout(r, 2000))
+    // Wait 1 second between attempts (old chain ~5s block time)
+    await new Promise((resolve) => setTimeout(resolve, 1000))
   }
-  
   return false
 }

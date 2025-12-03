@@ -22,9 +22,15 @@
       </Alert>
 
       <!-- Chain connection cards -->
-      <div class="grid gap-4 sm:grid-cols-2">
+      <div class="grid gap-4 sm:grid-cols-2" :class="{ 'opacity-50': !keplrAvailable }">
         <!-- Old Chain -->
-        <div class="rounded-lg border p-4 space-y-3">
+        <div
+          class="rounded-lg border p-4 space-y-3"
+          :class="{
+            'border-green-500': oldChainConnected,
+            'border-yellow-500': keplrAvailable && !oldChainConnected,
+          }"
+        >
           <div class="flex items-center gap-2">
             <span class="iconify lucide--link text-muted-foreground" />
             <span class="font-medium">Old Chain</span>
@@ -59,7 +65,13 @@
         </div>
 
         <!-- New Chain -->
-        <div class="rounded-lg border p-4 space-y-3">
+        <div
+          class="rounded-lg border p-4 space-y-3"
+          :class="{
+            'border-green-500': newChainConnected,
+            'border-yellow-500': keplrAvailable && !newChainConnected,
+          }"
+        >
           <div class="flex items-center gap-2">
             <span class="iconify lucide--link text-muted-foreground" />
             <span class="font-medium">New Chain</span>

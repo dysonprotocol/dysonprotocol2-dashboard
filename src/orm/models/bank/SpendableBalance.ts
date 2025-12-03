@@ -1,4 +1,4 @@
-import { Model } from 'pinia-orm'
+import { Model, useRepo } from 'pinia-orm'
 import type { Request } from '@pinia-orm/axios'
 
 type CoinsResp = { balances?: Array<{ denom: string; amount: string }> }

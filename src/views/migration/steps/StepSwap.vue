@@ -19,7 +19,9 @@
         <!-- IBC Balance -->
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-sm text-muted-foreground">IBC/DYS Balance</div>
+            <div class="text-sm text-muted-foreground">
+              IBC/DYS (old) available to be converted to native DYS2
+            </div>
             <div class="text-2xl font-bold tabular-nums">
               {{ formattedBalance }}
               <span class="text-lg font-medium text-muted-foreground">IBC/DYS</span>
@@ -34,9 +36,9 @@
         <div v-if="numericBalance > 0" class="flex items-center justify-between">
           <div>
             <div class="text-sm text-muted-foreground">You'll receive</div>
-            <div class="text-2xl font-bold tabular-nums text-emerald-600">
+            <div class="text-2xl font-bold tabular-nums text-green-500">
               {{ formattedNewBalance }}
-              <span class="text-lg font-medium text-emerald-600/70">DYS2</span>
+              <span class="text-lg font-medium text-green-500/70">DYS2</span>
             </div>
           </div>
           <div class="text-xs text-muted-foreground">{{ formattedBalance }} udys</div>
@@ -67,9 +69,9 @@
         <div v-if="numericNativeBalance > 0" class="flex items-center justify-between">
           <div>
             <div class="text-sm text-muted-foreground">Current DYS2 Balance</div>
-            <div class="text-2xl font-bold tabular-nums text-emerald-600">
+            <div class="text-2xl font-bold tabular-nums">
               {{ formattedNativeBalance }}
-              <span class="text-lg font-medium text-emerald-600/70">DYS2</span>
+              <span class="text-lg font-medium text-muted-foreground">DYS2</span>
             </div>
           </div>
           <div class="text-xs text-muted-foreground">{{ nativeBalance }} udys</div>
@@ -109,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -134,18 +136,6 @@ defineEmits<{
   swap: []
   refresh: []
 }>()
-
-// Navigate to address coins page after successful swap
-watch(
-  () => props.status,
-  (newStatus) => {
-    if (newStatus === 'success' && props.newAddress) {
-      setTimeout(() => {
-        router.push(`/address/${props.newAddress}/coins`)
-      }, 2000)
-    }
-  }
-)
 
 const numericBalance = computed(() => Number(props.ibcBalance) || 0)
 const formattedBalance = computed(() => numericBalance.value.toLocaleString())
