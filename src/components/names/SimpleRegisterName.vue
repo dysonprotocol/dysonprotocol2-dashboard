@@ -1,5 +1,5 @@
 <template>
-  <Card class="w-full max-w-lg mx-auto">
+  <Card class="w-full mx-auto">
     <CardHeader>
       <CardTitle class="text-2xl">Register a Name</CardTitle>
       <CardDescription> Your on-chain identity. One name, endless possibilities. </CardDescription>
@@ -78,7 +78,7 @@
             <Label>Set your valuation</Label>
             <button
               type="button"
-              class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+              class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
               @click="showValuationHelp = !showValuationHelp"
             >
               <InformationCircleIcon class="w-4 h-4" />
@@ -90,14 +90,17 @@
           <Alert v-if="showValuationHelp" class="text-sm">
             <AlertDescription>
               <p class="mb-2">
-                <strong>Harberger Tax:</strong> You set what your name is worth. This creates a fair
+                <strong>Harberger Fee:</strong> You set what your name is worth. This creates a fair
                 market:
               </p>
               <ul class="list-disc list-inside space-y-1 text-muted-foreground">
                 <li>
                   <strong>You pay {{ feePercentDisplay }}% annually</strong> based on your valuation
                 </li>
-                <li><strong>Anyone can buy</strong> your name at your valuation price</li>
+                <li>
+                  <strong>Anyone can bid</strong> on your name starting at your valuation price
+                </li>
+                <li><strong>You can refuse</strong> any bid by raising your valuation</li>
                 <li><strong>Higher value</strong> = more protection, but costs more</li>
                 <li><strong>Lower value</strong> = cheaper, but easier for others to buy</li>
               </ul>
