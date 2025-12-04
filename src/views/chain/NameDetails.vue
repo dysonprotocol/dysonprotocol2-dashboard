@@ -4,7 +4,7 @@
     <div>
       <div v-if="hasLoadedName && !nft" class="space-y-3">
         <div class="alert alert-info">This name is available</div>
-        <RegisterName :initial-name="routeName" @registered="onRegistered" />
+        <SimpleRegisterName :initial-name="routeName" @registered="onRegistered" />
       </div>
       <div v-else class="flex flex-wrap">
         <div class="rounded-box p-4 w-full">
@@ -402,7 +402,7 @@ import { ref, computed, watchEffect } from 'vue'
 import { useRepo } from 'pinia-orm'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRoute } from 'vue-router'
-import RegisterName from '@/components/names/RegisterName.vue'
+import SimpleRegisterName from '@/components/names/SimpleRegisterName.vue'
 import { useWallet } from '@/composables/useWallet'
 import WalletSelector from '@/components/shared/WalletSelector.vue'
 import AddressDisplay from '@/components/AddressDisplay.vue'

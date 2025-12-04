@@ -4,6 +4,14 @@ import { useAxiosRepo } from '@pinia-orm/axios'
 import NftItem from '../nft/NftItem'
 import type { WalletLike } from '@/orm/types/WalletLike'
 
+function generateSalt(): string {
+  const arr = new Uint8Array(16)
+  crypto.getRandomValues(arr)
+  return Array.from(arr)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 export class NameserviceRegistration extends Model {
   static entity = 'nameservice_registration'
   static primaryKey = ['committer', 'name', 'salt']
@@ -43,6 +51,69 @@ export class NameserviceRegistration extends Model {
           })
           return hexhash
         },
+
+        /**
+         * Register a name in a single transaction (commit + reveal combined).
+         * This is the simplified flow for users who don't need front-running protection.
+         */
+        async registerName(
+          this: Request,
+          params: {
+            committer: string
+            name: string
+            valuation: { amount: string; denom: string }
+            wallet: WalletLike
+            gasLimit?: number | 'auto'
+            memo?: string
+          }
+        ) {
+          const { committer, name, valuation, wallet, gasLimit, memo } = params
+          const salt = generateSalt()
+
+          // Compute hash first
+          const qs = new URLSearchParams({ name, salt, committer })
+          let hexhash = ''
+          await this.get(`/dysonprotocol/nameservice/v1/compute_hash?${qs}`, {
+            dataTransformer: ({ data }: { data: { hex_hash?: string } }) => {
+              hexhash = String(data?.hex_hash || '')
+              return []
+            },
+          })
+          if (!hexhash) throw new Error('Failed to compute name hash')
+
+          // Build both messages
+          const commitMsg = {
+            '@type': '/dysonprotocol.nameservice.v1.MsgCommit',
+            committer,
+            hexhash,
+            valuation,
+          }
+          const revealMsg = {
+            '@type': '/dysonprotocol.nameservice.v1.MsgReveal',
+            committer,
+            name,
+            salt,
+          }
+
+          // Send both in one transaction
+          const res = await wallet.sendMsg({
+            msgs: [commitMsg, revealMsg],
+            gasLimit,
+            memo,
+            executorAddress: committer,
+          })
+
+          if (!res?.success) throw new Error(res?.rawLog || 'Registration failed')
+
+          // Refresh NFT data
+          await Promise.allSettled([
+            useAxiosRepo(NftItem).api().fetchNft('nameservice.dys', name),
+            useAxiosRepo(NftItem).api().fetchOwner('nameservice.dys', name),
+          ])
+
+          return res
+        },
+
         async commit(
           this: Request,
           params: {

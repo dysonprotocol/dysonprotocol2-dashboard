@@ -76,6 +76,11 @@ body {
   z-index: 10;
 }
 
+/* Disable sidebar transition until initial state is hydrated */
+html:not([data-sidebar-ready]) #layout-sidebar {
+  transition: none !important;
+}
+
 /* Prevent content width shift when vertical scrollbar appears in sidebar */
 #layout-sidebar [data-simplebar] {
   scrollbar-gutter: stable;

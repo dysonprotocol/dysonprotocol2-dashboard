@@ -1,8 +1,6 @@
 <template>
-  <div class="max-w-5xl mx-auto p-4 space-y-4">
-    <div class="space-y-3">
-      <RegisterName />
-    </div>
+  <div class="max-w-5xl mx-auto p-4 space-y-8">
+    <SimpleRegisterName @registered="onRegistered" />
 
     <div>
       <div class="flex items-center justify-between">
@@ -22,24 +20,11 @@
                 <th>Name</th>
                 <th>Valuation</th>
                 <th>View details</th>
-                <th>Go to dwapp</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="nft in nftsView" :key="nft.id">
                 <td class="font-mono">
-                  {{ nft.id }}
-                </td>
-                <td>
-                  <span v-if="formatValuation(nft).label"
-                    >{{ formatValuation(nft).amount }} {{ formatValuation(nft).label }}</span
-                  >
-                  <span v-else>—</span>
-                </td>
-                <td>
-                  <router-link :to="`/names/${nft.id}`" class="link"> View details </router-link>
-                </td>
-                <td>
                   <a
                     :href="`/redirect-to-dwapp/${nft.id}`"
                     class="link inline-flex items-center"
@@ -49,6 +34,15 @@
                     {{ nft.id }}
                     <ArrowTopRightOnSquareIcon class="w-4 h-4 inline-block ml-1" />
                   </a>
+                </td>
+                <td>
+                  <span v-if="formatValuation(nft).label"
+                    >{{ formatValuation(nft).amount }} {{ formatValuation(nft).label }}</span
+                  >
+                  <span v-else>—</span>
+                </td>
+                <td>
+                  <router-link :to="`/names/${nft.id}`" class="link"> View details </router-link>
                 </td>
               </tr>
             </tbody>
@@ -63,9 +57,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRepo } from 'pinia-orm'
 import { useAxiosRepo } from '@pinia-orm/axios'
-import RegisterName from '@/components/names/RegisterName.vue'
+import SimpleRegisterName from '@/components/names/SimpleRegisterName.vue'
 import NftItem from '@/orm/models/nft/NftItem'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/outline'
+
+function onRegistered() {
+  loadAllNames()
+}
 
 const isLoadingAll = ref(false)
 const allError = ref('')

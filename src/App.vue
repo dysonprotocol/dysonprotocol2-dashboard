@@ -44,12 +44,20 @@ onMounted(() => {
   // Activate txHistory → toast bridge once at app root
   useTxToasts()
   startLatestBlockPoller()
-  
+
   // Restore sidebar state from localStorage (default: collapsed)
   const savedState = localStorage.getItem(STORAGE_KEY)
   if (sidebarToggle.value) {
     sidebarToggle.value.checked = savedState === 'true'
-    
+
+    // Enable sidebar transitions after initial state is rendered
+    // Double rAF ensures the browser has painted the initial state
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.documentElement.setAttribute('data-sidebar-ready', '')
+      })
+    })
+
     // Listen for changes (including label clicks)
     sidebarToggle.value.addEventListener('change', () => {
       localStorage.setItem(STORAGE_KEY, String(sidebarToggle.value.checked))

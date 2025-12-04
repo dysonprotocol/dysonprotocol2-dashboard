@@ -24,10 +24,19 @@ export class SpendableBalance extends Model {
     axiosApi: {
       actions: {
         async fetchAll(this: Request, address: string) {
-          return this.get(`/cosmos/bank/v1beta1/spendable_balances/${address}`, {
+          const response = await this.get(`/cosmos/bank/v1beta1/spendable_balances/${address}`, {
             dataTransformer: ({ data }: { data: CoinsResp }) =>
               toList(data?.balances).map((c) => ({ address, denom: c.denom, amount: c.amount })),
           })
+          // Remove stale denoms (balance dropped to 0, omitted by API)
+          const freshDenoms = new Set(
+            (response.entities || []).map((b) => String((b as unknown as { denom: string }).denom))
+          )
+          useRepo(SpendableBalance)
+            .where('address', (v: string) => v === address)
+            .where('denom', (d: string) => !freshDenoms.has(d))
+            .delete()
+          return response
         },
         async fetchByDenom(this: Request, address: string, denom: string) {
           const qs = new URLSearchParams({ denom })

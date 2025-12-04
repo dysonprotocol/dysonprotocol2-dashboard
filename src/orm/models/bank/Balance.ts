@@ -1,4 +1,4 @@
-import { Model } from 'pinia-orm'
+import { Model, useRepo } from 'pinia-orm'
 import type { Request } from '@pinia-orm/axios'
 
 type BalancesResp = { balances?: Array<{ denom: string; amount: string }> }
@@ -11,10 +11,19 @@ const transformBalances =
       amount: b.amount,
     }))
 
-function refreshBalances(this: Request, address: string) {
-  return this.get(`/cosmos/bank/v1beta1/balances/${address}`, {
+async function refreshBalances(this: Request, address: string) {
+  const response = await this.get(`/cosmos/bank/v1beta1/balances/${address}`, {
     dataTransformer: transformBalances(address),
   })
+  // Remove stale denoms (balance dropped to 0, omitted by API)
+  const freshDenoms = new Set(
+    (response.entities || []).map((b) => String((b as unknown as { denom: string }).denom))
+  )
+  useRepo(Balance)
+    .where('address', (v: string) => v === address)
+    .where('denom', (d: string) => !freshDenoms.has(d))
+    .delete()
+  return response
 }
 
 function ensureOk(res: { success: boolean; rawLog?: string }, msg: string) {
