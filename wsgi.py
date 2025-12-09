@@ -141,7 +141,6 @@ def msg(**kwargs):
     return _msg(kwargs)
 
 
-
 def build_cdn_base(version: str, template: str) -> str:
     repl = {"owner": OWNER, "repo": REPO, "version": version}
     base = re.sub(r"\{(owner|repo|version)\}", lambda m: repl[m.group(1)], template)
@@ -258,3 +257,4 @@ if __name__ == "__main__":
         print(f"Error: {e}")
         httpd.shutdown()
         httpd.server_close()
+

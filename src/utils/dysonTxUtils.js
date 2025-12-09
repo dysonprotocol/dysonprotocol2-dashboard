@@ -24,12 +24,14 @@ const escapeHTML = (str) =>
 
 /** Fetch chain info for address. */
 export async function getChainInfo({ apiUrl, address }) {
+  console.log('[getChainInfo] Fetching from:', `${apiUrl}/cosmos/base/tendermint/v1beta1/node_info`)
   const nodeInfoResp = await fetch(`${apiUrl}/cosmos/base/tendermint/v1beta1/node_info`)
   if (!nodeInfoResp.ok) {
     throw new Error(`Failed to fetch node info: ${await nodeInfoResp.text()}`)
   }
   const nodeInfoJson = await nodeInfoResp.json()
   const chainId = nodeInfoJson.default_node_info.network
+  console.log('[getChainInfo] Got chainId:', chainId, 'for address:', address)
 
   const acctInfoResp = await fetch(`${apiUrl}/cosmos/auth/v1beta1/account_info/${address}`)
   if (!acctInfoResp.ok) {
@@ -123,6 +125,14 @@ export async function signTx({
   bodyBytes,
   authInfoBytes,
 }) {
+  console.log(
+    '[signTx] Signing with chainId:',
+    chainId,
+    'accountNumber:',
+    accountNumber,
+    'walletType:',
+    walletType
+  )
   const signDoc = {
     bodyBytes,
     authInfoBytes,
@@ -149,6 +159,12 @@ export async function signTx({
   }
 
   const { signed, signature } = directSignResponse
+  console.log(
+    '[signTx] Signed response chainId:',
+    signed?.chainId,
+    'accountNumber:',
+    signed?.accountNumber
+  )
   const txRaw = TxRaw.fromPartial({
     bodyBytes: signed.bodyBytes || bodyBytes,
     authInfoBytes: signed.authInfoBytes || authInfoBytes,

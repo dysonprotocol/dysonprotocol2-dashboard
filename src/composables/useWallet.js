@@ -234,9 +234,7 @@ export function useWallet() {
   }
 
   const suggestChainIfNeeded = async (provider) => {
-    const name = chainId.value.includes('mainnet')
-      ? 'DysonProtocol2'
-      : `DysonProtocol2 (${chainId.value.split('-').slice(1, -1).join('-')})`
+    const name = chainId.value.includes('mainnet') ? 'Dyson Protocol 2' : `Dys2 ${chainId.value}`
 
     const chainInfo = {
       chainId: chainId.value,
@@ -267,7 +265,10 @@ export function useWallet() {
     try {
       await provider.enable(chainId.value)
     } catch (enableError) {
-      console.log('[suggestChainIfNeeded] Initial enable failed, suggesting chain:', enableError?.message)
+      console.log(
+        '[suggestChainIfNeeded] Initial enable failed, suggesting chain:',
+        enableError?.message
+      )
       await provider.experimentalSuggestChain(chainInfo)
       await provider.enable(chainId.value)
     }
