@@ -12,18 +12,18 @@ export const OLD_CHAIN_DENOM = 'dys'
 export const OLD_CHAIN_PREFIX = 'dys'
 
 // New chain configuration
-export const NEW_CHAIN_ID = 'dysonprotocol-testnet-2'
+export const NEW_CHAIN_ID = 'dys2-mainnet-1'
 export const NEW_CHAIN_DENOM = 'udys'
 export const NEW_CHAIN_PREFIX = 'dys2'
 
 // IBC channel configuration
-export const OLD_CHAIN_CHANNEL = 'channel-3' // Channel on old chain to new chain
-export const NEW_CHAIN_CHANNEL = 'channel-1' // Channel on new chain to old chain
+export const OLD_CHAIN_CHANNEL = 'channel-6' // Channel on old chain to new chain
+export const NEW_CHAIN_CHANNEL = 'channel-0' // Channel on new chain to old chain
 
 // IBC denom for old DYS when it arrives on the new chain
-// = ibc/SHA256("transfer/channel-1/dys")
+// = ibc/SHA256("transfer/channel-0/dys")
 export const IBC_OLD_DYS_DENOM =
-  'ibc/2ED385C0A97745B42B6A82A1CDECA206C005037E5FF620D12D0CEADCC6F35141'
+  'ibc/3B2294AF63D402DF9B10DA43CEC03677D9041297A1031AB1AFC789C492280D79'
 
 // Swap script address on new chain (must be funded with udys reserves)
 // TODO: Deploy the migration_swap.py script and set this address

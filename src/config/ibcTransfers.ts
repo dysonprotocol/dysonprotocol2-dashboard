@@ -21,20 +21,19 @@ export const IBC_TRANSFER_PEERS: IbcTransferPeer[] = [
     rest_address: 'https://dys-api.dysonprotocol.com',
     rpc_addr: 'https://dys-tm.dysonprotocol.com',
     account_prefix: 'dys',
-    localChannelId: 'channel-1', // Channel on new chain (dysonprotocol-testnet-2)
-    remoteChannelId: 'channel-3', // Channel on old chain (dyson-mainnet-01)
+    localChannelId: 'channel-0', // Channel on new chain (dys2-mainnet-1)
+    remoteChannelId: 'channel-6', // Channel on old chain (dyson-mainnet-01)
     chainId: 'dyson-mainnet-01',
     chainName: 'Dyson Protocol',
-    // IBC denom = ibc/SHA256("transfer/channel-1/dys")
-    ibcDenom: 'ibc/2ED385C0A97745B42B6A82A1CDECA206C005037E5FF620D12D0CEADCC6F35141',
+    // IBC denom = ibc/SHA256("transfer/channel-0/dys")
+    ibcDenom: 'ibc/3B2294AF63D402DF9B10DA43CEC03677D9041297A1031AB1AFC789C492280D79',
   },
   {
-    id: 'dysonprotocol-testnet-2',
-    name: 'Dyson Protocol Testnet 2',
-    description: 'Official Dyson testnet',
-    rest_address: 'https://dys-testnet2.dysonprotocol.com',
-    rpc_addr: 'https://dys-testnet2.dysonprotocol.com/rpc',
-    grpc_addr: 'http://139.162.147.122:9090',
+    id: 'dys2-mainnet-1',
+    name: 'Dyson Protocol Mainnet 2',
+    description: 'Official Dyson mainnet',
+    rest_address: 'https://dys2.dysonprotocol.com', // New chain API
+    rpc_addr: 'https://dys2.dysonprotocol.com/rpc',
     account_prefix: 'dys2',
     localChannelId: 'channel-0',
     remoteChannelId: 'channel-0',

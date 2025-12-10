@@ -84,7 +84,7 @@
 
           <div class="text-sm text-muted-foreground space-y-0.5">
             <div>Dyson Protocol 2</div>
-            <div>Chain ID: dysonprotocol-testnet-2</div>
+            <div>Chain ID: dys2-mainnet-1</div>
           </div>
 
           <div v-if="newChainConnected" class="bg-muted p-2 rounded">

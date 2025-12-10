@@ -69,8 +69,13 @@
               </span>
             </div>
           </div>
-          <!-- Migration CTA -->
-          <router-link to="/migrate" custom v-slot="{ href, navigate, isActive }">
+          <!-- Migration CTA (only on dys2-mainnet-1) -->
+          <router-link
+            v-if="showMigration"
+            to="/migrate"
+            custom
+            v-slot="{ href, navigate, isActive }"
+          >
             <a :href="href" @click="navigate" :class="migrateLinkClass(isActive)">
               <span class="iconify size-5" :class="'lucide--arrow-right-left'" />
               <span>Convert old DYS to DYS2</span>
@@ -181,6 +186,7 @@ const isNonMainnet = computed(() => {
   if (!id) return false
   return !id.includes('mainnet')
 })
+const showMigration = computed(() => chainIdDisplay.value === 'dys2-mainnet-1')
 
 const nodeVersion = computed(() => String(node.value.version || ''))
 const nodeCommit = computed(() => String(node.value.git_commit || ''))
