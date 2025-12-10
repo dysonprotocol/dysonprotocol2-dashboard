@@ -1,1 +1,0 @@
-import{bX as t,l as a,bY as s}from"./index-CqP_gCJE.js";function l(){const e=t({attribute:"class",selector:"html",storageKey:"vueuse-color-scheme",initialValue:"auto",emitAuto:!0}),o=s(),r=a(()=>e.value==="dark"||e.value==="auto"&&o.value);return{mode:e,prefersDark:o,isDark:r}}export{l as u};
