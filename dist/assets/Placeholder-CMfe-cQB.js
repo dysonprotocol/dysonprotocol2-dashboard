@@ -1,0 +1,1 @@
+import{d as o,m as a,T as s,a as c,f as n,o as r}from"./index-D6gYZ8hf.js";const l={class:"p-4 text-sm text-gray-500"},u=o({__name:"Placeholder",setup(m){const e=s(),t=a(()=>e.meta?.title||"Placeholder");return(p,_)=>(r(),c("div",l,n(t.value),1))}});export{u as default};

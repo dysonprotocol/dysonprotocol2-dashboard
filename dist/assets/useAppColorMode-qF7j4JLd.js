@@ -1,0 +1,1 @@
+import{b8 as t,m as a,b9 as s}from"./index-D6gYZ8hf.js";function l(){const e=t({attribute:"class",selector:"html",storageKey:"vueuse-color-scheme",initialValue:"auto",emitAuto:!0}),o=s(),r=a(()=>e.value==="dark"||e.value==="auto"&&o.value);return{mode:e,prefersDark:o,isDark:r}}export{l as u};
