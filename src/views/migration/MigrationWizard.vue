@@ -1,23 +1,15 @@
 <template>
   <div class="min-h-screen py-8 px-4">
     <div class="max-w-xl mx-auto">
-      <!-- Wrong chain warning -->
+      <!-- Welcome message for non-mainnet chains -->
       <template v-if="!isCorrectChain">
-        <Alert class="border-amber-500/50">
-          <Info class="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
-          <AlertTitle class="text-amber-700 dark:text-amber-300"
-            >Migration Not Available</AlertTitle
-          >
-          <AlertDescription class="text-amber-600 dark:text-amber-400">
-            <p>
-              The migration wizard is only available on the
-              <code class="font-mono">{{ NEW_CHAIN_ID }}</code> chain.
-            </p>
-            <p v-if="currentChainId" class="mt-2 text-sm opacity-80">
-              You are currently connected to: <code class="font-mono">{{ currentChainId }}</code>
-            </p>
-          </AlertDescription>
-        </Alert>
+        <div class="text-center space-y-4">
+          <h1 class="text-3xl font-bold tracking-tight">Welcome to Dyson Protocol</h1>
+          <p class="text-muted-foreground">
+            You are connected to
+            <code class="font-mono">{{ currentChainId || 'loading...' }}</code>
+          </p>
+        </div>
       </template>
 
       <template v-else>
