@@ -121,6 +121,24 @@ export class Params extends Message<Params> {
    */
   arbitrageMode = ArbitrageMode.UNSPECIFIED;
 
+  /**
+   * arbitrage_ref_denom is the reference denom for measuring arbitrage profit.
+   * Only cycles ending in this denom will be considered for auto-execution.
+   *
+   * @generated from field: string arbitrage_ref_denom = 10;
+   */
+  arbitrageRefDenom = "";
+
+  /**
+   * ═════ AFFILIATE PARAMETERS ═════
+   * affiliate_fee_pct is the percentage of arbitrage profit sent to the
+   * affiliate address resolved from tx memo dysname. E.g., "0.10" = 10%.
+   * Zero or empty disables affiliate payouts. Must be in range [0, 1).
+   *
+   * @generated from field: string affiliate_fee_pct = 11;
+   */
+  affiliateFeePct = "";
+
   constructor(data?: PartialMessage<Params>) {
     super();
     proto3.util.initPartial(data, this);
@@ -138,6 +156,8 @@ export class Params extends Message<Params> {
     { no: 7, name: "block_delay_before_close", kind: "scalar", T: 4 /* ScalarType.UINT64 */ },
     { no: 8, name: "block_delay_before_liquidation", kind: "scalar", T: 4 /* ScalarType.UINT64 */ },
     { no: 9, name: "arbitrage_mode", kind: "enum", T: proto3.getEnumType(ArbitrageMode) },
+    { no: 10, name: "arbitrage_ref_denom", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 11, name: "affiliate_fee_pct", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Params {

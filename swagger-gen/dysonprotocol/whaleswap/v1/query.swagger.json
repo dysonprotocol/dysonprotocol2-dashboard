@@ -1516,22 +1516,7 @@
           },
           {
             "name": "ref_denom",
-            "description": "Reference denom to measure profit in (typically the chain's base denom).",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "depth",
-            "description": "Number of hops to expand pool graph (0 = only direct pools, 1 = include\nneighbor pools, etc.).",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "max_fraction",
-            "description": "Maximum fraction of pool reserve to swap (e.g., 0.1 = 10%).",
+            "description": "Reference denom to measure profit in. Defaults to Params.ArbitrageRefDenom\nif empty.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -2121,6 +2106,13 @@
             "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
           },
           "title": "Total auction volume sold (denoms with metadata only)"
+        },
+        "affiliate_earned": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+          },
+          "title": "\u2550\u2550\u2550\u2550\u2550 AFFILIATE \u2550\u2550\u2550\u2550\u2550\nCumulative earnings from affiliate referrals (denoms with metadata only)"
         }
       },
       "description": "AddressMetrics aggregates lifetime whaleswap activity for a specific address.\nAll metrics are cumulative totals, not current state snapshots.\n\nNOTE: Only coins with existing denom metadata are tracked to prevent spam\nand focus on relevant assets. Coins without metadata are excluded from all\nvolume and balance aggregations."
@@ -2420,6 +2412,14 @@
         "arbitrage_mode": {
           "$ref": "#/definitions/dysonprotocol.whaleswap.v1.ArbitrageMode",
           "description": "\u2550\u2550\u2550\u2550\u2550 ARBITRAGE PARAMETERS \u2550\u2550\u2550\u2550\u2550\narbitrage_mode controls protocol arbitrage behavior."
+        },
+        "arbitrage_ref_denom": {
+          "type": "string",
+          "description": "arbitrage_ref_denom is the reference denom for measuring arbitrage profit.\nOnly cycles ending in this denom will be considered for auto-execution."
+        },
+        "affiliate_fee_pct": {
+          "type": "string",
+          "description": "\u2550\u2550\u2550\u2550\u2550 AFFILIATE PARAMETERS \u2550\u2550\u2550\u2550\u2550\naffiliate_fee_pct is the percentage of arbitrage profit sent to the\naffiliate address resolved from tx memo dysname. E.g., \"0.10\" = 10%.\nZero or empty disables affiliate payouts. Must be in range [0, 1)."
         }
       }
     },
@@ -2949,21 +2949,24 @@
           },
           "title": "Net outputs the trader would receive"
         },
-        "swap_amounts": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "format": "int64"
-          },
-          "title": "Swap amounts per pool (signed: positive = sell denom0, negative = sell\ndenom1)"
-        },
         "pool_ids": {
           "type": "array",
           "items": {
             "type": "string",
             "format": "uint64"
           },
-          "title": "Pool IDs in the arbitrage graph (corresponds to swap_amounts indices)"
+          "title": "Pool IDs in the arbitrage graph"
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/dysonprotocol.whaleswap.v1.TradeOperation"
+          },
+          "title": "Trade operations to execute (used by auto-arbitrage)"
+        },
+        "trader": {
+          "type": "string",
+          "title": "Trader address used in simulation"
         }
       }
     },

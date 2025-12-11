@@ -15,6 +15,9 @@ message EventPoolCreated { uint64 pool_id = 1; }
 
 message EventPoolUpdate { uint64 pool_id = 1; }
 
+// Emitted when a pool is deleted (full liquidity exit)
+message EventPoolDeleted { uint64 pool_id = 1; }
+
 message EventPoolSwap {
   uint64 pool_id = 1;
   uint64 trade_id = 2;
@@ -165,4 +168,24 @@ message EventLeveragePositionPartiallyClosed {
   cosmos.base.v1beta1.Coin new_collateral = 11 [ (gogoproto.nullable) = false ];
   string new_collateral_ratio = 12 [ (cosmos_proto.scalar) = "cosmos.Dec" ];
   cosmos.base.v1beta1.Coin loss = 13 [ (gogoproto.nullable) = false ];
+}
+
+// ═════════════════════════════════
+// Affiliate Events
+// ═════════════════════════════════
+
+// EventAffiliatePayment is emitted when an affiliate receives a share of
+// arbitrage profit from a transaction with their dysname in the memo.
+message EventAffiliatePayment {
+  // affiliate_name is the dysname from the transaction memo
+  string affiliate_name = 1;
+  // affiliate_addr is the resolved address that received payment
+  string affiliate_addr = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
+  // amount is the coins paid to the affiliate
+  repeated cosmos.base.v1beta1.Coin amount = 3 [
+    (gogoproto.nullable) = false,
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  // trade_id is the arbitrage trade that generated the profit
+  uint64 trade_id = 4;
 }

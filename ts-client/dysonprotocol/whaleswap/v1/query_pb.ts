@@ -10,6 +10,7 @@ import { AddressMetrics, AuctionRecord, OfferData, Pool, Trade, TradeMetrics } f
 import { PageRequest, PageResponse } from "../../../cosmos/base/query/v1beta1/pagination_pb.js";
 import { LeveragePosition, PositionStatus } from "./leverage_pb.js";
 import { Coin } from "../../../cosmos/base/v1beta1/coin_pb.js";
+import { TradeOperation } from "./tx_pb.js";
 
 /**
  * HealthStatus enum for position health
@@ -3091,42 +3092,12 @@ export class QuerySimulateArbitrageRequest extends Message<QuerySimulateArbitrag
   affectedDenoms: string[] = [];
 
   /**
-   * Reference denom to measure profit in (typically the chain's base denom)
+   * Reference denom to measure profit in. Defaults to Params.ArbitrageRefDenom
+   * if empty.
    *
    * @generated from field: string ref_denom = 3;
    */
   refDenom = "";
-
-  /**
-   * Number of hops to expand pool graph (0 = only direct pools, 1 = include
-   * neighbor pools, etc.)
-   *
-   * @generated from field: int32 depth = 4;
-   */
-  depth = 0;
-
-  /**
-   * Maximum fraction of pool reserve to swap (e.g., 0.1 = 10%)
-   *
-   * @generated from field: string max_fraction = 5;
-   */
-  maxFraction = "";
-
-  /**
-   * Trigger trade inputs (coins sent in the triggering swap) - used to scale
-   * probe bounds
-   *
-   * @generated from field: repeated cosmos.base.v1beta1.Coin trigger_inputs = 6;
-   */
-  triggerInputs: Coin[] = [];
-
-  /**
-   * Trigger trade outputs (coins received from the triggering swap) - used to
-   * scale probe bounds
-   *
-   * @generated from field: repeated cosmos.base.v1beta1.Coin trigger_outputs = 7;
-   */
-  triggerOutputs: Coin[] = [];
 
   constructor(data?: PartialMessage<QuerySimulateArbitrageRequest>) {
     super();
@@ -3139,10 +3110,6 @@ export class QuerySimulateArbitrageRequest extends Message<QuerySimulateArbitrag
     { no: 1, name: "trader", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "affected_denoms", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
     { no: 3, name: "ref_denom", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "depth", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
-    { no: 5, name: "max_fraction", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 6, name: "trigger_inputs", kind: "message", T: Coin, repeated: true },
-    { no: 7, name: "trigger_outputs", kind: "message", T: Coin, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): QuerySimulateArbitrageRequest {
@@ -3210,19 +3177,25 @@ export class QuerySimulateArbitrageResponse extends Message<QuerySimulateArbitra
   traderOutputs: Coin[] = [];
 
   /**
-   * Swap amounts per pool (signed: positive = sell denom0, negative = sell
-   * denom1)
+   * Pool IDs in the arbitrage graph
    *
-   * @generated from field: repeated int64 swap_amounts = 7;
-   */
-  swapAmounts: bigint[] = [];
-
-  /**
-   * Pool IDs in the arbitrage graph (corresponds to swap_amounts indices)
-   *
-   * @generated from field: repeated uint64 pool_ids = 8;
+   * @generated from field: repeated uint64 pool_ids = 7;
    */
   poolIds: bigint[] = [];
+
+  /**
+   * Trade operations to execute (used by auto-arbitrage)
+   *
+   * @generated from field: repeated dysonprotocol.whaleswap.v1.TradeOperation operations = 8;
+   */
+  operations: TradeOperation[] = [];
+
+  /**
+   * Trader address used in simulation
+   *
+   * @generated from field: string trader = 9;
+   */
+  trader = "";
 
   constructor(data?: PartialMessage<QuerySimulateArbitrageResponse>) {
     super();
@@ -3238,8 +3211,9 @@ export class QuerySimulateArbitrageResponse extends Message<QuerySimulateArbitra
     { no: 4, name: "profit", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "trader_inputs", kind: "message", T: Coin, repeated: true },
     { no: 6, name: "trader_outputs", kind: "message", T: Coin, repeated: true },
-    { no: 7, name: "swap_amounts", kind: "scalar", T: 3 /* ScalarType.INT64 */, repeated: true },
-    { no: 8, name: "pool_ids", kind: "scalar", T: 4 /* ScalarType.UINT64 */, repeated: true },
+    { no: 7, name: "pool_ids", kind: "scalar", T: 4 /* ScalarType.UINT64 */, repeated: true },
+    { no: 8, name: "operations", kind: "message", T: TradeOperation, repeated: true },
+    { no: 9, name: "trader", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): QuerySimulateArbitrageResponse {
