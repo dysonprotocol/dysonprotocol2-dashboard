@@ -1,0 +1,151 @@
+/* JSON Forms Vanilla Styles for Tailwind */
+
+/* Control wrapper */
+.control {
+  @apply space-y-1 mb-4;
+}
+
+/* Labels */
+.control > label {
+  @apply text-sm font-medium block;
+}
+
+/* Input fields */
+.control input[type='text'],
+.control input[type='number'],
+.control input[type='email'],
+.control input[type='password'],
+.control textarea,
+.control select {
+  @apply w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  @apply disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+/* Textarea specific */
+.control textarea {
+  @apply min-h-[80px] resize-y font-mono;
+}
+
+/* Description text */
+.control .description {
+  @apply text-xs text-muted-foreground;
+}
+
+/* Validation errors */
+.control .validation,
+.control .validation-error {
+  @apply text-xs text-destructive mt-1;
+}
+
+/* Checkboxes */
+.control input[type='checkbox'] {
+  @apply h-4 w-4 rounded border-primary text-primary;
+  @apply focus:ring-2 focus:ring-ring focus:ring-offset-2;
+}
+
+/* Array controls */
+.array-control {
+  @apply space-y-2;
+}
+
+.array-control .array-item {
+  @apply border rounded-md p-4 bg-muted/30;
+}
+
+.array-control .array-item-toolbar {
+  @apply flex gap-2 justify-end mt-2;
+}
+
+.array-control .array-item-toolbar button {
+  @apply px-2 py-1 text-xs rounded border hover:bg-muted;
+}
+
+/* Add item button */
+.array-control .add-button {
+  @apply mt-2 px-3 py-1.5 text-sm border rounded-md hover:bg-muted;
+}
+
+/* Object controls / groups */
+.group-layout {
+  @apply space-y-4 p-4 border rounded-md;
+}
+
+.group-layout > .group-label {
+  @apply text-sm font-semibold mb-2;
+}
+
+/* Vertical layout */
+.vertical-layout {
+  @apply space-y-4;
+}
+
+/* Horizontal layout */
+.horizontal-layout {
+  @apply flex gap-4 flex-wrap;
+}
+
+.horizontal-layout > * {
+  @apply flex-1 min-w-[200px];
+}
+
+/* Categorization */
+.categorization {
+  @apply space-y-4;
+}
+
+.categorization-stepper {
+  @apply flex gap-2 mb-4 border-b pb-2;
+}
+
+.categorization-step {
+  @apply px-3 py-1 text-sm rounded-md cursor-pointer;
+}
+
+.categorization-step.active {
+  @apply bg-primary text-primary-foreground;
+}
+
+.categorization-step:not(.active) {
+  @apply hover:bg-muted;
+}
+
+/* Enum / Select styling */
+.enum-control select {
+  @apply appearance-none bg-background;
+}
+
+/* One-of / Any-of combinator */
+.combinator {
+  @apply space-y-2;
+}
+
+.combinator-select {
+  @apply mb-4;
+}
+
+/* Master detail layout */
+.master-detail {
+  @apply flex gap-4;
+}
+
+.master-detail .master {
+  @apply w-1/3 border-r pr-4;
+}
+
+.master-detail .detail {
+  @apply w-2/3;
+}
+
+.master-detail .master-item {
+  @apply p-2 cursor-pointer rounded hover:bg-muted;
+}
+
+.master-detail .master-item.selected {
+  @apply bg-muted;
+}
+
+
+
+
+

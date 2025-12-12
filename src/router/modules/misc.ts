@@ -24,11 +24,6 @@ export const miscRoutes: RouteRecordRaw[] = [
     meta: { title: 'Whaleswap gRPC Pair Queries' },
   },
 
-  { path: '/docs', name: 'ApiDocs', component: Placeholder, meta: { title: 'API Docs' } },
-  { path: '/api', name: 'CodeSnippets', component: Placeholder, meta: { title: 'Code Snippets' } },
-
-  { path: '/wallet', name: 'WalletView', component: Placeholder, meta: { title: 'Wallet' } },
-
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',

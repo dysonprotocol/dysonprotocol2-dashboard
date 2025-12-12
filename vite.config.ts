@@ -60,6 +60,10 @@ export default defineConfig(({ mode }) => {
       watch: {
         usePolling: true,
       },
+      fs: {
+        // Allow serving files from project root for swagger-gen and proto-json-schema
+        allow: ['.'],
+      },
       proxy: {
         '/cosmos': {
           target: proxyTarget,
