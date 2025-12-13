@@ -14,12 +14,36 @@
         <span class="iconify lucide--panel-left size-5" />
       </label>
     </div>
+
     <div class="flex items-center justify-between gap-3 ps-5 pe-4">
       <img :src="dysLogoInverted" alt="Dyson logo" class="h-6 w-auto block dark:hidden" />
       <img :src="dysLogo" alt="Dyson logo inverted" class="h-6 w-auto hidden dark:block" />
       <a href="/" class="font-semibold">Dyson Protocol 2</a>
     </div>
+
     <div class="inline-flex items-center gap-1">
+      <!-- Search button -->
+      <Dialog v-model:open="searchOpen">
+        <DialogTrigger as-child>
+          <button
+            class="btn btn-ghost btn-sm gap-2 text-muted-foreground hover:text-foreground"
+            aria-label="Search"
+          >
+            <span class="iconify lucide--search size-4" />
+            <span class="hidden sm:inline text-sm">Search</span>
+            <kbd class="hidden sm:inline rounded border bg-muted px-1.5 py-0.5 text-xs">⌘K</kbd>
+          </button>
+        </DialogTrigger>
+        <DialogContent class="sm:max-w-2xl p-0 gap-0">
+          <DialogTitle class="sr-only">Search</DialogTitle>
+          <DialogDescription class="sr-only">
+            Search for addresses, transactions, names, blocks, or API endpoints
+          </DialogDescription>
+          <CommandPalette :on-select="() => (searchOpen = false)" />
+        </DialogContent>
+      </Dialog>
+
+      <!-- Theme toggle -->
       <button
         class="btn btn-square btn-ghost btn-sm"
         size="icon"
@@ -33,14 +57,31 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useColorMode } from '@vueuse/core'
-import { Button } from '@/components/ui/button'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useColorMode, useMagicKeys, whenever } from '@vueuse/core'
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import CommandPalette from '@/components/CommandPalette.vue'
 import dysLogo from '@/assets/images/dys.svg'
 import dysLogoInverted from '@/assets/images/dys-inverted.svg'
 
 defineOptions({ name: 'AppTopbar' })
 
+// Search dialog state
+const searchOpen = ref(false)
+
+// ⌘K to open search
+const { meta_k } = useMagicKeys()
+whenever(meta_k, () => {
+  searchOpen.value = true
+})
+
+// Theme management
 const mode = useColorMode({
   attribute: 'class',
   selector: 'html',

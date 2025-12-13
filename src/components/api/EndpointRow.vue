@@ -40,6 +40,15 @@ const paramCount = computed(() => props.endpoint.parameters?.length || 0)
 
 const methodColor = computed(() => 'bg-muted text-muted-foreground')
 
+// For Msg types, path equals operationId (type URL without leading /)
+// Show as type URL with / prefix, don't duplicate operationId below
+const isMsgType = computed(() => props.endpoint.path === props.endpoint.operationId)
+
+// Display path: for Msg types, add leading /
+const displayPath = computed(() =>
+  isMsgType.value ? '/' + props.endpoint.path : props.endpoint.path
+)
+
 // Use raw operationId as anchor (e.g., dysonprotocol.script.v1.QueryGetBlockRequest)
 const anchorId = computed(() => props.endpoint.operationId)
 
@@ -89,16 +98,14 @@ onMounted(() => {
         <div class="flex items-start gap-2 p-3 text-left">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-              <code class="font-mono text-sm font-semibold select-all break-all">{{
-                endpoint.path
-              }}</code>
+              <code class="font-mono font-semibold select-all break-all">{{ displayPath }}</code>
             </div>
-            <div class="mt-1">
-              <span class="text-xs font-medium text-foreground/80 select-all"
+            <div v-if="!isMsgType || endpoint.summary" class="mt-1">
+              <span v-if="!isMsgType" class="text-xs font-medium text-foreground/80 select-all"
                 >/{{ props.endpoint.operationId }}</span
               >
               <span v-if="endpoint.summary" class="text-xs text-muted-foreground">
-                — {{ endpoint.summary }}
+                <template v-if="!isMsgType"> - </template>{{ endpoint.summary }}
               </span>
             </div>
           </div>

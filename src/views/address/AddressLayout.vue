@@ -9,9 +9,7 @@
         v-slot="{ href, navigate, isExactActive }"
       >
         <a :href="href" @click="navigate" :class="tabButtonClass(isExactActive)">
-          <component v-if="link.icon" :is="link.icon" class="size-4" aria-hidden="true" />
-          <span v-else class="iconify size-4" :class="link.iconClass" aria-hidden="true" />
-          <span>{{ link.text }}</span>
+          {{ link.text }}
         </a>
       </router-link>
     </div>

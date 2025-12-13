@@ -77,8 +77,7 @@
             v-slot="{ href, navigate, isActive }"
           >
             <a :href="href" @click="navigate" :class="migrateLinkClass(isActive)">
-              <span class="iconify size-5" :class="'lucide--arrow-right-left'" />
-              <span>Convert old DYS to DYS2</span>
+              Convert old DYS to DYS2
             </a>
           </router-link>
 
@@ -88,59 +87,35 @@
           <!-- chain explorer links -->
           <nav class="space-y-2 flex flex-col">
             <router-link to="/names" custom v-slot="{ href, navigate, isActive }">
-              <a :href="href" @click="navigate" :class="linkClass(isActive)">
-                <Tag class="size-4" />
-                <span>Names</span>
-              </a>
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">Names</a>
             </router-link>
 
             <router-link to="/tasks" custom v-slot="{ href, navigate, isActive }">
-              <a :href="href" @click="navigate" :class="linkClass(isActive)">
-                <Clock class="size-4" />
-                <span>Crontasks</span>
-              </a>
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">Crontasks</a>
             </router-link>
 
             <router-link to="/blocks" custom v-slot="{ href, navigate, isActive }">
-              <a :href="href" @click="navigate" :class="linkClass(isActive)">
-                <SquareStack class="size-4" />
-                <span>Blocks</span>
-              </a>
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">Blocks</a>
             </router-link>
 
             <router-link to="/txs" custom v-slot="{ href, navigate, isActive }">
-              <a :href="href" @click="navigate" :class="linkClass(isActive)">
-                <ArrowLeftRight class="size-4" />
-                <span>Transactions</span>
-              </a>
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">Transactions</a>
             </router-link>
 
             <router-link to="/validators" custom v-slot="{ href, navigate, isActive }">
-              <a :href="href" @click="navigate" :class="linkClass(isActive)">
-                <ShieldCheck class="size-4" />
-                <span>Validators</span>
-              </a>
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">Validators</a>
             </router-link>
 
             <router-link to="/gov" custom v-slot="{ href, navigate, isActive }">
-              <a :href="href" @click="navigate" :class="linkClass(isActive)">
-                <Landmark class="size-4" />
-                <span>Governance</span>
-              </a>
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">Governance</a>
             </router-link>
 
             <router-link to="/whaleswap" custom v-slot="{ href, navigate, isActive }">
-              <a :href="href" @click="navigate" :class="linkClass(isActive)">
-                <span class="iconify size-4" :class="'lucide--fish'" />
-                <span>Whaleswap</span>
-              </a>
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">Whaleswap</a>
             </router-link>
 
             <router-link to="/ibc" custom v-slot="{ href, navigate, isActive }">
-              <a :href="href" @click="navigate" :class="linkClass(isActive)">
-                <span class="iconify size-4" :class="'lucide--box'" />
-                <span>IBC</span>
-              </a>
+              <a :href="href" @click="navigate" :class="linkClass(isActive)">IBC</a>
             </router-link>
           </nav>
         </div>
@@ -153,7 +128,6 @@
 defineOptions({ name: 'AppSidebar' })
 import KeplrCard from '@/components/wallet/KeplrCard.vue'
 import CosmjsWallets from '@/components/wallet/CosmjsWallets.vue'
-import { Tag, SquareStack, ArrowLeftRight, ShieldCheck, Landmark, Clock } from 'lucide-vue-next'
 import { computed, onMounted } from 'vue'
 import { useRepo } from 'pinia-orm'
 import { useAxiosRepo } from '@pinia-orm/axios'

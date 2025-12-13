@@ -10,15 +10,14 @@ import migrationRoutes from './modules/migration'
 import apiRoutes from './modules/api'
 
 const Index = () => import('@/views/Index.vue')
-const MigrationWizard = () => import('@/views/migration/MigrationWizard.vue')
 const DemoProtobuf = () => import('@/views/DemoProtobuf.vue')
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Index',
-    component: MigrationWizard,
-    meta: { title: 'Convert old DYS to DYS2' },
+    component: Index,
+    meta: { title: 'Dyson Protocol 2' },
   },
   { path: '/demo/protobuf', name: 'DemoProtobuf', component: DemoProtobuf },
   {
