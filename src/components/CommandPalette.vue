@@ -11,6 +11,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command'
 import { useSwaggerDocsGlobal } from '@/composables/useSwaggerDocs'
+import { getAddressLinks } from '@/navigation/addressLinks'
 
 const props = defineProps<{
   onSelect?: () => void
@@ -71,6 +72,11 @@ const detectedType = computed(() => {
 
 const cleanedQuery = computed(() => searchQuery.value.trim())
 const baseName = computed(() => cleanedQuery.value.replace(/\.d?y?s?$/, ''))
+
+// Address page links when address is detected
+const addressLinks = computed(() =>
+  detectedType.value === 'address' ? getAddressLinks(cleanedQuery.value) : []
+)
 
 const onSearchChange = (value: string) => {
   searchQuery.value = value
@@ -136,8 +142,13 @@ const quickLinks = [
 
       <!-- Address -->
       <CommandGroup v-if="detectedType === 'address'" heading="Address Found">
-        <CommandItem :value="cleanedQuery" @select="goToAddress">
-          <span class="truncate">{{ cleanedQuery }}</span>
+        <CommandItem
+          v-for="link in addressLinks"
+          :key="link.text"
+          :value="'addr-' + link.text"
+          @select="navigate(link.to)"
+        >
+          {{ cleanedQuery }} - {{ link.text }}
         </CommandItem>
       </CommandGroup>
 

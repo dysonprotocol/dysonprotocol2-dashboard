@@ -1021,9 +1021,7 @@ function formatResult(r: unknown) {
           <div class="text-lg font-medium">Dyslang Script</div>
           <div class="flex items-end gap-2">
             <Field class="flex-1">
-              <FieldLabel for="global-script-address-mobile"
-                >Script Address to run query</FieldLabel
-              >
+              <FieldLabel for="global-script-address-mobile">Script Address to simulate</FieldLabel>
               <Input
                 id="global-script-address-mobile"
                 v-model="globalScriptAddress"
@@ -1037,7 +1035,7 @@ function formatResult(r: unknown) {
               @click="runScriptQuery"
             >
               <Play class="h-4 w-4 mr-2" />
-              {{ isSimulating ? 'Running...' : 'Run Query' }}
+              {{ isSimulating ? 'Running...' : 'Simulate' }}
             </Button>
           </div>
           <div class="relative border rounded-md overflow-hidden">
@@ -1338,7 +1336,7 @@ function formatResult(r: unknown) {
         <div class="text-lg font-medium">Dyslang Script</div>
         <div class="flex items-end gap-2">
           <Field class="flex-1">
-            <FieldLabel for="global-script-address-desktop">Script Address to run query</FieldLabel>
+            <FieldLabel for="global-script-address-desktop">Script Address to simulate</FieldLabel>
             <Input
               id="global-script-address-desktop"
               v-model="globalScriptAddress"
@@ -1352,7 +1350,7 @@ function formatResult(r: unknown) {
             @click="runScriptQuery"
           >
             <Play class="h-4 w-4 mr-2" />
-            {{ isSimulating ? 'Running...' : 'Run Query' }}
+            {{ isSimulating ? 'Running...' : 'Simulate' }}
           </Button>
         </div>
         <div class="relative border rounded-md overflow-hidden">
