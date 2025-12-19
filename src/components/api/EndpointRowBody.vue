@@ -40,6 +40,14 @@ const codeCopied = ref(false)
 const linkCopied = ref(false)
 const jsonCopied = ref(false)
 
+// Parameters input mode (form vs JSON) for mobile
+const paramsInputMode = ref<'form' | 'json'>('form')
+const paramsJsonText = ref('{}')
+const paramsJsonError = ref<string | null>(null)
+// Flags to prevent circular updates between form and JSON
+const isUpdatingFromJson = ref(false)
+const isUpdatingFromForm = ref(false)
+
 // Wallet & transaction state
 const { sendMsg, isAnyWalletConnected } = useWallet()
 const selectedWalletAddress = ref('')
@@ -115,9 +123,42 @@ function onFormChange(event: { data: any }) {
   // Only update if data actually changed (prevents infinite loop)
   const newData = JSON.stringify(event.data)
   if (newData !== JSON.stringify(formData.value)) {
+    isUpdatingFromForm.value = true
     formData.value = JSON.parse(newData)
+    isUpdatingFromForm.value = false
   }
 }
+
+// Handle raw JSON text changes from Monaco editor
+function onParamsJsonChange(text: string) {
+  paramsJsonText.value = text
+  paramsJsonError.value = null
+
+  try {
+    const parsed = JSON.parse(text)
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      paramsJsonError.value = 'Must be a JSON object'
+      return
+    }
+    // Only update formData if parsing succeeded
+    isUpdatingFromJson.value = true
+    formData.value = parsed
+    isUpdatingFromJson.value = false
+  } catch (err: any) {
+    paramsJsonError.value = err.message || 'Invalid JSON'
+  }
+}
+
+// Sync formData changes to JSON text (unless change came from JSON editor)
+watch(
+  formData,
+  (data) => {
+    if (isUpdatingFromJson.value) return
+    paramsJsonText.value = JSON.stringify(data, null, 2)
+    paramsJsonError.value = null
+  },
+  { deep: true }
+)
 
 // Convert flat dotted keys to nested object structure (for query params only)
 // e.g., { "pagination.key": "abc", "pagination.limit": "10" }
@@ -463,19 +504,23 @@ const typeUrl = computed(() => {
   return null
 })
 
+// Check if this is a Service endpoint (cannot be signed, no Dyslang)
+const isService = computed(() => {
+  const tags = props.endpoint.tags || []
+  return tags.some((tag) => tag.includes('Service'))
+})
+
 // Determine if this is a query or msg based on operationId/typeUrl
+// Service endpoints are also treated as queries (no signing capability)
 const isQuery = computed(() => {
+  if (isService.value) return true
   const opId = props.endpoint.operationId || ''
   const type = typeUrl.value || ''
-  // Check if operationId or typeUrl contains 'Query' or if it's a GET request
   return opId.includes('Query') || type.includes('Query') || props.endpoint.method === 'get'
 })
 
 // Service endpoints don't support Dyslang scripts
-const supportsDyslang = computed(() => {
-  const tags = props.endpoint.tags || []
-  return !tags.some((tag) => tag.includes('Service'))
-})
+const supportsDyslang = computed(() => !isService.value)
 
 // Generate Python code snippet for script usage
 const generatedCode = computed(() => {
@@ -549,6 +594,8 @@ onMounted(() => {
   if (props.initialParams) {
     formData.value = { ...props.initialParams }
   }
+  // Initialize JSON text from form data
+  paramsJsonText.value = JSON.stringify(formData.value, null, 2)
   scriptCode.value = generatedCode.value
   // Signal parent that content is ready for scrolling
   // Small delay to let JsonForms and other content render
@@ -884,17 +931,65 @@ function formatResult(r: unknown) {
     <div v-else class="border rounded-md p-3 mt-3">
       <div class="flex items-center justify-between mb-2">
         <span class="text-sm font-medium">Parameters</span>
-        <Button variant="ghost" size="sm" class="h-7 px-2 text-xs" @click="copyDeepLink">
-          <Check v-if="linkCopied" class="h-3 w-3 text-green-500 mr-1" />
-          <Link v-else class="h-3 w-3 mr-1" />
-        </Button>
+        <div class="flex items-center gap-2">
+          <!-- Mobile: Toggle buttons for Form/JSON -->
+          <div class="xl:hidden flex border rounded-md overflow-hidden">
+            <button
+              class="px-2 py-1 text-xs transition-colors"
+              :class="
+                paramsInputMode === 'form'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted hover:bg-muted/80'
+              "
+              @click="paramsInputMode = 'form'"
+            >
+              Form
+            </button>
+            <button
+              class="px-2 py-1 text-xs transition-colors"
+              :class="
+                paramsInputMode === 'json'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted hover:bg-muted/80'
+              "
+              @click="paramsInputMode = 'json'"
+            >
+              JSON
+            </button>
+          </div>
+          <Button variant="ghost" size="sm" class="h-7 px-2 text-xs" @click="copyDeepLink">
+            <Check v-if="linkCopied" class="h-3 w-3 text-green-500 mr-1" />
+            <Link v-else class="h-3 w-3 mr-1" />
+          </Button>
+        </div>
       </div>
-      <JsonForms
-        :data="formData"
-        :schema="jsonSchema"
-        :renderers="customRenderers"
-        @change="onFormChange"
-      />
+
+      <!-- Desktop: Side by side layout -->
+      <div class="grid xl:grid-cols-2 gap-3 items-stretch">
+        <!-- Form Panel -->
+        <div :class="{ 'hidden xl:block': paramsInputMode === 'json' }">
+          <JsonForms
+            :data="formData"
+            :schema="jsonSchema"
+            :renderers="customRenderers"
+            @change="onFormChange"
+          />
+        </div>
+
+        <!-- JSON Panel -->
+        <div class="flex flex-col" :class="{ 'hidden xl:flex': paramsInputMode === 'form' }">
+          <div class="text-xs text-muted-foreground mb-1 xl:block hidden">Raw JSON</div>
+          <textarea
+            :value="paramsJsonText"
+            class="flex-1 min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            :class="{ 'border-destructive': paramsJsonError }"
+            @input="onParamsJsonChange(($event.target as HTMLTextAreaElement).value)"
+          />
+          <div v-if="paramsJsonError" class="text-xs text-destructive mt-1">
+            {{ paramsJsonError }}
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Mobile: Tabs layout (only when Dyslang supported) -->
