@@ -1,0 +1,1 @@
+import{d as n,T as o,G as r,l as a,aj as c,av as l,o as t}from"./index-BCYDVu-a.js";const _=n({__name:"Spinner",props:{class:{}},setup(s){const e=s;return(i,p)=>(t(),o(a(l),{role:"status","aria-label":"Loading",class:r(a(c)("size-4 animate-spin",e.class))},null,8,["class"]))}});export{_};

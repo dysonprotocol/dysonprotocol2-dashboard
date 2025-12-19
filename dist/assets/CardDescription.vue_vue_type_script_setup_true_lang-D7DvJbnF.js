@@ -1,0 +1,1 @@
+import{d as t,c as o,ad as r,G as n,l as c,aj as l,o as p}from"./index-BCYDVu-a.js";const i=t({__name:"CardDescription",props:{class:{}},setup(s){const e=s;return(a,d)=>(p(),o("p",{"data-slot":"card-description",class:n(c(l)("text-muted-foreground text-sm",e.class))},[r(a.$slots,"default")],2))}});export{i as _};
