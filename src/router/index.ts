@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import NProgress from 'nprogress'
+import 'nprogress/nprogress.css'
 import namesRoutes from './modules/names'
 import addressRoutes from './modules/address'
 import explorerRoutes from './modules/explorer'
@@ -8,6 +10,8 @@ import ibcRoutes from './modules/ibc'
 import ibcTransfersRoutes from './modules/ibcTransfers'
 import migrationRoutes from './modules/migration'
 import apiRoutes from './modules/api'
+
+NProgress.configure({ showSpinner: false })
 
 const Index = () => import('@/views/Index.vue')
 const DemoProtobuf = () => import('@/views/DemoProtobuf.vue')
@@ -39,6 +43,14 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+router.beforeEach(() => {
+  NProgress.start()
+})
+
+router.afterEach(() => {
+  NProgress.done()
 })
 
 export default router

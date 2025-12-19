@@ -229,3 +229,14 @@ html:not([data-sidebar-ready]) #layout-sidebar {
     @apply bg-background text-foreground;
   }
 }
+
+/* NProgress customization */
+#nprogress .bar {
+  background: oklch(0.696 0.17 162.48); /* emerald-500 */
+  height: 3px;
+}
+#nprogress .peg {
+  box-shadow:
+    0 0 10px oklch(0.696 0.17 162.48),
+    0 0 5px oklch(0.696 0.17 162.48);
+}
