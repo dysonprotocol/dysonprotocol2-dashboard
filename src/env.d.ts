@@ -6,6 +6,13 @@ declare module '*.vue' {
   export default component
 }
 
+declare module '*.md' {
+  import type { DefineComponent } from 'vue'
+  const component: DefineComponent<{}, {}, any>
+  export const frontmatter: Record<string, unknown>
+  export default component
+}
+
 interface KeplrKey {
   name: string
   bech32Address: string

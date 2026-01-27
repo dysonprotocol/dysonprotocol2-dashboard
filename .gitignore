@@ -1,4 +1,5 @@
 *.review
+ref
 .env
 node_modules/
 .devcontainer/
@@ -7,3 +8,4 @@ AGENT.md
 delivery/
 test-results/
 
+.mcp.json

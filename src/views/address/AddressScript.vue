@@ -10,6 +10,11 @@
         class="overflow-y-auto min-h-0 space-y-3"
         :style="{ height: listHeightPx + 'px' }"
       >
+        <CoveragePanel
+          :functions="functions"
+          :address="address"
+          :has-unsaved-changes="hasUnsavedChanges"
+        />
         <ScriptExtraCode
           :address="address"
           :current-script-content="script?.code || ''"
@@ -47,6 +52,7 @@ import Script from '@/orm/models/script/Script'
 const ScriptEditor = defineAsyncComponent(() => import('@/components/scripts/ScriptEditor.vue'))
 import ScriptExtraCode from '@/components/scripts/ScriptExtraCode.vue'
 import FunctionsList from '@/components/scripts/FunctionsList.vue'
+import CoveragePanel from '@/components/scripts/CoveragePanel.vue'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 
 const props = defineProps<{ address: string }>()

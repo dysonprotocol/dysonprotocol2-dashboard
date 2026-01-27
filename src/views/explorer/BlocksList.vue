@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useRepo } from 'pinia-orm'
@@ -29,7 +29,15 @@ const currentPage = computed(() => {
 const isLoading = ref(false)
 const hasError = ref(false)
 const errorMessage = ref('')
-const latestHeight = computed(() => getLatestHeightFromRepo())
+// Track latest height - use streamed value or fall back to ORM
+const streamedHeight = ref(0)
+const latestHeight = computed(() => {
+  // Prefer streamed height (from WebSocket events) over ORM (which has broken reactivity)
+  if (streamedHeight.value > 0) return streamedHeight.value
+  const all = blockRepo.all() as unknown as Array<{ singleton?: string; height?: string }>
+  const one = all.find((r) => r.singleton === 'default')
+  return one?.height ? Number(one.height) : 0
+})
 let tipTimer: ReturnType<typeof setTimeout> | null = null
 // Tx counts are sourced from TxBlock summary; cached by height forever
 
@@ -80,11 +88,6 @@ const blocks = computed(() => {
     .filter((r) => r.height)
 })
 
-function getLatestHeightFromRepo(): number {
-  const one = blockRepo.find('default') as unknown as { height?: string } | undefined
-  if (!one?.height) return 0
-  return Number(one.height)
-}
 
 async function loadPage() {
   if (isLoading.value) return
@@ -146,11 +149,13 @@ watch(
   }
 )
 
-// When following tip (no page query or already at max), auto-refresh on new heights
+// When latestHeight changes, check if current page has blocks that need fetching
 watch(latestHeight, () => {
-  const pinned = typeof route.query.page !== 'undefined'
-  const atTip = currentPage.value >= maxPage.value
-  if (!pinned || atTip) {
+  // Check if any blocks on this page are now fetchable (height <= latestHeight but no data)
+  const hasUnfetched = gridHeights.value.some(
+    (h) => h <= latestHeight.value && h > 0 && !txBlockRepo.find(String(h))
+  )
+  if (hasUnfetched) {
     if (tipTimer) globalThis.clearTimeout(tipTimer)
     tipTimer = setTimeout(() => {
       loadPage()
@@ -158,8 +163,50 @@ watch(latestHeight, () => {
   }
 })
 
+// Handler for new block events from WebSocket
+function onNewBlock(e: Event) {
+  const detail = (e as CustomEvent).detail as {
+    height?: string | number
+    timestamp?: string
+    tx_count?: number
+  } | undefined
+  const height = Number(detail?.height || 0)
+  if (height > streamedHeight.value) {
+    streamedHeight.value = height
+  }
+  // Save TxBlock directly from WS data if block is on current page
+  if (height > 0 && detail?.timestamp !== undefined) {
+    const isOnPage = gridHeights.value.includes(height)
+    if (isOnPage && !txBlockRepo.find(String(height))) {
+      txBlockRepo.save({
+        height: String(height),
+        timestamp: String(detail.timestamp || ''),
+        tx_count: String(detail.tx_count ?? 0),
+      })
+    }
+  }
+}
+
 onMounted(async () => {
   await loadPage()
+  globalThis.addEventListener('dys:newblock', onNewBlock)
+})
+
+onUnmounted(() => {
+  globalThis.removeEventListener('dys:newblock', onNewBlock)
+  if (tipTimer) clearTimeout(tipTimer)
+})
+
+// Watch streamed height and fetch blocks that appear on current page
+watch(streamedHeight, (newHeight) => {
+  if (newHeight <= 0) return
+  const hasUnfetched = gridHeights.value.some(
+    (h) => h <= newHeight && h > 0 && !txBlockRepo.find(String(h))
+  )
+  if (hasUnfetched && !isLoading.value) {
+    if (tipTimer) clearTimeout(tipTimer)
+    tipTimer = setTimeout(() => loadPage(), 150)
+  }
 })
 </script>
 

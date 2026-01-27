@@ -453,31 +453,10 @@ export function useWallet() {
     let finalGasLimit = gasLimit
 
     if (type === 'keplr') {
-      if (gasLimit === 'auto' || gasLimit == null || gasLimit == undefined)
-        finalGasLimit = 100000000
-      else finalGasLimit = gasLimit
-    } else if (gasLimit == null || gasLimit == undefined) {
-      const simulationResult = await sendMsgs({
-        apiUrl: restUrl,
-        wallet: walletInstance,
-        walletType: type,
-        address,
-        msgs: msgsForSend,
-        memo,
-        fee: buildFee(200000),
-        simulate: true,
-      })
-      if (!simulationResult.success) {
-        const errorMsg =
-          simulationResult.rawLog || simulationResult.raw?.message || 'Simulation failed'
-        throw new Error(`Gas estimation failed, code: [${simulationResult.code}] ${errorMsg}`)
-      }
-      let gasUsed = 0
-      if (simulationResult?.raw?.gas_info?.gas_used)
-        gasUsed = parseInt(simulationResult.raw.gas_info.gas_used)
-      else if (simulationResult?.gasUsed) gasUsed = parseInt(simulationResult.gasUsed)
-      finalGasLimit = gasUsed > 0 ? Math.ceil(gasUsed * 1.5) : 200000
-    } else if (gasLimit === 'auto') {
+      // Keplr auto-simulates gas; just use high limit or explicit value
+      finalGasLimit = typeof gasLimit === 'number' ? gasLimit : 100000000
+    } else if (gasLimit === 'auto' || gasLimit == null) {
+      // CosmJS: simulate to estimate gas
       const simulationResult = await sendMsgs({
         apiUrl: restUrl,
         wallet: walletInstance,
@@ -551,7 +530,11 @@ export function useWallet() {
 
     let finalGasLimit = gasLimit
     if (gasLimit === 'auto' && !simulate) {
-      if (type === COSMJS_WALLET_TYPE) {
+      if (type === 'keplr') {
+        // Keplr auto-simulates gas; just use high limit
+        finalGasLimit = 100000000
+      } else {
+        // CosmJS: simulate to estimate gas
         const innerMsg = {
           '@type': '/dysonprotocol.script.v1.MsgExec',
           executor_address: executorAddress,
@@ -581,8 +564,6 @@ export function useWallet() {
           gasUsed = parseInt(simulationResult.raw.gas_info.gas_used)
         else if (simulationResult?.gasUsed) gasUsed = parseInt(simulationResult.gasUsed)
         finalGasLimit = gasUsed > 0 ? Math.round(gasUsed * 1.5) : 100000000
-      } else {
-        finalGasLimit = 100000000
       }
     }
 

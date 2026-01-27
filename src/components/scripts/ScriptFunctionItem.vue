@@ -201,6 +201,9 @@ const emit = defineEmits(['function-executed', 'focus-code'])
 
 const { goToException: goTo } = useGoToException()
 
+// Detect coverage_* functions
+const isCoverageFunction = computed(() => props.func?.function_name?.startsWith('coverage_') || false)
+
 // Open state per address+fn
 const openStates = useStorage('script-function-open-states', {})
 const storageKey = computed(() => `${props.address}_${props.func.function_name}`)
@@ -475,6 +478,33 @@ async function run(simulate) {
         res,
         simulate,
       })
+      // Emit coverage event for coverage_* functions
+      if (isCoverageFunction.value && res.scriptResponse?.result) {
+        // Coverage data can be directly in result (if it's an array) or in result.result
+        let coverageData = res.scriptResponse.result
+        if (coverageData && typeof coverageData === 'object' && !Array.isArray(coverageData) && Array.isArray(coverageData.result)) {
+          coverageData = coverageData.result
+        }
+        if (typeof coverageData === 'string') {
+          try {
+            coverageData = JSON.parse(coverageData)
+          } catch {
+            coverageData = null
+          }
+        }
+        // Validate coverage data structure: array of [[meta], [calls, gas]]
+        if (Array.isArray(coverageData) && coverageData.length > 0 && Array.isArray(coverageData[0]) && coverageData[0].length === 2) {
+          window.dispatchEvent(
+            new CustomEvent('dyson:script-coverage', {
+              detail: {
+                address: props.address,
+                functionName: props.func.function_name,
+                coverageData,
+              },
+            })
+          )
+        }
+      }
     } else {
       // Success but no scriptResponse payload
       const txResp = res?.rawSendMsgsResponse?.raw?.tx_response

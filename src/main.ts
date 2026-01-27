@@ -10,6 +10,8 @@ import { useRepo, Model as OrmModel } from 'pinia-orm'
 import { useAxiosRepo } from '@pinia-orm/axios'
 import { useWallet } from '@/composables/useWallet'
 import type { Repository } from 'pinia-orm'
+import TendermintBlock from '@/orm/models/tendermint/Block'
+import TxBlock from '@/orm/models/tx/TxBlock'
 
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 
@@ -106,6 +108,23 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     console.log('[dev] __wallet.getWallet exposed on window')
   } catch (e) {
     console.warn('Failed to expose __wallet', e)
+  }
+
+  const sampleIntervalMs = 30000
+  const sample = () => {
+    const tmBlocks = useRepo(TendermintBlock).all().length
+    const txBlocks = useRepo(TxBlock).all().length
+    const heapUsed = performance?.memory?.usedJSHeapSize ?? null
+    const snapshot = { tmBlocks, txBlocks, heapUsed, at: new Date().toISOString() }
+    ;(globalThis as typeof globalThis & { __mem?: typeof snapshot }).__mem = snapshot
+    console.log('[dev][mem]', snapshot)
+  }
+  sample()
+  const memTimer = globalThis.setInterval(sample, sampleIntervalMs)
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => {
+      globalThis.clearInterval(memTimer)
+    })
   }
 }
 

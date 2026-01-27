@@ -10,6 +10,7 @@ import ibcRoutes from './modules/ibc'
 import ibcTransfersRoutes from './modules/ibcTransfers'
 import migrationRoutes from './modules/migration'
 import apiRoutes from './modules/api'
+import docsRoutes from './modules/docs'
 
 NProgress.configure({ showSpinner: false })
 
@@ -36,6 +37,7 @@ const routes: RouteRecordRaw[] = [
   ...ibcTransfersRoutes,
   ...migrationRoutes,
   ...addressRoutes,
+  ...docsRoutes,
   ...miscRoutes,
   ...apiRoutes,
 ]

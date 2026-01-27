@@ -1,12 +1,15 @@
+import { ref, type Ref } from 'vue'
 import { useRepo } from 'pinia-orm'
 import LatestBlock from '@/orm/models/base/TendermintService'
 
-import TendermintBlock from '@/orm/models/tendermint/Block'
-import TxBlock from '@/orm/models/tx/TxBlock'
 import { ensureGlobalCrontaskEventSync } from '@/orm/subscriptions/crontaskEvents'
 import { ensureGlobalBankTransferSync } from '@/orm/subscriptions/bankTransferEvents'
 import { ensureGlobalIbcEventSync } from '@/orm/subscriptions/ibcEvents'
 import { useWallet } from '@/composables/useWallet'
+
+export type ChainStatus = 'connecting' | 'connected' | 'error'
+const chainStatus: Ref<ChainStatus> = ref('connecting')
+export { chainStatus }
 
 let started = false
 let timer: ReturnType<typeof setTimeout> | null = null
@@ -103,8 +106,10 @@ export function startLatestBlockPoller() {
         return
       }
       ws = new globalThis.WebSocket(wsUrl)
+      chainStatus.value = 'connecting'
       ws.onopen = () => {
         wsFailures = 0
+        chainStatus.value = 'connected'
         console.info('[tm.ws] open')
         ws!.send(
           JSON.stringify({
@@ -158,67 +163,31 @@ export function startLatestBlockPoller() {
                 const lrepo = useRepo(LatestBlock)
                 const height = String((header?.height as string | number | undefined) || '')
                 if (height) {
+                  const timestamp = String((header?.time as string | undefined) || '')
                   lrepo.save({
                     singleton: 'default',
                     height,
-                    time: String((header?.time as string | undefined) || ''),
+                    time: timestamp,
                     proposer_address: String(
                       (header?.proposer_address as string | undefined) || ''
                     ),
                     chain_id: String((header?.chain_id as string | undefined) || ''),
                     hash: String(blockId?.hash ?? ''),
                   })
-                  // Upsert height-indexed TendermintBlock to satisfy GetBlockByHeight consumers
-                  useRepo(TendermintBlock).save({
-                    height,
-                    block_id: (value?.block_id as Record<string, unknown>) || {},
-                    header,
-                    data:
-                      ((value?.block as { data?: Record<string, unknown> } | undefined)?.data as
-                        | Record<string, unknown>
-                        | undefined) || {},
-                    evidence:
-                      ((value?.block as { evidence?: Record<string, unknown> } | undefined)
-                        ?.evidence as Record<string, unknown> | undefined) || {},
-                    last_commit:
-                      ((value?.block as { last_commit?: Record<string, unknown> } | undefined)
-                        ?.last_commit as Record<string, unknown> | undefined) || {},
-                  })
-                  console.debug('[tm.ws] upsert latest', { height })
-
-                  // Upsert TxBlock summary for the grid when we can derive tx count
-                  try {
-                    const txs = Array.isArray(
-                      ((value?.block as { data?: { txs?: unknown[] } } | undefined)?.data || {}).txs
-                    )
-                      ? ((
-                          (value?.block as { data?: { txs?: unknown[] } } | undefined)?.data as {
-                            txs?: unknown[]
-                          }
-                        )?.txs as unknown[]) || []
-                      : null
-                    const txResults = Array.isArray(
-                      (value?.result_finalize_block as { tx_results?: unknown[] } | undefined)
-                        ?.tx_results
-                    )
-                      ? ((value?.result_finalize_block as { tx_results?: unknown[] })
-                          .tx_results as unknown[])
-                      : null
-
-                    let txCount: number | null = null
-                    if (txs !== null) txCount = txs.length
-                    else if (txResults !== null) txCount = txResults.length
-
-                    if (txCount !== null) {
-                      useRepo(TxBlock).save({
-                        height,
-                        timestamp: String((header?.time as string | undefined) || ''),
-                        tx_count: String(txCount),
+                  // Extract tx_count from result_finalize_block.tx_results
+                  const txResults = (value?.result_finalize_block?.tx_results || []) as unknown[]
+                  const txCount = Array.isArray(txResults) ? txResults.length : 0
+                  // Emit event for components to react to new blocks with full data
+                  if (typeof globalThis.dispatchEvent === 'function') {
+                    globalThis.dispatchEvent(
+                      new CustomEvent('dys:newblock', {
+                        detail: { height, timestamp, tx_count: txCount },
                       })
-                    }
-                  } catch (e) {
-                    console.error('[tm.ws] upsert TxBlock error', e)
+                    )
                   }
+
+                  // Skip storing streaming TxBlock in ORM to prevent memory leak
+                  // On-demand fetches via fetchSummary will populate the repo when needed
                 }
 
                 // Emit all chain events as CustomEvents
@@ -307,6 +276,7 @@ export function startLatestBlockPoller() {
       ws.onclose = (ev) => {
         wsFailures += 1
         ws = null
+        chainStatus.value = wsFailures > 0 ? 'error' : 'connecting'
         // Fallback to polling continues; try to reconnect with backoff based on failures
         const backoff = Math.min(30000, 1000 * 2 ** Math.min(5, wsFailures))
         console.warn('[tm.ws] close', { code: ev?.code, reason: ev?.reason, backoff })
@@ -314,6 +284,7 @@ export function startLatestBlockPoller() {
       }
       ws.onerror = (err) => {
         console.error('[tm.ws] error', err)
+        chainStatus.value = 'error'
         try {
           ws?.close()
         } catch (e) {

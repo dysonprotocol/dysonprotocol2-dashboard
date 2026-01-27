@@ -1,37 +1,50 @@
 <template>
-  <div
+  <header
     id="layout-topbar"
     role="navigation"
     aria-label="Navbar"
-    class="flex items-center p-3 justify-between bg-background text-foreground border-b border-border"
+    class="h-14 flex items-center justify-between px-4 border-b border-border bg-background"
   >
-    <div class="inline-flex items-center gap-3">
-      <label
-        for="layout-sidebar-toggle-trigger"
-        class="btn btn-square btn-ghost btn-sm"
-        aria-label="Menu"
-      >
-        <span class="iconify lucide--panel-left size-5" />
-      </label>
+    <!-- Left: Sidebar trigger + Breadcrumbs -->
+    <div class="flex items-center gap-3 min-w-0">
+      <SidebarTrigger class="p-1.5 rounded-md hover:bg-muted flex-shrink-0" />
+
+      <!-- Breadcrumbs -->
+      <nav v-if="breadcrumbs.length > 0" class="flex items-center gap-1.5 text-sm min-w-0">
+        <template v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
+          <router-link
+            v-if="!crumb.isLast"
+            :to="crumb.path"
+            class="text-muted-foreground hover:text-foreground whitespace-nowrap"
+          >
+            {{ crumb.label }}
+          </router-link>
+          <span
+            v-else
+            class="font-medium truncate"
+          >
+            {{ crumb.label }}
+          </span>
+          <span
+            v-if="index < breadcrumbs.length - 1"
+            class="iconify lucide--chevron-right size-3 text-muted-foreground flex-shrink-0"
+          />
+        </template>
+      </nav>
     </div>
 
-    <div class="flex items-center justify-between gap-3 ps-5 pe-4">
-      <img :src="dysLogoInverted" alt="Dyson logo" class="h-6 w-auto block dark:hidden" />
-      <img :src="dysLogo" alt="Dyson logo inverted" class="h-6 w-auto hidden dark:block" />
-      <a href="/" class="font-semibold">Dyson Protocol 2</a>
-    </div>
-
-    <div class="inline-flex items-center gap-1">
+    <!-- Right: Search + Theme toggle -->
+    <div class="flex items-center gap-2 flex-shrink-0">
       <!-- Search button -->
       <Dialog v-model:open="searchOpen">
         <DialogTrigger as-child>
           <button
-            class="btn btn-ghost btn-sm gap-2 text-muted-foreground hover:text-foreground"
+            class="flex items-center gap-2 px-3 py-1.5 rounded-md border border-input text-sm text-muted-foreground hover:bg-muted"
             aria-label="Search"
           >
             <span class="iconify lucide--search size-4" />
-            <span class="hidden sm:inline text-sm">Search</span>
-            <kbd class="hidden sm:inline rounded border bg-muted px-1.5 py-0.5 text-xs">⌘K</kbd>
+            <span class="hidden md:inline">Search...</span>
+            <kbd class="hidden lg:inline rounded border bg-muted px-1.5 py-0.5 text-xs">⌘K</kbd>
           </button>
         </DialogTrigger>
         <DialogContent class="sm:max-w-2xl p-0 gap-0">
@@ -45,15 +58,14 @@
 
       <!-- Theme toggle -->
       <button
-        class="btn btn-square btn-ghost btn-sm"
-        size="icon"
+        class="p-1.5 rounded-md hover:bg-muted"
         aria-label="Toggle theme"
         @click="cycleTheme"
       >
-        <span class="iconify size-4.5" :class="icon" />
+        <span class="iconify size-4" :class="icon" />
       </button>
     </div>
-  </div>
+  </header>
 </template>
 
 <script setup lang="ts">
@@ -66,11 +78,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import CommandPalette from '@/components/CommandPalette.vue'
-import dysLogo from '@/assets/images/dys.svg'
-import dysLogoInverted from '@/assets/images/dys-inverted.svg'
+import { useBreadcrumbs } from '@/composables/useBreadcrumbs'
 
 defineOptions({ name: 'AppTopbar' })
+
+// Breadcrumbs
+const { breadcrumbs } = useBreadcrumbs()
 
 // Search dialog state
 const searchOpen = ref(false)

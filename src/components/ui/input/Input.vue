@@ -1,42 +1,33 @@
 <script setup lang="ts">
-import type { PrimitiveProps } from 'reka-ui'
-import type { HTMLAttributes } from 'vue'
-import { Primitive } from 'reka-ui'
-import { cn } from '@/lib/utils'
+import type { HTMLAttributes } from "vue"
+import { useVModel } from "@vueuse/core"
+import { cn } from "@/lib/utils"
 
-interface Props extends PrimitiveProps {
-  class?: HTMLAttributes['class']
+const props = defineProps<{
+  defaultValue?: string | number
   modelValue?: string | number
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  as: 'input',
-})
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string | number): void
+  class?: HTMLAttributes["class"]
 }>()
 
-function onInput(e: Event) {
-  const target = e.target as HTMLInputElement
-  emit('update:modelValue', target?.value ?? '')
-}
+const emits = defineEmits<{
+  (e: "update:modelValue", payload: string | number): void
+}>()
+
+const modelValue = useVModel(props, "modelValue", emits, {
+  passive: true,
+  defaultValue: props.defaultValue,
+})
 </script>
 
 <template>
-  <Primitive
+  <input
+    v-model="modelValue"
     data-slot="input"
-    :as="as"
-    :as-child="asChild"
-    :class="
-      cn(
-        'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-        props.class
-      )
-    "
-    :value="props.modelValue as any"
-    @input="onInput"
+    :class="cn(
+      'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+      'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+      'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
+      props.class,
+    )"
   >
-    <slot />
-  </Primitive>
 </template>

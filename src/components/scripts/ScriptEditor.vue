@@ -47,6 +47,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useWallet } from '@/composables/useWallet'
 import { useAppColorMode } from '@/composables/useAppColorMode'
+import { useCoverageVisualization } from '@/composables/useCoverageVisualization'
 
 import { useAxiosRepo } from '@pinia-orm/axios'
 import Script from '../../orm/models/script/Script'
@@ -63,6 +64,16 @@ const emit = defineEmits(['script-updated', 'content-changed'])
 
 const wallet = useWallet()
 const { isDark } = useAppColorMode()
+const {
+  coverageData,
+  visualizationMode,
+  coverageSource,
+  coverageStats,
+  setCoverage,
+  clearCoverage,
+  setVisualizationMode,
+  createDecorations,
+} = useCoverageVisualization()
 
 const editorEl = ref()
 
@@ -94,6 +105,7 @@ const editorExecutorAddress = ref('')
 const editorGranteeAddress = ref('')
 
 let errorDecorations: any = null
+let coverageDecorations: any = null
 
 const defaultCode = `# No script found.`
 
@@ -275,7 +287,11 @@ async function initEditor() {
     clearSuccessMessage()
     emit('content-changed', currentContent.value)
     dispatchScriptContentChanged()
-    if (editor.hasTextFocus() && errorDecorations) errorDecorations.set([])
+    if (editor.hasTextFocus()) {
+      if (errorDecorations) errorDecorations.set([])
+      // Clear coverage when code is edited
+      clearCoverageVisualization()
+    }
   })
   currentContent.value = editor.getValue()
   dispatchScriptContentChanged()
@@ -293,10 +309,48 @@ function onExceptionEvent(e: any) {
   highlightRange(line, startColRaw, endLine, endColRaw)
 }
 
+function onCoverageEvent(e: any) {
+  if (!editor || !monaco) return
+  const detail = e?.detail
+  if (!detail || detail.address !== props.address) return
+  setCoverage(detail.coverageData, editor.getValue(), detail.functionName)
+  applyVisualization()
+}
+
+function onCoverageModeEvent(e: any) {
+  const mode = e?.detail?.mode
+  if (mode) {
+    setVisualizationMode(mode)
+  }
+}
+
+function onCoverageClearEvent(e: any) {
+  if (e?.detail?.address !== props.address) return
+  clearCoverageVisualization()
+}
+
+function applyVisualization() {
+  if (!editor || !monaco || visualizationMode.value === 'off') {
+    if (coverageDecorations) coverageDecorations.set([])
+    return
+  }
+  const decorations = createDecorations(coverageData.value, visualizationMode.value, monaco, isDark.value)
+  if (!coverageDecorations) coverageDecorations = editor.createDecorationsCollection()
+  coverageDecorations.set(decorations)
+}
+
+function clearCoverageVisualization() {
+  clearCoverage()
+  if (coverageDecorations) coverageDecorations.set([])
+}
+
 onMounted(async () => {
   initEditor()
   if (props.script?.code) originalContent.value = props.script.code
   window.addEventListener('dyson:script-exception', onExceptionEvent)
+  window.addEventListener('dyson:script-coverage', onCoverageEvent)
+  window.addEventListener('dyson:coverage-mode', onCoverageModeEvent)
+  window.addEventListener('dyson:coverage-clear', onCoverageClearEvent)
   window.addEventListener('resize', updateEditorHeight)
 })
 
@@ -308,6 +362,9 @@ onUnmounted(() => {
   clearSuccessMessage()
   if (heightRaf.value) window.cancelAnimationFrame(heightRaf.value)
   window.removeEventListener('dyson:script-exception', onExceptionEvent)
+  window.removeEventListener('dyson:script-coverage', onCoverageEvent)
+  window.removeEventListener('dyson:coverage-mode', onCoverageModeEvent)
+  window.removeEventListener('dyson:coverage-clear', onCoverageClearEvent)
   window.removeEventListener('resize', updateEditorHeight)
 })
 
@@ -373,6 +430,13 @@ watch(editorTheme, (theme) => {
 watch(readOnly, (isReadOnly) => {
   if (editor) editor.updateOptions({ readOnly: isReadOnly })
 })
+watch(visualizationMode, () => {
+  applyVisualization()
+})
+watch(isDark, () => {
+  // Re-apply coverage visualization when theme changes
+  if (coverageData.value.length > 0) applyVisualization()
+})
 
 function clearEditorHighlight() {
   if (errorDecorations) errorDecorations.set([])
@@ -400,5 +464,28 @@ defineExpose({ restore, clearEditorHighlight })
 }
 ::deep(.myLineDecoration) {
   border-left: 3px solid rgba(244, 63, 94, 0.8);
+}
+
+</style>
+
+<style>
+/* Coverage visualization - must be non-scoped for Monaco decorations */
+.coverage-uncovered {
+  background-color: rgba(244, 63, 94, 0.3) !important;
+}
+.coverage-low {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+}
+.coverage-med {
+  background-color: rgba(34, 197, 94, 0.35) !important;
+}
+.coverage-high {
+  background-color: rgba(34, 197, 94, 0.5) !important;
+}
+.perf-low {
+  background-color: rgba(234, 179, 8, 0.25) !important;
+}
+.perf-high {
+  background-color: rgba(239, 68, 68, 0.35) !important;
 }
 </style>

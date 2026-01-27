@@ -992,339 +992,256 @@ function formatResult(r: unknown) {
       </div>
     </div>
 
-    <!-- Mobile: Tabs layout (only when Dyslang supported) -->
-    <Tabs v-if="!isWideScreen && supportsDyslang" v-model="globalSelectedTab" class="mt-4">
-      <TabsList class="w-full">
-        <TabsTrigger value="rest" class="flex-1">{{
-          isQuery ? 'REST API' : 'TX JSON'
-        }}</TabsTrigger>
-        <TabsTrigger value="dyslang" class="flex-1">Dyslang Script</TabsTrigger>
-      </TabsList>
+    <!-- API Panels: REST/TX JSON + Dyslang Script -->
+    <div v-if="supportsDyslang" class="mt-4">
+      <!-- Mobile: Toggle buttons -->
+      <div class="xl:hidden flex border rounded-md overflow-hidden mb-3 w-fit">
+        <button
+          class="px-3 py-1.5 text-sm transition-colors"
+          :class="
+            globalSelectedTab === 'rest'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted hover:bg-muted/80'
+          "
+          @click="globalSelectedTab = 'rest'"
+        >
+          {{ isQuery ? 'REST API' : 'TX JSON' }}
+        </button>
+        <button
+          class="px-3 py-1.5 text-sm transition-colors"
+          :class="
+            globalSelectedTab === 'dyslang'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted hover:bg-muted/80'
+          "
+          @click="globalSelectedTab = 'dyslang'"
+        >
+          Dyslang Script
+        </button>
+      </div>
 
-      <TabsContent value="rest" class="mt-3">
-        <!-- REST API Content (for queries) -->
-        <div v-if="isQuery" class="border rounded-md p-3 space-y-3">
-          <div class="text-lg font-medium">REST API</div>
-          <div class="flex items-end gap-2">
-            <Field class="flex-1">
-              <FieldLabel>Request URL</FieldLabel>
-              <Input :model-value="urlPreview" readonly class="font-mono text-xs" />
-            </Field>
-            <Button
-              class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
-              :disabled="isLoading"
-              @click="execute"
-            >
-              {{ isLoading ? 'Loading...' : endpoint.method.toUpperCase() }}
-            </Button>
-          </div>
-          <div v-if="bodyPreview">
-            <div class="text-xs text-muted-foreground mb-1">Request Body</div>
-            <pre class="bg-zinc-900 text-zinc-100 p-2 rounded text-xs overflow-x-auto max-h-32">{{
-              JSON.stringify(bodyPreview, null, 2)
-            }}</pre>
-          </div>
-          <div v-if="error || response || exampleResponse">
-            <div class="text-sm font-medium mb-2">Response</div>
-            <div
-              v-if="error"
-              class="bg-destructive/10 border border-destructive/20 rounded p-3 mb-2"
-            >
-              <div class="text-sm text-destructive">{{ error }}</div>
-            </div>
-            <div v-if="response">
-              <pre class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-60">{{
-                JSON.stringify(response, null, 2)
-              }}</pre>
-            </div>
-            <div v-else-if="exampleResponse">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs font-medium">200</span>
-                <span class="text-xs text-muted-foreground">Example response</span>
-              </div>
-              <pre class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-60">{{
-                JSON.stringify(exampleResponse, null, 2)
-              }}</pre>
-            </div>
-          </div>
-        </div>
-
-        <!-- TX JSON Content (for messages) -->
-        <div v-else class="border rounded-md p-3 space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="text-lg font-medium">TX JSON</div>
-            <Button variant="ghost" size="sm" class="h-7 px-2" @click="copyJson">
-              <Check v-if="jsonCopied" class="h-3 w-3 text-green-500" />
-              <Copy v-else class="h-3 w-3" />
-              <span class="ml-1 text-xs">{{ jsonCopied ? 'Copied' : 'Copy' }}</span>
-            </Button>
-          </div>
-          <FieldDescription>
-            Raw message JSON for signing and broadcasting a transaction.
-          </FieldDescription>
-          <pre class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-80">{{
-            JSON.stringify(msgJsonPayload, null, 2)
-          }}</pre>
-
-          <!-- Wallet selector and sign button -->
-          <div class="flex items-end gap-2 pt-2 border-t">
-            <div class="flex-1">
-              <div class="text-xs text-muted-foreground mb-1">Wallet</div>
-              <WalletSelector
-                v-model="selectedWalletAddress"
-                button-class="w-full justify-between"
-                @update:executor-address="executorAddress = $event"
-                @update:grantee-address="granteeAddress = $event"
-              />
-            </div>
-            <Button
-              class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
-              :disabled="isSigning || !executorAddress"
-              @click="signAndSendTx"
-            >
-              <Send class="h-4 w-4 mr-2" />
-              {{ isSigning ? 'Signing...' : 'Sign & Send' }}
-            </Button>
-          </div>
-
-          <!-- Transaction result -->
-          <div
-            v-if="txResult"
-            class="rounded-lg p-3"
-            :class="
-              txResult.success ? 'border border-green-500/50' : 'border border-destructive/50'
-            "
-          >
-            <div v-if="txResult.success" class="text-sm text-green-600 dark:text-green-400">
-              ✓ Transaction sent!
-              <a
-                v-if="txResult.txHash"
-                :href="`/txs/${txResult.txHash}`"
-                class="underline ml-1 font-mono text-xs"
+      <!-- Side by side on desktop, toggle on mobile -->
+      <div class="grid xl:grid-cols-2 gap-4">
+        <!-- REST API / TX JSON Panel -->
+        <div :class="{ 'hidden xl:block': globalSelectedTab === 'dyslang' }">
+          <!-- REST API (for queries) -->
+          <div v-if="isQuery" class="border rounded-md p-3 space-y-3">
+            <div class="text-lg font-medium">REST API</div>
+            <div class="flex items-end gap-2">
+              <Field class="flex-1">
+                <FieldLabel>Request URL</FieldLabel>
+                <Input :model-value="urlPreview" readonly class="font-mono text-xs" />
+              </Field>
+              <Button
+                class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
+                :disabled="isLoading"
+                @click="execute"
               >
-                {{ txResult.txHash.slice(0, 12) }}...
-              </a>
+                {{ isLoading ? 'Loading...' : endpoint.method.toUpperCase() }}
+              </Button>
             </div>
-            <div v-else class="text-sm text-destructive">{{ txResult.error }}</div>
+            <div v-if="bodyPreview">
+              <div class="text-xs text-muted-foreground mb-1">Request Body</div>
+              <pre class="bg-zinc-900 text-zinc-100 p-2 rounded text-xs overflow-x-auto max-h-32">{{
+                JSON.stringify(bodyPreview, null, 2)
+              }}</pre>
+            </div>
+            <div v-if="error || response || exampleResponse">
+              <div class="text-sm font-medium mb-2">Response</div>
+              <div
+                v-if="error"
+                class="bg-destructive/10 border border-destructive/20 rounded p-3 mb-2"
+              >
+                <div class="text-sm text-destructive">{{ error }}</div>
+              </div>
+              <div v-if="response">
+                <pre
+                  class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-60"
+                  >{{ JSON.stringify(response, null, 2) }}</pre
+                >
+              </div>
+              <div v-else-if="exampleResponse">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-xs font-medium">200</span>
+                  <span class="text-xs text-muted-foreground">Example response</span>
+                </div>
+                <pre
+                  class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-60"
+                  >{{ JSON.stringify(exampleResponse, null, 2) }}</pre
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- TX JSON (for messages) -->
+          <div v-else class="border rounded-md p-3 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="text-lg font-medium">TX JSON</div>
+              <Button variant="ghost" size="sm" class="h-7 px-2" @click="copyJson">
+                <Check v-if="jsonCopied" class="h-3 w-3 text-green-500" />
+                <Copy v-else class="h-3 w-3" />
+                <span class="ml-1 text-xs">{{ jsonCopied ? 'Copied' : 'Copy' }}</span>
+              </Button>
+            </div>
+            <FieldDescription>
+              Raw message JSON for signing and broadcasting a transaction.
+            </FieldDescription>
+            <pre class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-80">{{
+              JSON.stringify(msgJsonPayload, null, 2)
+            }}</pre>
+
+            <!-- Wallet selector and sign button -->
+            <div class="flex items-end gap-2 pt-2 border-t">
+              <div class="max-w-[240px]">
+                <div class="text-xs text-muted-foreground mb-1">Wallet</div>
+                <WalletSelector
+                  v-model="selectedWalletAddress"
+                  @update:executor-address="executorAddress = $event"
+                  @update:grantee-address="granteeAddress = $event"
+                />
+              </div>
+              <Button
+                class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
+                :disabled="isSigning || !executorAddress"
+                @click="signAndSendTx"
+              >
+                <Send class="h-4 w-4 mr-2" />
+                {{ isSigning ? 'Signing...' : 'Sign & Send' }}
+              </Button>
+            </div>
+
+            <!-- Transaction result -->
+            <div
+              v-if="txResult"
+              class="rounded-lg p-3"
+              :class="
+                txResult.success ? 'border border-green-500/50' : 'border border-destructive/50'
+              "
+            >
+              <div v-if="txResult.success" class="text-sm text-green-600 dark:text-green-400">
+                ✓ Transaction sent!
+                <a
+                  v-if="txResult.txHash"
+                  :href="`/txs/${txResult.txHash}`"
+                  class="underline ml-1 font-mono text-xs"
+                >
+                  {{ txResult.txHash.slice(0, 12) }}...
+                </a>
+              </div>
+              <div v-else class="text-sm text-destructive">{{ txResult.error }}</div>
+            </div>
           </div>
         </div>
-      </TabsContent>
 
-      <TabsContent value="dyslang" class="mt-3">
-        <!-- Dyslang Script Content -->
-        <div class="border rounded-md p-3 space-y-3">
-          <div class="text-lg font-medium">Dyslang Script</div>
-          <div class="flex items-end gap-2">
-            <Field class="flex-1">
-              <FieldLabel for="global-script-address-mobile">Script Address to simulate</FieldLabel>
-              <Input
-                id="global-script-address-mobile"
-                v-model="globalScriptAddress"
-                placeholder="dys2..."
-                class="font-mono"
+        <!-- Dyslang Script Panel -->
+        <div :class="{ 'hidden xl:block': globalSelectedTab === 'rest' }">
+          <div class="border rounded-md p-3 space-y-3">
+            <div class="text-lg font-medium">Dyslang Script</div>
+            <div class="flex items-end gap-2">
+              <Field class="flex-1">
+                <FieldLabel>Script Address to simulate</FieldLabel>
+                <Input v-model="globalScriptAddress" placeholder="dys2..." class="font-mono" />
+              </Field>
+              <Button
+                class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
+                :disabled="isSimulating || !globalScriptAddress"
+                @click="runScriptQuery"
+              >
+                <Play class="h-4 w-4 mr-2" />
+                {{ isSimulating ? 'Running...' : 'Simulate' }}
+              </Button>
+            </div>
+            <div class="relative border rounded-md overflow-hidden">
+              <MonacoEditor
+                v-model="scriptCode"
+                language="python"
+                :theme="editorTheme"
+                :auto-height="true"
+                :min-height="100"
+                :max-height="300"
               />
-            </Field>
-            <Button
-              class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
-              :disabled="isSimulating || !globalScriptAddress"
-              @click="runScriptQuery"
-            >
-              <Play class="h-4 w-4 mr-2" />
-              {{ isSimulating ? 'Running...' : 'Simulate' }}
-            </Button>
-          </div>
-          <div class="relative border rounded-md overflow-hidden">
-            <MonacoEditor
-              v-model="scriptCode"
-              language="python"
-              :theme="editorTheme"
-              :auto-height="true"
-              :min-height="100"
-              :max-height="300"
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              class="absolute top-2 right-2 h-7 px-2 bg-zinc-800 hover:bg-zinc-700 z-10"
-              @click="copyCode"
-            >
-              <Check v-if="codeCopied" class="h-3 w-3 text-green-500" />
-              <Copy v-else class="h-3 w-3" />
-              <span class="ml-1 text-xs">{{ codeCopied ? 'Copied' : 'Copy' }}</span>
-            </Button>
-          </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="absolute top-2 right-2 h-7 px-2 bg-zinc-800 hover:bg-zinc-700 z-10"
+                @click="copyCode"
+              >
+                <Check v-if="codeCopied" class="h-3 w-3 text-green-500" />
+                <Copy v-else class="h-3 w-3" />
+                <span class="ml-1 text-xs">{{ codeCopied ? 'Copied' : 'Copy' }}</span>
+              </Button>
+            </div>
 
-          <!-- Error Display -->
-          <div v-if="simulateError" class="rounded-lg border border-destructive/50 p-3 space-y-2">
-            <div class="text-sm font-medium text-destructive">{{ simulateError.context }}</div>
-            <div class="text-sm text-destructive/90">{{ simulateError.message }}</div>
+            <!-- Error Display -->
+            <div v-if="simulateError" class="rounded-lg border border-destructive/50 p-3 space-y-2">
+              <div class="text-sm font-medium text-destructive">{{ simulateError.context }}</div>
+              <div class="text-sm text-destructive/90">{{ simulateError.message }}</div>
 
-            <template v-if="simulateError.payload">
-              <div v-if="simulateError.stdout" class="overflow-x-auto">
+              <template v-if="simulateError.payload">
+                <div v-if="simulateError.stdout" class="overflow-x-auto">
+                  <div class="text-xs text-muted-foreground mb-1">stdout</div>
+                  <pre
+                    class="text-xs p-2 bg-zinc-900 text-zinc-100 rounded whitespace-pre max-h-60 overflow-y-auto"
+                  ><code>{{ String(simulateError.stdout || '') }}</code></pre>
+                </div>
+              </template>
+
+              <div v-if="simulateError.sourceSegment" class="overflow-x-auto">
+                <pre
+                  class="text-xs p-2 bg-destructive/5 border border-destructive/20 rounded font-mono whitespace-pre"
+                  >{{ simulateError.sourceSegment }}</pre
+                >
+              </div>
+
+              <div
+                v-if="simulateError.payload"
+                class="text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1"
+              >
+                <span
+                  >gas:
+                  {{ simulateError.payload.script_gas_consumed?.toLocaleString() ?? 'null' }}</span
+                >
+                <span>nodes: {{ simulateError.payload.nodes_called ?? 'null' }}</span>
+                <span
+                  >cumsize: {{ simulateError.payload.cumsize?.toLocaleString() ?? 'null' }}</span
+                >
+              </div>
+            </div>
+
+            <!-- Success Display -->
+            <div v-if="simulateResult" class="rounded-lg border border-green-500/50 p-3 space-y-2">
+              <div class="text-sm font-medium text-green-600 dark:text-green-400">
+                Query Successful
+              </div>
+
+              <div class="overflow-x-auto">
                 <div class="text-xs text-muted-foreground mb-1">stdout</div>
                 <pre
                   class="text-xs p-2 bg-zinc-900 text-zinc-100 rounded whitespace-pre max-h-60 overflow-y-auto"
-                ><code>{{ String(simulateError.stdout || '') }}</code></pre>
+                ><code>{{ String(simulateResult.stdout || '') }}</code></pre>
               </div>
-            </template>
 
-            <div v-if="simulateError.sourceSegment" class="overflow-x-auto">
-              <pre
-                class="text-xs p-2 bg-destructive/5 border border-destructive/20 rounded font-mono whitespace-pre"
-                >{{ simulateError.sourceSegment }}</pre
-              >
-            </div>
+              <div class="overflow-x-auto">
+                <div class="text-xs text-muted-foreground mb-1">result (return value)</div>
+                <pre
+                  class="text-xs p-2 bg-zinc-900 text-zinc-100 rounded whitespace-pre max-h-40 overflow-y-auto"
+                ><code>{{ formatJson(simulateResult.returnValue) }}</code></pre>
+              </div>
 
-            <div
-              v-if="simulateError.payload"
-              class="text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1"
-            >
-              <span
-                >gas:
-                {{ simulateError.payload.script_gas_consumed?.toLocaleString() ?? 'null' }}</span
-              >
-              <span>nodes: {{ simulateError.payload.nodes_called ?? 'null' }}</span>
-              <span>cumsize: {{ simulateError.payload.cumsize?.toLocaleString() ?? 'null' }}</span>
-            </div>
-          </div>
-
-          <!-- Success Display -->
-          <div v-if="simulateResult" class="rounded-lg border border-green-500/50 p-3 space-y-2">
-            <div class="text-sm font-medium text-green-600 dark:text-green-400">
-              Query Successful
-            </div>
-
-            <div class="overflow-x-auto">
-              <div class="text-xs text-muted-foreground mb-1">stdout</div>
-              <pre
-                class="text-xs p-2 bg-zinc-900 text-zinc-100 rounded whitespace-pre max-h-60 overflow-y-auto"
-              ><code>{{ String(simulateResult.stdout || '') }}</code></pre>
-            </div>
-
-            <div class="overflow-x-auto">
-              <div class="text-xs text-muted-foreground mb-1">result (return value)</div>
-              <pre
-                class="text-xs p-2 bg-zinc-900 text-zinc-100 rounded whitespace-pre max-h-40 overflow-y-auto"
-              ><code>{{ formatJson(simulateResult.returnValue) }}</code></pre>
-            </div>
-
-            <div class="text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
-              <span>gas: {{ simulateResult.gasConsumed?.toLocaleString() ?? 'null' }}</span>
-              <span>nodes: {{ simulateResult.nodesExecuted ?? 'null' }}</span>
-              <span>cumsize: {{ simulateResult.cumSize?.toLocaleString() ?? 'null' }}</span>
+              <div class="text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
+                <span>gas: {{ simulateResult.gasConsumed?.toLocaleString() ?? 'null' }}</span>
+                <span>nodes: {{ simulateResult.nodesExecuted ?? 'null' }}</span>
+                <span>cumsize: {{ simulateResult.cumSize?.toLocaleString() ?? 'null' }}</span>
+              </div>
             </div>
           </div>
         </div>
-      </TabsContent>
-    </Tabs>
+      </div>
+    </div>
 
-    <!-- Mobile: REST-only layout (when Dyslang not supported) -->
-    <template v-if="!isWideScreen && !supportsDyslang">
+    <!-- REST-only layout (when Dyslang not supported) -->
+    <div v-else class="mt-3">
       <!-- REST API (for queries) -->
-      <div v-if="isQuery" class="mt-3 border rounded-md p-3 space-y-3">
-        <div class="text-lg font-medium">REST API</div>
-        <div class="flex items-end gap-2">
-          <Field class="flex-1">
-            <FieldLabel>Request URL</FieldLabel>
-            <Input :model-value="urlPreview" readonly class="font-mono text-xs" />
-          </Field>
-          <Button
-            class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
-            :disabled="isLoading"
-            @click="execute"
-          >
-            {{ isLoading ? 'Loading...' : endpoint.method.toUpperCase() }}
-          </Button>
-        </div>
-        <div v-if="bodyPreview">
-          <div class="text-xs text-muted-foreground mb-1">Request Body</div>
-          <pre class="bg-zinc-900 text-zinc-100 p-2 rounded text-xs overflow-x-auto max-h-32">{{
-            JSON.stringify(bodyPreview, null, 2)
-          }}</pre>
-        </div>
-        <div v-if="error || response || exampleResponse">
-          <div class="text-sm font-medium mb-2">Response</div>
-          <div v-if="error" class="bg-destructive/10 border border-destructive/20 rounded p-3 mb-2">
-            <div class="text-sm text-destructive">{{ error }}</div>
-          </div>
-          <div v-if="response">
-            <pre class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-60">{{
-              JSON.stringify(response, null, 2)
-            }}</pre>
-          </div>
-          <div v-else-if="exampleResponse">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-xs font-medium">200</span>
-              <span class="text-xs text-muted-foreground">Example response</span>
-            </div>
-            <pre class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-60">{{
-              JSON.stringify(exampleResponse, null, 2)
-            }}</pre>
-          </div>
-        </div>
-      </div>
-      <!-- TX JSON (for messages) -->
-      <div v-else class="mt-3 border rounded-md p-3 space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="text-lg font-medium">TX JSON</div>
-          <Button variant="ghost" size="sm" class="h-7 px-2" @click="copyJson">
-            <Check v-if="jsonCopied" class="h-3 w-3 text-green-500" />
-            <Copy v-else class="h-3 w-3" />
-            <span class="ml-1 text-xs">{{ jsonCopied ? 'Copied' : 'Copy' }}</span>
-          </Button>
-        </div>
-        <FieldDescription>
-          Raw message JSON for signing and broadcasting a transaction.
-        </FieldDescription>
-        <pre class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-80">{{
-          JSON.stringify(msgJsonPayload, null, 2)
-        }}</pre>
-
-        <!-- Wallet selector and sign button -->
-        <div class="flex items-end gap-2 pt-2 border-t">
-          <div class="flex-1">
-            <div class="text-xs text-muted-foreground mb-1">Wallet</div>
-            <WalletSelector
-              v-model="selectedWalletAddress"
-              button-class="w-full justify-between"
-              @update:executor-address="executorAddress = $event"
-              @update:grantee-address="granteeAddress = $event"
-            />
-          </div>
-          <Button
-            class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
-            :disabled="isSigning || !executorAddress"
-            @click="signAndSendTx"
-          >
-            <Send class="h-4 w-4 mr-2" />
-            {{ isSigning ? 'Signing...' : 'Sign & Send' }}
-          </Button>
-        </div>
-
-        <!-- Transaction result -->
-        <div
-          v-if="txResult"
-          class="rounded-lg p-3"
-          :class="txResult.success ? 'border border-green-500/50' : 'border border-destructive/50'"
-        >
-          <div v-if="txResult.success" class="text-sm text-green-600 dark:text-green-400">
-            ✓ Transaction sent!
-            <a
-              v-if="txResult.txHash"
-              :href="`/txs/${txResult.txHash}`"
-              class="underline ml-1 font-mono text-xs"
-            >
-              {{ txResult.txHash.slice(0, 12) }}...
-            </a>
-          </div>
-          <div v-else class="text-sm text-destructive">{{ txResult.error }}</div>
-        </div>
-      </div>
-    </template>
-
-    <!-- Desktop: Side by side layout (when Dyslang supported) -->
-    <div v-if="isWideScreen && supportsDyslang" class="grid grid-cols-2 gap-4 mt-3">
-      <!-- REST API Panel (for queries) -->
       <div v-if="isQuery" class="border rounded-md p-3 space-y-3">
         <div class="text-lg font-medium">REST API</div>
         <div class="flex items-end gap-2">
@@ -1368,7 +1285,7 @@ function formatResult(r: unknown) {
         </div>
       </div>
 
-      <!-- TX JSON Panel (for messages) -->
+      <!-- TX JSON (for messages) -->
       <div v-else class="border rounded-md p-3 space-y-3">
         <div class="flex items-center justify-between">
           <div class="text-lg font-medium">TX JSON</div>
@@ -1387,11 +1304,10 @@ function formatResult(r: unknown) {
 
         <!-- Wallet selector and sign button -->
         <div class="flex items-end gap-2 pt-2 border-t">
-          <div class="flex-1">
+          <div class="max-w-[240px]">
             <div class="text-xs text-muted-foreground mb-1">Wallet</div>
             <WalletSelector
               v-model="selectedWalletAddress"
-              button-class="w-full justify-between"
               @update:executor-address="executorAddress = $event"
               @update:grantee-address="granteeAddress = $event"
             />
@@ -1423,215 +1339,8 @@ function formatResult(r: unknown) {
             </a>
           </div>
           <div v-else class="text-sm text-destructive">{{ txResult.error }}</div>
-        </div>
-      </div>
-
-      <!-- Dyslang Script Panel -->
-      <div class="border rounded-md p-3 space-y-3">
-        <div class="text-lg font-medium">Dyslang Script</div>
-        <div class="flex items-end gap-2">
-          <Field class="flex-1">
-            <FieldLabel for="global-script-address-desktop">Script Address to simulate</FieldLabel>
-            <Input
-              id="global-script-address-desktop"
-              v-model="globalScriptAddress"
-              placeholder="dys2..."
-              class="font-mono"
-            />
-          </Field>
-          <Button
-            class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
-            :disabled="isSimulating || !globalScriptAddress"
-            @click="runScriptQuery"
-          >
-            <Play class="h-4 w-4 mr-2" />
-            {{ isSimulating ? 'Running...' : 'Simulate' }}
-          </Button>
-        </div>
-        <div class="relative border rounded-md overflow-hidden">
-          <MonacoEditor
-            v-model="scriptCode"
-            language="python"
-            :theme="editorTheme"
-            :auto-height="true"
-            :min-height="100"
-            :max-height="300"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            class="absolute top-2 right-2 h-7 px-2 bg-zinc-800 hover:bg-zinc-700 z-10"
-            @click="copyCode"
-          >
-            <Check v-if="codeCopied" class="h-3 w-3 text-green-500" />
-            <Copy v-else class="h-3 w-3" />
-            <span class="ml-1 text-xs">{{ codeCopied ? 'Copied' : 'Copy' }}</span>
-          </Button>
-        </div>
-
-        <!-- Error Display -->
-        <div v-if="simulateError" class="rounded-lg border border-destructive/50 p-3 space-y-2">
-          <div class="text-sm font-medium text-destructive">{{ simulateError.context }}</div>
-          <div class="text-sm text-destructive/90">{{ simulateError.message }}</div>
-
-          <template v-if="simulateError.payload">
-            <div v-if="simulateError.stdout" class="overflow-x-auto">
-              <div class="text-xs text-muted-foreground mb-1">stdout</div>
-              <pre
-                class="text-xs p-2 bg-zinc-900 text-zinc-100 rounded whitespace-pre max-h-60 overflow-y-auto"
-              ><code>{{ String(simulateError.stdout || '') }}</code></pre>
-            </div>
-          </template>
-
-          <div v-if="simulateError.sourceSegment" class="overflow-x-auto">
-            <pre
-              class="text-xs p-2 bg-destructive/5 border border-destructive/20 rounded font-mono whitespace-pre"
-              >{{ simulateError.sourceSegment }}</pre
-            >
-          </div>
-
-          <div
-            v-if="simulateError.payload"
-            class="text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1"
-          >
-            <span
-              >gas:
-              {{ simulateError.payload.script_gas_consumed?.toLocaleString() ?? 'null' }}</span
-            >
-            <span>nodes: {{ simulateError.payload.nodes_called ?? 'null' }}</span>
-            <span>cumsize: {{ simulateError.payload.cumsize?.toLocaleString() ?? 'null' }}</span>
-          </div>
-        </div>
-
-        <!-- Success Display -->
-        <div v-if="simulateResult" class="rounded-lg border border-green-500/50 p-3 space-y-2">
-          <div class="text-sm font-medium text-green-600 dark:text-green-400">Query Successful</div>
-
-          <div class="overflow-x-auto">
-            <div class="text-xs text-muted-foreground mb-1">stdout</div>
-            <pre
-              class="text-xs p-2 bg-zinc-900 text-zinc-100 rounded whitespace-pre max-h-60 overflow-y-auto"
-            ><code>{{ String(simulateResult.stdout || '') }}</code></pre>
-          </div>
-
-          <div class="overflow-x-auto">
-            <div class="text-xs text-muted-foreground mb-1">result (return value)</div>
-            <pre
-              class="text-xs p-2 bg-zinc-900 text-zinc-100 rounded whitespace-pre max-h-40 overflow-y-auto"
-            ><code>{{ formatJson(simulateResult.returnValue) }}</code></pre>
-          </div>
-
-          <div class="text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
-            <span>gas: {{ simulateResult.gasConsumed?.toLocaleString() ?? 'null' }}</span>
-            <span>nodes: {{ simulateResult.nodesExecuted ?? 'null' }}</span>
-            <span>cumsize: {{ simulateResult.cumSize?.toLocaleString() ?? 'null' }}</span>
-          </div>
         </div>
       </div>
     </div>
-
-    <!-- Desktop: REST-only layout (when Dyslang not supported) -->
-    <template v-if="isWideScreen && !supportsDyslang">
-      <!-- REST API (for queries) -->
-      <div v-if="isQuery" class="mt-3 border rounded-md p-3 space-y-3">
-        <div class="text-lg font-medium">REST API</div>
-        <div class="flex items-end gap-2">
-          <Field class="flex-1">
-            <FieldLabel>Request URL</FieldLabel>
-            <Input :model-value="urlPreview" readonly class="font-mono text-xs" />
-          </Field>
-          <Button
-            class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
-            :disabled="isLoading"
-            @click="execute"
-          >
-            {{ isLoading ? 'Loading...' : endpoint.method.toUpperCase() }}
-          </Button>
-        </div>
-        <div v-if="bodyPreview">
-          <div class="text-xs text-muted-foreground mb-1">Request Body</div>
-          <pre class="bg-zinc-900 text-zinc-100 p-2 rounded text-xs overflow-x-auto max-h-32">{{
-            JSON.stringify(bodyPreview, null, 2)
-          }}</pre>
-        </div>
-        <div v-if="error || response || exampleResponse">
-          <div class="text-sm font-medium mb-2">Response</div>
-          <div v-if="error" class="bg-destructive/10 border border-destructive/20 rounded p-3 mb-2">
-            <div class="text-sm text-destructive">{{ error }}</div>
-          </div>
-          <div v-if="response">
-            <pre class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-60">{{
-              JSON.stringify(response, null, 2)
-            }}</pre>
-          </div>
-          <div v-else-if="exampleResponse">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-xs font-medium">200</span>
-              <span class="text-xs text-muted-foreground">Example response</span>
-            </div>
-            <pre class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-60">{{
-              JSON.stringify(exampleResponse, null, 2)
-            }}</pre>
-          </div>
-        </div>
-      </div>
-      <!-- TX JSON (for messages) -->
-      <div v-else class="mt-3 border rounded-md p-3 space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="text-lg font-medium">TX JSON</div>
-          <Button variant="ghost" size="sm" class="h-7 px-2" @click="copyJson">
-            <Check v-if="jsonCopied" class="h-3 w-3 text-green-500" />
-            <Copy v-else class="h-3 w-3" />
-            <span class="ml-1 text-xs">{{ jsonCopied ? 'Copied' : 'Copy' }}</span>
-          </Button>
-        </div>
-        <FieldDescription>
-          Raw message JSON for signing and broadcasting a transaction.
-        </FieldDescription>
-        <pre class="bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto max-h-80">{{
-          JSON.stringify(msgJsonPayload, null, 2)
-        }}</pre>
-
-        <!-- Wallet selector and sign button -->
-        <div class="flex items-end gap-2 pt-2 border-t">
-          <div class="flex-1">
-            <div class="text-xs text-muted-foreground mb-1">Wallet</div>
-            <WalletSelector
-              v-model="selectedWalletAddress"
-              button-class="w-full justify-between"
-              @update:executor-address="executorAddress = $event"
-              @update:grantee-address="granteeAddress = $event"
-            />
-          </div>
-          <Button
-            class="bg-green-600 hover:bg-green-700 text-white h-10 px-6 shrink-0"
-            :disabled="isSigning || !executorAddress"
-            @click="signAndSendTx"
-          >
-            <Send class="h-4 w-4 mr-2" />
-            {{ isSigning ? 'Signing...' : 'Sign & Send' }}
-          </Button>
-        </div>
-
-        <!-- Transaction result -->
-        <div
-          v-if="txResult"
-          class="rounded-lg p-3"
-          :class="txResult.success ? 'border border-green-500/50' : 'border border-destructive/50'"
-        >
-          <div v-if="txResult.success" class="text-sm text-green-600 dark:text-green-400">
-            ✓ Transaction sent!
-            <a
-              v-if="txResult.txHash"
-              :href="`/txs/${txResult.txHash}`"
-              class="underline ml-1 font-mono text-xs"
-            >
-              {{ txResult.txHash.slice(0, 12) }}...
-            </a>
-          </div>
-          <div v-else class="text-sm text-destructive">{{ txResult.error }}</div>
-        </div>
-      </div>
-    </template>
   </div>
 </template>

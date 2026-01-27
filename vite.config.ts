@@ -1,6 +1,9 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
+import Markdown from 'unplugin-vue-markdown/vite'
+import MarkdownItAnchor from 'markdown-it-anchor'
+import MarkdownItPrism from 'markdown-it-prism'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { execSync } from 'child_process'
@@ -29,7 +32,18 @@ export default defineConfig(({ mode }) => {
   const isHttpsTarget = /^https:\/\//.test(proxyTarget)
 
   return {
-    plugins: [vue(), tailwindcss()],
+    plugins: [
+      vue({ include: [/\.vue$/, /\.md$/] }),
+      Markdown({
+        markdownItOptions: { html: true, linkify: true, typographer: true },
+        markdownItSetup(md) {
+          md.use(MarkdownItAnchor, { permalink: MarkdownItAnchor.permalink.headerLink() })
+          md.use(MarkdownItPrism)
+        },
+        wrapperClasses: 'prose dark:prose-invert max-w-none',
+      }),
+      tailwindcss(),
+    ],
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
