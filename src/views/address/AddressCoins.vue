@@ -410,7 +410,7 @@ function runValidation() {
   sendValidation.value = msgs
 }
 const debouncedValidate = useDebounceFn(runValidation, 300)
-watch([sendTo, sendAmount, sendDenom, balances], () => {
+watch([sendTo, sendAmount, sendDenom], () => {
   if (sendError.value) sendError.value = ''
   if (confirm.value) confirm.value = false
   debouncedValidate()
@@ -453,7 +453,9 @@ async function submitSend() {
     }
     await refresh()
     sendTo.value = ''
+    sendToText.value = ''
     sendAmount.value = ''
+    selectorBaseAmount.value = ''
     confirm.value = false
     runValidation()
   } catch (e: any) {
