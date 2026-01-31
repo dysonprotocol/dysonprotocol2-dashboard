@@ -7,7 +7,7 @@
   >
     <!-- Left: Sidebar trigger + Breadcrumbs -->
     <div class="flex items-center gap-3 min-w-0">
-      <SidebarTrigger class="p-1.5 rounded-md hover:bg-muted flex-shrink-0" />
+      <SidebarTrigger class="md:p-1.5 rounded-md hover:bg-muted flex-shrink-0" />
 
       <!-- Breadcrumbs -->
       <nav v-if="breadcrumbs.length > 0" class="flex items-center gap-1.5 text-sm min-w-0">

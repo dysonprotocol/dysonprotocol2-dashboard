@@ -1,1 +1,0 @@
-import{d as o,c as t,b as s,O as a,o as n}from"./index-DGcK8uE6.js";const c={class:"max-w-4xl mx-auto py-6"},u=o({__name:"DocsLayout",setup(r){return(_,m)=>{const e=a("router-view");return n(),t("div",c,[s(e)])}}});export{u as default};
