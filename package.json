@@ -23,7 +23,7 @@
     "@connectrpc/connect": "^1.7.0",
     "@connectrpc/connect-web": "^1.7.0",
     "@cosmjs/encoding": "^0.28.0",
-    "@cosmjs/proto-signing": "^0.33.0",
+    "@cosmjs/proto-signing": "^0.38.1",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@jsonforms/core": "^3.6.0",
